@@ -2,6 +2,7 @@ set nocompatible
 let mapleader="\<space>"
 
 " Editor settings
+color slate
 set tabstop=2
 set softtabstop=2
 set shiftwidth=2
@@ -60,6 +61,7 @@ Plug 'prettier/vim-prettier', {
 Plug 'scrooloose/nerdtree', { 'on':  'NERDTreeToggle' }
 Plug 'w0rp/ale'
 Plug 'ctrlpvim/ctrlp.vim'
+Plug 'SirVer/ultisnips'
 call plug#end()
 
 let g:jsx_ext_required = 0 "Allows vim-jsx to parse jsx in js files
@@ -94,3 +96,8 @@ let g:prettier#config#bracket_spacing = 'true'
 let g:prettier#config#jsx_bracket_same_line = 'false'
 autocmd BufWritePre *.js,*.css,*.scss,*.less Prettier
 
+" UltiSnips settings
+let g:UltiSnipsExpandTrigger="<tab>"
+let g:UltiSnipsEditSplit="vertical"
+let g:UltiSnipsSnippetsDir="~/.vim/UltiSnips"
+let g:UltiSnipsSnippetDirectors=["~/.vim/UltiSnips"]
