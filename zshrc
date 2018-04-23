@@ -6,9 +6,6 @@ export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
 export PATH=$HOME/bin:/usr/local/bin:/usr/local/share/npm/bin:$PATH
 
-# PHP path
-export PATH="$(brew --prefix homebrew/php/php71)/bin:$PATH"
-
 # Path to your oh-my-zsh installation.
 export ZSH=/Users/dlemay/.oh-my-zsh
 
