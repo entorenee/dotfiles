@@ -62,6 +62,7 @@ Plug 'scrooloose/nerdtree', { 'on':  'NERDTreeToggle' }
 Plug 'w0rp/ale'
 Plug 'ctrlpvim/ctrlp.vim'
 Plug 'SirVer/ultisnips'
+Plug 'tpope/vim-commentary'
 call plug#end()
 
 let g:jsx_ext_required = 0 "Allows vim-jsx to parse jsx in js files
