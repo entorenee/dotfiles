@@ -106,3 +106,9 @@ source $ZSH/oh-my-zsh.sh
 # Example aliases
 # alias zshconfig="mate ~/.zshrc"
 # alias ohmyzsh="mate ~/.oh-my-zsh"
+alias y="yarn"
+alias yt="yarn test"
+alias ytw="yarn test --watch"
+alias ytc="yarn test --coverage"
+alias ya="yarn add"
+alias yad="yard add dev"
