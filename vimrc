@@ -14,6 +14,7 @@ set ruler
 set backspace=indent,eol,start
 set visualbell
 set t_vb=
+set wildignore+=*.DS_Store
 
 " Autoclose tag maps
 inoremap {{ {}<left>
@@ -72,6 +73,7 @@ map <C-n> :NERDTreeToggle<CR>
 let g:NERDTreeDirArrowExpandable = '▸'
 let g:NERDTreeDirArrowCollapsible = '▾'
 let NERDTreeShowHidden=1
+let NERDTreeRespectWildIgnore=1
 
 " Ale settings
 let g:ale_linters = {'jsx': 'eslint'}
