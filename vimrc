@@ -55,6 +55,7 @@ endif
 call plug#begin('~/.vim/plugged')
 Plug 'pangloss/vim-javascript'
 Plug 'mxw/vim-jsx'
+Plug 'lumiliet/vim-twig'
 Plug 'posva/vim-vue'
 Plug 'prettier/vim-prettier', {
     \ 'do': 'npm install',
@@ -78,9 +79,10 @@ let NERDTreeRespectWildIgnore=1
 " Ale settings
 let g:ale_linters = {'jsx': 'eslint'}
 let g:ale_fixers = {
-\   'javascript': ['eslint'],
+\   'javascript': ['eslint', 'prettier'],
 \}
 let g:ale_fix_on_save = 1
+let g:ale_javascript_prettier_use_local_config = 1
 nmap <silent> <C-k> <Plug>(ale_previous_wrap)
 nmap <silent> <C-j> <Plug>(ale_next_wrap)
 
@@ -93,11 +95,11 @@ let g:ctrlp_custom_ignore = {
 	\ }
 
 " Prettier settings
-let g:prettier#autoformat = 0
-let g:prettier#config#print_width = 80
-let g:prettier#config#bracket_spacing = 'true'
-let g:prettier#config#jsx_bracket_same_line = 'false'
-autocmd BufWritePre *.js,*.css,*.scss,*.less Prettier
+" let g:prettier#autoformat = 0
+" let g:prettier#config#print_width = 80
+" let g:prettier#config#bracket_spacing = 'true'
+" let g:prettier#config#jsx_bracket_same_line = 'false'
+" autocmd BufWritePre *.js,*.css,*.scss,*.less Prettier
 
 " UltiSnips settings
 let g:UltiSnipsExpandTrigger="<tab>"
