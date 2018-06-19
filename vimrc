@@ -55,12 +55,14 @@ endif
 call plug#begin('~/.vim/plugged')
 Plug 'pangloss/vim-javascript'
 Plug 'mxw/vim-jsx'
+Plug 'lumiliet/vim-twig'
 Plug 'posva/vim-vue'
 Plug 'prettier/vim-prettier', {
     \ 'do': 'npm install',
     \ 'for': ['javascript', 'typescript', 'css', 'less', 'scss'] }
 Plug 'scrooloose/nerdtree', { 'on':  'NERDTreeToggle' }
 Plug 'w0rp/ale'
+Plug 'mileszs/ack.vim'
 Plug 'ctrlpvim/ctrlp.vim'
 Plug 'SirVer/ultisnips'
 Plug 'tpope/vim-commentary'
@@ -87,8 +89,12 @@ let g:ale_statusline_format = ['X %d', '? %d', '']
 let g:ale_fix_on_save = 1
 highlight clear ALEError "Don't highlight error on line, just in gutter
 highlight clear ALEWarning "Don't highlight warning on line, just in gutter
+let g:ale_javascript_prettier_use_local_config = 1
 nmap <silent> <C-k> <Plug>(ale_previous_wrap)
 nmap <silent> <C-j> <Plug>(ale_next_wrap)
+
+" Ack settings
+nmap <C-S-F> :Ack<space>
 
 " Control-P settings
 let g:ctrlp_map = '<C-p>' 
@@ -99,11 +105,11 @@ let g:ctrlp_custom_ignore = {
 	\ }
 
 " Prettier settings
-let g:prettier#autoformat = 0
-let g:prettier#config#print_width = 80
-let g:prettier#config#bracket_spacing = 'true'
-let g:prettier#config#jsx_bracket_same_line = 'false'
-autocmd BufWritePre *.js,*.css,*.scss,*.less Prettier
+" let g:prettier#autoformat = 0
+" let g:prettier#config#print_width = 80
+" let g:prettier#config#bracket_spacing = 'true'
+" let g:prettier#config#jsx_bracket_same_line = 'false'
+" autocmd BufWritePre *.js,*.css,*.scss,*.less Prettier
 
 " UltiSnips settings
 let g:UltiSnipsExpandTrigger="<tab>"

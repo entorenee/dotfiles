@@ -8,6 +8,11 @@ $ cd ~
 $ git clone https://github.com/dslemay/dotfiles
 ```
 
+## System configuration requirements
+
+1. UltiSnips utilizes a build of Vim which includes Python. The default version installed on Mac OS is not compatible. If you do not want to use UltiSnips remove it from the vimrc file. Otherwise install Vim via homebrew by running `$ brew install vim`.
+2. The vimrc currently sets nocompatible. This can create issues when using git commit and using the editor window to write your commit. By default Git uses vi, which has compatibility issues with UltiSnips. To resolve this, set your default Git editor to Vim by running the following command in your terminal. `$ git config --global core.editor "vim"`.
+
 ### Install [RCM](https://github.com/thoughtbot/rcm)
 
 This repo uses RCM to manage the dotfiles and relocate them from within the repo folder to your home directory.

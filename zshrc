@@ -25,7 +25,7 @@ alias re='eval "$(rig config)"'
 # Set name of the theme to load. Optionally, if you set this to "random"
 # it'll load a random theme each time that oh-my-zsh is loaded.
 # See https://github.com/robbyrussell/oh-my-zsh/wiki/Themes
-ZSH_THEME="agnoster"
+ZSH_THEME="spaceship"
 
 # Set list of themes to load
 # Setting this variable when ZSH_THEME=random
@@ -117,3 +117,9 @@ alias ytc="yarn test --coverage"
 alias ya="yarn add"
 alias yad="yard add dev"
 alias yr="yarn run"
+
+# NPM Aliases
+alias n="npm"
+alias ni="npm install"
+alias nis="npm install --save"
+alias nid="npm install --save-dev"
