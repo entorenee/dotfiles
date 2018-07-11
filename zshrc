@@ -115,7 +115,7 @@ alias yt="yarn test"
 alias ytw="yarn test --watch"
 alias ytc="yarn test --coverage"
 alias ya="yarn add"
-alias yad="yard add dev"
+alias yad="yarn add --dev"
 alias yr="yarn run"
 
 # NPM Aliases
@@ -123,3 +123,11 @@ alias n="npm"
 alias ni="npm install"
 alias nis="npm install --save"
 alias nid="npm install --save-dev"
+alias ns="npm start"
+alias nr="npm run dev"
+alias nt="npm test"
+
+# Tmux Aliases
+alias tm="tmux"
+alias tma="tmux a"
+alias tmat="tmux a -t"
