@@ -11,12 +11,14 @@ set autoindent
 set number
 set relativenumber
 set ruler
+set hlsearch
 set backspace=indent,eol,start
 set visualbell
 set t_vb=
 set wildignore+=*.DS_Store
+nnoremap <CR> :noh<CR> " Clear highlighting
 
-" Autoclose tag maps
+" Autocloser highlighting tag maps
 inoremap {{ {}<left>
 inoremap (( ()<left>
 inoremap [[ []<left>
@@ -38,6 +40,11 @@ noremap <leader>9 9gt
 noremap <leader>0 :tablast<cr>
 noremap <leader>h gT
 noremap <leader>l gt
+" Provide easier Vim pane navigation
+noremap <leader><leader>j <C-W>j
+noremap <leader><leader>k <C-W>k
+noremap <leader><leader>h <C-W>h
+noremap <leader><leader>l <C-W>l
 
 " End Editor Settings
 
@@ -81,6 +88,7 @@ let NERDTreeRespectWildIgnore=1
 let g:ale_linters = {'jsx': 'eslint'}
 let g:ale_fixers = {
 \   'javascript': ['eslint', 'prettier'],
+\   'jsx': ['eslint', 'prettier-standard'], # Added for client project
 \}
 let g:ale_fix_on_save = 1
 let g:ale_javascript_prettier_use_local_config = 1
