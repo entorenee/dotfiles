@@ -110,6 +110,12 @@ source $ZSH/oh-my-zsh.sh
 # Example aliases
 # alias zshconfig="mate ~/.zshrc"
 # alias ohmyzsh="mate ~/.oh-my-zsh"
+
+# General Aliases
+alias gu="git up"
+# Git up is a separate package for better pull updates https://github.com/msiemens/PyGitUp
+
+# Yarn Aliases
 alias y="yarn"
 alias yt="yarn test"
 alias ytw="yarn test --watch"
@@ -131,3 +137,7 @@ alias nt="npm test"
 alias tm="tmux"
 alias tma="tmux a"
 alias tmat="tmux a -t"
+
+# Git Alises
+alias grb="git rebase"
+alias grbd="git rebase develop"
