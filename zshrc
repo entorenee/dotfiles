@@ -18,10 +18,6 @@ DEFAULT_USER=dlemay
 export MONGO_PATH=/usr/local/mongodb
 export PATH=$PATH:$MONGO_PATH/bin
 
-# Support for Outrigger
-eval "$(rig config)"
-alias re='eval "$(rig config)"'
-
 # Set name of the theme to load. Optionally, if you set this to "random"
 # it'll load a random theme each time that oh-my-zsh is loaded.
 # See https://github.com/robbyrussell/oh-my-zsh/wiki/Themes
