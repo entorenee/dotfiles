@@ -64,6 +64,7 @@ Plug 'pangloss/vim-javascript'
 Plug 'mxw/vim-jsx'
 Plug 'lumiliet/vim-twig'
 Plug 'posva/vim-vue'
+Plug 'leafgarland/typescript-vim'
 Plug 'reasonml-editor/vim-reason-plus'
 Plug 'prettier/vim-prettier', {
     \ 'do': 'npm install',
