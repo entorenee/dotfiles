@@ -64,12 +64,12 @@ Plug 'pangloss/vim-javascript'
 Plug 'mxw/vim-jsx'
 Plug 'lumiliet/vim-twig'
 Plug 'posva/vim-vue'
+Plug 'reasonml-editor/vim-reason-plus'
 Plug 'prettier/vim-prettier', {
     \ 'do': 'npm install',
     \ 'for': ['javascript', 'typescript', 'css', 'less', 'scss'] }
 Plug 'scrooloose/nerdtree', { 'on':  'NERDTreeToggle' }
 Plug 'w0rp/ale'
-Plug 'mileszs/ack.vim'
 Plug 'ctrlpvim/ctrlp.vim'
 Plug 'SirVer/ultisnips'
 Plug 'tpope/vim-commentary'
@@ -93,6 +93,7 @@ let g:ale_linters = {
 let g:ale_fixers = {
 \   'javascript': ['eslint', 'prettier'],
 \   'jsx': ['eslint', 'prettier-standard'],
+\   'reason': ['refmt']
 \}
 let g:ale_statusline_format = ['X %d', '? %d', '']
 let g:ale_fix_on_save = 1
