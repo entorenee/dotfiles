@@ -89,10 +89,12 @@ let NERDTreeRespectWildIgnore=1
 " Ale settings
 let g:ale_linters = {
 \  'javascript': ['flow', 'eslint'],
+\  'typescript': ['tslint'],
 \}
 " Added jsx fixer for client project
 let g:ale_fixers = {
 \   'javascript': ['eslint', 'prettier'],
+\   'typescript': ['tslint', 'prettier'],
 \   'jsx': ['eslint', 'prettier-standard'],
 \   'reason': ['refmt']
 \}
