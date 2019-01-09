@@ -130,13 +130,6 @@ let g:ctrlp_custom_ignore = {
 	\ 'dir':  'node_modules\|coverage',
 	\ }
 
-" Prettier settings
-" let g:prettier#autoformat = 0
-" let g:prettier#config#print_width = 80
-" let g:prettier#config#bracket_spacing = 'true'
-" let g:prettier#config#jsx_bracket_same_line = 'false'
-" autocmd BufWritePre *.js,*.css,*.scss,*.less Prettier
-
 " UltiSnips settings
 let g:UltiSnipsExpandTrigger="<tab>"
 let g:UltiSnipsEditSplit="vertical"
