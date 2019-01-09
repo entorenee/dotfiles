@@ -1,5 +1,5 @@
 set nocompatible
-let mapleader="\<space>"
+let mapleader=";"
 
 " Editor settings
 color slate
@@ -28,8 +28,12 @@ inoremap '' ''<left>
 inoremap "" ""<left>
 inoremap `` ``<left>
 
-" Leader key remaps
-nnoremap <leader><leader> :w<cr>
+" File management
+nnoremap <leader>w :w<cr>
+nnoremap <leader>q :q!<cr>
+nnoremap <leader>z ZZ
+
+" Tab management
 noremap <leader>1 1gt
 noremap <leader>2 2gt
 noremap <leader>3 3gt
@@ -42,11 +46,18 @@ noremap <leader>9 9gt
 noremap <leader>0 :tablast<cr>
 noremap <leader>h gT
 noremap <leader>l gt
-" Provide easier Vim pane navigation
-noremap <leader><leader>j <C-W>j
-noremap <leader><leader>k <C-W>k
-noremap <leader><leader>h <C-W>h
-noremap <leader><leader>l <C-W>l
+
+" Pane navigation
+noremap <leader>j <C-W>j
+noremap <leader>k <C-W>k
+noremap <leader>h <C-W>h
+noremap <leader>l <C-W>l
+
+" Indentation
+nnoremap <leader><Tab> >>
+nnoremap <leader><S-Tab> <<
+inoremap <leader><Tab> >
+inoremap <leader><S-Tab> <
 
 " End Editor Settings
 
