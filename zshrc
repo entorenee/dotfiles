@@ -137,3 +137,10 @@ alias tmat="tmux a -t"
 # Git Alises
 alias grb="git rebase"
 alias grbd="git rebase develop"
+
+# Support for Outrigger
+eval "$(rig config)"
+alias re='eval "$(rig config)"'
+
+# Docker
+export DOCKER_HIDE_LEGACY_COMMANDS=true
