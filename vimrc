@@ -12,6 +12,8 @@ set number
 set relativenumber
 set ruler
 set hlsearch
+set ignorecase
+set smartcase
 set backspace=indent,eol,start
 set visualbell
 set t_vb=
@@ -89,7 +91,7 @@ let NERDTreeRespectWildIgnore=1
 " Ale settings
 let g:ale_linters = {
 \  'javascript': ['flow', 'eslint'],
-\  'typescript': ['tslint'],
+\  'typescript': ['tslint', 'typecheck'],
 \}
 " Added jsx fixer for client project
 let g:ale_fixers = {
