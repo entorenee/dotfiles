@@ -109,6 +109,7 @@ let g:ale_fixers = {
 \   'javascript': ['eslint', 'prettier'],
 \   'typescript': ['tslint', 'prettier'],
 \   'jsx': ['eslint', 'prettier-standard'],
+\   'scss': ['prettier'],
 \   'reason': ['refmt']
 \}
 let g:ale_statusline_format = ['X %d', '? %d', '']
