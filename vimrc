@@ -32,6 +32,7 @@ inoremap `` ``<left>
 nnoremap <leader>w :w<cr>
 nnoremap <leader>q :q!<cr>
 nnoremap <leader>z ZZ
+nnoremap <leader>md :silent !open -a Marked\ 2 %<cr> " Open current md file in Marked
 
 " Tab management
 noremap <leader>1 1gt
