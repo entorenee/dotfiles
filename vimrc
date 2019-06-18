@@ -78,6 +78,7 @@ Plug 'pangloss/vim-javascript'
 Plug 'mxw/vim-jsx'
 Plug 'lumiliet/vim-twig'
 Plug 'posva/vim-vue'
+Plug 'burner/vim-svelte'
 Plug 'leafgarland/typescript-vim'
 Plug 'reasonml-editor/vim-reason-plus'
 Plug 'prettier/vim-prettier', {
@@ -101,9 +102,13 @@ let NERDTreeShowHidden=1
 let NERDTreeRespectWildIgnore=1
 
 " Ale settings
+let g:ale_linter_aliases = {
+\  'svelte': ['css', 'javascript'],
+\}
 let g:ale_linters = {
 \  'javascript': ['flow', 'eslint'],
 \  'typescript': ['tslint', 'typecheck'],
+\  'svelte': ['stylelint', 'eslint'],
 \}
 " Added jsx fixer for client project
 let g:ale_fixers = {
@@ -111,6 +116,7 @@ let g:ale_fixers = {
 \   'typescript': ['tslint', 'prettier'],
 \   'jsx': ['eslint', 'prettier-standard'],
 \   'scss': ['prettier'],
+\   'svelte': ['eslint', 'prettier'],
 \   'reason': ['refmt']
 \}
 let g:ale_statusline_format = ['X %d', '? %d', '']
