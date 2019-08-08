@@ -107,7 +107,7 @@ let g:ale_linter_aliases = {
 \}
 let g:ale_linters = {
 \  'javascript': ['flow', 'eslint'],
-\  'typescript': ['tslint', 'typecheck'],
+\  'typescript': ['tslint', 'eslint', 'typecheck'],
 \  'svelte': ['stylelint', 'eslint'],
 \}
 " Added jsx fixer for client project
