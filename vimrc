@@ -115,6 +115,7 @@ let g:ale_fixers = {
 \   'javascript': ['eslint', 'prettier'],
 \   'typescript': ['tslint', 'prettier'],
 \   'jsx': ['eslint', 'prettier-standard'],
+\   'json': ['prettier'],
 \   'scss': ['prettier'],
 \   'svelte': ['eslint', 'prettier'],
 \   'reason': ['refmt']
