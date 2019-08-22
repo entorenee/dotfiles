@@ -113,10 +113,11 @@ let g:ale_linters = {
 " Added jsx fixer for client project
 let g:ale_fixers = {
 \   'javascript': ['eslint', 'prettier'],
-\   'typescript': ['tslint', 'prettier'],
+\   'typescript': ['tslint', 'eslint', 'prettier'],
 \   'jsx': ['eslint', 'prettier-standard'],
 \   'json': ['prettier'],
 \   'scss': ['prettier'],
+\   'vue': ['eslint', 'prettier'],
 \   'svelte': ['eslint', 'prettier'],
 \   'reason': ['refmt']
 \}
