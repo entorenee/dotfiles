@@ -17,7 +17,7 @@ set smartcase
 set backspace=indent,eol,start
 set visualbell
 set t_vb=
-set wildignore+=*.DS_Store
+set wildignore+=*.DS_Store,*.d,*.mlast,*.cmi,*.cmj,*.cmt,*reast
 nnoremap <CR> :noh<CR> " Clear highlighting
 
 " Autocloser highlighting tag maps
