@@ -144,3 +144,11 @@ alias re='eval "$(rig config)"'
 
 # Docker
 export DOCKER_HIDE_LEGACY_COMMANDS=true
+
+# Functions
+vlist () {
+  nvim -p $(rg -l "$1")
+}
+gpnew () {
+  git push origin -u $(git rev-parse --abbrev-ref HEAD)
+}
