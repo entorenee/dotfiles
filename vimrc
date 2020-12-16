@@ -130,9 +130,6 @@ let g:ale_javascript_prettier_use_local_config = 1
 nmap <silent> <C-k> <Plug>(ale_previous_wrap)
 nmap <silent> <C-j> <Plug>(ale_next_wrap)
 
-" Ack settings
-nmap <C-S-F> :Ack<space>
-
 " Control-P settings
 let g:ctrlp_map = '<C-p>' 
 let g:ctrlp_cmd = 'CtrlP'
