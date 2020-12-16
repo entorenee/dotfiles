@@ -152,3 +152,10 @@ vlist () {
 gpnew () {
   git push origin -u $(git rev-parse --abbrev-ref HEAD)
 }
+code () { VSCODE_CWD="$PWD" open -n -b "com.microsoft.VSCode" --args $* ;}
+scripts () {
+  bat package.json | jq .scripts
+}
+marked () {
+  open -a Marked\ 2 "$1"
+}
