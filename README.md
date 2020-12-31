@@ -21,7 +21,7 @@ This repo uses RCM to manage the dotfiles and relocate them from within the repo
 2. After installing RCM run the command below. *Note: The configuration expects that you cloned your dotfiles to `~/dotfiles`. If you cloned to a different location the`rcrc` file must be updated.*
 
 ```
-$ env RCRC=$HOME/dotfiles/rcrc rcup
+$ env RCRC=$HOME/dotfiles/rcrc rcup -x scripts
 ```
 RCM creates dotfile symlinks (`.vimrc` -> `/dotfiles/vimrc`) from your home directory to your `/dotfiles/` directory.
 
