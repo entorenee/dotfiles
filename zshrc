@@ -126,7 +126,7 @@ alias ni="npm install"
 alias nis="npm install --save"
 alias nid="npm install --save-dev"
 alias ns="npm start"
-alias nr="npm run dev"
+alias nr="npm run"
 alias nt="npm test"
 
 # Tmux Aliases
