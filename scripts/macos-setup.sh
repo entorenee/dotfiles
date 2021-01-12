@@ -21,6 +21,7 @@ PACKAGES=(
   jq
   neovim
   node
+  python
   rcm
   tmux
   tree
@@ -41,5 +42,9 @@ CASKS=(
 
 echo "Installing cask apps..."
 brew install ${CASKS[@]}
+
+# Install Python packages
+echo "Installing Python packages"
+pip3 install git-up
 
 echo "Bootstrapping complete"
