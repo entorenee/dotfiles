@@ -38,6 +38,7 @@ CASKS=(
   focus
   google-chrome
   iterm2
+  rectangle
   slack
 )
 
