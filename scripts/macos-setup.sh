@@ -23,6 +23,7 @@ PACKAGES=(
   node
   python
   rcm
+  ripgrep
   tmux
   tree
 )
