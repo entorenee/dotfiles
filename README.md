@@ -35,6 +35,10 @@ The following packages are generally used and not part of the scaffolding script
 - Install [spaceship theme](https://github.com/denysdovhan/spaceship-prompt#oh-my-zsh)
 - Install [z.sh](https://github.com/rupa/z) for freecency search
 
+## NVM
+
+To utilize nvm for node version management, follow the [installation instructions](https://github.com/nvm-sh/nvm#install--update-script)
+
 ## Manual configuration
 
 ## Iterm
