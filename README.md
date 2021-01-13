@@ -21,9 +21,33 @@ This repo uses RCM to manage the dotfiles and relocate them from within the repo
 2. After installing RCM run the command below. *Note: The configuration expects that you cloned your dotfiles to `~/dotfiles`. If you cloned to a different location the`rcrc` file must be updated.*
 
 ```
-$ env RCRC=$HOME/dotfiles/rcrc rcup
+$ env RCRC=$HOME/dotfiles/rcrc rcup -x scripts
 ```
 RCM creates dotfile symlinks (`.vimrc` -> `/dotfiles/vimrc`) from your home directory to your `/dotfiles/` directory.
+
+## Additional Installations
+
+The following packages are generally used and not part of the scaffolding script.
+
+## Oh My ZSH
+
+- Install zsh via [Oh My ZSH](https://ohmyz.sh/#install)
+- Install [spaceship theme](https://github.com/denysdovhan/spaceship-prompt#oh-my-zsh)
+- Install [z.sh](https://github.com/rupa/z) for freecency search
+
+## NVM
+
+To utilize nvm for node version management, follow the [installation instructions](https://github.com/nvm-sh/nvm#install--update-script)
+
+## Manual configuration
+
+## Iterm
+
+After copying the dotfiles, several pieces need to be manually set in Iterm's preferences.
+
+- Set the preference backup to `~/dotfiles/iterm2`. Make sure to ignore local settings when first selecting this to avoid overwriting the settings.
+- Set iTerm2 to save the settings on exit.
+- The zsh theme uses Powerline fonts and will not render correctly without setting the display font to a Powerline based font. I currently use Dank Mono.
 
 ## Installing Vim Plugins
 
