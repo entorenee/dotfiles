@@ -37,6 +37,7 @@ CASKS=(
   firefox
   focus
   google-chrome
+  hub
   iterm2
   rectangle
   slack

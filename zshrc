@@ -141,6 +141,12 @@ alias grbd="git rebase develop"
 # Docker
 export DOCKER_HIDE_LEGACY_COMMANDS=true
 
+# Hub Aliases
+alias hs="hub show"
+alias hpl="hub pr list"
+alias hps="hub pr show"
+alias hpc="hub pr checkout"
+
 # Functions
 vlist () {
   nvim -p $(rg -l "$1")
