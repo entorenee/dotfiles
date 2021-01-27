@@ -68,6 +68,10 @@ ZSH_THEME="spaceship"
 # Would you like to use another custom folder than $ZSH/custom?
 # ZSH_CUSTOM=/path/to/new-custom-folder
 
+# Disable globbing patterns with git commands. OhMyZSH enables globbing by default
+# https://github.com/ohmyzsh/ohmyzsh/issues/4398#issuecomment-143335160
+alias git="noglob git"
+
 # Which plugins would you like to load? (plugins can be found in ~/.oh-my-zsh/plugins/*)
 # Custom plugins may be added to ~/.oh-my-zsh/custom/plugins/
 # Example format: plugins=(rails git textmate ruby lighthouse)
