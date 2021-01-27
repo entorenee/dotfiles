@@ -11,7 +11,8 @@
                     "basic.simultaneous_threshold_milliseconds": 50,
                     "basic.to_delayed_action_delay_milliseconds": 500,
                     "basic.to_if_alone_timeout_milliseconds": 1000,
-                    "basic.to_if_held_down_threshold_milliseconds": 500
+                    "basic.to_if_held_down_threshold_milliseconds": 500,
+                    "mouse_motion_to_scroll.speed": 100
                 },
                 "rules": []
             },
@@ -24,6 +25,76 @@
                         "is_pointing_device": false,
                         "product_id": 41208,
                         "vendor_id": 1241
+                    },
+                    "ignore": false,
+                    "manipulate_caps_lock_led": false,
+                    "simple_modifications": [
+                        {
+                            "from": {
+                                "key_code": "insert"
+                            },
+                            "to": {
+                                "consumer_key_code": "play_or_pause"
+                            }
+                        },
+                        {
+                            "from": {
+                                "key_code": "left_command"
+                            },
+                            "to": {
+                                "key_code": "left_option"
+                            }
+                        },
+                        {
+                            "from": {
+                                "key_code": "left_option"
+                            },
+                            "to": {
+                                "key_code": "left_command"
+                            }
+                        },
+                        {
+                            "from": {
+                                "key_code": "page_down"
+                            },
+                            "to": {
+                                "consumer_key_code": "volume_decrement"
+                            }
+                        },
+                        {
+                            "from": {
+                                "key_code": "page_up"
+                            },
+                            "to": {
+                                "consumer_key_code": "volume_increment"
+                            }
+                        },
+                        {
+                            "from": {
+                                "key_code": "right_control"
+                            },
+                            "to": {
+                                "key_code": "right_option"
+                            }
+                        },
+                        {
+                            "from": {
+                                "key_code": "right_option"
+                            },
+                            "to": {
+                                "key_code": "right_command"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "disable_built_in_keyboard_if_exists": false,
+                    "fn_function_keys": [],
+                    "identifiers": {
+                        "is_keyboard": true,
+                        "is_pointing_device": false,
+                        "product_id": 25345,
+                        "vendor_id": 12851
                     },
                     "ignore": false,
                     "manipulate_caps_lock_led": false,
@@ -46,7 +117,7 @@
                         },
                         {
                             "from": {
-                                "key_code": "right_control"
+                                "key_code": "right_command"
                             },
                             "to": {
                                 "key_code": "right_option"
@@ -58,30 +129,6 @@
                             },
                             "to": {
                                 "key_code": "right_command"
-                            }
-                        },
-                        {
-                            "from": {
-                                "key_code": "insert"
-                            },
-                            "to": {
-                                "consumer_key_code": "play_or_pause"
-                            }
-                        },
-                        {
-                            "from": {
-                                "key_code": "page_up"
-                            },
-                            "to": {
-                                "consumer_key_code": "volume_increment"
-                            }
-                        },
-                        {
-                            "from": {
-                                "key_code": "page_down"
-                            },
-                            "to": {
-                                "consumer_key_code": "volume_decrement"
                             }
                         }
                     ]
@@ -186,6 +233,9 @@
                 }
             ],
             "name": "Default profile",
+            "parameters": {
+                "delay_milliseconds_before_open_device": 1000
+            },
             "selected": true,
             "simple_modifications": [
                 {
@@ -200,7 +250,8 @@
             "virtual_hid_keyboard": {
                 "caps_lock_delay_milliseconds": 0,
                 "country_code": 0,
-                "keyboard_type": "ansi"
+                "keyboard_type": "ansi",
+                "mouse_key_xy_scale": 100
             }
         }
     ]
