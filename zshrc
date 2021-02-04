@@ -146,7 +146,7 @@ alias grbd="git rebase develop"
 export DOCKER_HIDE_LEGACY_COMMANDS=true
 
 # Hub Aliases
-alias hs="hub show"
+alias hb="hub browse"
 alias hpl="hub pr list"
 alias hps="hub pr show"
 alias hpc="hub pr checkout"
