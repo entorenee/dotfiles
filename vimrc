@@ -1,5 +1,6 @@
 set nocompatible
 let mapleader=";"
+let maplocalleader=";"
 
 " Editor settings
 color slate
@@ -80,7 +81,7 @@ Plug 'lumiliet/vim-twig'
 Plug 'posva/vim-vue'
 Plug 'burner/vim-svelte'
 Plug 'leafgarland/typescript-vim'
-Plug 'reasonml-editor/vim-reason-plus'
+Plug 'rescript-lang/vim-rescript'
 Plug 'prettier/vim-prettier', {
     \ 'do': 'npm install',
     \ 'for': ['javascript', 'typescript', 'css', 'less', 'scss'] }
@@ -119,8 +120,7 @@ let g:ale_fixers = {
 \   'json': ['prettier'],
 \   'scss': ['prettier'],
 \   'vue': ['eslint', 'prettier'],
-\   'svelte': ['eslint', 'prettier'],
-\   'reason': ['refmt']
+\   'svelte': ['eslint', 'prettier']
 \}
 let g:ale_statusline_format = ['X %d', '? %d', '']
 let g:ale_fix_on_save = 1
@@ -186,3 +186,12 @@ nmap <silent> ]g <Plug>(coc-diagnostic-next)
 au BufNewFile,BufRead *.ts setlocal filetype=typescript
 au BufNewFile,BufRead *.tsx setlocal filetype=typescript.tsx
 " == AUTOCMD END ================================
+
+" ReScript bindings
+" Note that <buffer> allows us to use different commands with the same keybindings depending
+" on the filetype. This is useful if to override your e.g. ALE bindings while working on
+" ReScript projects.
+autocmd FileType rescript nnoremap <silent> <buffer> <localleader>r :RescriptFormat<CR>
+autocmd FileType rescript nnoremap <silent> <buffer> <localleader>t :RescriptTypeHint<CR>
+autocmd FileType rescript nnoremap <silent> <buffer> <localleader>b :RescriptBuild<CR>
+autocmd FileType rescript nnoremap <silent> <buffer> gd :RescriptJumpToDefinition<CR>
