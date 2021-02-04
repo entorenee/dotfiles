@@ -56,5 +56,14 @@ The vimrc file uses [Vim-plug](https://github.com/junegunn/vim-plug) for its plu
 1. Open Vim in a terminal. The vimrc file checks to see if Vim-Plug is already installed and installs it if it isn't.
 2. Run `:PlugInstall` on the Vim Command line.
 
+### Installing Conquer of Completion Language Servers
+
+After installing Vim plugins, the following language servers may be installed and used for development.
+
+- `:CocInstall coc-tsserver`: TypeScript language server
+- `:CocInstall coc-rescript`: ReScript/ReasonML language server
+
+Running `:CocList extensions` will list all language servers/extensions used by CoC.
+
 ---
 Many thanks to Francesco Renzi for his detailed [post](https://uracode.com/2017/08/05/the-perks-of-storing-your-dotfiles-in-a-repository/) on how to set up this system.
