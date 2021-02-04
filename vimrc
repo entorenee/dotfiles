@@ -109,13 +109,13 @@ let g:ale_linter_aliases = {
 \}
 let g:ale_linters = {
 \  'javascript': ['flow', 'eslint'],
-\  'typescript': ['tslint', 'eslint', 'typecheck'],
+\  'typescript': ['eslint', 'typecheck'],
 \  'svelte': ['stylelint', 'eslint'],
 \}
 " Added jsx fixer for client project
 let g:ale_fixers = {
 \   'javascript': ['eslint', 'prettier'],
-\   'typescript': ['tslint', 'eslint', 'prettier'],
+\   'typescript': ['eslint', 'prettier'],
 \   'jsx': ['eslint', 'prettier-standard'],
 \   'json': ['prettier'],
 \   'scss': ['prettier'],
