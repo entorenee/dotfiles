@@ -151,6 +151,12 @@ alias hpl="hub pr list"
 alias hps="hub pr show"
 alias hpc="hub pr checkout"
 
+# Docker Compose Aliases
+alias dc="docker-compose"
+alias dcu="docker-compose up -d"
+alias dcd="docker-compose down"
+alias dcl="docker-compose logs -f"
+
 # Functions
 vlist () {
   nvim -p $(rg -l "$1")
