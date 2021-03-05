@@ -18,6 +18,7 @@ brew update
 PACKAGES=(
   bat
   git
+  hub
   jq
   neovim
   node
@@ -34,17 +35,17 @@ brew install ${PACKAGES[@]}
 CASKS=(
   1password
   bartender
+  docker
   firefox
   focus
   google-chrome
-  hub
   iterm2
   rectangle
   slack
 )
 
 echo "Installing cask apps..."
-brew install ${CASKS[@]}
+brew install --cask ${CASKS[@]}
 
 # Install Python packages
 echo "Installing Python packages"
