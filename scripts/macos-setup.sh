@@ -22,6 +22,7 @@ PACKAGES=(
   jq
   neovim
   node
+  nvm
   python
   rcm
   ripgrep
