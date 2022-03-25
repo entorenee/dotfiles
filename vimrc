@@ -92,6 +92,9 @@ Plug 'ctrlpvim/ctrlp.vim'
 " Plug 'SirVer/ultisnips'
 Plug 'tpope/vim-commentary'
 Plug 'neoclide/coc.nvim', {'branch': 'release'}
+Plug 'https://github.com/ngmy/vim-rubocop'
+Plug 'https://github.com/vim-ruby/vim-ruby'
+Plug 'https://github.com/tpope/vim-rails'
 call plug#end()
 
 let g:jsx_ext_required = 0 "Allows vim-jsx to parse jsx in js files
@@ -121,7 +124,8 @@ let g:ale_fixers = {
 \   'json': ['prettier'],
 \   'scss': ['prettier'],
 \   'vue': ['eslint', 'prettier'],
-\   'svelte': ['eslint', 'prettier']
+\   'svelte': ['eslint', 'prettier'],
+\   'ruby': ['rubocop']
 \}
 let g:ale_statusline_format = ['X %d', '? %d', '']
 let g:ale_fix_on_save = 1

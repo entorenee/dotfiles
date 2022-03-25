@@ -138,6 +138,9 @@ alias dcu="docker-compose up -d"
 alias dcd="docker-compose down"
 alias dcl="docker-compose logs -f"
 
+alias awsdev="aws-vault exec app-engineer --"
+alias awsv="aws-vault exec hh-engineer --"
+
 # Functions
 vlist () {
   nvim -p $(rg -l "$1")
@@ -151,4 +154,10 @@ scripts () {
 }
 marked () {
   open -a Marked\ 2 "$1"
+}
+weather () {
+  curl "https://wttr.in/$1?m"
+}
+dreload() {
+  docker-compose stop "$1" && docker-compose rm -f "$1" && docker-compose up -d "$1" && docker-compose logs -f "$1"
 }
