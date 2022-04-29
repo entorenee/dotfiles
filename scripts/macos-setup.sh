@@ -6,6 +6,10 @@
 
 echo "Starting Mac bootstrapping"
 
+echo "Configuring git"
+git config --global user.email "26767995+dslemay@users.noreply.github.com"
+git config --global user.name "Skyler Lemay"
+
 # Check for Homebrew, install if we don't have it
 if test ! $(which brew); then
     echo "Installing homebrew..."
@@ -18,14 +22,19 @@ brew update
 PACKAGES=(
   bat
   git
+  gh
+  helm
   hub
+  kubectl
   jq
+  minikube
   neovim
   node
   nvm
   python
   rcm
   ripgrep
+  skaffold
   tmux
   tree
 )
@@ -40,6 +49,7 @@ CASKS=(
   firefox
   focus
   google-chrome
+  karabiner-elements
   iterm2
   rectangle
   slack
