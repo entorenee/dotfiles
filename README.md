@@ -1,4 +1,4 @@
-# Daniel Lemay dotfiles
+# Skyler Lemay dotfiles
 
 ## Setup
 
