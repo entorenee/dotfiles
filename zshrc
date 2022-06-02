@@ -138,8 +138,8 @@ alias dcu="docker-compose up -d"
 alias dcd="docker-compose down"
 alias dcl="docker-compose logs -f"
 
-alias awsdev="aws-vault exec app-engineer --"
-alias awsv="aws-vault exec hh-engineer --"
+alias awsdev="aws-vault exec engineer-dev --"
+alias awsv="aws-vault exec engineer-prod --"
 
 # Functions
 vlist () {
