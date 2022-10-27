@@ -7,7 +7,7 @@
 echo "Starting Mac bootstrapping"
 
 echo "Configuring git"
-git config --global user.email "26767995+dslemay@users.noreply.github.com"
+git config --global user.email "26767995+entorenee@users.noreply.github.com"
 git config --global user.name "Skyler Lemay"
 
 # Check for Homebrew, install if we don't have it
