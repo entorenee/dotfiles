@@ -7,11 +7,10 @@ export NVM_DIR="$HOME/.nvm"
 export PATH=$HOME/bin:/usr/local/bin:/usr/local/share/npm/bin:$PATH
 
 # Path to your oh-my-zsh installation.
-export ZSH=/Users/dlemay/.oh-my-zsh
+export ZSH="$HOME/.oh-my-zsh"
 
 export PATH=$HOME/bin:/usr/local/bin:/usr/local/share/npm/bin:$PATH
 
-DEFAULT_USER=dlemay
 . /usr/local/etc/profile.d/z.sh
 
 NVM_LAZY=1
