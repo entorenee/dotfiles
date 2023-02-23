@@ -137,8 +137,23 @@ alias dcu="docker-compose up -d"
 alias dcd="docker-compose down"
 alias dcl="docker-compose logs -f"
 
-alias awsdev="aws-vault exec engineer-dev --"
-alias awsv="aws-vault exec engineer-prod --"
+alias awsvdev="aws-vault exec engineer-dev --"
+alias awsvstage="aws-vault exec monitoring-phi-staging --"
+alias awsvprime="aws-vault exec monitoring-phi-prime --"
+
+# K8s configuration
+awsprime () {
+  kubectl config use-context prod
+  aws-vault exec monitoring-phi-prime
+}
+awsstage() {
+  kubectl config use-context stage
+  aws-vault exec monitoring-phi-staging
+}
+awsdev () {
+  kubectl config use-context dev
+  aws-vault exec engineer-dev
+}
 
 # Functions
 vlist () {
