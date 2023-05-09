@@ -5,7 +5,7 @@
 Feel free to clone or fork the repo and store the dotfiles in your **home** directory.
 ```
 $ cd ~
-$ git clone https://github.com/dslemay/dotfiles
+$ git clone https://github.com/entorenee/dotfiles
 ```
 
 ## System configuration requirements
