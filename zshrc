@@ -1,24 +1,25 @@
 # If you come from bash you might have to change your $PATH.
 # export PATH=$HOME/bin:/usr/local/bin:$PATH
+source "/opt/homebrew/opt/spaceship/spaceship.zsh"
 
 # Export NVM Paths
 export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
 export PATH=$HOME/bin:/usr/local/bin:/usr/local/share/npm/bin:$PATH
+[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
 
 # Path to your oh-my-zsh installation.
 export ZSH="$HOME/.oh-my-zsh"
 
 export PATH=$HOME/bin:/usr/local/bin:/usr/local/share/npm/bin:$PATH
+# Add RVM to PATH for scripting. Make sure this is the last PATH variable change.
+export PATH="$PATH:$HOME/.rvm/bin"
 
 . /usr/local/etc/profile.d/z.sh
 
-NVM_LAZY=1
+export KUBECTL_PATH=/usr/local/bin/kubectl
 
-# Set name of the theme to load. Optionally, if you set this to "random"
-# it'll load a random theme each time that oh-my-zsh is loaded.
-# See https://github.com/robbyrussell/oh-my-zsh/wiki/Themes
-ZSH_THEME="spaceship"
+NVM_LAZY=1
 
 # Uncomment the following line to use case-sensitive completion.
 # CASE_SENSITIVE="true"
@@ -121,6 +122,7 @@ alias tmat="tmux a -t"
 # Git Alises
 alias grb="git rebase"
 alias grbd="git rebase develop"
+alias gpb="git-prune-branches"
 
 # Docker
 export DOCKER_HIDE_LEGACY_COMMANDS=true
@@ -132,22 +134,24 @@ alias hps="hub pr show"
 alias hpc="hub pr checkout"
 
 # Docker Compose Aliases
-alias dc="docker-compose"
-alias dcu="docker-compose up -d"
-alias dcd="docker-compose down"
-alias dcl="docker-compose logs -f"
+alias dc="docker compose"
+alias dcu="docker compose up -d"
+alias dcd="docker compose down"
+alias dcl="docker compose logs -f"
+alias dce="docker compose ps --filter status=exited"
 
 alias awsvdev="aws-vault exec engineer-dev --"
 alias awsvstage="aws-vault exec monitoring-phi-staging --"
-alias awsvprime="aws-vault exec monitoring-phi-prime --"
+alias awsvprod="aws-vault exec engineer-prod --"
+alias gardendev='aws-vault exec engineer-dev -- garden'
 
 # K8s configuration
-awsprime () {
+awsprod () {
   kubectl config use-context prod
-  aws-vault exec monitoring-phi-prime
+  aws-vault exec engineer-prod
 }
 awsstage() {
-  kubectl config use-context stage
+  kubectl config use-context staging
   aws-vault exec monitoring-phi-staging
 }
 awsdev () {
@@ -174,4 +178,12 @@ weather () {
 }
 dreload() {
   docker-compose stop "$1" && docker-compose rm -f "$1" && docker-compose up -d "$1" && docker-compose logs -f "$1"
+}
+git-prune-branches() {
+        echo "switching to master or main branch.."
+        git branch | grep 'main\|master' | xargs -n 1 git checkout
+        echo "fetching with -p option...";
+        git fetch -p;
+        echo "running pruning of local branches"
+        git branch -vv | grep ': gone]'|  grep -v "\*" | awk '{ print $1; }' | xargs -r git branch -D ;
 }

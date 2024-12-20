@@ -35,6 +35,7 @@ PACKAGES=(
   rcm
   ripgrep
   skaffold
+  spaceship
   tmux
   tree
 )
