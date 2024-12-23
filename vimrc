@@ -77,15 +77,12 @@ endif
 call plug#begin('~/.vim/plugged')
 Plug 'pangloss/vim-javascript'
 Plug 'mxw/vim-jsx'
-Plug 'lumiliet/vim-twig'
-Plug 'posva/vim-vue'
 Plug 'jparise/vim-graphql'
-Plug 'burner/vim-svelte'
 Plug 'leafgarland/typescript-vim'
 Plug 'rescript-lang/vim-rescript'
 Plug 'prettier/vim-prettier', {
     \ 'do': 'npm install',
-    \ 'for': ['javascript', 'typescript', 'css', 'less', 'scss'] }
+    \ 'for': ['javascript', 'typescript', 'css', 'json', 'graphql', 'markdown', 'yaml'] }
 Plug 'scrooloose/nerdtree', { 'on':  'NERDTreeToggle' }
 Plug 'w0rp/ale'
 Plug 'ctrlpvim/ctrlp.vim'
@@ -95,6 +92,7 @@ Plug 'neoclide/coc.nvim', {'branch': 'release'}
 Plug 'https://github.com/ngmy/vim-rubocop'
 Plug 'https://github.com/vim-ruby/vim-ruby'
 Plug 'https://github.com/tpope/vim-rails'
+Plug 'github/copilot.vim', {'branch': 'release'}
 call plug#end()
 
 let g:jsx_ext_required = 0 "Allows vim-jsx to parse jsx in js files
@@ -122,9 +120,6 @@ let g:ale_fixers = {
 \   'typescript': ['eslint', 'prettier'],
 \   'jsx': ['eslint', 'prettier-standard'],
 \   'json': ['prettier'],
-\   'scss': ['prettier'],
-\   'vue': ['eslint', 'prettier'],
-\   'svelte': ['eslint', 'prettier'],
 \   'ruby': ['rubocop']
 \}
 let g:ale_statusline_format = ['X %d', '? %d', '']
@@ -140,7 +135,7 @@ let g:ctrlp_map = '<C-p>'
 let g:ctrlp_cmd = 'CtrlP'
 let g:ctrlp_working_path_mode = 'ra'
 let g:ctrlp_custom_ignore = {
-	\ 'dir':  'node_modules\|coverage\|rendered-*\|dist-*',
+	\ 'dir':  'node_modules\|coverage\|rendered-*\|dist-*\|.bundle\|vendor\|tmp\|.git',
 	\ }
 
 " UltiSnips settings
