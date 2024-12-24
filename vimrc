@@ -1,6 +1,7 @@
 set nocompatible
 let mapleader=";"
 let maplocalleader=";"
+let g:python3_host_prog = '/opt/homebrew/bin/python3'
 
 " Editor settings
 color slate
@@ -86,13 +87,21 @@ Plug 'prettier/vim-prettier', {
 Plug 'scrooloose/nerdtree', { 'on':  'NERDTreeToggle' }
 Plug 'w0rp/ale'
 Plug 'ctrlpvim/ctrlp.vim'
-" Plug 'SirVer/ultisnips'
 Plug 'tpope/vim-commentary'
 Plug 'neoclide/coc.nvim', {'branch': 'release'}
 Plug 'https://github.com/ngmy/vim-rubocop'
 Plug 'https://github.com/vim-ruby/vim-ruby'
 Plug 'https://github.com/tpope/vim-rails'
 Plug 'github/copilot.vim', {'branch': 'release'}
+" LSP configuration
+Plug 'neovim/nvim-lspconfig'
+Plug 'hrsh7th/cmp-nvim-lsp', {'branch': 'main'}
+Plug 'hrsh7th/cmp-buffer', {'branch': 'main'}
+Plug 'hrsh7th/cmp-path', {'branch': 'main'}
+Plug 'hrsh7th/cmp-cmdline', {'branch': 'main'}
+Plug 'hrsh7th/nvim-cmp', {'branch': 'main'}
+Plug 'SirVer/ultisnips'
+Plug 'quangnguyen30192/cmp-nvim-ultisnips', {'branch': 'main'}
 call plug#end()
 
 let g:jsx_ext_required = 0 "Allows vim-jsx to parse jsx in js files
