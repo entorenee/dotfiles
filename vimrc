@@ -93,6 +93,8 @@ Plug 'https://github.com/ngmy/vim-rubocop'
 Plug 'https://github.com/vim-ruby/vim-ruby'
 Plug 'https://github.com/tpope/vim-rails'
 Plug 'github/copilot.vim', {'branch': 'release'}
+Plug 'nvim-lua/plenary.nvim'
+Plug 'CopilotC-Nvim/CopilotChat.nvim', {'branch': 'main'}
 " LSP configuration
 Plug 'neovim/nvim-lspconfig'
 Plug 'hrsh7th/cmp-nvim-lsp', {'branch': 'main'}

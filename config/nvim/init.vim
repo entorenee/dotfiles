@@ -83,4 +83,5 @@ lua <<EOF
     filetypes = { "typescript", "typescriptreact", "typescript.tsx" },
     cmd = { "typescript-language-server", "--stdio" }
   }
+  require('CopilotChat').setup {}
 EOF
