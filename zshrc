@@ -21,6 +21,12 @@ export KUBECTL_PATH=/usr/local/bin/kubectl
 
 NVM_LAZY=1
 
+# GPG Settings
+export GPG_TTY=$(tty)
+export SSH_AUTH_SOCK=$(gpgconf --list-dirs agent-ssh-socket)
+gpgconf --launch gpg-agent
+gpg-connect-agent updatestartuptty /bye > /dev/null
+
 # Uncomment the following line to use case-sensitive completion.
 # CASE_SENSITIVE="true"
 
