@@ -1,3 +1,3 @@
-EXCLUDES="README.md scripts vim/plugged/* vim/pack/*"
+EXCLUDES="README.md scripts vim/plugged/* vim/pack/* fonts/*"
 DOTFILES_DIRS="$HOME/dotfiles"
 UNDOTTED="z.sh"
