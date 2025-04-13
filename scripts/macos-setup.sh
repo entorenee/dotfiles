@@ -6,14 +6,14 @@
 
 echo "Starting Mac bootstrapping"
 
+echo "Installing Oh My ZSH"
+sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
+
 echo "Configuring git"
 git config --global user.email "26767995+entorenee@users.noreply.github.com"
 git config --global user.name "Skyler Lemay"
 git config --global commit.gpgsign true
-git config --global gpg.format ssh
-git config --global user.signingkey ~/.ssh/id_ed25519.pub
-touch ~/.ssh/allowed_signers
-git config --global gpg.ssh.allowedSignersFile ~/.ssh/allowed_signers
+git config --global tag.gpgsign true
 echo "Git scaffolding complete"
 
 # Check for Homebrew, install if we don't have it
@@ -30,6 +30,7 @@ PACKAGES=(
   git
   git-lfs
   gh
+  gnupg
   helm
   hub
   kubectl
@@ -39,6 +40,10 @@ PACKAGES=(
   neovim
   node
   nvm
+  obsidian
+  pinentry
+  pinentry-mac
+  pygitup
   python
   postgresql@14
   rcm
@@ -47,13 +52,14 @@ PACKAGES=(
   spaceship
   tmux
   tree
+  wget
+  ykman
 )
 
 echo "Installing packages..."
 brew install ${PACKAGES[@]}
 
 CASKS=(
-  1password
   docker
   firefox
   google-chrome
@@ -66,9 +72,10 @@ CASKS=(
 echo "Installing cask apps..."
 brew install --cask ${CASKS[@]}
 
-# Install Python packages
-echo "Installing Python packages"
-pip3 install git-up
+echo "Scaffolding out npm"
+cat >> $NVM_DIR/default-packages<< EOF
+npm-check-updates
+EOF
+nvm install --lts
 
 echo "Bootstrapping complete"
-echo "Generate a ed25519 key for git usage. Reference https://docs.github.com/en/authentication/connecting-to-github-with-ssh/generating-a-new-ssh-key-and-adding-it-to-the-ssh-agent"
