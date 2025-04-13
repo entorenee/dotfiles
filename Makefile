@@ -8,6 +8,10 @@ decrypt-fonts:
 		tar -xf - -C private-fonts; \
 		echo "Private fonts available in fonts/private-fonts"
 
+## Copy fonts to Mac user fonts
+import-fonts:
+	find fonts/ -type f | grep -i otf$ | xargs -i cp {} $HOME/Library/Fonts
+
 help:
 	@awk '/^## / \
         { if (c) {print c}; c=substr($$0, 4); next } \
