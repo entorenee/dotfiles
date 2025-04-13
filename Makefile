@@ -4,6 +4,10 @@
 initialize-mac:
 	./scripts/macos-setup.sh
 
+## Import dev public GPG keys
+import-public-keys:
+	gpg --import public-keys/*.asc
+
 ## Decrypt private font files
 decrypt-fonts:
 	cd fonts; \
