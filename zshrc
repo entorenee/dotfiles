@@ -1,6 +1,5 @@
-# If you come from bash you might have to change your $PATH.
-# export PATH=$HOME/bin:/usr/local/bin:$PATH
 source "/opt/homebrew/opt/spaceship/spaceship.zsh"
+source "$HOME/z.sh"
 
 # Export NVM Paths
 export NVM_DIR="$HOME/.nvm"
@@ -14,8 +13,6 @@ export ZSH="$HOME/.oh-my-zsh"
 export PATH=$HOME/bin:/usr/local/bin:/usr/local/share/npm/bin:$PATH
 # Add RVM to PATH for scripting. Make sure this is the last PATH variable change.
 export PATH="$PATH:$HOME/.rvm/bin"
-
-. /usr/local/etc/profile.d/z.sh
 
 export KUBECTL_PATH=/usr/local/bin/kubectl
 
