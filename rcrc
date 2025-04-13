@@ -1,2 +1,2 @@
-EXCLUDES="README.md LICENSE"
+EXCLUDES="README.md scripts vim/plugged/* vim/pack/*"
 DOTFILES_DIRS="$HOME/dotfiles"
