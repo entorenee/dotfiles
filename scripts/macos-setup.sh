@@ -4,17 +4,62 @@
 # 
 # This should be idempotent so it can be run multiple times.
 
+workspace=${WORKSPACE_TYPE}
+found=false
+VALID_WORKSPACES=(
+	personal
+	work
+)
+for item in "${VALID_WORKSPACES[@]}"; do
+  if [[ "$item" == "$workspace" ]]; then
+    found=true
+    break
+  fi
+done
+
+if [ ! -z "$workspace" ]; then
+  if ! $found; then
+    echo "Workspace value ${workspace} is invalid. Unsetting value."
+    workspace=""
+  else
+    echo "Workspace is valid. Current value is $workspace. Do you want to continue with this value?"
+    select continue in yes no; do
+      case $continue in
+        yes)
+          echo "Continuing with $workspace configuration"
+          break;;
+        no)
+          echo "Unsetting workspace value"
+          workspace=""
+          break;;
+      esac
+    done
+  fi
+fi
+
+if [ -z "$workspace" ]; then
+  echo "Please select workspace type"
+  select workspace in "${VALID_WORKSPACES[@]}"; do
+    echo "Selected option $workspace"
+    exit 0;
+  done
+fi
+
 echo "Starting Mac bootstrapping"
 
-echo "Installing Oh My ZSH"
-sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
+if [ -z "$ZSH" ]; then
+  echo "Installing Oh My ZSH"
+  sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
+else
+  echo "ZSH already installed. Skipping install"
+fi
 
-echo "Configuring git"
-git config --global user.email "26767995+entorenee@users.noreply.github.com"
-git config --global user.name "Skyler Lemay"
-git config --global commit.gpgsign true
-git config --global tag.gpgsign true
-echo "Git scaffolding complete"
+# Persist workspace to shell env
+echo "Persisting workspace to the environment"
+cat >> $HOME/.zshev<< EOF
+export WORKSPACE_TYPE=$workspace
+source $HOME/.zshrc
+EOF
 
 # Check for Homebrew, install if we don't have it
 if test ! $(which brew); then
@@ -25,18 +70,13 @@ fi
 # Update homebrew recipes
 brew update
 
-PACKAGES=(
+BASE_PACKAGES=(
   bat
   git
-  git-lfs
   gh
   gnupg
-  helm
   hub
-  kubectl
-  k9s
   jq
-  minikube
   neovim
   node
   nvm
@@ -48,13 +88,27 @@ PACKAGES=(
   postgresql@14
   rcm
   ripgrep
-  skaffold
   spaceship
   tmux
   tree
   wget
   ykman
 )
+
+WORK_PACKAGES=(
+  git-lfs
+  helm
+  kubectl
+  k9s
+  minikube
+  skaffold
+)
+
+if [[ "$workspace" == "personal" ]]; then
+  PACKAGES=("${BASE_PACKAGES[@]}")
+else
+  PACKAGES=("${BASE_PACKAGES[@]}" "${WORK_PACKAGES[@]}")
+fi
 
 echo "Installing packages..."
 brew install ${PACKAGES[@]}
@@ -72,10 +126,24 @@ CASKS=(
 echo "Installing cask apps..."
 brew install --cask ${CASKS[@]}
 
+if [[ "$workspace" == "personal" ]]; then
+  git_email="26767995+entorenee@users.noreply.github.com"
+else
+  git_email="skyler.lemayhingehealth.com"
+fi
+
+echo "Configuring git"
+git config --global user.email $git_email
+git config --global user.name "Skyler Lemay"
+git config --global commit.gpgsign true
+git config --global tag.gpgsign true
+echo "Git scaffolding complete"
+
 echo "Scaffolding out npm"
 cat >> $NVM_DIR/default-packages<< EOF
 npm-check-updates
 EOF
 nvm install --lts
+nvm alias default lts/*
 
 echo "Bootstrapping complete"

@@ -1,5 +1,9 @@
 .PHONY: help
 
+## Initialize Mac environment
+initialize-mac:
+	./scripts/macos-setup.sh
+
 ## Decrypt private font files
 decrypt-fonts:
 	cd fonts; \
