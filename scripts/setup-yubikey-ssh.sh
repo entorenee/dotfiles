@@ -16,7 +16,7 @@ select key_import in yes no; do
       read -p "Press enter to continue" </dev/tty
       ssh-add -L | grep "cardno:" > ~/.ssh/id_rsa_yubikey.pub
       cat $ssh_config >> $HOME/.ssh/config
-      echo "Yubikey SSH key added. Confirm public key is configured in GitHub for SSH access."
+      echo "Yubikey SSH key added. Confirm public key is stored on $host for SSH access."
       break;;
     no)
       break;;
