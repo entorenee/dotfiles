@@ -4,9 +4,17 @@
 initialize-mac:
 	./scripts/macos-setup.sh
 
-## Import dev public GPG keys
-import-public-keys:
-	gpg --import public-keys/*.asc
+## Complete initial GPG setup
+gpg-setup:
+	./scripts/gpg-setup.sh
+
+## Set Yubikey SSH access for Github
+setup-yubikey-ssh:
+	./scripts/setup-yubikey-ssh.sh
+
+## Set Git Signing Key
+set-git-signing:
+	./scripts/set-git-signing-key.sh
 
 ## Decrypt private font files
 decrypt-fonts:
