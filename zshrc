@@ -1,5 +1,5 @@
 source "/opt/homebrew/opt/spaceship/spaceship.zsh"
-source "$HOME/z.sh"
+source "/opt/homebrew/etc/profile.d/z.sh"
 
 # Export NVM Paths
 export NVM_DIR="$HOME/.nvm"

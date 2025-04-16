@@ -10,7 +10,7 @@ if test ! $(which brew); then
     /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 fi
 
-# Update homebrew recipes
+# Update homebrew
 brew update
 
 BASE_PACKAGES=(
@@ -18,6 +18,7 @@ BASE_PACKAGES=(
   git
   gh
   gnupg
+  htop
   hub
   jq
   neovim
@@ -36,6 +37,7 @@ BASE_PACKAGES=(
   tree
   wget
   ykman
+  Z
 )
 
 WORK_PACKAGES=(
@@ -56,15 +58,40 @@ fi
 echo "Installing packages..."
 brew install ${PACKAGES[@]}
 
-CASKS=(
+BASE_CASKS=(
   docker
   firefox
   google-chrome
   karabiner-elements
   iterm2
   rectangle
-  slack
+  yubico-authenticator
 )
+
+PERSONAL_CASKS=(
+  anylist
+  backblaze
+  balenaetcher
+  calibre
+  discord
+  proton-mail
+  proton-pass
+  raspberry-pi-imager
+  signal
+  slack
+  veracrypt
+  zoom
+)
+
+WORK_CASKS=(
+  cursor
+)
+
+if [[ "$workspace" == "personal" ]]; then
+  PACKAGES=("${BASE_CASKS[@]}")
+else
+  PACKAGES=("${BASE_CASKS[@]}" "${WORK_CASKS[@]}")
+fi
 
 echo "Installing cask apps..."
 brew install --cask ${CASKS[@]}
