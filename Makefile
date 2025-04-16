@@ -1,8 +1,16 @@
 .PHONY: help
 
+## Set the WORKSPACE_TYPE for all of the scripts
+set-workspace-type:
+	./scripts/set-workspace-type.sh
+
 ## Initialize Mac environment
 initialize-mac:
 	./scripts/macos-setup.sh
+
+## Setup Homebrew and packages
+homebrew-setup:
+	./scripts/homebrew-setup.sh
 
 ## Complete initial GPG setup
 gpg-setup:

@@ -61,78 +61,16 @@ export WORKSPACE_TYPE=$workspace
 source $HOME/.zshrc
 EOF
 
-# Check for Homebrew, install if we don't have it
-if test ! $(which brew); then
-    echo "Installing homebrew..."
-    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-fi
+# Install and configure Homebrew
+source ./scripts/homebrew-setup.sh
 
-# Update homebrew recipes
-brew update
-
-BASE_PACKAGES=(
-  bat
-  git
-  gh
-  gnupg
-  hub
-  jq
-  neovim
-  node
-  nvm
-  obsidian
-  pinentry
-  pinentry-mac
-  pygitup
-  python
-  postgresql@14
-  rcm
-  ripgrep
-  spaceship
-  tmux
-  tree
-  wget
-  ykman
-)
-
-WORK_PACKAGES=(
-  git-lfs
-  helm
-  kubectl
-  k9s
-  minikube
-  skaffold
-)
-
-if [[ "$workspace" == "personal" ]]; then
-  PACKAGES=("${BASE_PACKAGES[@]}")
-else
-  PACKAGES=("${BASE_PACKAGES[@]}" "${WORK_PACKAGES[@]}")
-fi
-
-echo "Installing packages..."
-brew install ${PACKAGES[@]}
-
-CASKS=(
-  docker
-  firefox
-  google-chrome
-  karabiner-elements
-  iterm2
-  rectangle
-  slack
-)
-
-echo "Installing cask apps..."
-brew install --cask ${CASKS[@]}
+echo "Configuring git"
 
 if [[ "$workspace" == "personal" ]]; then
   git_email="26767995+entorenee@users.noreply.github.com"
 else
   git_email="skyler.lemayhingehealth.com"
 fi
-
-echo "Configuring git"
 git config --global user.email $git_email
 git config --global user.name "Skyler Lemay"
 git config --global commit.gpgsign true
