@@ -1,5 +1,17 @@
 # Skyler Lemay dotfiles
 
+This repository contains dotfiles shared across multiple computer systems, differentiating between work and personal profiles in terms of package installation and configuration. Under the hood it uses [rcm](https://github.com/thoughtbot/rcm) to sync the files from this directory to the home directory.
+
+Most files are public and can be shared across systems. Some files are private and are consequently encrypted with the unencrypted versions placed in gitignore. This may be due to licensing restrictions, paid products including fonts, or sensitive/confidential information. These files are encrypted using GPG with the respective public keys of one or more of my profiles. They will not be accessible to others using the repository.
+
+This configuration is highly opinionated and tailored to my preferences. Various aspects of it can be broken out into separate flows and scripts. This is not a plug and play solution for other engineers, though aspects of it may be used and adjusted to fit your needs. Strong preferences include:
+
+* The use of Oh my ZSH for shell configuration
+* The use of Homebrew for package management whenever possible
+* A strong preference for assymetric encryption utilizing GPG for encryption, signing, and authentication
+* The use of Yubikey as a hardware security key eliminating the storage of private keys on a networked computer
+* The use of Neovim and Vimplugged as a code editor solution
+
 ## Setup
 
 Feel free to clone or fork the repo and store the dotfiles in your **home** directory.
@@ -8,38 +20,41 @@ $ cd ~
 $ git clone https://github.com/entorenee/dotfiles
 ```
 
-## System configuration requirements
+Set the workspace type with `make set-workspace-type`. Many other scripts require this environment to be set in order to proceed. If you are working in multiple terminals, you will need to start a fresh terminal instance to resource the env file. The environment variable is exported in the shell session where the script is initially run.
 
-1. UltiSnips utilizes a build of Vim which includes Python. The default version installed on Mac OS is not compatible. If you do not want to use UltiSnips remove it from the vimrc file. Otherwise install Vim via homebrew by running `$ brew install vim`.
-2. The vimrc currently sets nocompatible. This can create issues when using git commit and using the editor window to write your commit. By default Git uses vi, which has compatibility issues with UltiSnips. To resolve this, set your default Git editor to Vim by running the following command in your terminal. `$ git config --global core.editor "vim"`.
+Run `make initialize-mac` to scaffold out a number of the packages, configuration, and install rcm to manage the dotfiles.
 
-### Install [RCM](https://github.com/thoughtbot/rcm)
-
-This repo uses RCM to manage the dotfiles and relocate them from within the repo folder to your home directory.
-
-1. Install RCM for your OS per the [RCM README](https://github.com/thoughtbot/rcm/blob/master/README.md).
-2. After installing RCM run the command below. *Note: The configuration expects that you cloned your dotfiles to `~/dotfiles`. If you cloned to a different location the`rcrc` file must be updated.*
-
+To begin syncing the dotfiles to your home folder, run the following command:
 ```
-$ env RCRC=$HOME/dotfiles/rcrc rcup -x scripts
+rcup [-t work|personal]
 ```
-RCM creates dotfile symlinks (`.vimrc` -> `/dotfiles/vimrc`) from your home directory to your `/dotfiles/` directory.
 
-## Additional Installations
+Most of the dotfiles are shared. The `-t` flag allows you to install specific configuration files located within the respected `tag-$workspace` folders. The `-t` flag is optional.
 
-The following packages are generally used and not part of the scaffolding script.
 
-## Oh My ZSH
+## Optional scripts and configuration
 
-- Install zsh via [Oh My ZSH](https://ohmyz.sh/#install)
-- Install [spaceship theme](https://github.com/denysdovhan/spaceship-prompt#oh-my-zsh)
-- Install [z.sh](https://github.com/rupa/z) for freecency search
+Again, this is an opinionated setup prioritizing the use of GPG and Yubikeys. The following scripts are optional, but can be used to configure GPG, SSH authentication, and git signing.
 
-## NVM
+### GPG setup
 
-To utilize nvm for node version management, follow the [installation instructions](https://github.com/nvm-sh/nvm#install--update-script)
+Running `make gpg-setup` will add GPG specific launch agents, as well as attempt to setup Yubikey SSH and git signing. This is a one time operation. Future operations to set up Yubikey SSH or git signing can be run with sepearate scripts.
 
-## Manual configuration
+### SSH Setup
+
+Running `make setup-yubikey-ssh` will configure SSH to use the Yubikey for authentication. This also includes exporting the public key to the SSH folder if it is not already present.
+
+The script also asks for a corresponding hostname to be added to the SSH config file. This will be added to the SSH config and list the Yubikey as the authentication method.
+
+This script can be run multiple times to add additional hostnames to the SSH config. Do not forget to add the public key to the remote server for proper authentication.
+
+### Git signing
+
+Cryptographically signed commits provide validaty to the commit and the author. This provides greater confidence that the author is who they say they are. Again, my opinionated approach is that this should be done with an external key to protect the private key. The script supports a singular private key. My opinion is to have an offline certifying key and to use subkeys that expire for signing, encryption, and authentication. If using a subkey, append a `!` to the corresponding subkey id in the script. If using a singular key, this should be omitted.
+
+For more information on how to securely generate a private key including airlocked machines, pleaase reference this extensive [Yubikey Guide](https://github.com/drduh/YubiKey-Guide) which details key generation, back up, and transfering the key to a Yubikey. My personal approach is highly informed by this guide.
+
+### Manual configuration
 
 ## Iterm
 
@@ -49,21 +64,9 @@ After copying the dotfiles, several pieces need to be manually set in Iterm's pr
 - Set iTerm2 to save the settings on exit.
 - The zsh theme uses Powerline fonts and will not render correctly without setting the display font to a Powerline based font. I currently use Dank Mono.
 
-## Installing Vim Plugins
+### Installing Vim Plugins
 
 The vimrc file uses [Vim-plug](https://github.com/junegunn/vim-plug) for its plugin management. To install the plugins listed in the vimrc file:
 
 1. Open Vim in a terminal. The vimrc file checks to see if Vim-Plug is already installed and installs it if it isn't.
 2. Run `:PlugInstall` on the Vim Command line.
-
-### Installing Conquer of Completion Language Servers
-
-After installing Vim plugins, the following language servers may be installed and used for development.
-
-- `:CocInstall coc-tsserver`: TypeScript language server
-- `:CocInstall coc-rescript`: ReScript/ReasonML language server
-
-Running `:CocList extensions` will list all language servers/extensions used by CoC.
-
----
-Many thanks to Francesco Renzi for his detailed [post](https://uracode.com/2017/08/05/the-perks-of-storing-your-dotfiles-in-a-repository/) on how to set up this system.
