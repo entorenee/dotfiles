@@ -1,0 +1,92 @@
+prSections:
+- title: My Pull Requests
+  filters: >-
+    is:open
+    author:@me
+- title: Involved
+  filters: >-
+    owner:hinge-health
+    is:open
+    draft:false
+    involves:@me
+    -author:@me
+    -author:hh-smartling-robot
+    -author:mend-for-github-com[bot]
+- title: Team Needs Review
+  filters: >-
+    owner:hinge-health
+    is:open
+    draft:false
+    review-requested:@me
+    -author:hh-smartling-robot
+    -author:mend-for-github-com[bot]
+    ENO NOT Smartling
+- title: External Needs Review
+  filters: >-
+    owner:hinge-health
+    is:open
+    draft:false
+    review-requested:@me
+    -author:hh-smartling-robot
+    -author:mend-for-github-com[bot]
+    NOT ENO NOT Smartling
+- title: Renovate
+  filters: >-
+    owner:hinge-health
+    is:open
+    draft:false
+    author:mend-for-github-com[bot]
+    ENO
+- title: Smartling
+  filters: >-
+    owner:hinge-health
+    is:open
+    draft:false
+    review-requested:@me
+    Smartling main
+defaults:
+  preview:
+    open: true
+    width: 75
+  prsLimit: 20
+  issuesLimit: 20
+  view: prs
+  layout:
+    prs:
+      updatedAt:
+        width: 7
+      repo:
+        width: 15
+      author:
+        width: 15
+      assignees:
+        width: 20
+        hidden: true
+      base:
+        width: 15
+        hidden: true
+      lines:
+        width: 16
+    issues:
+      updatedAt:
+        width: 7
+      repo:
+        width: 15
+      creator:
+        width: 10
+      assignees:
+        width: 20
+        hidden: true
+  refetchIntervalMinutes: 30
+keybindings:
+  issues: []
+  prs: []
+repoPaths:
+  hinge-health/*: ~/code/*
+smartFilteringAtLaunch: false
+theme:
+  ui:
+    table:
+      showSeparator: true
+pager:
+  diff: ""

@@ -75,6 +75,9 @@ git config --global user.email $git_email
 git config --global user.name "Skyler Lemay"
 git config --global commit.gpgsign true
 git config --global tag.gpgsign true
+
+echo "Installing GitHub Extensions"
+gh extension install dlvhdr/gh-dash
 echo "Git scaffolding complete"
 
 echo "Scaffolding out npm"
