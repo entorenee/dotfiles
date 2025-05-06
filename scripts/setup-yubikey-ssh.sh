@@ -2,12 +2,19 @@
 
 read -p "Enter the SSH host [github.com]" host
 host=${host:-github.com}
-yubikey_pub=$HOME/.ssh/id_rsa_yubikey.pub
+ssh_dir="$HOME/.ssh"
+yubikey_pub="$ssh_dir/id_rsa_yubikey.pub"
 
+echo "SSH dir $ssh_dir"
 echo "Insert Yubikey with stored PGP keys."
 read -p "Press enter to continue" </dev/tty
 
-if [ -f $yubikey_pub ]; then
+if [ ! -d "$ssh_dir" ]; then
+  echo "SSH directory doesn't exist. Creating it at $ssh_dir."
+  mkdir -p $ssh_dir
+fi
+
+if [ -f "$yubikey_pub" ]; then
   echo "Yubikey SSH key already exists at $yubikey_pub. Not exporting file"
 else
   ssh-add -L | grep "cardno:" > $yubikey_pub

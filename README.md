@@ -24,9 +24,10 @@ Set the workspace type with `make set-workspace-type`. Many other scripts requir
 
 Run `make initialize-mac` to scaffold out a number of the packages, configuration, and install rcm to manage the dotfiles.
 
-To begin syncing the dotfiles to your home folder, run the following command:
+To begin syncing the dotfiles to your home folder, run the command below. **NOTE:** Explicitly providing the RCRC environment variable is only needed on the first run. Once it is synchronized into the home folder, the default variable path will work
+
 ```
-rcup [-t work|personal]
+RCRC=~/dotfiles/rcrc rcup [-t work|personal]
 ```
 
 Most of the dotfiles are shared. The `-t` flag allows you to install specific configuration files located within the respected `tag-$workspace` folders. The `-t` flag is optional.

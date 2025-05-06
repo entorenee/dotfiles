@@ -61,7 +61,6 @@ brew install ${PACKAGES[@]}
 BASE_CASKS=(
   docker
   firefox
-  google-chrome
   karabiner-elements
   iterm2
   rectangle
@@ -74,6 +73,7 @@ PERSONAL_CASKS=(
   balenaetcher
   calibre
   discord
+  google-chrome
   proton-mail
   proton-pass
   raspberry-pi-imager
@@ -88,9 +88,9 @@ WORK_CASKS=(
 )
 
 if [[ "$workspace" == "personal" ]]; then
-  PACKAGES=("${BASE_CASKS[@]}")
+  CASKS=("${BASE_CASKS[@]}")
 else
-  PACKAGES=("${BASE_CASKS[@]}" "${WORK_CASKS[@]}")
+  CASKS=("${BASE_CASKS[@]}" "${WORK_CASKS[@]}")
 fi
 
 echo "Installing cask apps..."

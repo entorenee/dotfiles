@@ -81,10 +81,11 @@ gh extension install dlvhdr/gh-dash
 echo "Git scaffolding complete"
 
 echo "Scaffolding out npm"
+mkdir -p ~/.nvm
 cat >> $NVM_DIR/default-packages<< EOF
 npm-check-updates
 EOF
 nvm install --lts
-nvm alias default lts/*
+nvm alias default 'lts/*'
 
 echo "Bootstrapping complete"

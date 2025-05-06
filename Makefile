@@ -2,7 +2,7 @@
 
 ## Set the WORKSPACE_TYPE for all of the scripts
 set-workspace-type:
-	./scripts/set-workspace-type.sh
+	./scripts/set-workspace.sh
 
 ## Initialize Mac environment
 initialize-mac:
@@ -13,7 +13,7 @@ homebrew-setup:
 	./scripts/homebrew-setup.sh
 
 ## Complete initial GPG setup
-gpg-setup:
+setup-gpg:
 	./scripts/gpg-setup.sh
 
 ## Set Yubikey SSH access for Github
