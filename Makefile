@@ -34,7 +34,7 @@ decrypt-fonts:
 
 ## Copy fonts to Mac user fonts
 import-fonts:
-	find fonts/ -type f | grep -i otf$ | xargs -i cp {} $HOME/Library/Fonts
+	find fonts \( -name '*.otf' -o -name '*.ttf' \) -exec cp {} ~/Library/Fonts \;
 
 help:
 	@awk '/^## / \
