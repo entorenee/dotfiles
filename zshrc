@@ -87,8 +87,9 @@ alias dcl="docker compose logs -f"
 alias dce="docker compose ps --filter status=exited"
 
 alias awsvdev="aws-vault exec engineer-dev --"
-alias awsvstage="aws-vault exec monitoring-phi-staging --"
+alias awsvstage="aws-vault exec engineer-stage --"
 alias awsvprod="aws-vault exec engineer-prod --"
+alias awsvprodro="aws-vault exec engineer-prod-ro --"
 alias gardendev='aws-vault exec engineer-dev -- garden'
 
 # K8s configuration
@@ -98,7 +99,7 @@ awsprod () {
 }
 awsstage() {
   kubectl config use-context staging
-  aws-vault exec monitoring-phi-staging
+  aws-vault exec engineer-stage
 }
 awsdev () {
   kubectl config use-context dev

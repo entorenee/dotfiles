@@ -41,6 +41,7 @@ BASE_PACKAGES=(
 )
 
 WORK_PACKAGES=(
+  aws-cli
   git-lfs
   helm
   kubectl
@@ -84,6 +85,7 @@ PERSONAL_CASKS=(
 )
 
 WORK_CASKS=(
+  aws-vault
   cursor
 )
 
