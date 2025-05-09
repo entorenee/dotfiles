@@ -34,7 +34,9 @@ inoremap `` ``<left>
 nnoremap <leader>w :w<cr>
 nnoremap <leader>q :q!<cr>
 nnoremap <leader>z ZZ
-nnoremap <leader>md :silent !open -a Marked\ 2 %<cr> " Open current md file in Marked
+command! CopyBuffer let @+ = expand('%')
+nnoremap <leader>c :let @+=expand('%')<CR>
+
 
 " Tab management
 noremap <leader>1 1gt
