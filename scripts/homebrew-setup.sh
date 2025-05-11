@@ -40,6 +40,10 @@ BASE_PACKAGES=(
   Z
 )
 
+PERSONAL_PACKAGES=(
+  tor
+)
+
 WORK_PACKAGES=(
   aws-cli
   git-lfs
@@ -51,7 +55,7 @@ WORK_PACKAGES=(
 )
 
 if [[ "$workspace" == "personal" ]]; then
-  PACKAGES=("${BASE_PACKAGES[@]}")
+  PACKAGES=("${BASE_PACKAGES[@]}" "${PERSONAL_PACKAGES[@]}")
 else
   PACKAGES=("${BASE_PACKAGES[@]}" "${WORK_PACKAGES[@]}")
 fi
@@ -61,10 +65,12 @@ brew install ${PACKAGES[@]}
 
 BASE_CASKS=(
   docker
+  elgato-control-center
   firefox
   karabiner-elements
   iterm2
   rectangle
+  vlc
   yubico-authenticator
 )
 
@@ -75,11 +81,12 @@ PERSONAL_CASKS=(
   calibre
   discord
   google-chrome
+  keepassxc
   proton-mail
-  proton-pass
   raspberry-pi-imager
   signal
   slack
+  tpvirtual
   veracrypt
   zoom
 )
