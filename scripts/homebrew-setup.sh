@@ -16,6 +16,7 @@ brew update
 BASE_PACKAGES=(
   bat
   git
+  git-lfs
   gh
   gnupg
   htop
@@ -41,12 +42,13 @@ BASE_PACKAGES=(
 )
 
 PERSONAL_PACKAGES=(
+  go
+  hugo
   tor
 )
 
 WORK_PACKAGES=(
   aws-cli
-  git-lfs
   helm
   kubectl
   k9s
@@ -80,8 +82,9 @@ PERSONAL_CASKS=(
   balenaetcher
   calibre
   discord
-  google-chrome
   keepassxc
+  nextcloud
+  ollama
   proton-mail
   raspberry-pi-imager
   signal
@@ -97,7 +100,7 @@ WORK_CASKS=(
 )
 
 if [[ "$workspace" == "personal" ]]; then
-  CASKS=("${BASE_CASKS[@]}")
+  CASKS=("${BASE_CASKS[@]}" "${PERSONAL_CASKS[@]}")
 else
   CASKS=("${BASE_CASKS[@]}" "${WORK_CASKS[@]}")
 fi
