@@ -69,12 +69,14 @@ echo "Configuring git"
 if [[ "$workspace" == "personal" ]]; then
   git_email="26767995+entorenee@users.noreply.github.com"
 else
-  git_email="skyler.lemayhingehealth.com"
+  echo "Configure work email"
+  git_email=""
 fi
 git config --global user.email $git_email
 git config --global user.name "Skyler Lemay"
 git config --global commit.gpgsign true
 git config --global tag.gpgsign true
+git config --global init.defaultBranch main
 
 echo "Installing GitHub Extensions"
 gh extension install dlvhdr/gh-dash
