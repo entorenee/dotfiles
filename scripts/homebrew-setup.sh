@@ -68,6 +68,7 @@ brew install ${PACKAGES[@]}
 BASE_CASKS=(
   docker
   elgato-control-center
+  font-sauce-code-pro-nerd-font
   firefox
   karabiner-elements
   iterm2
@@ -86,6 +87,7 @@ PERSONAL_CASKS=(
   nextcloud
   ollama
   proton-mail
+  protonvpn
   raspberry-pi-imager
   signal
   slack
