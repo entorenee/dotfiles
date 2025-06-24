@@ -70,7 +70,7 @@ if [[ "$workspace" == "personal" ]]; then
   git_email="26767995+entorenee@users.noreply.github.com"
 else
   echo "Configure work email"
-  git_email=""
+  git_email="skyler@freeworld.org"
 fi
 git config --global user.email $git_email
 git config --global user.name "Skyler Lemay"

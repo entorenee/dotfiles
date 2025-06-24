@@ -39,7 +39,7 @@ Again, this is an opinionated setup prioritizing the use of GPG and Yubikeys. Th
 
 ### GPG setup
 
-Running `make gpg-setup` will add GPG specific launch agents, as well as attempt to setup Yubikey SSH and git signing. This is a one time operation. Future operations to set up Yubikey SSH or git signing can be run with sepearate scripts.
+Running `make setup-gpg` will add GPG specific launch agents, as well as attempt to setup Yubikey SSH and git signing. This is a one time operation. Future operations to set up Yubikey SSH or git signing can be run with sepearate scripts.
 
 ### SSH Setup
 

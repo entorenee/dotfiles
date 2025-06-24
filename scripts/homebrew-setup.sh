@@ -48,7 +48,7 @@ PERSONAL_PACKAGES=(
 )
 
 WORK_PACKAGES=(
-  aws-cli
+  awscli
   helm
   kubectl
   k9s

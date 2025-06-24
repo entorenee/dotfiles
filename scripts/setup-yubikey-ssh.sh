@@ -12,12 +12,14 @@ read -p "Press enter to continue" </dev/tty
 if [ ! -d "$ssh_dir" ]; then
   echo "SSH directory doesn't exist. Creating it at $ssh_dir."
   mkdir -p $ssh_dir
+  chmod 700 $ssh_dir
 fi
 
 if [ -f "$yubikey_pub" ]; then
   echo "Yubikey SSH key already exists at $yubikey_pub. Not exporting file"
 else
   ssh-add -L | grep "cardno:" > $yubikey_pub
+  chmod 600 $yubikey_pub
   echo "Yubikey SSH key exported to $yubikey_pub"
 fi
 
