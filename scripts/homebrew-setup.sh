@@ -48,12 +48,9 @@ PERSONAL_PACKAGES=(
 )
 
 WORK_PACKAGES=(
-  awscli
-  helm
-  kubectl
-  k9s
-  minikube
-  skaffold
+  doctl
+  mkcert
+  mysql
 )
 
 if [[ "$workspace" == "personal" ]]; then
@@ -97,8 +94,8 @@ PERSONAL_CASKS=(
 )
 
 WORK_CASKS=(
-  aws-vault
-  cursor
+  bitwarden
+  tableplus
 )
 
 if [[ "$workspace" == "personal" ]]; then
