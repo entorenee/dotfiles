@@ -6,4 +6,4 @@ require("config.keymaps")
 require("config.autocmds")
 
 -- Load plugin configuration
-require("plugins")
+require("plugins.lazy")

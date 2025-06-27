@@ -26,7 +26,10 @@ return {
   -- Fuzzy finder (modern alternative to CtrlP)
   {
     "nvim-telescope/telescope.nvim",
-    dependencies = "nvim-lua/plenary.nvim",
+    dependencies = {
+      "nvim-lua/plenary.nvim",
+      "nvim-tree/nvim-web-devicons",
+    },
     keys = {
       { "<C-p>", ":Telescope find_files<CR>", desc = "Find files" },
       { "<leader>fg", ":Telescope live_grep<CR>", desc = "Live grep" },

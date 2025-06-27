@@ -19,10 +19,13 @@ return {
       require('CopilotChat').setup()
     end
   },
-  
+
   -- Linting and fixing
   {
     "dense-analysis/ale",
     event = { "BufReadPre", "BufNewFile" },
+    config = function()
+      vim.g.ale_fix_on_save = 1       -- Auto-fix on save
+    end
   },
 }
