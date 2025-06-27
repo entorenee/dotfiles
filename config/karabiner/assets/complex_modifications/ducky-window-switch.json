@@ -1,0 +1,25 @@
+{
+  "title": "Change left_option+escape to left_option+tilde for 60% keyboard",
+  "rules": [
+    {
+      "description": "Left Option + Escape → Left Option + Tilde",
+      "manipulators": [
+        {
+          "type": "basic",
+          "from": {
+            "key_code": "escape",
+            "modifiers": {
+              "mandatory": ["left_option"]
+            }
+          },
+          "to": [
+            {
+              "key_code": "grave_accent_and_tilde",
+              "modifiers": ["left_option"]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
