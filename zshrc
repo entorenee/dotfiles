@@ -64,6 +64,7 @@ alias nt="npm test"
 alias tm="tmux"
 alias tma="tmux a"
 alias tmat="tmux a -t"
+alias tx="tmuxinator"
 
 # Git Alises
 alias grb="git rebase"
