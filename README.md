@@ -34,6 +34,8 @@ Most of the dotfiles are shared. The `-t` flag allows you to install specific co
 
 ## Tmux Configuration
 
+_Prerequisite:_ This assumes that homebrew has been set up via the make commands including the brew install of several packages which are utilized in this section.
+
 This repository also has an opinionated approach to tmux configuration and theming. In order to utilize this some manual steps will need to be performed. This repository uses the [Tmux Plugin Manager](https://github.com/tmux-plugins/tpm) to manage dependencies. However, this library does not support installation via git submodules. As a result, the following steps will need to be done on the end user computer:
 
 0. _Prerequisite:_ This must be completed after running `rcup` in the preceding step. Failure to do so may result in unexpected behaviors. rcup initializes the user tmux config directory using the `XDG_CONFIG_HOME` standard.
@@ -42,6 +44,16 @@ This repository also has an opinionated approach to tmux configuration and themi
 3. Press `C-a I` to install the remainding plugins. These can be upgraded to the latest versions by running `C-a U` in line with the TPM docs while using `C-a` as the prefix key.
 
 This will fully initialize the tmux environment and set up the plugin management on the end user computer. TPM handles this via git cloning the plugin libraries, and the setup starts things with downloading TPM as the `init` step.
+
+### Tmuxinator
+
+This repository also ships with [tmuxinator](https://github.com/tmuxinator/tmuxinator) for quick templating of different tmux sessions. The blog template really only makes sense for myself. Hopefully seeing that and the generic code example give some insight into how this tool can be used. I separately have private encrypted project configs that I can quickly spin up all of the commands to work in private repositories I commonly work in. A quick highlight of the usage (see the referenced repository above for more detailed docs):
+
+* Run `tmux start generic-code`. This will spin up a tmux session with a `main-vertical` pane arrangement. Neovim will be open in the main pane and two terminal windows are horizontally split for the second vertical section.
+* Optionally include `-n [name]` to provide a distinct name for the session on creation.
+* There is also an alias `tx` configured to abbreviate typing out `tmuxinator` because ADHD.
+* You can create your own configuration by typing `tx new [project-name]` using the name you want to reference with `tmux start` as mentioned above.
+* Set the configuration as you would like and save for future use.
 
 ## Optional scripts and configuration
 
