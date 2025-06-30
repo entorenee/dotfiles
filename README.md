@@ -49,8 +49,9 @@ This will fully initialize the tmux environment and set up the plugin management
 
 This repository also ships with [tmuxinator](https://github.com/tmuxinator/tmuxinator) for quick templating of different tmux sessions. The blog template really only makes sense for myself. Hopefully seeing that and the generic code example give some insight into how this tool can be used. I separately have private encrypted project configs that I can quickly spin up all of the commands to work in private repositories I commonly work in. A quick highlight of the usage (see the referenced repository above for more detailed docs):
 
-* Run `tmux start generic-code`. This will spin up a tmux session with a `main-vertical` pane arrangement. Neovim will be open in the main pane and two terminal windows are horizontally split for the second vertical section.
-* Optionally include `-n [name]` to provide a distinct name for the session on creation.
+* Run `tmux start code [workspace=~/project-path]`. This will spin up a tmux session with a `main-vertical` pane arrangement. Neovim will be open in the main pane and two terminal windows are horizontally split for the second vertical section.
+  * `workspace` is an optional settings variable in the template. Setting it will dictate the working directory the tmux session is initiated with. If it is omitted, it will fall back to `~/`.
+  * Optionally include `-n [name]` to provide a distinct name for the session on creation.
 * There is also an alias `tx` configured to abbreviate typing out `tmuxinator` because ADHD.
 * You can create your own configuration by typing `tx new [project-name]` using the name you want to reference with `tmux start` as mentioned above.
 * Set the configuration as you would like and save for future use.

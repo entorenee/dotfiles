@@ -1,7 +1,7 @@
-# /Users/skyler.lemay/.config/tmuxinator/generic-code.yml
+# /Users/skyler.lemay/.config/tmuxinator/code.yml
 
-name: generic-code
-root: ~/
+name: code
+root: <%= @settings["workspace"] ||= '~/' %>
 
 windows:
   - editor:
