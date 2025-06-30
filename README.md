@@ -32,6 +32,16 @@ RCRC=~/dotfiles/rcrc rcup [-t work|personal]
 
 Most of the dotfiles are shared. The `-t` flag allows you to install specific configuration files located within the respected `tag-$workspace` folders. The `-t` flag is optional.
 
+## Tmux Configuration
+
+This repository also has an opinionated approach to tmux configuration and theming. In order to utilize this some manual steps will need to be performed. This repository uses the [Tmux Plugin Manager](https://github.com/tmux-plugins/tpm) to manage dependencies. However, this library does not support installation via git submodules. As a result, the following steps will need to be done on the end user computer:
+
+0. _Prerequisite:_ This must be completed after running `rcup` in the preceding step. Failure to do so may result in unexpected behaviors. rcup initializes the user tmux config directory using the `XDG_CONFIG_HOME` standard.
+1. Run `git clone https://github.com/tmux-plugins/tpm ~/.config/tmux/plugins/tpm` to clone the package manager to the correct location.
+2. Open a fresh tmux session. Alternatively, you can run `tmux source ~/.config/tmux/tmux.conf` to force load the latest configuration which will load TPM.
+3. Press `C-a I` to install the remainding plugins. These can be upgraded to the latest versions by running `C-a U` in line with the TPM docs while using `C-a` as the prefix key.
+
+This will fully initialize the tmux environment and set up the plugin management on the end user computer. TPM handles this via git cloning the plugin libraries, and the setup starts things with downloading TPM as the `init` step.
 
 ## Optional scripts and configuration
 
