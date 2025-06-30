@@ -35,6 +35,7 @@ BASE_PACKAGES=(
   ripgrep
   spaceship
   tmux
+  tmuxinator
   tree
   wget
   ykman
