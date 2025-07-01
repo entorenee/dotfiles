@@ -5,45 +5,25 @@ prSections:
     author:@me
 - title: Involved
   filters: >-
-    owner:hinge-health
+    owner:JoinFreeWorld
     is:open
     draft:false
     involves:@me
     -author:@me
-    -author:hh-smartling-robot
-    -author:mend-for-github-com[bot]
-- title: Team Needs Review
+- title: Review Requested
   filters: >-
-    owner:hinge-health
+    owner:JoinFreeWorld
     is:open
     draft:false
     review-requested:@me
-    -author:hh-smartling-robot
     -author:mend-for-github-com[bot]
-    ENO NOT Smartling
-- title: External Needs Review
-  filters: >-
-    owner:hinge-health
-    is:open
-    draft:false
-    review-requested:@me
-    -author:hh-smartling-robot
-    -author:mend-for-github-com[bot]
-    NOT ENO NOT Smartling
 - title: Renovate
   filters: >-
-    owner:hinge-health
+    owner:JoinFreeWorld
     is:open
     draft:false
     author:mend-for-github-com[bot]
     ENO
-- title: Smartling
-  filters: >-
-    owner:hinge-health
-    is:open
-    draft:false
-    review-requested:@me
-    Smartling main
 defaults:
   preview:
     open: true
@@ -82,7 +62,7 @@ keybindings:
   issues: []
   prs: []
 repoPaths:
-  hinge-health/*: ~/code/*
+  JoinFreeWorld/*: ~/code/*
 smartFilteringAtLaunch: false
 theme:
   ui:
