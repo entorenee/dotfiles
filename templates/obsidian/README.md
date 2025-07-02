@@ -24,3 +24,6 @@ Plugins and themes will need to be manually installed in each Obsidian vault due
 * **Notes about Books I'm reading or want to read:** Obsidian Book Search Plugin
 * **Recipe Management with different views and scaling:** Recipe View
 
+## Vault Structure
+
+Additionally, a sample starter vault including some Templates can be found in `sample-vault/`. The intention is to copy items from here as it proves helpful. This primarily serves as a snapshot of general folder structure for consistency between my various work and personal vaults.
