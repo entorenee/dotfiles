@@ -3,6 +3,3 @@ fonts/DankMono*
 fonts/private-fonts/
 config/iterm2/AppSupport
 .DS_Store
-
-# Obsidian ignore
-remotely-save
