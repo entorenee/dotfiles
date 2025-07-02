@@ -8,7 +8,6 @@ g.maplocalleader = ";"
 g.python3_host_prog = '/opt/homebrew/bin/python3'
 
 -- Editor settings
-vim.cmd('colorscheme slate')
 opt.tabstop = 2
 opt.softtabstop = 2
 opt.shiftwidth = 2

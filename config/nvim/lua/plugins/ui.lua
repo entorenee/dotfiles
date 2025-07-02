@@ -1,5 +1,12 @@
 -- UI-related plugins
 return {
+  -- Theme
+  {
+    "folke/tokyonight.nvim",
+    lazy = false,
+    priority = 1000,
+    opts = {},
+  },
   -- File explorer
   {
     "nvim-tree/nvim-tree.lua",

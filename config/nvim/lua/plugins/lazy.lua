@@ -20,3 +20,5 @@ require("lazy").setup({
   { import = "plugins.completion" },
   { import = "plugins.languages" },
 })
+
+vim.cmd('colorscheme tokyonight-night')
