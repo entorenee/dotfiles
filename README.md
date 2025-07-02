@@ -94,3 +94,8 @@ The vimrc file uses [Vim-plug](https://github.com/junegunn/vim-plug) for its plu
 
 1. Open Vim in a terminal. The vimrc file checks to see if Vim-Plug is already installed and installs it if it isn't.
 2. Run `:PlugInstall` on the Vim Command line.
+
+## Optional App Templates
+
+Not all apps allow global rc files 😔. Template configuration for these apps are namespaced under the `templates/* folder. Depending on the use case, these can either be copied into the appropriate locations, or manually symlinked in certain cases. Specific instructions for each template live in their respective READMEs.
+

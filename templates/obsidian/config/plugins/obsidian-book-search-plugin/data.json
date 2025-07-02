@@ -1,0 +1,20 @@
+{
+  "folder": "Book Notes",
+  "fileNameFormat": "",
+  "frontmatter": "",
+  "content": "",
+  "useDefaultFrontmatter": true,
+  "defaultFrontmatterKeyType": "Camel Case",
+  "templateFile": "Templates/Book Note.md",
+  "serviceProvider": "google",
+  "naverClientId": "",
+  "naverClientSecret": "",
+  "localePreference": "default",
+  "apiKey": "",
+  "openPageOnCompletion": true,
+  "showCoverImageInSearch": true,
+  "enableCoverImageSave": true,
+  "enableCoverImageEdgeCurl": true,
+  "coverImagePath": "Book Notes/Cover Images",
+  "askForLocale": true
+}
