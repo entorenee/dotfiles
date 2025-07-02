@@ -10,6 +10,7 @@ prSections:
     is:open
     draft:false
     involves:@me
+    -review-requested:@me
     -author:@me
 - title: Review Requested
   filters: >-
@@ -18,12 +19,12 @@ prSections:
     draft:false
     review-requested:@me
     -author:mend-for-github-com[bot]
-- title: Renovate
-  filters: >-
-    owner:JoinFreeWorld
-    is:open
-    draft:false
-    author:mend-for-github-com[bot]
+# - title: Renovate
+#   filters: >-
+#     owner:JoinFreeWorld
+#     is:open
+#     draft:false
+#     author:mend-for-github-com[bot]
 
 defaults:
   preview:
