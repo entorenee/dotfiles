@@ -1,4 +1,5 @@
-## [[Tarot Reading]]
-Card pulled: 
-Meaning: 
+## Agenda
+* 
 
+## Notes
+* 
