@@ -1,12 +1,11 @@
-# /Users/skyler.lemay/.config/tmuxinator/blog.yml
+# /Users/fw-skylerlemay/.config/tmuxinator/dotfiles.yml
 
-name: blog
-root: ~/code/skyler-lemay-blog
+name: dotfiles
+root: ~/dotfiles
 
 windows:
   - editor:
       layout: b76b,170x68,0,0{108x68,0,0,30,61x68,109,0,32}
       panes:
         - nvim
-        - hugo serve
         - 
