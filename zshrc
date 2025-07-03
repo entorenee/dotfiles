@@ -32,8 +32,9 @@ scripts () {
 
 # Tmux Aliases
 alias tm="tmux"
-alias tma="tmux a"
-alias tmat="tmux a -t"
+alias ta="tmux a"
+alias tat="tmux a -t"
+alias tl="tmux list-sessions"
 alias tx="tmuxinator"
 
 # Git Alises
