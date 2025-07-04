@@ -14,6 +14,7 @@ fi
 brew update
 
 BASE_PACKAGES=(
+  bash # tmux theme needs a more recent version of bash
   bat
   git
   git-lfs
