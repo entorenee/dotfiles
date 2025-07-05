@@ -5,5 +5,6 @@
   
   imports = [
     ./gh
+    ./pkgs.nix
   ];
 }
