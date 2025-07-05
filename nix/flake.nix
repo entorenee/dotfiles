@@ -1,11 +1,17 @@
 {
-  description = "Home Manager configuration of skyler.lemay";
+  description = "entorenee's Nix environment";
 
   inputs = {
     # Specify the source of Home Manager and Nixpkgs.
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
     home-manager = {
       url = "github:nix-community/home-manager";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
+    # nix modules for macOS such as homebrew, launchd, users, networking etc.
+    darwin = {
+      url = "github:lnl7/nix-darwin";
       inputs.nixpkgs.follows = "nixpkgs";
     };
   };
