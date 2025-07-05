@@ -12,6 +12,7 @@
     ./nvim
     ./pkgs.nix
     ./starship
+    ./tmux
     ./tmuxinator
     ./zsh
   ];
