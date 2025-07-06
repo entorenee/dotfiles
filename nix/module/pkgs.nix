@@ -13,6 +13,7 @@
     [
       bash # tmux theme needs a more recent version of bash
       bat
+      cargo # Nix LSP dependency
       git-lfs
       git-up
       htop

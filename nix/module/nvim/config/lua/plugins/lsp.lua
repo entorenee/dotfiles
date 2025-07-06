@@ -35,6 +35,7 @@ return {
           "cssls",        -- CSS
           "jsonls",       -- JSON
           "lua_ls",       -- Lua
+          "nil_ls",       -- Nix
         },
         automatic_installation = true,
       })
@@ -118,11 +119,15 @@ return {
           },
         },
 
+        nil_ls = {
+          filetypes = { "nix" }
+        },
+
         lua_ls = {
           settings = {
             Lua = {
               runtime = { version = 'LuaJIT' },
-              diagnostics = { 
+              diagnostics = {
                 globals = {
                   'vim',           -- Neovim global
                   'describe',      -- Busted testing framework
