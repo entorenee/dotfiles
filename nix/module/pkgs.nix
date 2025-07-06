@@ -15,7 +15,6 @@
       bat
       git-lfs
       git-up
-      # gnupg
       htop
       # iterm2
       jq

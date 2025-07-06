@@ -6,6 +6,7 @@
   imports = [
     ./gh
     ./git
+    ./gnupg
     ./karabiner
     ./nvim
     ./pkgs.nix
