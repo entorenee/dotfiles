@@ -14,7 +14,6 @@ fi
 brew update
 
 BASE_PACKAGES=(
-  git
   hub
   neovim
   node
