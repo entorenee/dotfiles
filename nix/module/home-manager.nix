@@ -11,6 +11,8 @@
     ./karabiner
     ./nvim
     ./pkgs.nix
+    ./starship
     ./tmuxinator
+    ./zsh
   ];
 }

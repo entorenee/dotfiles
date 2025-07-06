@@ -27,7 +27,6 @@
       # python313
       rectangle
       ripgrep
-      # spaceship-prompt
       tmuxinator
       tree
       # vlc
