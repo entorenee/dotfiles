@@ -42,6 +42,11 @@
       }
     ];
   };
+
+  programs.zsh.initContent = ''
+    export SSH_AUTH_SOCK=$(gpgconf --list-dirs agent-ssh-socket)
+  '';
+
   services.gpg-agent = {
     enable = true;
     enableScDaemon = true;
@@ -55,5 +60,6 @@
       ttyname $GPG_TTY
     '';
   };
+
   home.file.".gnupg/common.conf".source = ./common.conf;
 }

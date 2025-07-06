@@ -3,6 +3,7 @@
   programs.zsh = {
     enable = true;
     shellAliases = {
+      # TODO move to npm module
       # NPM aliases
       ni = "npm install";
       nis = "npm install --save";
@@ -18,12 +19,7 @@
       tl = "tmux list-sessions";
       tx = "tmuxinator";
 
-      # Git Alises
-      gu = "git up"; # Better git branch management
-      grb = "git rebase";
-      grbd = "git rebase develop";
-      gpb = "git-prune-branches";
-
+      # TODO Move to docker module
       # Docker Compose Aliases
       dc = "docker compose";
       dcu = "docker compose up -d";
@@ -33,35 +29,14 @@
     };
 
     initContent = ''
-      # GPG Settings
-      export SSH_AUTH_SOCK=$(gpgconf --list-dirs agent-ssh-socket)
-
       # Functions
       scripts () {
         bat package.json | jq .scripts
       }
 
-      gpnew () {
-        git push origin -u $(git rev-parse --abbrev-ref HEAD)
-      }
-
-      # TODO: consider moving this to a bin script
-      git-prune-branches() {
-        echo "switching to master or main branch.."
-        git branch | grep 'main\|master' | xargs -n 1 git checkout
-        echo "fetching with -p option...";
-        git fetch -p;
-        echo "running pruning of local branches"
-        git branch -vv | grep ': gone]'|  grep -v "\*" | awk '{ print $1; }' | xargs -r git branch -D ;
-      }
-
       # TODO: consider moving this to a bin script
       dreload() {
         docker-compose stop "$1" && docker-compose rm -f "$1" && docker-compose up -d "$1" && docker-compose logs -f "$1"
-      }
-
-      vlist () {
-        nvim -p $(rg -l "$1")
       }
     '';
 
@@ -69,6 +44,7 @@
       eval "$(/opt/homebrew/bin/brew shellenv)"
       source "/opt/homebrew/etc/profile.d/z.sh"
 
+      # TODO move to npm module
       # Export NVM Paths
       export NVM_DIR="$HOME/.nvm"
       [ -s "/opt/homebrew/opt/nvm/nvm.sh" ] && \. "/opt/homebrew/opt/nvm/nvm.sh"  # This loads nvm
