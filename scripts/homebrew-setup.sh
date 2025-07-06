@@ -14,32 +14,12 @@ fi
 brew update
 
 BASE_PACKAGES=(
-  bash # tmux theme needs a more recent version of bash
-  bat
-  git
-  git-lfs
-  gh
-  gnupg
-  htop
   hub
-  jq
-  neovim
   node
   nvm
-  obsidian
   pinentry
-  pinentry-mac
-  pygitup
-  python
-  postgresql@14
   rcm
-  ripgrep
-  spaceship
   tmux
-  tmuxinator
-  tree
-  wget
-  ykman
   Z
 )
 
@@ -66,14 +46,9 @@ brew install ${PACKAGES[@]}
 
 BASE_CASKS=(
   docker
-  elgato-control-center
-  font-sauce-code-pro-nerd-font
-  firefox
-  karabiner-elements
-  iterm2
-  rectangle
-  vlc
-  yubico-authenticator
+  elgato-control-center Stay in Brew?
+  firefox # Home Manager
+  yubico-authenticator # Stay in Brew?
 )
 
 PERSONAL_CASKS=(
@@ -92,7 +67,6 @@ PERSONAL_CASKS=(
   slack
   tpvirtual
   veracrypt
-  zoom
 )
 
 WORK_CASKS=(

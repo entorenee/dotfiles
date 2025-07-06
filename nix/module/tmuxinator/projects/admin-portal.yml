@@ -1,6 +1,4 @@
-# /Users/fw-skylerlemay/.config/tmuxinator/AdminPortal.yml
-
-name: AdminPortal
+name: admin-portal
 root: ~/code/AdminPortal
 
 windows:

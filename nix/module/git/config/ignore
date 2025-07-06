@@ -1,0 +1,19 @@
+# Packages #
+######################
+node_modules
+*.dmg
+*.iso
+*.exe
+
+# OS generated files #
+######################
+.DS_Store*
+
+# Temporary files #
+######################
+*.swp
+*.swo
+
+# Logs #
+######################
+*.log

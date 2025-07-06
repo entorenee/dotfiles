@@ -1,6 +1,6 @@
 # /Users/fw-skylerlemay/.config/tmuxinator/StudentPortal.yml
 
-name: StudentPortal
+name: student-portal
 root: ~/code/StudentPortal
 
 windows:
