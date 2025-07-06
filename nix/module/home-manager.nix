@@ -6,6 +6,7 @@
   imports = [
     ./gh
     ./git
+    ./nvim
     ./pkgs.nix
     ./tmuxinator
   ];

@@ -15,7 +15,6 @@ brew update
 
 BASE_PACKAGES=(
   hub
-  neovim
   node
   nvm
   pinentry
