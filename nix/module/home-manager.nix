@@ -4,7 +4,7 @@
   xdg.enable = true;
   
   imports = [
-    ./fonts.nix
+    ./fonts
     ./gh
     ./git
     ./gnupg
