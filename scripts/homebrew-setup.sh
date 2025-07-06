@@ -21,7 +21,6 @@ BASE_PACKAGES=(
   pinentry
   rcm
   tmux
-  tmuxinator
   Z
 )
 

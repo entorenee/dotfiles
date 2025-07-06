@@ -29,6 +29,7 @@
       rectangle
       ripgrep
       # spaceship-prompt
+      tmuxinator
       tree
       # vlc
       vlc-bin-universal

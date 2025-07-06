@@ -1,6 +1,6 @@
 # /Users/fw-skylerlemay/.config/tmuxinator/MarketingSite.yml
 
-name: MarketingSite
+name: marketing-site
 root: ~/code/fw_monorepo/MarketingSite
 
 windows:

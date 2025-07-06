@@ -7,5 +7,6 @@
     ./gh
     ./git
     ./pkgs.nix
+    ./tmuxinator
   ];
 }
