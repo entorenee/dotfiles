@@ -6,6 +6,7 @@
   imports = [
     ./gh
     ./git
+    ./karabiner
     ./nvim
     ./pkgs.nix
     ./tmuxinator
