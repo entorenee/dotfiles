@@ -16,5 +16,5 @@ export PATH=$HOME/bin:/usr/local/bin:/usr/local/share/npm/bin:$PATH
 if [[ -n $SSH_CONNECTION ]]; then
   export EDITOR='vim'
 else
-  export EDITOR='mvim'
+  export EDITOR='nvim'
 fi
