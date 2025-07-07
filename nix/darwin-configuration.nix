@@ -1,15 +1,12 @@
 { config, ... }:
 {
 
-  # Enable homebrew
-  # homebrew = {
-  #   enable = true;
-  #   onActivation.cleanup = "zap";
-  #   onActivation.autoUpdate = true;
-  #   onActivation.upgrade = true;
-  # };
+  imports = [
+    ./module/homebrew.nix
+  ];
 
   ids.gids.nixbld = 350;
+  system.primaryUser = "skyler.lemay";
 
   # System-level user configurations
   users.users."skyler.lemay" = {
