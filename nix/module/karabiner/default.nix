@@ -1,13 +1,10 @@
+{ ... }:
 {
-  pkgs,
-  ...
-}:
-{
-  ## TODO: determine if this should be moved back to Homebrew for global application install
-  home.packages =
-    with pkgs;
-    [
-      karabiner-elements
-    ];
-  xdg.configFile."karabiner".source = ./config;
+  homebrew.casks = [
+    "karabiner-elements"
+  ];
+
+  home-manager.users."skyler.lemay" = { ... }: {
+    xdg.configFile."karabiner".source = ./config;
+  };
 }

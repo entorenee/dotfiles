@@ -17,21 +17,23 @@
   };
 
   outputs =
-    { nixpkgs, home-manager, ... }:
+    { home-manager, darwin, ... }:
     let
       system = "aarch64-darwin";
-      pkgs = nixpkgs.legacyPackages.${system};
     in
     {
-      homeConfigurations."skyler.lemay" = home-manager.lib.homeManagerConfiguration {
-        inherit pkgs;
-
-        # Specify your home configuration modules here, for example,
-        # the path to your home.nix.
-        modules = [ ./home.nix ];
-
-        # Optionally use extraSpecialArgs
-        # to pass through arguments to home.nix
+      darwinConfigurations."entorenee" = darwin.lib.darwinSystem {
+        inherit system;
+        modules = [
+          ./darwin-configuration.nix
+          home-manager.darwinModules.home-manager
+          {
+            home-manager.useGlobalPkgs = false;
+            home-manager.useUserPackages = true;
+            # TODO: This will need to be dynamic for mnultiple profiles in the future
+            home-manager.users."skyler.lemay" = import ./home.nix;
+          }
+        ];
       };
     };
 }

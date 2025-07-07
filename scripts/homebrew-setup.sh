@@ -15,12 +15,7 @@ brew update
 
 BASE_PACKAGES=(
   hub
-  node
-  nvm
-  pinentry
   rcm
-  tmux
-  Z
 )
 
 PERSONAL_PACKAGES=(
@@ -45,10 +40,7 @@ echo "Installing packages..."
 brew install ${PACKAGES[@]}
 
 BASE_CASKS=(
-  docker
-  elgato-control-center Stay in Brew?
   firefox # Home Manager
-  yubico-authenticator # Stay in Brew?
 )
 
 PERSONAL_CASKS=(
