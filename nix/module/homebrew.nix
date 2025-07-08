@@ -1,6 +1,7 @@
 { ... }:
 {
   imports = [
+    ./ghostty
     ./karabiner
     ./nvm
   ];
