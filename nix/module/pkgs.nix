@@ -18,8 +18,8 @@
       git-up
       htop
       jq
-      # postgresql
-      # python313
+      postgresql
+      python314
       ripgrep
       tmuxinator
       tree
