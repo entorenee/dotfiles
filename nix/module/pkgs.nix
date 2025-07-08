@@ -17,23 +17,13 @@
       git-lfs
       git-up
       htop
-      # iterm2
       jq
-      # karabiner-elements
-      # nerd-fonts.sauce-code-pro
-      # obsidian
-      # pinentry-tty
-      # pinentry_mac
-      # postgresql
-      # python313
-      rectangle
+      postgresql
+      python314
       ripgrep
       tmuxinator
       tree
-      # vlc
-      vlc-bin-universal
       wget
       yubikey-manager
-      zoom-us
     ];
 }

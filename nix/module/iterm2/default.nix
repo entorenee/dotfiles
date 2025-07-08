@@ -1,10 +1,10 @@
 { ... }:
 {
   homebrew.casks = [
-    "karabiner-elements"
+    "iterm2"
   ];
 
   home-manager.users."skyler.lemay" = { ... }: {
-    xdg.configFile."karabiner".source = ./config;
+    xdg.configFile."iterm2".source = ./config;
   };
 }

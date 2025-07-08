@@ -8,7 +8,6 @@
     ./gh
     ./git
     ./gnupg
-    ./karabiner
     ./nvim
     ./pkgs.nix
     ./starship

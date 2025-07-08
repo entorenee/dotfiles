@@ -1,10 +1,10 @@
 { ... }:
 {
   homebrew.casks = [
-    "karabiner-elements"
+    "ghostty"
   ];
 
   home-manager.users."skyler.lemay" = { ... }: {
-    xdg.configFile."karabiner".source = ./config;
+    xdg.configFile."ghostty".source = ./config;
   };
 }
