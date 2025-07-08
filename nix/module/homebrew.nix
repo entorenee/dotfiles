@@ -2,6 +2,7 @@
 {
   imports = [
     ./ghostty
+    ./iterm2 # likely to be deprecated pending trial of ghostty
     ./karabiner
     ./nvm
   ];
