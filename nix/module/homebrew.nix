@@ -2,6 +2,7 @@
 {
   imports = [
     ./karabiner
+    ./nvm
   ];
 
   homebrew = {
@@ -9,8 +10,6 @@
     global.autoUpdate = false;
 
     brews = [
-      "node"
-      "nvm"
       "pinentry"
       "pinentry-mac"
       "Z"
