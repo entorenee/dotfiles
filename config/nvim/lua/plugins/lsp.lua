@@ -72,7 +72,7 @@ return {
 
       local capabilities = require('cmp_nvim_lsp').default_capabilities()
 
-      local function on_attach(client, bufnr)
+      local function on_attach(_, bufnr)
         local opts = { noremap = true, silent = true, buffer = bufnr }
         vim.keymap.set("n", "gD", vim.lsp.buf.declaration, opts)
         vim.keymap.set("n", "gd", vim.lsp.buf.definition, opts)
@@ -122,16 +122,8 @@ return {
           settings = {
             Lua = {
               runtime = { version = 'LuaJIT' },
-              diagnostics = { 
-                globals = {
-                  'vim',           -- Neovim global
-                  'describe',      -- Busted testing framework
-                  'it',            -- Busted testing framework
-                  'before_each',   -- Busted testing framework
-                  'after_each',    -- Busted testing framework
-                  'setup',         -- Busted testing framework
-                  'teardown',      -- Busted testing framework
-                }
+              diagnostics = {
+                globals = {}
               },
               workspace = {
                 library = vim.api.nvim_get_runtime_file("", true),
