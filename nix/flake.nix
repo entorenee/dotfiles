@@ -19,18 +19,18 @@
   outputs =
     { home-manager, darwin, ... }:
     let
-      username = "skyler.lemay";
-      darwin-system = import ./system/darwin.nix {
+      mkDarwinConfig = username: profile: system: import ./system/darwin.nix {
         inherit
           home-manager
           darwin
           username
+          profile
           ;
-      };
+      } system;
     in
     {
       darwinConfigurations = {
-        entorenee = darwin-system "aarch64-darwin";
+        personal = mkDarwinConfig "skyler.lemay" "personal" "aarch64-darwin";
       };
     };
 }
