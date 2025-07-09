@@ -15,13 +15,9 @@ brew update
 
 BASE_PACKAGES=(
   hub
-  rcm
 )
 
 PERSONAL_PACKAGES=(
-  go
-  hugo
-  tor
 )
 
 WORK_PACKAGES=(
@@ -44,21 +40,6 @@ BASE_CASKS=(
 )
 
 PERSONAL_CASKS=(
-  anylist
-  backblaze
-  balenaetcher
-  calibre
-  discord
-  keepassxc
-  nextcloud
-  ollama
-  proton-mail
-  protonvpn
-  raspberry-pi-imager
-  signal
-  slack
-  tpvirtual
-  veracrypt
 )
 
 WORK_CASKS=(

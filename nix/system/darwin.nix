@@ -1,14 +1,16 @@
 {
   home-manager,
   darwin,
+  nixpkgs,
   username,
   profile,
   ...
 }:
 system:
 let
+  lib = nixpkgs.lib;
   home-manager-config = import ../module/home-manager.nix { inherit profile; };
-  homebrew = import ../module/homebrew.nix { inherit profile; };
+  homebrew = import ../module/homebrew/default.nix { inherit lib profile; };
   system-config = import ../module/system-configuration.nix { inherit username; };
 in
 darwin.lib.darwinSystem {

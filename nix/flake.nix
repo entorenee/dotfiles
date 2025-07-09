@@ -17,12 +17,13 @@
   };
 
   outputs =
-    { home-manager, darwin, ... }:
+    { home-manager, darwin, nixpkgs, ... }:
     let
       mkDarwinConfig = username: profile: system: import ./system/darwin.nix {
         inherit
           home-manager
           darwin
+          nixpkgs
           username
           profile
           ;
