@@ -2,7 +2,7 @@
 let
   profileConfigs = {
     personal = import ./personal.nix;
-    # work = import ./work.nix;
+    work = import ./work.nix;
   };
 
   profileConfig = profileConfigs.${profile} or {};
@@ -19,6 +19,7 @@ in
     {
       enable = true;
       global.autoUpdate = false;
+      # TODO: review installs and set cleanup to zap
 
       brews = [
         "pinentry"
@@ -29,6 +30,7 @@ in
       casks = [
         "docker"
         "elgato-control-center"
+        "firefox" # TODO: look into migrating to Home Manager
         "iterm2"
         "karabiner-elements"
         "obsidian"
