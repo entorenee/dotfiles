@@ -17,8 +17,7 @@ prSections:
     owner:JoinFreeWorld
     is:open
     draft:false
-    review-requested:@me
-    -author:mend-for-github-com[bot]
+    -author:dependabot[bot]
 # - title: Renovate
 #   filters: >-
 #     owner:JoinFreeWorld
