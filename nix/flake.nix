@@ -19,21 +19,18 @@
   outputs =
     { home-manager, darwin, ... }:
     let
-      system = "aarch64-darwin";
+      username = "skyler.lemay";
+      darwin-system = import ./system/darwin.nix {
+        inherit
+          home-manager
+          darwin
+          username
+          ;
+      };
     in
     {
-      darwinConfigurations."entorenee" = darwin.lib.darwinSystem {
-        inherit system;
-        modules = [
-          ./darwin-configuration.nix
-          home-manager.darwinModules.home-manager
-          {
-            home-manager.useGlobalPkgs = false;
-            home-manager.useUserPackages = true;
-            # TODO: This will need to be dynamic for mnultiple profiles in the future
-            home-manager.users."skyler.lemay" = import ./home.nix;
-          }
-        ];
+      darwinConfigurations = {
+        entorenee = darwin-system "aarch64-darwin";
       };
     };
 }
