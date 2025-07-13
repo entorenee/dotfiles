@@ -1,10 +1,5 @@
 .PHONY: help
 
-
-## Set Yubikey SSH access for Github
-setup-yubikey-ssh:
-	./scripts/setup-yubikey-ssh.sh
-
 ## Decrypt private font files
 decrypt-fonts:
 	cd fonts; \
