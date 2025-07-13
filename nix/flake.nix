@@ -17,23 +17,21 @@
   };
 
   outputs =
-    { home-manager, darwin, ... }:
+    { home-manager, darwin, nixpkgs, ... }:
     let
-      system = "aarch64-darwin";
+      mkDarwinConfig = username: profile: system: import ./system/darwin.nix {
+        inherit
+          home-manager
+          darwin
+          nixpkgs
+          username
+          profile
+          ;
+      } system;
     in
     {
-      darwinConfigurations."entorenee" = darwin.lib.darwinSystem {
-        inherit system;
-        modules = [
-          ./darwin-configuration.nix
-          home-manager.darwinModules.home-manager
-          {
-            home-manager.useGlobalPkgs = false;
-            home-manager.useUserPackages = true;
-            # TODO: This will need to be dynamic for mnultiple profiles in the future
-            home-manager.users."skyler.lemay" = import ./home.nix;
-          }
-        ];
+      darwinConfigurations = {
+        personal = mkDarwinConfig "skyler.lemay" "personal" "aarch64-darwin";
       };
     };
 }

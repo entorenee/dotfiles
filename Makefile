@@ -1,29 +1,5 @@
 .PHONY: help
 
-## Set the WORKSPACE_TYPE for all of the scripts
-set-workspace-type:
-	./scripts/set-workspace.sh
-
-## Initialize Mac environment
-initialize-mac:
-	./scripts/macos-setup.sh
-
-## Setup Homebrew and packages
-homebrew-setup:
-	./scripts/homebrew-setup.sh
-
-## Complete initial GPG setup
-setup-gpg:
-	./scripts/gpg-setup.sh
-
-## Set Yubikey SSH access for Github
-setup-yubikey-ssh:
-	./scripts/setup-yubikey-ssh.sh
-
-## Set Git Signing Key
-set-git-signing:
-	./scripts/set-git-signing-key.sh
-
 ## Decrypt private font files
 decrypt-fonts:
 	cd fonts; \

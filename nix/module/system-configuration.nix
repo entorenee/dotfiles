@@ -1,24 +1,15 @@
-{ config, ... }:
 {
-
-  imports = [
-    ./module/homebrew.nix
-  ];
-
+  username,
+  ...
+}:
+{
   ids.gids.nixbld = 350;
-  system.primaryUser = "skyler.lemay";
 
   # System-level user configurations
-  users.users."skyler.lemay" = {
-    name = "skyler.lemay";
-    home = "/Users/skyler.lemay";
-  };
+  users.users.${username}.home = "/Users/${username}";
 
   # Enable experimental features
   nix.settings.experimental-features = "nix-command flakes";
-
-  # Set Git commit hash for darwin-rebuild
-  system.configurationRevision = config.rev or config.dirtyRev or null;
 
   # Used for backwards compatibility, please read the changelog before changing.
   # $ darwin-rebuild changelog
