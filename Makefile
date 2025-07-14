@@ -1,16 +1,29 @@
 .PHONY: help
 
 ## Run Darwin rebuild for Personal profile
-rebuildP:
+pRebuild:
 	sudo darwin-rebuild switch --flake nix/#personal
 
 ## Run Darwin rebuild for Work profile
-rebuildW:
+wRebuild:
 	sudo darwin-rebuild switch --flake nix/#work
 
 ## Update the flake.lock file
 update:
 	nix flake update --flake ./nix
+
+## View previous generations of Nix configuration
+generations:
+	nix run home-manager generations
+
+## Switch to a different generation
+switch-gen:
+	@read -p "Enter generation number: " gen; \
+	home-manager switch --switch-generation $$gen
+
+## Cleanup generations older than 7 days
+cleanup:
+	nix-collect-garbage --delete-older-than 7d
 
 ## Decrypt private font files
 decrypt-fonts:

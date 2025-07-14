@@ -18,7 +18,11 @@ in
   homebrew = lib.mkMerge [
     {
       enable = true;
-      global.autoUpdate = false;
+      onActivation = {
+        cleanup = "uninstall"; # Uninstall anything not declared in Nix
+        autoUpdate = false;
+        upgrade = false;
+      };
       # TODO: review installs and set cleanup to zap
 
       brews = [
@@ -28,6 +32,7 @@ in
       ];
 
       casks = [
+        "claude"
         "docker"
         "elgato-control-center"
         "firefox" # TODO: look into migrating to Home Manager
