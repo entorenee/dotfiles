@@ -23,6 +23,10 @@ in
       enable = true;
       shell = "${pkgs.zsh}/bin/zsh";
       terminal = "xterm-256color";
+      baseIndex = 1;
+      clock24 = true;
+      keyMode = "vi";
+      mouse = true;
       plugins = with pkgs; [
         # tmuxPlugins.sensible
         tmuxPlugins.vim-tmux-navigator
