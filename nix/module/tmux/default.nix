@@ -5,23 +5,33 @@
 }:
 let
   mkOrder = lib.mkOrder;
+  tmux-tokyo-night = pkgs.tmuxPlugins.mkTmuxPlugin {
+    pluginName = "tmux-tokyo-night";
+    version = "unstable-2025-07-13";
+    src = pkgs.fetchFromGitHub {
+      owner = "fabioluciano";
+      repo = "tmux-tokyo-night";
+      rev = "main";
+      sha256 = "sha256-p0CbzwG0i6UeIiY2pEx4TTn2bukZmJS008yR34N9APU=";
+    };
+    rtpFilePath = "tmux-tokyo-night.tmux";
+  };
 in
 {
-  # TODO: Figure out fonts getting exposed correctly
   programs = {
     tmux = {
       enable = true;
-      shell = "/bin/zsh";
+      shell = "${pkgs.zsh}/bin/zsh";
+      terminal = "xterm-256color";
       plugins = with pkgs; [
-        tmuxPlugins.sensible
+        # tmuxPlugins.sensible
         tmuxPlugins.vim-tmux-navigator
         {
-          plugin = tmuxPlugins.tokyo-night-tmux;
+          plugin = tmux-tokyo-night;
           extraConfig = ''
             set -g @theme_variation 'night'
             set -g @theme_plugins 'datetime,weather,battery'
             set -g @theme_plugin_weather_location 'Portland, Oregon'
-            set -g @theme_plugin_datetime_format '%Y-%m-%d %H:%M'
             # Show temp in metric, condition, and moon phase
             set -g @theme_plugin_weather_format '%t+%C+%m&m'
           '';
