@@ -1,5 +1,17 @@
 .PHONY: help
 
+## Run Darwin rebuild for Personal profile
+rebuildP:
+	sudo darwin-rebuild switch --flake nix/#personal
+
+## Run Darwin rebuild for Work profile
+rebuildW:
+	sudo darwin-rebuild switch --flake nix/#work
+
+## Update the flake.lock file
+update:
+	nix flake update --flake ./nix
+
 ## Decrypt private font files
 decrypt-fonts:
 	cd fonts; \
