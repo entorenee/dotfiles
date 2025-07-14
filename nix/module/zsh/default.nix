@@ -51,6 +51,13 @@
       [ -s "/opt/homebrew/opt/nvm/etc/bash_completion.d/nvm" ] && \. "/opt/homebrew/opt/nvm/etc/bash_completion.d/nvm"  # This loads nvm bash_completion
 
       export PATH=$HOME/bin:/usr/local/bin:/usr/local/share/npm/bin:$PATH
+
+      # Preferred editor for local and remote sessions
+      if [[ -n $SSH_CONNECTION ]]; then
+        export EDITOR='vim'
+      else
+        export EDITOR='nvim'
+      fi
     '';
 
     sessionVariables = {
