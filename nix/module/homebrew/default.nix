@@ -33,7 +33,7 @@ in
 
       casks = [
         "claude"
-        "docker"
+        "docker-desktop"
         "elgato-control-center"
         "firefox" # TODO: look into migrating to Home Manager
         "iterm2"
