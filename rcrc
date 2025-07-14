@@ -1,2 +1,0 @@
-EXCLUDES="README.md Makefile gpg-setup/* scripts vim/pack/* fonts/* public-keys/* templates/* nix/*"
-DOTFILES_DIRS="$HOME/dotfiles"

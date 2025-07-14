@@ -20,6 +20,7 @@ in
     ./pkgs.nix
     sshModule
     ./starship
+    ./tmux
     ./tmuxinator
     ./zsh
   ];
