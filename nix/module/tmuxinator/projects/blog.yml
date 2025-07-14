@@ -1,7 +1,5 @@
-# /Users/skyler.lemay/.config/tmuxinator/blog.yml
-
 name: blog
-root: ~/code/skyler-lemay-blog
+root: ~/code/personal/skyler-lemay-blog
 
 windows:
   - editor:

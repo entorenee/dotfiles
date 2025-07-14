@@ -1,5 +1,3 @@
-# /Users/skyler.lemay/.config/tmuxinator/code.yml
-
 name: code
 root: <%= @settings["workspace"] ||= '~/' %>
 

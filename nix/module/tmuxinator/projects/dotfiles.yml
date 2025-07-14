@@ -1,5 +1,3 @@
-# /Users/fw-skylerlemay/.config/tmuxinator/dotfiles.yml
-
 name: dotfiles
 root: ~/dotfiles
 
