@@ -5,6 +5,7 @@
   ...
 }:
 let
+  ghDashModule = import ./gh-dash { inherit lib profile; };
   sshModule = import ./ssh { inherit lib username profile; };
 in
 {
@@ -15,6 +16,7 @@ in
   imports = [
     ./fonts
     ./gh
+    ghDashModule
     ./git
     ./gnupg
     ./nvim

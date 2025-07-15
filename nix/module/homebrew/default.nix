@@ -23,7 +23,6 @@ in
         autoUpdate = false;
         upgrade = false;
       };
-      # TODO: review installs and set cleanup to zap
 
       brews = [
         "pinentry"

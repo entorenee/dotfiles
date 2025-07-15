@@ -1,24 +1,6 @@
 prSections:
-- title: My Pull Requests
-  filters: >-
-    owner:JoinFreeWorld
-    is:open
-    author:@me
-- title: Involved
-  filters: >-
-    owner:JoinFreeWorld
-    is:open
-    draft:false
-    involves:@me
-    -review-requested:@me
-    -author:@me
-- title: Review Requested
-  filters: >-
-    owner:JoinFreeWorld
-    is:open
-    draft:false
-    -commenter:@me
-    -author:dependabot[bot]
+- title: My PRs
+  filters: author:@me
 
 defaults:
   preview:
@@ -26,6 +8,7 @@ defaults:
     width: 75
   prsLimit: 20
   issuesLimit: 20
+  prApproveComment: ""
   view: prs
   layout:
     prs:
@@ -59,12 +42,12 @@ keybindings:
   issues: []
   prs: []
 
-repoPaths:
-  JoinFreeWorld/*: ~/code/*
-smartFilteringAtLaunch: false
+repoPaths: {}
+# Filter list to current repo. Set to false to not auto filter results
+smartFilteringAtLaunch: true
 
 pager:
-  diff: ""
+  diff: "delta"
 
 theme:
   ui:
