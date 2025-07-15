@@ -1,10 +1,11 @@
 {
+  lib,
   username,
   profile,
   ...
 }:
 let
-  sshModule = import ./ssh { inherit username profile; };
+  sshModule = import ./ssh { inherit lib username profile; };
 in
 {
   programs.home-manager.enable = true;

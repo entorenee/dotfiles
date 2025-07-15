@@ -1,10 +1,13 @@
-{ username, profile, ... }:
+{
+  lib,
+  username,
+  profile,
+  ...
+}:
 let
-  pubYubikeySsh = {
-    personal = ./public-ssh-keys/personal.pub;
-    ## work = ./public-ssh-keys/work.pub;
-  };
-  pubSshPath = pubYubikeySsh.${profile};
+  personalKeyPath = ./public-ssh-keys/id_rsa_yubikey_personal.pub;
+  workKeyPath = ./public-ssh-keys/id_rsa_yubikey_work.pub;
+  isWorkProfile = profile == "work";
 in
 {
   programs.ssh = {
@@ -12,10 +15,19 @@ in
     matchBlocks = {
       github = {
         host = "github.com";
-        identityFile = "/Users/${username}/.ssh/id_rsa_yubikey.pub";
+        identityFile = [
+          "/Users/${username}/.ssh/id_rsa_yubikey_personal.pub"
+        ] ++ lib.optional isWorkProfile "/Users/${username}/.ssh/id_rsa_yubikey_work.pub";
         identitiesOnly = true;
       };
     };
   };
-  home.file.".ssh/id_rsa_yubikey.pub".source = pubSshPath;
+
+  # Always include personal key file, for dotfiles access
+  home.file.".ssh/id_rsa_yubikey_personal.pub".source = personalKeyPath;
+
+  # Conditionally copy work public key for work profile
+  home.file.".ssh/id_rsa_yubikey_work.pub" = lib.mkIf isWorkProfile {
+    source = workKeyPath;
+  };
 }

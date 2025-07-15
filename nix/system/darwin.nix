@@ -9,7 +9,7 @@
 system:
 let
   lib = nixpkgs.lib;
-  home-manager-config = import ../module/home-manager.nix { inherit username profile; };
+  home-manager-config = import ../module/home-manager.nix { inherit lib username profile; };
   homebrew = import ../module/homebrew/default.nix { inherit lib profile; };
   system-config = import ../module/system-configuration.nix { inherit username; };
 in
