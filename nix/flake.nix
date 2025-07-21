@@ -32,6 +32,7 @@
     {
       darwinConfigurations = {
         personal = mkDarwinConfig "skyler.lemay" "personal" "aarch64-darwin";
+        work = mkDarwinConfig "fw-skylerlemay" "work" "aarch64-darwin";
       };
     };
 }
