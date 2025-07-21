@@ -26,6 +26,8 @@
       dcd = "docker compose down";
       dcl = "docker compose logs -f";
       dce = "docker compose ps --filter status=exited";
+
+      tree = "tree -C -F -a -h --gitignore -I \".git\"";
     };
 
     initContent = ''
@@ -58,6 +60,11 @@
       else
         export EDITOR='nvim'
       fi
+    '';
+
+    envExtra = ''
+      # Source local zshenv if it exists
+      [ -f ~/.zshenv.local ] && source ~/.zshenv.local
     '';
 
     sessionVariables = {
