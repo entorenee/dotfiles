@@ -21,7 +21,6 @@
       "protonvpn"
       "raspberry-pi-imager"
       "signal"
-      "slack"
       "tpvirtual"
       "veracrypt"
     ];

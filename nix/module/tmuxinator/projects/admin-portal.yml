@@ -1,5 +1,5 @@
 name: admin-portal
-root: ~/code/AdminPortal
+root: ~/code/work/AdminPortal
 
 windows:
   - editor:

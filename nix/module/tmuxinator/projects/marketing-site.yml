@@ -1,5 +1,5 @@
 name: marketing-site
-root: ~/code/fw_monorepo/MarketingSite
+root: ~/code/work/fw_monorepo/MarketingSite
 
 windows:
   - editor:

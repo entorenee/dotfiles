@@ -1,5 +1,5 @@
 name: student-portal
-root: ~/code/StudentPortal
+root: ~/code/work/StudentPortal
 
 windows:
   - editor:

@@ -39,6 +39,7 @@ in
         "karabiner-elements"
         "obsidian"
         "rectangle"
+        "slack"
         "vlc"
         "yubico-authenticator"
         "zoom"
