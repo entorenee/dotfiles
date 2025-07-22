@@ -22,3 +22,6 @@ opt.smartcase = true
 opt.backspace = {'indent', 'eol', 'start'}
 opt.visualbell = true
 opt.wildignore:append({'*.DS_Store', '*.d', '*.mlast', '*.cmi', '*.cmj', '*.cmt', '*reast', '*.ast'})
+
+-- Auto-reload buffers when files change outside Neovim
+opt.autoread = true
