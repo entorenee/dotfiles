@@ -13,7 +13,11 @@ return {
             package_pending = "➜",
             package_uninstalled = "✗"
           }
-        }
+        },
+        ensure_installed = {
+          "eslint_d",     -- ESLint daemon for fast linting
+          "prettier",     -- Code formatter
+        },
       })
     end
   },
