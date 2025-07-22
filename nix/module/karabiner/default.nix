@@ -1,10 +1,10 @@
-{ ... }:
+{ username, ... }:
 {
   homebrew.casks = [
     "karabiner-elements"
   ];
 
-  home-manager.users."skyler.lemay" = { ... }: {
+  home-manager.users."${username}" = { ... }: {
     xdg.configFile."karabiner".source = ./config;
   };
 }

@@ -1,4 +1,9 @@
-{ profile, lib, ... }:
+{
+  lib,
+  profile,
+  username,
+  ...
+}:
 let
   profileConfigs = {
     personal = import ./personal.nix;
@@ -6,13 +11,17 @@ let
   };
 
   profileConfig = profileConfigs.${profile} or {};
+  ghosttyModule = import ../ghostty { inherit username; };
+  iterm2Module = import ../iterm2 { inherit username; };
+  karabinerModule = import ../karabiner { inherit username; };
+  nvmModule = import ../nvm { inherit username; };
 in
 {
   imports = [
-    ../ghostty
-    ../iterm2 # likely to be deprecated pending trial of ghostty
-    ../karabiner
-    ../nvm
+    ghosttyModule
+    iterm2Module# likely to be deprecated pending trial of ghostty
+    karabinerModule
+    nvmModule
   ];
 
   homebrew = lib.mkMerge [

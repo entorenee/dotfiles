@@ -1,10 +1,10 @@
-{ ... }:
+{ username, ... }:
 {
   homebrew.casks = [
     "ghostty"
   ];
 
-  home-manager.users."skyler.lemay" = { ... }: {
+  home-manager.users."${username}" = { ... }: {
     xdg.configFile."ghostty".source = ./config;
   };
 }

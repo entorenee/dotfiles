@@ -1,4 +1,4 @@
-{ ... }:
+{ username, ... }:
 {
   homebrew.brews = [
     "nvm"
@@ -8,7 +8,7 @@
   # nvm install --lts
   # nvm alias default 'lts/*'
 
-  home-manager.users."skyler.lemay" = { ... }: {
+  home-manager.users."${username}" = { ... }: {
     xdg.configFile."nvm".source = ./config;
   };
 }
