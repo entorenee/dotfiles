@@ -1,8 +1,6 @@
 {
   homebrew = {
     brews = [
-      "go"
-      "hugo"
       "tor"
     ];
 

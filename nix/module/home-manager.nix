@@ -1,11 +1,13 @@
 {
   lib,
   username,
+  pkgs,
   profile,
   ...
 }:
 let
   ghDashModule = import ./gh-dash { inherit lib profile; };
+  pkgsModule = import ./pkgs.nix { inherit lib pkgs profile; };
   sshModule = import ./ssh { inherit lib username profile; };
 in
 {
@@ -20,7 +22,7 @@ in
     ./git
     ./gnupg
     ./nvim
-    ./pkgs.nix
+    pkgsModule
     sshModule
     ./starship
     ./tmux

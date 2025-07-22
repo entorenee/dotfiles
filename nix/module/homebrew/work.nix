@@ -1,13 +1,12 @@
 {
   homebrew = {
     brews = [
-      "doctl"
-      "mkcert"
       "mysql"
       "vercel-cli"
     ];
 
     casks = [
+      "asana"
       "bitwarden"
       "google-chrome"
       "google-drive"

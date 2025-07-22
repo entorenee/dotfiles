@@ -1,7 +1,22 @@
 {
+  lib,
   pkgs,
+  profile,
   ...
 }:
+let
+  isWorkProfile = profile == "work";
+  workPkgs = with pkgs; [
+    doctl
+    mkcert
+  ];
+
+  isPersonalProfile = profile == "personal";
+  personalPkgs = with pkgs; [
+    go
+    hugo
+  ];
+in
 {
   nixpkgs = {
     config = {
@@ -25,5 +40,7 @@
       tree
       wget
       yubikey-manager
-    ];
+    ]
+      ++ lib.optionals isWorkProfile workPkgs
+      ++ lib.optionals isPersonalProfile personalPkgs;
 }
