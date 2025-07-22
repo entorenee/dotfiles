@@ -8,8 +8,14 @@
   # System-level user configurations
   users.users.${username}.home = "/Users/${username}";
 
-  # Enable experimental features
-  nix.settings.experimental-features = "nix-command flakes";
+  nix = {
+    enable = false;
+
+    settings = {
+      experimental-features = "nix-command flakes";
+      warn-dirty = false;
+    };
+  };
 
   # Used for backwards compatibility, please read the changelog before changing.
   # $ darwin-rebuild changelog
