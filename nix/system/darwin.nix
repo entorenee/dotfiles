@@ -13,6 +13,33 @@ let
   home-manager-config = import ../module/home-manager.nix { inherit lib username pkgs profile; };
   homebrew-config = import ../module/homebrew/default.nix { inherit lib username profile; };
   system-config = import ../module/system-configuration.nix { inherit username; };
+
+  personalDock = [
+    "/Applications/Ghostty.app"
+    "/Applications/Obsidian.app"
+    "/Applications/Firefox.app"
+    "/Applications/Signal.app"
+    "/Applications/Slack.app"
+    "/Applications/Discord.app"
+    "/Applications/KeyPassXC.app"
+    "/Applications/Proton Mail.app"
+    "/Applications/ProtonVPN.app"
+    "/Applications/Yubico Authenticator.app"
+  ];
+  workDock = [
+    "/Applications/Ghostty.app"
+    "/Applications/Obsidian.app"
+    "/Applications/Asana.app"
+    "/Applications/Slack.app"
+    "/Applications/Google Chrome.app"
+    "/Applications/TablePlus.app"
+    "/Applications/Claude.app"
+    "/Applications/Bitwarden.app"
+  ];
+  dockPersistentApps = {
+    personal = personalDock;
+    work = workDock;
+  };
 in
 darwin.lib.darwinSystem {
   inherit system;
@@ -43,6 +70,9 @@ darwin.lib.darwinSystem {
               Bluetooth = true;
             };
             CustomUserPreferences = {
+              "com.apple.dock" = {
+                size-immutable = true;
+              };
               "com.apple.trackpad" = {
                 scaling = 2;
               };
@@ -50,9 +80,7 @@ darwin.lib.darwinSystem {
             dock = {
               autohide = true;
               orientation = "left";
-              # TODO: come back to setting this up.
-              # persistent-apps = [
-              # ];
+              persistent-apps = dockPersistentApps.${profile} or null;
               showhidden = true;
               tilesize = 40;
               wvous-tr-corner = 4;
@@ -74,6 +102,7 @@ darwin.lib.darwinSystem {
             };
             NSGlobalDomain = {
               AppleInterfaceStyle = "Dark";
+              AppleICUForce24HourTime = true;
               AppleMeasurementUnits = "Centimeters";
               AppleMetricUnits = 1;
               AppleShowAllExtensions = true;
@@ -87,7 +116,7 @@ darwin.lib.darwinSystem {
               NSAutomaticQuoteSubstitutionEnabled = false;
               NSAutomaticSpellingCorrectionEnabled = false;
               NSDocumentSaveNewDocumentsToCloud = false;
-              _HIHideMenuBar = true;
+              _HIHideMenuBar = false;
             };
             screensaver = {
               askForPassword = true;
