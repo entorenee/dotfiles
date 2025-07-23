@@ -1,0 +1,36 @@
+[user]
+	email = 26767995+entorenee@users.noreply.github.com
+	name = Skyler Lemay
+
+[includeIf "gitdir:~/dotfiles/"]
+  path = config-personal
+[includeIf "gitdir:~/code/personal/"]
+  path = config-personal
+[includeIf "gitdir:~/code/work/"]
+  path = config-work
+
+[url "git@github.com:"]
+  insteadOf = https://github.com/
+
+[commit]
+	gpgsign = true
+
+[tag]
+	gpgsign = true
+
+[init]
+	defaultBranch = main
+
+[push]
+  default = current
+  autoSetupRemote = true
+
+[core]
+  excludesfile = ~/.config/git/ignore
+  ignorecase = false
+
+[filter "lfs"]
+	clean = git-lfs clean -- %f
+	smudge = git-lfs smudge -- %f
+	process = git-lfs filter-process
+	required = true

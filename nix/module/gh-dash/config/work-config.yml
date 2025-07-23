@@ -1,0 +1,88 @@
+prSections:
+- title: My Pull Requests
+  filters: >-
+    owner:JoinFreeWorld
+    is:open
+    author:@me
+- title: Involved
+  filters: >-
+    owner:JoinFreeWorld
+    is:open
+    draft:false
+    involves:@me
+    -review-requested:@me
+    -author:@me
+- title: Review Requested
+  filters: >-
+    owner:JoinFreeWorld
+    is:open
+    draft:false
+    -commenter:@me
+    -author:dependabot[bot]
+
+defaults:
+  preview:
+    open: true
+    width: 75
+  prsLimit: 20
+  issuesLimit: 20
+  prApproveComment: ""
+  view: prs
+  layout:
+    prs:
+      updatedAt:
+        width: 7
+      repo:
+        width: 15
+      author:
+        width: 15
+      assignees:
+        width: 20
+        hidden: true
+      base:
+        width: 15
+        hidden: true
+      lines:
+        width: 16
+    issues:
+      updatedAt:
+        width: 7
+      repo:
+        width: 15
+      creator:
+        width: 10
+      assignees:
+        width: 20
+        hidden: true
+  refetchIntervalMinutes: 30
+
+keybindings:
+  issues: []
+  prs: []
+
+repoPaths:
+  JoinFreeWorld/*: ~/code/work/*
+smartFilteringAtLaunch: false
+
+pager:
+  diff: "delta"
+
+theme:
+  ui:
+    sectionsShowCount: true
+    table:
+      compact: false
+  colors:
+    text:
+      primary: "#E2E1ED"
+      secondary: "#666CA6"
+      inverted: "#242347"
+      faint: "#B0B3BF"
+      warning: "#E0AF68"
+      success: "#3DF294"
+    background:
+      selected: "#1B1B33"
+    border:
+      primary: "#383B5B"
+      secondary: "#39386B"
+      faint: "#2B2B40"

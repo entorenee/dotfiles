@@ -1,28 +1,29 @@
 .PHONY: help
 
-## Set the WORKSPACE_TYPE for all of the scripts
-set-workspace-type:
-	./scripts/set-workspace.sh
+## Run Darwin rebuild for Personal profile
+pRebuild:
+	sudo darwin-rebuild switch --flake nix/#personal
 
-## Initialize Mac environment
-initialize-mac:
-	./scripts/macos-setup.sh
+## Run Darwin rebuild for Work profile
+wRebuild:
+	sudo darwin-rebuild switch --flake nix/#work
 
-## Setup Homebrew and packages
-homebrew-setup:
-	./scripts/homebrew-setup.sh
+## Update the flake.lock file
+update:
+	nix flake update --flake ./nix
 
-## Complete initial GPG setup
-setup-gpg:
-	./scripts/gpg-setup.sh
+## View previous generations of Nix configuration
+generations:
+	nix run home-manager generations
 
-## Set Yubikey SSH access for Github
-setup-yubikey-ssh:
-	./scripts/setup-yubikey-ssh.sh
+## Switch to a different generation
+switch-gen:
+	@read -p "Enter generation number: " gen; \
+	home-manager switch --switch-generation $$gen
 
-## Set Git Signing Key
-set-git-signing:
-	./scripts/set-git-signing-key.sh
+## Cleanup generations older than 7 days
+cleanup:
+	nix-collect-garbage --delete-older-than 7d
 
 ## Decrypt private font files
 decrypt-fonts:

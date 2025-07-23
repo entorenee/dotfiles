@@ -1,0 +1,8 @@
+name: pr-review
+root: ~/
+
+windows:
+  - editor:
+      layout: main-vertical
+      panes:
+        - gh dash
