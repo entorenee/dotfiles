@@ -1,8 +1,9 @@
-vim/plugged
-fonts/DankMono*
-fonts/private-fonts/
+DankMono*
 config/iterm2/AppSupport
 .DS_Store
 
 # Neovim lazy.nvim lockfile - let lazy.nvim manage this locally
 nix/module/nvim/config/lazy-lock.json
+
+# Nix artifacts from testing build
+result/
