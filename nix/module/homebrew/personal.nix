@@ -13,7 +13,7 @@
       "keepassxc"
       "libreoffice"
       "nextcloud"
-      "ollama"
+      # "ollama"  not currently using and may revisit in the near future
       "proton-mail"
       "proton-pass" #deprecating usage of
       "protonvpn"
