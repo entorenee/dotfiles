@@ -25,6 +25,18 @@ switch-gen:
 cleanup:
 	nix-collect-garbage --delete-older-than 7d
 
+## Switch to local Karabiner setup for easier UI editing
+kb-edit:
+	unlink ~/.config/karabiner; \
+		cp -r nix/module/karabiner/config ~/.config/karabiner/
+
+## Pull local Karabiner config from UI editing into Nix
+kb-pull:
+	rsync -av --exclude='automatic_backups' \
+  ~/.config/karabiner/ \
+  ~/dotfiles/nix/module/karabiner/config/; \
+	rm -rf ~/.config/karabiner.backup;
+
 ## Decrypt private font files
 decrypt-fonts:
 	cd fonts; \
