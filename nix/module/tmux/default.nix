@@ -35,6 +35,7 @@ in
           extraConfig = ''
             set -g @theme_variation 'night'
             set -g @theme_plugins 'datetime,weather,battery'
+            set -g @theme_plugin_datetime_format '%F %H:%M'
             set -g @theme_plugin_weather_location 'Portland, Oregon'
             # Show temp in metric, condition, and moon phase
             set -g @theme_plugin_weather_format '%t+%C+%m&m'
