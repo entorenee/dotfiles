@@ -19,9 +19,11 @@ opt.ruler = true
 opt.hlsearch = true
 opt.ignorecase = true
 opt.smartcase = true
-opt.backspace = {'indent', 'eol', 'start'}
+opt.backspace = { 'indent', 'eol', 'start' }
 opt.visualbell = true
-opt.wildignore:append({'*.DS_Store', '*.d', '*.mlast', '*.cmi', '*.cmj', '*.cmt', '*reast', '*.ast'})
+opt.wildignore:append({ '*.DS_Store', '*.d', '*.mlast', '*.cmi', '*.cmj', '*.cmt', '*reast', '*.ast' })
+opt.clipboard = "unnamedplus"
 
 -- Auto-reload buffers when files change outside Neovim
 opt.autoread = true
+
