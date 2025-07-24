@@ -13,6 +13,7 @@ let
   home-manager-config = import ../module/home-manager.nix { inherit lib username pkgs profile; };
   homebrew-config = import ../module/homebrew/default.nix { inherit lib username profile; };
   system-config = import ../module/system-configuration.nix { inherit username; };
+  launch-agents-config = import ../module/launch-agents/default.nix { inherit profile; };
 
   personalDock = [
     "/Applications/Ghostty.app"
@@ -62,6 +63,7 @@ darwin.lib.darwinSystem {
 
       # System settings
       {
+        launchd.user.agents = launch-agents-config;
         system = {
           primaryUser = username;
           defaults = {
