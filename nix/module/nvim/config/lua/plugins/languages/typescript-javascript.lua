@@ -1,15 +1,26 @@
 return {
-  -- JavaScript/TypeScript
+  -- Modern TypeScript/React support with nvim-treesitter
   {
-    "pangloss/vim-javascript",
-    ft = "javascript"
-  },
-  {
-    "leafgarland/typescript-vim",
-    ft = "typescript"
-  },
-  {
-    "mxw/vim-jsx",
-    ft = { "javascript", "javascriptreact" }
+    "nvim-treesitter/nvim-treesitter",
+    build = ":TSUpdate",
+    config = function()
+      require("nvim-treesitter.configs").setup({
+        ensure_installed = {
+          "javascript",
+          "typescript",
+          "tsx",
+          "html",
+          "css",
+          "json",
+          "lua"
+        },
+        highlight = {
+          enable = true,
+        },
+        indent = {
+          enable = true,
+        },
+      })
+    end
   },
 }
