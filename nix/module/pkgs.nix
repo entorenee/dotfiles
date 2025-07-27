@@ -29,6 +29,7 @@ in
       bash # tmux theme needs a more recent version of bash
       bat
       cargo # Nix LSP dependency
+      glow
       git-lfs
       git-up
       htop
