@@ -34,6 +34,7 @@ in
       };
 
       brews = [
+        "npm-check-updates"
         "pinentry"
         "pinentry-mac"
         "Z"
