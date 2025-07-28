@@ -35,10 +35,12 @@ in
         "elgato-control-center"
         "firefox" # TODO: look into migrating to Home Manager
         "ghostty"
+        "insomnia"
         "karabiner-elements"
         "obsidian"
         "rectangle"
         "slack"
+        "spotify"
         "vlc"
         "yubico-authenticator"
         "zoom"
