@@ -21,7 +21,7 @@ let
     "/Applications/Signal.app"
     "/Applications/Slack.app"
     "/Applications/Discord.app"
-    "/Applications/KeyPassXC.app"
+    "/Applications/KeePassXC.app"
     "/Applications/Proton Mail.app"
     "/Applications/ProtonVPN.app"
     "/Applications/Yubico Authenticator.app"
