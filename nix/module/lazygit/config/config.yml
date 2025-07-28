@@ -1,0 +1,5 @@
+git:
+  # Don't fetch and refresh automatically due to use of GPG touch policy
+  # on Yubikey. Constantly having it fetch and having to touch the key sucks.
+  autoFetch: true
+  autoRefresh: true

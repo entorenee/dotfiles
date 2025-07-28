@@ -1,7 +1,11 @@
 {
+  config,
   pkgs,
   ...
 }:
+let
+  gnupgPath = "${config.home.homeDirectory}/dotfiles/nix/module/gnupg/common.conf";
+in
 {
   programs.gpg = {
     enable = true;
@@ -61,5 +65,5 @@
     '';
   };
 
-  home.file.".gnupg/common.conf".source = ./common.conf;
+  xdg.configFile.".gnupg/common.conf".source = config.lib.file.mkOutOfStoreSymlink gnupgPath;
 }

@@ -9,8 +9,7 @@
 system:
 let
   lib = nixpkgs.lib;
-  pkgs = nixpkgs.legacyPackages.${system};
-  home-manager-config = import ../module/home-manager.nix { inherit lib username pkgs profile; };
+  home-manager-config = import ../module/home-manager.nix;
   homebrew-config = import ../module/homebrew/default.nix { inherit lib username profile; };
   system-config = import ../module/system-configuration.nix { inherit username; };
   launch-agents-config = import ../module/launch-agents/default.nix { inherit profile; };
@@ -51,7 +50,10 @@ darwin.lib.darwinSystem {
       {
         home-manager.useGlobalPkgs = false;
         home-manager.useUserPackages = true;
-        home-manager.users."${username}" = home-manager-config;
+        home-manager.users."${username}" = {
+          imports = [ home-manager-config ];
+          _module.args = { inherit lib username profile; };
+        };
         home-manager.backupFileExtension = "backup";
       }
 

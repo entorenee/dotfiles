@@ -11,17 +11,11 @@ let
   };
 
   profileConfig = profileConfigs.${profile} or {};
-  ghosttyModule = import ../ghostty { inherit username; };
   iterm2Module = import ../iterm2 { inherit username; };
-  karabinerModule = import ../karabiner { inherit username; };
-  nvmModule = import ../nvm { inherit username; };
 in
 {
   imports = [
-    ghosttyModule
     iterm2Module# likely to be deprecated pending trial of ghostty
-    karabinerModule
-    nvmModule
   ];
 
   homebrew = lib.mkMerge [
@@ -35,6 +29,7 @@ in
 
       brews = [
         "npm-check-updates"
+        "nvm"
         "pinentry"
         "pinentry-mac"
         "Z"
@@ -45,6 +40,7 @@ in
         "docker-desktop"
         "elgato-control-center"
         "firefox" # TODO: look into migrating to Home Manager
+        "ghostty"
         "iterm2"
         "karabiner-elements"
         "obsidian"

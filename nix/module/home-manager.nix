@@ -1,4 +1,5 @@
 {
+  config,
   lib,
   username,
   pkgs,
@@ -6,7 +7,7 @@
   ...
 }:
 let
-  ghDashModule = import ./gh-dash { inherit lib profile; };
+  ghDashModule = import ./gh-dash { inherit config lib profile; };
   pkgsModule = import ./pkgs.nix { inherit lib pkgs profile; };
   sshModule = import ./ssh { inherit lib username profile; };
 in
@@ -17,11 +18,15 @@ in
   
   imports = [
     ./fonts
+    ./karabiner
     ./gh
     ghDashModule
+    ./ghostty
     ./git
     ./gnupg
+    ./lazygit
     ./nvim
+    ./nvm
     pkgsModule
     sshModule
     ./starship

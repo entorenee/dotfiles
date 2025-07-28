@@ -34,7 +34,6 @@ in
       git-up
       htop
       jq
-      lazygit
       postgresql
       python314
       ripgrep
