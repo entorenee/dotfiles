@@ -3,6 +3,12 @@
   ...
 }:
 {
+  security.pam.services.sudo_local = {
+    enable = true;
+    touchIdAuth = true;
+    reattach = true;
+  };
+
   ids.gids.nixbld = 350;
 
   # System-level user configurations
