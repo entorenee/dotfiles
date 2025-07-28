@@ -69,6 +69,7 @@
 
     sessionVariables = {
       DOCKER_HIDE_LEGACY_COMMANDS = true;
+      DISABLE_AUTOUPDATER = true; # Handle Claude Code updates via Nix
     };
 
     oh-my-zsh = {
