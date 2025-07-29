@@ -39,6 +39,7 @@ in
             set -g @theme_plugin_weather_location 'Portland, Oregon'
             # Show temp in metric, condition, and moon phase
             set -g @theme_plugin_weather_format '%t+%C+%m&m'
+            set -g @theme_active_pane_border_style '#9D7CD8'
           '';
         }
       ];
