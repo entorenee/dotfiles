@@ -7,3 +7,5 @@ nix/module/nvim/config/lazy-lock.json
 
 # Nix artifacts from testing build
 result/
+
+.claude/settings.local.json

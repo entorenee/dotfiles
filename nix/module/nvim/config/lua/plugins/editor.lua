@@ -97,7 +97,17 @@ return {
           lualine_c = {
             { git_blame.get_current_blame_text, cond = git_blame.is_blame_text_available }
           },
-          lualine_x = {}
+          lualine_x = {
+            {
+              function()
+                local words = vim.fn.wordcount()
+                return string.format('Words: %d Chars: %d', words.words, words.chars)
+              end,
+              cond = function()
+                return vim.bo.filetype == 'markdown'
+              end
+            }
+          }
         }
       })
     end
