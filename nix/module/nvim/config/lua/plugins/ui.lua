@@ -80,4 +80,35 @@ return {
       { "<c-\\>", "<cmd><C-U>TmuxNavigatePrevious<cr>" },
     },
   },
+
+  -- TreeSitter for syntax highlighting and parsing
+  {
+    "nvim-treesitter/nvim-treesitter",
+    build = ":TSUpdate",
+    event = { "BufReadPre", "BufNewFile" },
+    config = function()
+      require("nvim-treesitter.configs").setup({
+        ensure_installed = {
+          "lua",
+          "nix",
+          "html",
+          "css",
+          "json",
+          "yaml",
+          "markdown",
+          "bash",
+          "sql",
+          "javascript",
+          "typescript",
+          "tsx",
+        },
+        highlight = {
+          enable = true,
+        },
+        indent = {
+          enable = true,
+        },
+      })
+    end
+  },
 }

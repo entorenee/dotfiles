@@ -1,6 +1,7 @@
 return {
-  {
-    "jparise/vim-graphql",
-    ft = "graphql"
-  },
+	-- GraphQL syntax support
+	{
+		"jparise/vim-graphql",
+		ft = "graphql",
+	},
 }
