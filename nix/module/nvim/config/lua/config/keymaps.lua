@@ -41,3 +41,6 @@ keymap('n', '<leader><S-Tab>', '<<', { desc = 'Unindent line' })
 keymap('n', '<leader>c', function()
   vim.fn.setreg('+', vim.fn.expand('%'))
 end, { desc = 'Copy current file path' })
+
+-- Git blame toggle
+keymap('n', '<leader>gb', ':GitBlameToggle<CR>', { desc = 'Toggle git blame' })

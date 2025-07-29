@@ -68,4 +68,38 @@ return {
       })
     end,
   },
+
+  -- Git blame functionality
+  {
+    "f-person/git-blame.nvim",
+    event = { "BufReadPre", "BufNewFile" },
+    config = function()
+      require("gitblame").setup({
+        enabled = false, -- Start with blame disabled
+        message_template = " <summary> • <sha> • <date> • <author>",
+        date_format = "%m/%d/%y",
+        display_virtual_text = false, -- Disable virtual text to avoid overflow. Use Lualine instead
+      })
+    end,
+  },
+
+  -- Use Lualine for better statusline output
+  {
+    'nvim-lualine/lualine.nvim',
+    event = { "BufReadPre", "BufNewFile" },
+    config = function()
+      local git_blame = require('gitblame')
+      require("lualine").setup({
+        options = {
+          theme = 'palenight',
+        },
+        sections = {
+          lualine_c = {
+            { git_blame.get_current_blame_text, cond = git_blame.is_blame_text_available }
+          },
+          lualine_x = {}
+        }
+      })
+    end
+  }
 }
