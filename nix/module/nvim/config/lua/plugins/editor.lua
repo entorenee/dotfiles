@@ -36,6 +36,15 @@ return {
           css = { "prettier" },
           html = { "prettier" },
           markdown = { "prettier" },
+          nix = { "alejandra" },
+          yaml = { "yamlfmt" },
+          yml = { "yamlfmt" },
+          lua = { "stylua" },
+          sh = { "shfmt" },
+          bash = { "shfmt" },
+          zsh = { "shfmt" },
+          toml = { "taplo" },
+          sql = { "sqlfluff" },
         },
         format_on_save = {
           timeout_ms = 500,
@@ -57,6 +66,12 @@ return {
         typescriptreact = { "eslint_d" },
         javascript = { "eslint_d" },
         javascriptreact = { "eslint_d" },
+        make = { "checkmake" },
+        yaml = { "actionlint" },
+        markdown = { "cspell" },
+        html = { "htmlhint" },
+        json = { "jsonlint" },
+        sql = { "sqlfluff" },
       }
 
       local lint_augroup = vim.api.nvim_create_augroup("lint", { clear = true })

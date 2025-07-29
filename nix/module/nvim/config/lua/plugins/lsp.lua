@@ -17,6 +17,17 @@ return {
         ensure_installed = {
           "eslint_d",     -- ESLint daemon for fast linting
           "prettier",     -- Code formatter
+          "alejandra",    -- Nix formatter
+          "yamlfmt",      -- YAML formatter
+          "stylua",       -- Lua formatter
+          "shfmt",        -- Shell script formatter
+          "checkmake",    -- Makefile linter
+          "actionlint",   -- GitHub Actions linter
+          "cspell",       -- Spell checker
+          "htmlhint",     -- HTML linter
+          "jsonlint",     -- JSON linter
+          "taplo",        -- TOML formatter
+          "sqlfluff",     -- SQL formatter and linter
         },
       })
     end
