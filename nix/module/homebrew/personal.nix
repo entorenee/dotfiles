@@ -20,6 +20,7 @@
       "raspberry-pi-imager"
       "signal"
       "tpvirtual"
+      "tor-browser"
       "veracrypt"
     ];
   };
