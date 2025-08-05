@@ -10,6 +10,7 @@
       "bitwarden"
       "google-chrome"
       "google-drive"
+      "loom"
       "tableplus"
     ];
   };
