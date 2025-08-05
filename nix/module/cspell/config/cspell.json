@@ -28,7 +28,6 @@
     "TreeSitter",
     "autocmds",
     "lspconfig",
-    "williamboman",
     "checkmake",
     "htmlhint",
     "jsonlint",
@@ -38,4 +37,3 @@
   ],
   "ignorePaths": [".git", "dist", "node_modules"]
 }
-

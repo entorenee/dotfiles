@@ -16,10 +16,30 @@ autocmd("BufEnter", {
         -- Only restart if mason-lspconfig is ready
         local mason_ok, mason_lspconfig = pcall(require, "mason-lspconfig")
         if mason_ok then
+          -- Stop any cspell_ls instances before restarting
+          local all_clients = vim.lsp.get_clients()
+          for _, client in ipairs(all_clients) do
+            if client.name == "cspell_ls" then
+              client.stop()
+            end
+          end
           vim.cmd("LspRestart")
         end
       end
     end, 100)
+  end,
+})
+
+-- Auto-kill cspell_ls to prevent conflicts with cspell_lsp
+local cspell_group = augroup("CSpellManagement", { clear = true })
+autocmd("LspAttach", {
+  group = cspell_group,
+  desc = "Stop cspell_ls when it attaches to prevent conflicts",
+  callback = function(args)
+    local client = vim.lsp.get_client_by_id(args.data.client_id)
+    if client and client.name == "cspell_ls" then
+      client.stop()
+    end
   end,
 })
 
