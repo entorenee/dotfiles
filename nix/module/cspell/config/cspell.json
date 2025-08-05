@@ -1,0 +1,41 @@
+{
+  "version": "0.2",
+  "language": "en",
+  "dictionaries": [
+    "bash",
+    "css",
+    "docker",
+    "en_US",
+    "fonts",
+    "fullstack",
+    "git",
+    "golang",
+    "html",
+    "lua",
+    "makefile",
+    "networking-terms",
+    "node",
+    "npm",
+    "software-term-suggestions",
+    "software-tools",
+    "softwareTerms",
+    "sql",
+    "typescript",
+    "web-services"
+  ],
+  "words": [
+    "Inngest",
+    "TreeSitter",
+    "autocmds",
+    "lspconfig",
+    "williamboman",
+    "checkmake",
+    "htmlhint",
+    "jsonlint",
+    "taplo",
+    "sqlfluff",
+    "cssls"
+  ],
+  "ignorePaths": [".git", "dist", "node_modules"]
+}
+
