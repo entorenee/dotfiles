@@ -71,7 +71,7 @@ return {
 		},
 		config = function()
 			local lspconfig = require("lspconfig")
-			
+
 			-- Wait for mason-lspconfig to be available
 			local mason_lspconfig = _G.mason_lspconfig
 			if not mason_lspconfig then
@@ -86,28 +86,14 @@ return {
 				return
 			end
 
-			-- Define custom cspell server using new API
-			local cspell_cmd = vim.fn.stdpath("data") .. "/mason/bin/cspell-lsp"
-
-			vim.lsp.config("cspell_lsp", {
+			vim.lsp.config("cspell_ls", {
 				cmd = {
-					cspell_cmd,
+					"cspell-lsp",
 					"--config",
-					"/Users/fw-skylerlemay/dotfiles/nix/module/cspell/config/cspell.json",
+					vim.fn.expand("~/.config/cspell/cspell.json"),
 					"--stdio",
 				},
 				root_dir = vim.fs.root(0, { ".git" }),
-				filetypes = {
-					"text",
-					"markdown", 
-					"javascript",
-					"typescript",
-					"html",
-					"css",
-					"lua",
-					"nix",
-					"gitcommit",
-				},
 			})
 
 			local capabilities = require("cmp_nvim_lsp").default_capabilities()
@@ -123,9 +109,6 @@ return {
 				vim.keymap.set("n", "[d", vim.diagnostic.goto_prev, opts)
 				vim.keymap.set("n", "]d", vim.diagnostic.goto_next, opts)
 			end
-
-			-- Setup cspell_lsp with new API
-			vim.lsp.enable("cspell_lsp")
 
 			-- Configure diagnostic display
 			vim.diagnostic.config({
@@ -212,8 +195,7 @@ return {
 				mason_lspconfig.setup_handlers({
 					function(server_name)
 						-- Only setup if we haven't already configured it manually
-						-- Skip cspell servers as we handle them separately
-						if not servers[server_name] and server_name ~= "cspell_lsp" and server_name ~= "cspell_ls" then
+						if not servers[server_name] then
 							lspconfig[server_name].setup({
 								on_attach = on_attach,
 								capabilities = capabilities,
