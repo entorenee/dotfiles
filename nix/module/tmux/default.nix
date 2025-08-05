@@ -12,7 +12,7 @@ let
       owner = "fabioluciano";
       repo = "tmux-tokyo-night";
       rev = "main";
-      sha256 = "sha256-p0CbzwG0i6UeIiY2pEx4TTn2bukZmJS008yR34N9APU=";
+      sha256 = "sha256-WjDbunWmxbw/jjvc34ujOWif18POC3WVO1s+hk9SLg4=";
     };
     rtpFilePath = "tmux-tokyo-night.tmux";
   };
