@@ -3,23 +3,6 @@ return {
   -- Commentary
   "tpope/vim-commentary",
 
-  -- GitHub Copilot
-  {
-    "github/copilot.vim",
-    event = "InsertEnter",
-  },
-
-  {
-    "CopilotC-Nvim/CopilotChat.nvim",
-    dependencies = {
-      "github/copilot.vim",
-      "nvim-lua/plenary.nvim",
-    },
-    config = function()
-      require('CopilotChat').setup()
-    end
-  },
-
   -- Formatting with Mason tools
   {
     "stevearc/conform.nvim",
@@ -93,6 +76,26 @@ return {
         message_template = " <summary> • <sha> • <date> • <author>",
         date_format = "%m/%d/%y",
         display_virtual_text = false, -- Disable virtual text to avoid overflow. Use Lualine instead
+      })
+    end,
+  },
+
+  -- GitHub integration for generating links
+  {
+    "ruifm/gitlinker.nvim",
+    dependencies = { "nvim-lua/plenary.nvim" },
+    event = { "BufReadPre", "BufNewFile" },
+    config = function()
+      require("gitlinker").setup({
+        opts = {
+          remote = nil,
+          add_current_line_on_normal_mode = true,
+          action_callback = require("gitlinker.actions").copy_to_clipboard,
+          print_url = true,
+        },
+        callbacks = {
+          ["github.com"] = require("gitlinker.hosts").get_github_type_url,
+        },
       })
     end,
   },

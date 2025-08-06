@@ -10,8 +10,10 @@
       "balenaetcher"
       "calibre"
       "discord"
+      "freefilesync"
       "keepassxc"
       "libreoffice"
+      "little-snitch"
       "nextcloud"
       # "ollama"  not currently using and may revisit in the near future
       "proton-mail"

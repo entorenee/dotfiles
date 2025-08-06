@@ -28,6 +28,7 @@ in
     [
       bash # tmux theme needs a more recent version of bash
       bat
+      caddy
       cargo # Nix LSP dependency
       claude-code
       glow
