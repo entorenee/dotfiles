@@ -98,6 +98,26 @@ return {
     end,
   },
 
+  -- GitHub integration for generating links
+  {
+    "ruifm/gitlinker.nvim",
+    dependencies = { "nvim-lua/plenary.nvim" },
+    event = { "BufReadPre", "BufNewFile" },
+    config = function()
+      require("gitlinker").setup({
+        opts = {
+          remote = nil,
+          add_current_line_on_normal_mode = true,
+          action_callback = require("gitlinker.actions").copy_to_clipboard,
+          print_url = true,
+        },
+        callbacks = {
+          ["github.com"] = require("gitlinker.hosts").get_github_type_url,
+        },
+      })
+    end,
+  },
+
   -- Use Lualine for better statusline output
   {
     'nvim-lualine/lualine.nvim',
