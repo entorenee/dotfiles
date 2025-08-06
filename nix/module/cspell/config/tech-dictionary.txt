@@ -1,0 +1,20 @@
+# Neovim Terms
+autocmds
+bufnr
+checkmake
+htmlhint
+jsonlint
+jsonls
+lspconfig
+noremap
+taplo
+sqlfluff
+cssls
+TreeSitter
+
+# Git Usernames
+hrsh
+williamboman
+
+# Tools, Libraries, and Frameworks
+Inngest

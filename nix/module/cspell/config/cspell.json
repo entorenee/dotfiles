@@ -20,20 +20,22 @@
     "software-tools",
     "softwareTerms",
     "sql",
+    "tech-dictionary",
     "typescript",
-    "web-services"
+    "web-services",
+    "work-dictionary"
   ],
-  "words": [
-    "Inngest",
-    "TreeSitter",
-    "autocmds",
-    "lspconfig",
-    "checkmake",
-    "htmlhint",
-    "jsonlint",
-    "taplo",
-    "sqlfluff",
-    "cssls"
+  "dictionaryDefinitions": [
+    {
+      "name": "work-dictionary",
+      "path": "./work-dictionary.txt",
+      "addWords": true
+    },
+    {
+      "name": "tech-dictionary",
+      "path": "./tech-dictionary.txt"
+    }
   ],
+  "words": [],
   "ignorePaths": [".git", "dist", "node_modules"]
 }
