@@ -30,19 +30,6 @@ autocmd("BufEnter", {
 	end,
 })
 
--- Auto-kill cspell_ls to prevent conflicts with cspell_lsp
--- local cspell_group = augroup("CSpellManagement", { clear = true })
--- autocmd("LspAttach", {
---   group = cspell_group,
---   desc = "Stop cspell_ls when it attaches to prevent conflicts",
---   callback = function(args)
---     local client = vim.lsp.get_client_by_id(args.data.client_id)
---     if client and client.name == "cspell_ls" then
---       client.stop()
---     end
---   end,
--- })
-
 -- Auto-reload buffer when file changes outside Neovim
 local reload_group = augroup("AutoReload", { clear = true })
 autocmd({ "FocusGained", "BufEnter", "CursorHold", "CursorHoldI" }, {
