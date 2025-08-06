@@ -33,9 +33,31 @@
     },
     {
       "name": "tech-dictionary",
-      "path": "./tech-dictionary.txt"
+      "path": "./tech-dictionary.txt",
+      "addWords": true
     }
   ],
-  "words": [],
-  "ignorePaths": [".git", "dist", "node_modules"]
+  "languageDefinitions": [
+    {
+      "languageId": "*",
+      "dictionaries": [
+        "tech-dictionary",
+        "work-dictionary"
+      ],
+      "allowCompoundWords": true,
+      "caseSensitive": false
+    }
+  ],
+  "words": [
+    "Middlesex",
+    "Moines"
+  ],
+  "ignorePaths": [
+    ".git",
+    "dist",
+    "node_modules"
+  ],
+  "ignoreRegExpList": [
+    "/\\borg_[a-zA-Z0-9_-]+\\b/gi"
+  ]
 }
