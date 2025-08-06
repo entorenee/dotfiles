@@ -51,7 +51,6 @@ return {
         javascriptreact = { "eslint_d" },
         make = { "checkmake" },
         yaml = { "actionlint" },
-        markdown = { "cspell" },
         html = { "htmlhint" },
         json = { "jsonlint" },
         sql = { "sqlfluff" },

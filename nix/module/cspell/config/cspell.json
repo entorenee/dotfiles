@@ -1,0 +1,63 @@
+{
+  "version": "0.2",
+  "language": "en",
+  "dictionaries": [
+    "bash",
+    "css",
+    "docker",
+    "en_US",
+    "fonts",
+    "fullstack",
+    "git",
+    "golang",
+    "html",
+    "lua",
+    "makefile",
+    "networking-terms",
+    "node",
+    "npm",
+    "software-term-suggestions",
+    "software-tools",
+    "softwareTerms",
+    "sql",
+    "tech-dictionary",
+    "typescript",
+    "web-services",
+    "work-dictionary"
+  ],
+  "dictionaryDefinitions": [
+    {
+      "name": "work-dictionary",
+      "path": "./work-dictionary.txt",
+      "addWords": true
+    },
+    {
+      "name": "tech-dictionary",
+      "path": "./tech-dictionary.txt",
+      "addWords": true
+    }
+  ],
+  "languageDefinitions": [
+    {
+      "languageId": "*",
+      "dictionaries": [
+        "tech-dictionary",
+        "work-dictionary"
+      ],
+      "allowCompoundWords": true,
+      "caseSensitive": false
+    }
+  ],
+  "words": [
+    "Middlesex",
+    "Moines"
+  ],
+  "ignorePaths": [
+    ".git",
+    "dist",
+    "node_modules"
+  ],
+  "ignoreRegExpList": [
+    "/\\borg_[a-zA-Z0-9_-]+\\b/gi"
+  ]
+}

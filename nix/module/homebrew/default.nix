@@ -2,17 +2,14 @@
   lib,
   profile,
   ...
-}:
-let
+}: let
   profileConfigs = {
     personal = import ./personal.nix;
     work = import ./work.nix;
   };
 
   profileConfig = profileConfigs.${profile} or {};
-in
-{
-
+in {
   homebrew = lib.mkMerge [
     {
       enable = true;
@@ -23,6 +20,7 @@ in
       };
 
       brews = [
+        "cspell"
         "nvm"
         "pinentry"
         "pinentry-mac"
