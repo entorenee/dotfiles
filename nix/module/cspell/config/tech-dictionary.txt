@@ -15,6 +15,30 @@ TreeSitter
 # Git Usernames
 hrsh
 williamboman
+denisidoro
+entorenee
 
 # Tools, Libraries, and Frameworks
 Inngest
+Navi
+nixpkgs
+nixos
+Ghostty
+Yubico
+Asana
+Bitwarden
+
+# Mac Settings and Config
+controlcenter
+trackpad
+autohide
+tilesize
+wvous
+Nlsv
+Pathbar
+
+# General Terms
+cheatsheet
+cheatsheets
+
+# Cspell fresh imports
