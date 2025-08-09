@@ -24,6 +24,7 @@ in {
     ./git
     ./gnupg
     ./lazygit
+    ./navi
     ./nvim
     ./nvm
     pkgsModule

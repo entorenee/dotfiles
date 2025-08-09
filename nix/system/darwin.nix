@@ -2,17 +2,16 @@
   home-manager,
   darwin,
   nixpkgs,
+  navi-cheatsheets,
   username,
   profile,
   ...
-}:
-system:
-let
+}: system: let
   lib = nixpkgs.lib;
   home-manager-config = import ../module/home-manager.nix;
-  homebrew-config = import ../module/homebrew/default.nix { inherit lib profile; };
-  system-config = import ../module/system-configuration.nix { inherit username; };
-  launch-agents-config = import ../module/launch-agents/default.nix { inherit profile; };
+  homebrew-config = import ../module/homebrew/default.nix {inherit lib profile;};
+  system-config = import ../module/system-configuration.nix {inherit username;};
+  launch-agents-config = import ../module/launch-agents/default.nix {inherit profile;};
 
   personalDock = [
     "/Applications/Ghostty.app"
@@ -41,18 +40,21 @@ let
     work = workDock;
   };
 in
-darwin.lib.darwinSystem {
-  inherit system;
+  darwin.lib.darwinSystem {
+    inherit system;
 
-   modules = [
+    modules = [
       # home-manager
       home-manager.darwinModules.home-manager
       {
         home-manager.useGlobalPkgs = false;
         home-manager.useUserPackages = true;
         home-manager.users."${username}" = {
-          imports = [ home-manager-config ];
-          _module.args = { inherit lib username profile; };
+          imports = [home-manager-config];
+          _module.args = {
+            inherit lib username profile;
+            navi-cheatsheets = navi-cheatsheets.packages.${system}.default;
+          };
         };
         home-manager.backupFileExtension = "backup";
       }
@@ -142,4 +144,4 @@ darwin.lib.darwinSystem {
         };
       }
     ];
-}
+  }

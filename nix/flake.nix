@@ -14,25 +14,36 @@
       url = "github:lnl7/nix-darwin";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
+    # Custom navi cheatsheets
+    navi-cheatsheets = {
+      url = "path:./module/navi";
+    };
   };
 
-  outputs =
-    { home-manager, darwin, nixpkgs, ... }:
-    let
-      mkDarwinConfig = username: profile: system: import ./system/darwin.nix {
+  outputs = {
+    home-manager,
+    darwin,
+    nixpkgs,
+    navi-cheatsheets,
+    ...
+  }: let
+    mkDarwinConfig = username: profile: system:
+      import ./system/darwin.nix {
         inherit
           home-manager
           darwin
           nixpkgs
+          navi-cheatsheets
           username
           profile
           ;
-      } system;
-    in
-    {
-      darwinConfigurations = {
-        personal = mkDarwinConfig "skyler.lemay" "personal" "aarch64-darwin";
-        work = mkDarwinConfig "fw-skylerlemay" "work" "aarch64-darwin";
-      };
+      }
+      system;
+  in {
+    darwinConfigurations = {
+      personal = mkDarwinConfig "skyler.lemay" "personal" "aarch64-darwin";
+      work = mkDarwinConfig "fw-skylerlemay" "work" "aarch64-darwin";
     };
+  };
 }
