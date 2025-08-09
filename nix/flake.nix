@@ -28,6 +28,11 @@
     navi-cheatsheets,
     ...
   }: let
+    # Try to fetch private assets, fallback to null if authentication fails
+    privateAssets = builtins.tryEval (builtins.fetchGit {
+      url = "ssh://git@github.com/entorenee/dotfiles-private-assets.git";
+    });
+    private-assets = if privateAssets.success then privateAssets.value else null;
     mkDarwinConfig = username: profile: system:
       import ./system/darwin.nix {
         inherit
@@ -35,6 +40,7 @@
           darwin
           nixpkgs
           navi-cheatsheets
+          private-assets
           username
           profile
           ;

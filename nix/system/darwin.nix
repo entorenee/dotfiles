@@ -3,6 +3,7 @@
   darwin,
   nixpkgs,
   navi-cheatsheets,
+  private-assets,
   username,
   profile,
   ...
@@ -52,7 +53,7 @@ in
         home-manager.users."${username}" = {
           imports = [home-manager-config];
           _module.args = {
-            inherit lib username profile;
+            inherit lib username profile private-assets;
             navi-cheatsheets = navi-cheatsheets.packages.${system}.default;
           };
         };

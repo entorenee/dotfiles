@@ -1,8 +1,6 @@
-{
-  username,
-  ...
-}:
-{
+# NOTE: This configuration uses private assets with graceful fallback
+# Requires --impure flag when building: nix build --impure
+{username, ...}: {
   security.pam.services.sudo_local = {
     enable = true;
     touchIdAuth = true;

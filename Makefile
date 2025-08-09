@@ -2,11 +2,11 @@
 
 ## Run Darwin rebuild for Personal profile
 pRebuild:
-	sudo darwin-rebuild switch --flake nix/#personal
+	sudo darwin-rebuild --impure switch --flake nix/#personal
 
 ## Run Darwin rebuild for Work profile
 wRebuild:
-	sudo darwin-rebuild switch --flake nix/#work
+	sudo darwin-rebuild --impure switch --flake nix/#work
 
 ## Update the flake.lock file
 update:

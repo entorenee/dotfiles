@@ -42,3 +42,4 @@ cheatsheet
 cheatsheets
 
 # Cspell fresh imports
+fontconfig
