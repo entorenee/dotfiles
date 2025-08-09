@@ -19,6 +19,13 @@
     navi-cheatsheets = {
       url = "path:./module/navi";
     };
+
+    # Private assets - for initial setup without SSH, use:
+    # --override-input private-assets 'path:/dev/null'
+    private-assets = {
+      url = "git+ssh://git@github.com/entorenee/dotfiles-private-assets.git";
+      flake = false;
+    };
   };
 
   outputs = {
@@ -26,13 +33,9 @@
     darwin,
     nixpkgs,
     navi-cheatsheets,
+    private-assets,
     ...
   }: let
-    # Try to fetch private assets, fallback to null if authentication fails
-    privateAssets = builtins.tryEval (builtins.fetchGit {
-      url = "ssh://git@github.com/entorenee/dotfiles-private-assets.git";
-    });
-    private-assets = if privateAssets.success then privateAssets.value else null;
     mkDarwinConfig = username: profile: system:
       import ./system/darwin.nix {
         inherit

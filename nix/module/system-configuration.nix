@@ -1,5 +1,5 @@
 # NOTE: This configuration uses private assets with graceful fallback
-# Requires --impure flag when building: nix build --impure
+# For initial setup without SSH: --override-input private-assets 'path:/dev/null'
 {username, ...}: {
   security.pam.services.sudo_local = {
     enable = true;

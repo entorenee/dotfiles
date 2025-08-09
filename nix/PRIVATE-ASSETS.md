@@ -4,7 +4,7 @@ This configuration supports optional private assets that gracefully fall back wh
 
 ## How it works
 
-The flake uses `builtins.tryEval` and `builtins.fetchGit` to attempt fetching private assets during evaluation. If authentication fails or the repository is unavailable, it continues with `private-assets = null` and public assets only.
+The flake includes `private-assets` as an explicit input. For normal builds with SSH authentication, it fetches the private repository. For initial setup or when SSH isn't available, you can override the input to use an empty directory instead.
 
 ## Private Repository Structure
 
@@ -17,17 +17,45 @@ fonts/
 └── ...
 ```
 
+## Usage
+
+### Normal build (with SSH authentication)
+```bash
+# Using Makefile targets (recommended)
+make pRebuild  # Personal profile
+make wRebuild  # Work profile
+
+# Or directly with nix-darwin
+sudo darwin-rebuild switch --flake nix/#personal
+```
+
+### Bootstrap build (without SSH authentication)
+```bash
+# For initial setup when private repo is unavailable
+sudo darwin-rebuild switch --override-input private-assets 'path:nix/.empty-private-assets' --flake nix/#personal
+```
+
+### Testing
+
+```bash
+# Test normal mode (requires SSH authentication)
+cd nix && nix flake check --no-build
+
+# Test fallback mode (works without authentication)
+cd nix && nix flake check --override-input private-assets 'path:./.empty-private-assets' --no-build
+
+# Test fonts config evaluation in fallback mode
+cd nix && nix eval --override-input private-assets 'path:./.empty-private-assets' '.#darwinConfigurations.personal.config.home-manager.users."USERNAME".fonts.fontconfig.enable'
+```
+
 ## Implementation Details
 
-- Single `flake.nix` file handles both scenarios - no duplication
-- Uses `builtins.tryEval` to catch authentication failures gracefully
+- Single `flake.nix` file with explicit `private-assets` input
+- Uses `--override-input` for graceful fallback during initial setup
 - The `fonts/default.nix` module checks if `private-assets` is available and contains a `fonts/` directory
 - If available, fonts are copied into the Nix store and added to the font packages
-- If unavailable, the system continues with only public fonts
-- Requires `--impure` flag for `builtins.fetchGit` to work
-- The fallback is completely transparent to the user
-
-## Troubleshooting
-
-If you see "error: access to URI '...' is forbidden in restricted mode", add the `--impure` flag to your nix command.
+- If unavailable (empty override), the system continues with only public fonts
+- Pure evaluation - no `--impure` flag needed
+- Proper dependency tracking and caching via flake.lock
+- Reproducible builds in both modes
 
