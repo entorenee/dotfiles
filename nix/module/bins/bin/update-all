@@ -4,18 +4,9 @@ local NOW=$(date +"%Y-%m-%d-%H-%M-%S")
 local LOGS="/tmp/update-all-$NOW.txt"
 echo -e "$NOW\n" >>$LOGS
 
-local function logNewLine() {
-  echo -e "\n" >>$LOGS
-}
-
-local function logTask() {
-  logNewLine
+function logTask() {
+  echo -e "\n$1\n" >>$LOGS
   echo "$1"
-}
-
-local function gumUpdate() {
-  local command="$2"
-  gum spin --spinner moon --title "$1" --show-output -- $command >>$LOGS
 }
 
 # Neovim updates
@@ -25,27 +16,27 @@ gum spin --spinner moon --title "💤 lazy.nvim syncing..." -- nvim --headless "
 logTask "✅ 💤 lazy.nvim synced"
 
 gum spin --spinner moon --title "🧰 mason.nvim updating" -- nvim --headless "+MasonUpdate" +qa
-logTask "✅ 🧰 mason.nvim updated" 
+logTask "✅ 🧰 mason.nvim updated"
 
 # Homebrew updates
-gumUpdate "🍻homebrew updating" "brew update"
+gum spin --spinner moon --title "🍻 homebrew updating" --show-output brew update >>$LOGS
 logTask "✅ 🍻homebrew updated"
 
 local OUTDATED=$(brew outdated)
-logNewLine
+logTask "Brew outdated: $OUTDATED"
 
 if test -n "$OUTDATED"; then
-  gumUpdate "🍻 homebrew upgrading" "brew upgrade"
+  gum spin --spinner moon --title "🍻 homebrew upgrading" --show-output brew upgrade >>$LOGS
   logTask "✅ 🍻 homebrew upgraded"
 
-  gumUpdate "🍻 homebrew cleanup" "brew cleanup"
+  gum spin --spinner moon --title "🍻 homebrew cleanup" --show-output brew cleanup >>$LOGS
   logTask "✅ 🍻 homebrew cleaned"
 else
   logTask "No outdated brew packages"
 fi
 
-gumUpdate "🍻 homebrew doctoring" "brew doctor"
+gum spin --spinner moon --title "🍻 homebrew doctoring" --show-output brew doctor >>$LOGS
 logTask "✅ 🍻 homebrew doctored"
 
 logTask "✅ 💻 update logs captured in $LOGS"
-less $LOGS
+man $LOGS
