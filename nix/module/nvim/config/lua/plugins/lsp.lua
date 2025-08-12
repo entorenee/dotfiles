@@ -54,9 +54,6 @@ return {
 				},
 				automatic_installation = true,
 			})
-
-			-- Store mason_lspconfig in a global for later use
-			_G.mason_lspconfig = mason_lspconfig
 		end,
 	},
 
@@ -71,20 +68,6 @@ return {
 		},
 		config = function()
 			local lspconfig = require("lspconfig")
-
-			-- Wait for mason-lspconfig to be available
-			local mason_lspconfig = _G.mason_lspconfig
-			if not mason_lspconfig then
-				vim.notify("Mason LSP Config not ready, retrying...", vim.log.levels.WARN)
-				-- Retry after a short delay
-				vim.defer_fn(function()
-					mason_lspconfig = require("mason-lspconfig")
-					if mason_lspconfig and mason_lspconfig.setup_handlers then
-						-- Setup handlers here if needed
-					end
-				end, 100)
-				return
-			end
 
 			vim.lsp.config("cspell_ls", {
 				cmd = {
@@ -121,10 +104,16 @@ return {
 				severity_sort = true,
 			})
 
-			-- Manual server configurations (bypassing mason-lspconfig handlers for now)
+			-- Manual server configurations
 			local servers = {
 				ts_ls = {
-					filetypes = { "typescript", "typescriptreact", "typescript.tsx", "javascript", "javascriptreact" },
+					filetypes = { "typescript", "typescriptreact", "javascript", "javascriptreact" },
+					init_options = {
+						preferences = {
+							includeCompletionsForModuleExports = true,
+							includeCompletionsForImportStatements = true,
+						},
+					},
 				},
 
 				tailwindcss = {
@@ -190,8 +179,9 @@ return {
 				end
 			end
 
-			-- Try to use mason-lspconfig handlers if available (fallback)
-			if mason_lspconfig and mason_lspconfig.setup_handlers then
+			-- Use mason-lspconfig handlers for any servers not manually configured
+			local mason_lspconfig = require("mason-lspconfig")
+			if mason_lspconfig.setup_handlers then
 				mason_lspconfig.setup_handlers({
 					function(server_name)
 						-- Only setup if we haven't already configured it manually
