@@ -21,6 +21,7 @@
       "protonvpn"
       "raspberry-pi-imager"
       "signal"
+      "steam"
       "tpvirtual"
       "tor-browser"
       "veracrypt"
