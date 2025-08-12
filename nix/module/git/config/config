@@ -9,9 +9,6 @@
 [includeIf "gitdir:~/code/work/"]
   path = config-work
 
-[url "git@github.com:"]
-  insteadOf = https://github.com/
-
 [commit]
 	gpgsign = true
 

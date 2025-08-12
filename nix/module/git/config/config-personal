@@ -1,2 +1,7 @@
 [user]
 	signingkey = 785A45A23EA2C574!
+
+; Force personal repos to use SSH.
+; Not set at root to avoid Yubikey usage for tooling updates.
+[url "git@github.com:"]
+  insteadOf = https://github.com/

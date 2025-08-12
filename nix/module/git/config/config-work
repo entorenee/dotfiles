@@ -1,3 +1,8 @@
 [user]
   email = skyler@freeworld.org
 	signingkey = B7735BE9D620530D!
+
+; Force work repos to use SSH.
+; Not set at root to avoid Yubikey usage for tooling updates.
+[url "git@github.com:"]
+  insteadOf = https://github.com/
