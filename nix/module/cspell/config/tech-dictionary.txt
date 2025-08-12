@@ -43,3 +43,17 @@ cheatsheets
 
 # Cspell fresh imports
 fontconfig
+anylist
+backblaze
+balenaetcher
+freefilesync
+keepassxc
+nextcloud
+protonvpn
+veracrypt
+imager
+ollama
+tmuxinator
+yubikey
+karabiner
+lazygit
