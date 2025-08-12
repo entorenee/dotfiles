@@ -1,0 +1,51 @@
+#!/usr/bin/env zsh
+
+local NOW=$(date +"%Y-%m-%d-%H-%M-%S")
+local LOGS="/tmp/update-all-$NOW.txt"
+echo -e "$NOW\n" >>$LOGS
+
+local function logNewLine() {
+  echo -e "\n" >>$LOGS
+}
+
+local function logTask() {
+  logNewLine
+  echo "$1"
+}
+
+local function gumUpdate() {
+  local command="$2"
+  gum spin --spinner moon --title "$1" --show-output -- $command >>$LOGS
+}
+
+# Neovim updates
+echo "Updating Neovim packages"
+
+gum spin --spinner moon --title "💤 lazy.nvim syncing..." -- nvim --headless "+Lazy! update" +qa
+logTask "✅ 💤 lazy.nvim synced"
+
+gum spin --spinner moon --title "🧰 mason.nvim updating" -- nvim --headless "+MasonUpdate" +qa
+logTask "✅ 🧰 mason.nvim updated" 
+
+# Homebrew updates
+gumUpdate "🍻homebrew updating" "brew update"
+logTask "✅ 🍻homebrew updated"
+
+local OUTDATED=$(brew outdated)
+logNewLine
+
+if test -n "$OUTDATED"; then
+  gumUpdate "🍻 homebrew upgrading" "brew upgrade"
+  logTask "✅ 🍻 homebrew upgraded"
+
+  gumUpdate "🍻 homebrew cleanup" "brew cleanup"
+  logTask "✅ 🍻 homebrew cleaned"
+else
+  logTask "No outdated brew packages"
+fi
+
+gumUpdate "🍻 homebrew doctoring" "brew doctor"
+logTask "✅ 🍻 homebrew doctored"
+
+logTask "✅ 💻 update logs captured in $LOGS"
+less $LOGS

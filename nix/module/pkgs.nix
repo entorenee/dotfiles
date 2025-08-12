@@ -3,8 +3,7 @@
   pkgs,
   profile,
   ...
-}:
-let
+}: let
   isWorkProfile = profile == "work";
   workPkgs = with pkgs; [
     doctl
@@ -16,15 +15,13 @@ let
     go
     hugo
   ];
-in
-{
+in {
   nixpkgs = {
     config = {
       allowUnfree = true;
     };
   };
-  home.packages =
-    with pkgs;
+  home.packages = with pkgs;
     [
       bash # tmux theme needs a more recent version of bash
       bat
@@ -34,6 +31,7 @@ in
       glow
       git-lfs
       git-up
+      gum
       htop
       jq
       npm-check-updates
@@ -45,6 +43,6 @@ in
       wget
       yubikey-manager
     ]
-      ++ lib.optionals isWorkProfile workPkgs
-      ++ lib.optionals isPersonalProfile personalPkgs;
+    ++ lib.optionals isWorkProfile workPkgs
+    ++ lib.optionals isPersonalProfile personalPkgs;
 }

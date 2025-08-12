@@ -15,6 +15,7 @@ in {
   xdg.enable = true;
 
   imports = [
+    ./bins
     ./cspell
     ./fonts
     ./karabiner

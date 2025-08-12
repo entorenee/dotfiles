@@ -1,5 +1,4 @@
-{ ... }:
-{
+{...}: {
   programs.zsh = {
     enable = true;
     shellAliases = {
@@ -52,7 +51,7 @@
       [ -s "/opt/homebrew/opt/nvm/nvm.sh" ] && \. "/opt/homebrew/opt/nvm/nvm.sh"  # This loads nvm
       [ -s "/opt/homebrew/opt/nvm/etc/bash_completion.d/nvm" ] && \. "/opt/homebrew/opt/nvm/etc/bash_completion.d/nvm"  # This loads nvm bash_completion
 
-      export PATH=$HOME/bin:/usr/local/bin:/usr/local/share/npm/bin:$PATH
+      export PATH=$HOME/bin:$HOME/.local/bin:/usr/local/bin:/usr/local/share/npm/bin:$PATH
 
       # Preferred editor for local and remote sessions
       if [[ -n $SSH_CONNECTION ]]; then
@@ -70,7 +69,7 @@
     sessionVariables = {
       DOCKER_HIDE_LEGACY_COMMANDS = true;
       DISABLE_AUTOUPDATER = true; # Handle Claude Code updates via Nix
-      HOMEBREW_NO_AUTO_UPDATE=1;
+      HOMEBREW_NO_AUTO_UPDATE = 1;
     };
 
     oh-my-zsh = {
