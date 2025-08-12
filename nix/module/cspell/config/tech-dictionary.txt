@@ -1,4 +1,3 @@
-# Neovim Terms
 autocmds
 bufnr
 checkmake
@@ -11,14 +10,10 @@ taplo
 sqlfluff
 cssls
 TreeSitter
-
-# Git Usernames
 hrsh
 williamboman
 denisidoro
 entorenee
-
-# Tools, Libraries, and Frameworks
 Inngest
 Navi
 nixpkgs
@@ -27,22 +22,11 @@ Ghostty
 Yubico
 Asana
 Bitwarden
-
-# Mac Settings and Config
-controlcenter
-trackpad
-autohide
-tilesize
-wvous
-Nlsv
-Pathbar
-
-# General Terms
-cheatsheet
-cheatsheets
-
-# Cspell fresh imports
-fontconfig
+ollama
+tmuxinator
+yubikey
+karabiner
+lazygit
 anylist
 backblaze
 balenaetcher
@@ -51,9 +35,17 @@ keepassxc
 nextcloud
 protonvpn
 veracrypt
+controlcenter
+trackpad
+autohide
+tilesize
+wvous
+Nlsv
+Pathbar
+cheatsheet
+cheatsheets
+fontconfig
 imager
-ollama
-tmuxinator
-yubikey
-karabiner
-lazygit
+Typeform
+fuzzysort
+tpvirtual
