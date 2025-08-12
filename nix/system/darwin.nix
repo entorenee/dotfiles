@@ -131,8 +131,10 @@ in
             };
             trackpad = {
               Clicking = true;
-              Dragging = true;
               TrackpadThreeFingerTapGesture = 0;
+            };
+            WindowManager = {
+              EnableStandardClickToShowDesktop = false;
             };
           };
           keyboard = {
