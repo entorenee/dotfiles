@@ -1,132 +1,142 @@
 -- Editor enhancement plugins
 return {
-  -- Commentary
-  "tpope/vim-commentary",
+	-- Commentary
+	"tpope/vim-commentary",
 
-  -- Formatting with Mason tools
-  {
-    "stevearc/conform.nvim",
-    event = { "BufWritePre" },
-    cmd = { "ConformInfo" },
-    config = function()
-      require("conform").setup({
-        formatters_by_ft = {
-          typescript = { "prettier" },
-          typescriptreact = { "prettier" },
-          javascript = { "prettier" },
-          javascriptreact = { "prettier" },
-          json = { "prettier" },
-          css = { "prettier" },
-          html = { "prettier" },
-          markdown = { "prettier" },
-          nix = { "alejandra" },
-          yaml = { "yamlfmt" },
-          yml = { "yamlfmt" },
-          lua = { "stylua" },
-          sh = { "shfmt" },
-          bash = { "shfmt" },
-          zsh = { "shfmt" },
-          toml = { "taplo" },
-          sql = { "sqlfluff" },
-        },
-        format_on_save = {
-          timeout_ms = 500,
-          lsp_fallback = true,
-        },
-      })
-    end,
-  },
+	-- Formatting with Mason tools
+	{
+		"stevearc/conform.nvim",
+		event = { "BufWritePre" },
+		cmd = { "ConformInfo" },
+		config = function()
+			require("conform").setup({
+				formatters_by_ft = {
+					typescript = { "prettier" },
+					typescriptreact = { "prettier" },
+					javascript = { "prettier" },
+					javascriptreact = { "prettier" },
+					json = { "prettier" },
+					css = { "prettier" },
+					html = { "prettier" },
+					markdown = { "prettier" },
+					nix = { "alejandra" },
+					yaml = { "yamlfmt" },
+					yml = { "yamlfmt" },
+					lua = { "stylua" },
+					sh = { "shfmt" },
+					bash = { "shfmt" },
+					zsh = { "shfmt" },
+					toml = { "taplo" },
+					sql = { "sqlfluff" },
+				},
+				formatters = {
+					yamlfmt = {
+						args = { "-conf", vim.fn.expand("~/.config/.yamlfmt"), "-" },
+					},
+				},
+				format_on_save = {
+					timeout_ms = 500,
+					lsp_fallback = true,
+				},
+			})
+		end,
+	},
 
-  -- Linting with Mason tools
-  {
-    "mfussenegger/nvim-lint",
-    event = { "BufReadPre", "BufNewFile" },
-    config = function()
-      local lint = require("lint")
+	-- Linting with Mason tools
+	{
+		"mfussenegger/nvim-lint",
+		event = { "BufReadPre", "BufNewFile" },
+		config = function()
+			local lint = require("lint")
 
-      lint.linters_by_ft = {
-        typescript = { "eslint_d" },
-        typescriptreact = { "eslint_d" },
-        javascript = { "eslint_d" },
-        javascriptreact = { "eslint_d" },
-        make = { "checkmake" },
-        yaml = { "actionlint" },
-        html = { "htmlhint" },
-        json = { "jsonlint" },
-        sql = { "sqlfluff" },
-      }
+			lint.linters_by_ft = {
+				typescript = { "eslint_d" },
+				typescriptreact = { "eslint_d" },
+				javascript = { "eslint_d" },
+				javascriptreact = { "eslint_d" },
+				make = { "checkmake" },
+				html = { "htmlhint" },
+				json = { "jsonlint" },
+				sql = { "sqlfluff" },
+			}
 
-      local lint_augroup = vim.api.nvim_create_augroup("lint", { clear = true })
-      vim.api.nvim_create_autocmd({ "BufEnter", "BufWritePost", "InsertLeave" }, {
-        group = lint_augroup,
-        callback = function()
-          lint.try_lint()
-        end,
-      })
-    end,
-  },
+			local lint_augroup = vim.api.nvim_create_augroup("lint", { clear = true })
+			vim.api.nvim_create_autocmd({ "BufEnter", "BufWritePost", "InsertLeave" }, {
+				group = lint_augroup,
+				callback = function()
+					-- Check if current file is a GitHub Actions workflow
+					local file_path = vim.api.nvim_buf_get_name(0)
+					if string.match(file_path, "%.github/workflows/.*%.ya?ml$") then
+						lint.try_lint("actionlint")
+					else
+						lint.try_lint()
+					end
+				end,
+			})
+		end,
+	},
 
-  -- Git blame functionality
-  {
-    "f-person/git-blame.nvim",
-    event = { "BufReadPre", "BufNewFile" },
-    config = function()
-      require("gitblame").setup({
-        enabled = false, -- Start with blame disabled
-        message_template = " <summary> • <sha> • <date> • <author>",
-        date_format = "%m/%d/%y",
-        display_virtual_text = false, -- Disable virtual text to avoid overflow. Use Lualine instead
-      })
-    end,
-  },
+	-- Git blame functionality
+	{
+		"f-person/git-blame.nvim",
+		event = { "BufReadPre", "BufNewFile" },
+		config = function()
+			require("gitblame").setup({
+				enabled = false, -- Start with blame disabled
+				message_template = " <summary> • <sha> • <date> • <author>",
+				date_format = "%m/%d/%y",
+				display_virtual_text = false, -- Disable virtual text to avoid overflow. Use Lualine instead
+			})
+		end,
+	},
 
-  -- GitHub integration for generating links
-  {
-    "ruifm/gitlinker.nvim",
-    dependencies = { "nvim-lua/plenary.nvim" },
-    event = { "BufReadPre", "BufNewFile" },
-    config = function()
-      require("gitlinker").setup({
-        opts = {
-          remote = nil,
-          add_current_line_on_normal_mode = true,
-          action_callback = require("gitlinker.actions").copy_to_clipboard,
-          print_url = true,
-        },
-        callbacks = {
-          ["github.com"] = require("gitlinker.hosts").get_github_type_url,
-        },
-      })
-    end,
-  },
+	-- GitHub integration for generating links
+	{
+		"ruifm/gitlinker.nvim",
+		dependencies = { "nvim-lua/plenary.nvim" },
+		event = { "BufReadPre", "BufNewFile" },
+		config = function()
+			require("gitlinker").setup({
+				opts = {
+					remote = nil,
+					add_current_line_on_normal_mode = true,
+					action_callback = require("gitlinker.actions").copy_to_clipboard,
+					print_url = true,
+				},
+				callbacks = {
+					["github.com"] = require("gitlinker.hosts").get_github_type_url,
+				},
+			})
+		end,
+	},
 
-  -- Use Lualine for better statusline output
-  {
-    'nvim-lualine/lualine.nvim',
-    event = { "BufReadPre", "BufNewFile" },
-    config = function()
-      local git_blame = require('gitblame')
-      require("lualine").setup({
-        options = {
-          theme = 'palenight',
-        },
-        sections = {
-          lualine_c = {
-            { git_blame.get_current_blame_text, cond = git_blame.is_blame_text_available }
-          },
-          lualine_x = {
-            {
-              function()
-                local words = vim.fn.wordcount()
-                return string.format('Words: %d Chars: %d', words.words, words.chars)
-              end,
-              cond = function()
-                return vim.bo.filetype == 'markdown'
-              end
-            }
-          }
-        }
-      })
-    end
-  }
+	-- Use Lualine for better statusline output
+	{
+		"nvim-lualine/lualine.nvim",
+		event = { "BufReadPre", "BufNewFile" },
+		config = function()
+			local git_blame = require("gitblame")
+			require("lualine").setup({
+				options = {
+					theme = "palenight",
+				},
+				sections = {
+					lualine_c = {
+						{ git_blame.get_current_blame_text, cond = git_blame.is_blame_text_available },
+					},
+					lualine_x = {
+						{
+							function()
+								local words = vim.fn.wordcount()
+								return string.format("Words: %d Chars: %d", words.words, words.chars)
+							end,
+							cond = function()
+								return vim.bo.filetype == "markdown"
+							end,
+						},
+					},
+				},
+			})
+		end,
+	},
 }

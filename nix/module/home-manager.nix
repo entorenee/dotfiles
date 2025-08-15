@@ -33,6 +33,7 @@ in {
     ./starship
     ./tmux
     ./tmuxinator
+    ./yamlfmt
     ./zsh
   ];
 }
