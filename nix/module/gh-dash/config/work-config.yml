@@ -1,24 +1,25 @@
 prSections:
-- title: My Pull Requests
-  filters: >-
-    owner:JoinFreeWorld
-    is:open
-    author:@me
-- title: Involved
-  filters: >-
-    owner:JoinFreeWorld
-    is:open
-    draft:false
-    involves:@me
-    -review-requested:@me
-    -author:@me
-- title: Review Requested
-  filters: >-
-    owner:JoinFreeWorld
-    is:open
-    draft:false
-    -commenter:@me
-    -author:dependabot[bot]
+  - title: Involved
+    filters: >-
+      owner:JoinFreeWorld
+      is:open
+      draft:false
+      involves:@me
+      -review-requested:@me
+      -author:@me
+  - title: Review Requested
+    filters: >-
+      owner:JoinFreeWorld
+      is:open
+      draft:false
+      -commenter:@me
+      -author:@me
+      -author:dependabot[bot]
+  - title: My Pull Requests
+    filters: >-
+      owner:JoinFreeWorld
+      is:open
+      author:@me
 
 defaults:
   preview:
