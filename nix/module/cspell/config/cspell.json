@@ -40,13 +40,27 @@
   "languageDefinitions": [
     {
       "languageId": "*",
-      "dictionaries": ["tech-dictionary", "work-dictionary"],
+      "dictionaries": [
+        "tech-dictionary",
+        "work-dictionary"
+      ],
       "allowCompoundWords": true,
       "caseSensitive": false
     }
   ],
-  "words": ["Middlesex", "Moines", "skyler.lemay", "skylerlemay"],
-  "ignorePaths": [".git", "dist", "node_modules"],
-  "ignoreRegExpList": ["/\\borg_[a-zA-Z0-9_-]+\\b/gi"]
+  "words": [
+    "Middlesex",
+    "Moines",
+    "skyler.lemay",
+    "skylerlemay",
+    "Addy"
+  ],
+  "ignorePaths": [
+    ".git",
+    "dist",
+    "node_modules"
+  ],
+  "ignoreRegExpList": [
+    "/\\borg_[a-zA-Z0-9_-]+\\b/gi"
+  ]
 }
-
