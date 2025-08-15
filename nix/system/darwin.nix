@@ -90,8 +90,6 @@ in
               persistent-apps = dockPersistentApps.${profile} or null;
               showhidden = true;
               tilesize = 40;
-              wvous-tr-corner = 4;
-              wvous-br-corner = 2;
             };
             finder = {
               AppleShowAllExtensions = true;
