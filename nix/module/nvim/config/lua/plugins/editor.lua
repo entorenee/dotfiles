@@ -121,6 +121,7 @@ return {
 					theme = "palenight",
 				},
 				sections = {
+					lualine_b = { "diagnostics" },
 					lualine_c = {
 						{ git_blame.get_current_blame_text, cond = git_blame.is_blame_text_available },
 					},
