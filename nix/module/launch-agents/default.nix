@@ -4,7 +4,7 @@ let
     elgatoControlCenter = {
       serviceConfig = {
         Label = "ElgatoControlCenter";
-        Program = "/Applications/Elgato Control Center.app/Contents/MacOS/Elgato Control Center";
+        ProgramArguments = ["/Applications/Elgato Control Center.app/Contents/MacOS/Elgato Control Center"];
         RunAtLoad = true;
         KeepAlive = false;
       };
@@ -12,7 +12,7 @@ let
     rectangle = {
       serviceConfig = {
         Label = "Rectangle";
-        Program = "/Applications/Rectangle.app/Contents/MacOS/Rectangle";
+        ProgramArguments = ["/Applications/Rectangle.app/Contents/MacOS/Rectangle"];
         RunAtLoad = true;
         KeepAlive = false;
       };
