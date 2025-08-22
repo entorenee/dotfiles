@@ -40,10 +40,7 @@
   "languageDefinitions": [
     {
       "languageId": "*",
-      "dictionaries": [
-        "tech-dictionary",
-        "work-dictionary"
-      ],
+      "dictionaries": ["tech-dictionary", "work-dictionary"],
       "allowCompoundWords": true,
       "caseSensitive": false
     }
@@ -53,14 +50,12 @@
     "Moines",
     "skyler.lemay",
     "skylerlemay",
-    "Addy"
+    "Addy",
+    "Professionality",
+    "skyler",
+    "lemay"
   ],
-  "ignorePaths": [
-    ".git",
-    "dist",
-    "node_modules"
-  ],
-  "ignoreRegExpList": [
-    "/\\borg_[a-zA-Z0-9_-]+\\b/gi"
-  ]
+  "ignorePaths": [".git", "dist", "node_modules"],
+  "ignoreRegExpList": ["/\\borg_[a-zA-Z0-9_-]+\\b/gi"]
 }
+
