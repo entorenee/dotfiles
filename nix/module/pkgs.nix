@@ -28,6 +28,7 @@ in {
       caddy
       cargo # Nix LSP dependency
       claude-code
+      fd
       glow
       git-lfs
       git-up
@@ -40,6 +41,7 @@ in {
       ripgrep
       tmuxinator
       tree
+      update-nix-fetchgit
       wget
       yubikey-manager
     ]

@@ -1,0 +1,4 @@
+#!/usr/bin/env zsh
+
+# git add ~/dotfiles/nix
+darwin-rebuild switch --flake "/users/$SUDO_USER/dotfiles/nix#$NIX_PROFILE"

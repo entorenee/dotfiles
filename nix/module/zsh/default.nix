@@ -1,4 +1,4 @@
-{...}: {
+{profile, ...}: {
   programs.zsh = {
     enable = true;
     shellAliases = {
@@ -70,6 +70,7 @@
       DOCKER_HIDE_LEGACY_COMMANDS = true;
       DISABLE_AUTOUPDATER = true; # Handle Claude Code updates via Nix
       HOMEBREW_NO_AUTO_UPDATE = 1;
+      NIX_PROFILE = "${profile}";
     };
 
     oh-my-zsh = {
