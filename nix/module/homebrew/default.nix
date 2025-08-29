@@ -34,6 +34,7 @@ in {
         "firefox" # TODO: look into migrating to Home Manager
         "ghostty"
         "insomnia"
+        "jordanbaird-ice"
         "karabiner-elements"
         "obsidian"
         "rectangle"

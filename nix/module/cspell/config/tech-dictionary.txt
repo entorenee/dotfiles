@@ -120,3 +120,4 @@ setreg
 tablast
 mlast
 reast
+scansnap
