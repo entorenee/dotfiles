@@ -3,21 +3,22 @@
   username,
   profile,
   ...
-}:
-let
+}: let
   personalKeyPath = ./public-ssh-keys/id_rsa_yubikey_personal.pub;
   workKeyPath = ./public-ssh-keys/id_rsa_yubikey_work.pub;
   isWorkProfile = profile == "work";
-in
-{
+in {
   programs.ssh = {
     enable = true;
+    enableDefaultConfig = false;
     matchBlocks = {
       github = {
         host = "github.com";
-        identityFile = [
-          "/Users/${username}/.ssh/id_rsa_yubikey_personal.pub"
-        ] ++ lib.optional isWorkProfile "/Users/${username}/.ssh/id_rsa_yubikey_work.pub";
+        identityFile =
+          [
+            "/Users/${username}/.ssh/id_rsa_yubikey_personal.pub"
+          ]
+          ++ lib.optional isWorkProfile "/Users/${username}/.ssh/id_rsa_yubikey_work.pub";
         identitiesOnly = true;
       };
     };
