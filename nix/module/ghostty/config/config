@@ -1,3 +1,5 @@
+# use xterm config for ssh compatability
+term = xterm-256color
 theme = tokyonight
 
 shell-integration = zsh
