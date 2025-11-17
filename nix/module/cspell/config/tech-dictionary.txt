@@ -121,3 +121,6 @@ tablast
 mlast
 reast
 scansnap
+ultimaker
+cura
+prusaslicer

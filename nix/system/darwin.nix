@@ -25,6 +25,7 @@
     "/Applications/Proton Mail.app"
     "/Applications/ProtonVPN.app"
     "/Applications/Yubico Authenticator.app"
+    "/Applications/OrcaSlicer.app"
   ];
   workDock = [
     "/Applications/Ghostty.app"
