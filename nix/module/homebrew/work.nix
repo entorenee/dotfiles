@@ -6,11 +6,13 @@
     ];
 
     casks = [
+      "android-studio"
       "asana"
       "bitwarden"
       "google-chrome"
       "google-drive"
       "loom"
+      "ngrok"
       "tableplus"
     ];
   };
