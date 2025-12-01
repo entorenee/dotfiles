@@ -67,8 +67,6 @@ return {
 			"williamboman/mason-lspconfig.nvim",
 		},
 		config = function()
-			local lspconfig = require("lspconfig")
-
 			vim.lsp.config("cspell_ls", {
 				cmd = {
 					"cspell-lsp",
@@ -104,96 +102,86 @@ return {
 				severity_sort = true,
 			})
 
-			-- Manual server configurations
-			local servers = {
-				ts_ls = {
-					filetypes = { "typescript", "typescriptreact", "javascript", "javascriptreact" },
-					init_options = {
-						preferences = {
-							includeCompletionsForModuleExports = true,
-							includeCompletionsForImportStatements = true,
-						},
+			-- Server configurations using vim.lsp.config
+			vim.lsp.config("ts_ls", {
+				filetypes = { "typescript", "typescriptreact", "javascript", "javascriptreact" },
+				init_options = {
+					preferences = {
+						includeCompletionsForModuleExports = true,
+						includeCompletionsForImportStatements = true,
 					},
 				},
+				on_attach = on_attach,
+				capabilities = capabilities,
+			})
 
-				tailwindcss = {
-					filetypes = {
-						"html",
-						"css",
-						"scss",
-						"javascript",
-						"javascriptreact",
-						"typescript",
-						"typescriptreact",
-						"vue",
-						"svelte",
-					},
-					settings = {
-						tailwindCSS = {
-							experimental = {
-								classRegex = {
-									"tw`([^`]*)",
-									'tw="([^"]*)',
-									'tw={"([^"}]*)',
-									"tw\\.\\w+`([^`]*)",
-									"tw\\(.*?\\)`([^`]*)",
-								},
+			vim.lsp.config("tailwindcss", {
+				filetypes = {
+					"html",
+					"css",
+					"scss",
+					"javascript",
+					"javascriptreact",
+					"typescript",
+					"typescriptreact",
+					"vue",
+					"svelte",
+				},
+				settings = {
+					tailwindCSS = {
+						experimental = {
+							classRegex = {
+								"tw`([^`]*)",
+								'tw="([^"]*)',
+								'tw={"([^"}]*)',
+								"tw\\.\\w+`([^`]*)",
+								"tw\\(.*?\\)`([^`]*)",
 							},
 						},
 					},
 				},
+				on_attach = on_attach,
+				capabilities = capabilities,
+			})
 
-				nil_ls = {
-					filetypes = { "nix" },
-				},
+			vim.lsp.config("nil_ls", {
+				filetypes = { "nix" },
+				on_attach = on_attach,
+				capabilities = capabilities,
+			})
 
-				lua_ls = {
-					settings = {
-						Lua = {
-							runtime = { version = "LuaJIT" },
-							diagnostics = {
-								globals = {},
-							},
-							workspace = {
-								library = vim.api.nvim_get_runtime_file("", true),
-								checkThirdParty = false,
-							},
-							telemetry = { enable = false },
+			vim.lsp.config("lua_ls", {
+				settings = {
+					Lua = {
+						runtime = { version = "LuaJIT" },
+						diagnostics = {
+							globals = {},
 						},
+						workspace = {
+							library = vim.api.nvim_get_runtime_file("", true),
+							checkThirdParty = false,
+						},
+						telemetry = { enable = false },
 					},
 				},
+				on_attach = on_attach,
+				capabilities = capabilities,
+			})
 
-				html = {},
-				cssls = {},
-				jsonls = {},
-			}
+			vim.lsp.config("html", {
+				on_attach = on_attach,
+				capabilities = capabilities,
+			})
 
-			-- Setup servers manually
-			for server_name, config in pairs(servers) do
-				config.on_attach = on_attach
-				config.capabilities = capabilities
+			vim.lsp.config("cssls", {
+				on_attach = on_attach,
+				capabilities = capabilities,
+			})
 
-				local ok, err = pcall(lspconfig[server_name].setup, config)
-				if not ok then
-					vim.notify(string.format("Failed to setup %s: %s", server_name, err), vim.log.levels.ERROR)
-				end
-			end
-
-			-- Use mason-lspconfig handlers for any servers not manually configured
-			local mason_lspconfig = require("mason-lspconfig")
-			if mason_lspconfig.setup_handlers then
-				mason_lspconfig.setup_handlers({
-					function(server_name)
-						-- Only setup if we haven't already configured it manually
-						if not servers[server_name] then
-							lspconfig[server_name].setup({
-								on_attach = on_attach,
-								capabilities = capabilities,
-							})
-						end
-					end,
-				})
-			end
+			vim.lsp.config("jsonls", {
+				on_attach = on_attach,
+				capabilities = capabilities,
+			})
 		end,
 	},
 }
