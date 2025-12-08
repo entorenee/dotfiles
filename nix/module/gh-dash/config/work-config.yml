@@ -15,11 +15,16 @@ prSections:
       -commenter:@me
       -author:@me
       -author:dependabot[bot]
-  - title: My Pull Requests
+  - title: Me
     filters: >-
       owner:JoinFreeWorld
       is:open
       author:@me
+  - title: Assigned
+    filters: >-
+      owner:JoinFreeWorld
+      is:open
+      assignee:@me
 
 defaults:
   preview:

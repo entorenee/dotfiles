@@ -13,6 +13,7 @@
       "google-drive"
       "loom"
       "ngrok"
+      "surfshark"
       "tableplus"
     ];
   };
