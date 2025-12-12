@@ -49,10 +49,34 @@
           ;
       }
       system;
+
+    mkHomeManagerConfig = username: profile: system: let
+      lib = nixpkgs.lib;
+      home-manager-config = import ./module/home-manager.nix;
+      pkgs = nixpkgs.legacyPackages.${system};
+    in
+      home-manager.lib.homeManagerConfiguration {
+        inherit pkgs;
+        modules = [
+          home-manager-config
+          {
+            home.username = username;
+            home.homeDirectory = "/home/${username}";
+            _module.args = {
+              inherit lib username profile private-assets;
+              navi-cheatsheets = navi-cheatsheets.packages.${system}.default;
+            };
+          }
+        ];
+      };
   in {
     darwinConfigurations = {
       personal = mkDarwinConfig "skyler.lemay" "personal" "aarch64-darwin";
       work = mkDarwinConfig "fw-skylerlemay" "work" "aarch64-darwin";
+    };
+
+    homeConfigurations = {
+      "personal@linux" = mkHomeManagerConfig "skyler.lemay" "personal" "x86_64-linux";
     };
   };
 }
