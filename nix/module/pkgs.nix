@@ -15,6 +15,14 @@
     go
     hugo
   ];
+
+  linuxPkgs = with pkgs; [
+    nodejs_20
+    pcsc-tools
+    pcsclite
+    pinentry-gnome3
+    slack
+  ];
 in {
   nixpkgs = {
     config = {
@@ -46,5 +54,6 @@ in {
       yubikey-manager
     ]
     ++ lib.optionals isWorkProfile workPkgs
-    ++ lib.optionals isPersonalProfile personalPkgs;
+    ++ lib.optionals isPersonalProfile personalPkgs
+    ++ linuxPkgs;
 }

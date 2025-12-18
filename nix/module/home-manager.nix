@@ -11,8 +11,12 @@
   sshModule = import ./ssh {inherit lib username profile;};
 in {
   programs.home-manager.enable = true;
-  home.stateVersion = "24.05";
+  home.stateVersion = "26.05";
   xdg.enable = true;
+  targets.genericLinux.enable = true;
+
+  home.username = username;
+  home.homeDirectory = "/home/skyler.lemay";
 
   imports = [
     ./bins
