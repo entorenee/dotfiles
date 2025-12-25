@@ -33,7 +33,6 @@ in
       throw-keyids = true;
     };
     scdaemonSettings = {
-      disable-ccid = true;
     };
     publicKeys = [
       {
@@ -58,7 +57,7 @@ in
     defaultCacheTtl = 60;
     maxCacheTtl = 120;
     pinentry = {
-      package = pkgs.pinentry_mac;
+      package = pkgs.pinentry-gnome3;
     };
     extraConfig = ''
       ttyname $GPG_TTY
