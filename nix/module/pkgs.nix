@@ -17,11 +17,33 @@
   ];
 
   linuxPkgs = with pkgs; [
-    nodejs_20
+    calibre
+    cryptsetup
+    cspell
+    discord
+    docker
+    docker-compose
+    firefox
+    freefilesync
+    insomnia
+    keepassxc
+    libreoffice
+    nextcloud-client
+    nodejs_20 # TODO determine dynamic sourcing of Node
+    orca-slicer
+    obsidian
     pcsc-tools
-    pcsclite
     pinentry-gnome3
+    protonmail-desktop
+    protonvpn-gui
+    signal-desktop
     slack
+    spotify
+    tor
+    veracrypt # TODO see if this still applies of switch to luks
+    yubikey-personalization
+    yubioath-flutter
+    z-lua
   ];
 in {
   nixpkgs = {

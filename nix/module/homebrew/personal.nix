@@ -23,7 +23,7 @@
       "proton-mail"
       "proton-pass" #deprecating usage of
       "protonvpn"
-      "raspberry-pi-imager"
+      "raspberry-pi-imager" # TODO find Linux version
       "signal"
       "sweet-home3d"
       "steam"
