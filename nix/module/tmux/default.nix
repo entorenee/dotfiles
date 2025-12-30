@@ -7,12 +7,12 @@ let
   mkOrder = lib.mkOrder;
   tmux-tokyo-night = pkgs.tmuxPlugins.mkTmuxPlugin {
     pluginName = "tmux-tokyo-night";
-    version = "unstable-2025-12-01";
+    version = "unstable-2025-12-20";
     src = pkgs.fetchFromGitHub {
       owner = "fabioluciano";
       repo = "tmux-tokyo-night";
-      rev = "17ccc64c2e133817da88ba9b9473479f7c74fd51";
-      sha256 = "0z9xxm8cc66gsyqdfhn9c7l9ma2y77w3dnpai1zjm33zpv4mnqir";
+      rev = "60b99a078030331e0685766e5d45e49d84b2b823";
+      sha256 = "1z8hrbkmhfc2gfgac8djr3d3524h589h77y6866m4pdnjk45406y";
     };
     rtpFilePath = "tmux-tokyo-night.tmux";
   };
