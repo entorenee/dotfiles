@@ -29,6 +29,7 @@ return {
 					"taplo", -- TOML formatter
 					"sqlfluff", -- SQL formatter and linter
 				},
+				automatic_installation = true,
 			})
 		end,
 	},
