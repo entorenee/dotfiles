@@ -8,7 +8,7 @@
 }: let
   ghDashModule = import ./gh-dash {inherit config lib profile;};
   pkgsModule = import ./pkgs.nix {inherit lib pkgs profile;};
-  sshModule = import ./ssh {inherit lib username profile;};
+  sshModule = import ./ssh {inherit lib username pkgs profile;};
 in {
   programs.home-manager.enable = true;
   home.stateVersion = "26.05";
