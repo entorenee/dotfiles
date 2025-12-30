@@ -18,7 +18,7 @@
 
   linuxPkgs = with pkgs; [
     calibre
-    cryptsetup
+    cryptsetup # TODO: Confirm if this is a needed dependency
     cspell
     discord
     docker
@@ -32,17 +32,15 @@
     nodejs_20 # TODO determine dynamic sourcing of Node
     orca-slicer
     obsidian
-    pcsc-tools
     pinentry-gnome3
     protonmail-desktop
     protonvpn-gui
     signal-desktop
     slack
+    syncthing # TODO: confirm if this can be set up in Home Manager
     spotify
     tor
     veracrypt # TODO see if this still applies of switch to luks
-    yubikey-personalization
-    yubioath-flutter
     z-lua
   ];
 in {
@@ -73,9 +71,9 @@ in {
       tree
       update-nix-fetchgit
       wget
-      yubikey-manager
+      # yubikey-manager TODO only apply this to Mac. Nix and Pop OS run into a pcscd protocol mismatch
     ]
     ++ lib.optionals isWorkProfile workPkgs
     ++ lib.optionals isPersonalProfile personalPkgs
-    ++ linuxPkgs;
+    ++ lib.optionals pkgs.stdenv.isLinux linuxPkgs;
 }
