@@ -30,7 +30,6 @@
     libreoffice
     nextcloud-client
     nodejs_20 # TODO determine dynamic sourcing of Node
-    orca-slicer
     obsidian
     pinentry-gnome3
     protonmail-desktop

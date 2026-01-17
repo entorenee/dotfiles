@@ -1,0 +1,9 @@
+{
+    "filename_format": "{if plate_name!=\"\"}{plate_name}{else}{input_filename_base}{endif}_{print_time}_{filament_type[initial_tool]}_{nozzle_diameter[0]}.gcode",
+    "from": "User",
+    "inherits": "0.10mm Standard @Qidi Q2 0.2 nozzle",
+    "is_custom_defined": "0",
+    "name": "0.10mm Standard @Qidi Q2 0.2",
+    "print_settings_id": "0.10mm Standard @Qidi Q2 0.2",
+    "version": "2.3.1.10"
+}

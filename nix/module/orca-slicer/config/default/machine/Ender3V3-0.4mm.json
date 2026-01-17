@@ -1,0 +1,16 @@
+{
+    "from": "User",
+    "inherits": "Creality Ender-3 V3 0.4 nozzle",
+    "is_custom_defined": "0",
+    "name": "Ender3V3-0.4mm",
+    "print_host": "192.168.1.50:4408",
+    "printer_settings_id": "Ender3V3-0.4mm",
+    "retraction_length": [
+        "1"
+    ],
+    "template_custom_gcode": ";slicer:OrcaSlicer\n;slicer_version:2.x.x\n;estimated_time:{total_print_time}\n;nozzle_diameter:[nozzle_diameter]\n;layer_height:layer_height\n;first_layer_height:first_layer_height\n;first_layer_extr_temp:[first_layer_temperature]\n;first_layer_bed_temp:[first_layer_bed_temperature]\n;filament_name:[filament_vendor]\n;filament_type:[filament_type]\n;filament_total:extruded_volume_total\n;filament_weight_total:extruded_volume_total",
+    "version": "2.3.0.3",
+    "z_hop": [
+        "0.5"
+    ]
+}

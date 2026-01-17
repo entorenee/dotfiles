@@ -52,11 +52,12 @@
 
     mkHomeManagerConfig = username: profile: system: let
       lib = nixpkgs.lib;
-      home-manager-config = import ./module/home-manager.nix;
       pkgs = nixpkgs.legacyPackages.${system};
+      home-manager-config = import ./module/home-manager.nix;
     in
       home-manager.lib.homeManagerConfiguration {
         inherit pkgs;
+        extraSpecialArgs = {inherit profile;};
         modules = [
           home-manager-config
           {
