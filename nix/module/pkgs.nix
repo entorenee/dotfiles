@@ -74,4 +74,6 @@ in {
     ++ lib.optionals isWorkProfile workPkgs
     ++ lib.optionals isPersonalProfile personalPkgs
     ++ lib.optionals pkgs.stdenv.isLinux linuxPkgs;
+
+  services.syncthing.enable = isPersonalProfile;
 }
