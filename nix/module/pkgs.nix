@@ -23,7 +23,6 @@
     discord
     docker
     docker-compose
-    firefox
     freefilesync
     insomnia
     keepassxc
