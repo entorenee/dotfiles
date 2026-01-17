@@ -1,7 +1,7 @@
 .PHONY: help
 
 linux:
-	nix run home-manager -- --extra-experimental-features 'nix-command flakes' --override-input private-assets /home/skyler.lemay/private/ switch --flake nix/#personal@linux
+	nix run home-manager -- --extra-experimental-features 'nix-command flakes' switch --flake nix/#personal@linux
 
 ## Run Darwin rebuild for Personal profile
 pRebuild:
