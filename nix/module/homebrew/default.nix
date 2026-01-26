@@ -31,7 +31,6 @@ in {
         "claude"
         "docker-desktop"
         "elgato-control-center"
-        "firefox" # TODO: look into migrating to Home Manager
         "ghostty"
         "insomnia"
         "jordanbaird-ice"

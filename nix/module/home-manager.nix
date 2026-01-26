@@ -17,6 +17,7 @@ in {
   imports = [
     ./bins
     ./cspell
+    ./firefox
     ./fonts
     ./karabiner
     ./gh
