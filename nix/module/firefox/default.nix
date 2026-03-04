@@ -59,7 +59,6 @@
         # Misc privacy‑related tweaks
         "signon.rememberSignons" = false; # no built‑in password manager
         "browser.formfill.enable" = false; # no form autofill
-        "browser.privatebrowsing.autostart" = true; # always start private window
         "browser.sessionstore.max_tabs_undo" = 0; # no session restore
         "browser.sessionstore.restore_on_demand" = true;
         "browser.startup.page" = 0; # blank page on launch
