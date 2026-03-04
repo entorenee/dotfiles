@@ -32,7 +32,7 @@
     "/Applications/Obsidian.app"
     "/Applications/Asana.app"
     "/Applications/Slack.app"
-    "/Applications/Google Chrome.app"
+    "/Applications/Firefox.app"
     "/Applications/TablePlus.app"
     "/Applications/Claude.app"
     "/Applications/Bitwarden.app"
