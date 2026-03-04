@@ -20,6 +20,8 @@
       url = "path:./module/navi";
     };
 
+    tmux-powerkit.url = "github:fabioluciano/tmux-powerkit";
+
     # Private assets - for initial setup without SSH, use:
     # --override-input private-assets 'path:/dev/null'
     private-assets = {
@@ -34,16 +36,18 @@
     nixpkgs,
     navi-cheatsheets,
     private-assets,
+    tmux-powerkit,
     ...
   }: let
     mkDarwinConfig = username: profile: system:
       import ./system/darwin.nix {
         inherit
-          home-manager
           darwin
+          home-manager
           nixpkgs
           navi-cheatsheets
           private-assets
+          tmux-powerkit
           username
           profile
           ;

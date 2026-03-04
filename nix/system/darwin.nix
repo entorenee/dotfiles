@@ -4,6 +4,7 @@
   nixpkgs,
   navi-cheatsheets,
   private-assets,
+  tmux-powerkit,
   username,
   profile,
   ...
@@ -54,7 +55,7 @@ in
         home-manager.users."${username}" = {
           imports = [home-manager-config];
           _module.args = {
-            inherit lib username profile private-assets;
+            inherit lib username profile private-assets tmux-powerkit;
             navi-cheatsheets = navi-cheatsheets.packages.${system}.default;
           };
         };
