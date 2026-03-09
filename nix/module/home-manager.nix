@@ -17,7 +17,6 @@ in {
   imports = [
     ./bins
     ./cspell
-    ./firefox
     ./fonts
     ./karabiner
     ./gh
@@ -34,6 +33,7 @@ in {
     ./starship
     ./tmux
     ./tmuxinator
+    ./smug
     ./yamlfmt
     ./zsh
   ];
