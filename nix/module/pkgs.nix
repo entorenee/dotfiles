@@ -27,7 +27,6 @@
     freefilesync
     insomnia
     jellyfin-web
-    keepassxc
     libreoffice
     nextcloud-client
     nodejs_20 # TODO determine dynamic sourcing of Node

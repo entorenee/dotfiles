@@ -9,10 +9,10 @@
   ghDashModule = import ./gh-dash {inherit config lib profile;};
   pkgsModule = import ./pkgs.nix {inherit lib pkgs profile;};
   sshModule = import ./ssh {inherit lib username pkgs profile;};
-  # isPersonalProfile = true;
   isPersonalProfile = profile == "personal";
 
   personalPkgs = [
+    ./keepassxc
     ./orca-slicer
   ];
 in {

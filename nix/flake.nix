@@ -66,6 +66,7 @@
             _module.args = {
               inherit lib username profile private-assets;
               navi-cheatsheets = navi-cheatsheets.packages.${system}.default;
+              backupFileExtension = "hm-backup";
             };
           }
         ];
