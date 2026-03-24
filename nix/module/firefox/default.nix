@@ -89,9 +89,16 @@
             Alias = "@nh";
             URLTemplate = "https://home-manager-options.extranix.com/?query={searchTerms}";
           }
+          {
+            Name = "GitHub";
+            Alias = "@gh";
+            URLTemplate = "https://github.com/search?q={searchTerms}";
+          }
         ];
         Default = "SearXNG";
         Remove = [
+          "Bing"
+          "eBay"
           "Google"
           "Amazon.com"
         ];
