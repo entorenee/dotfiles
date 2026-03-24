@@ -2,8 +2,7 @@
   home-manager,
   darwin,
   nixpkgs,
-  navi-cheatsheets,
-  private-assets,
+  homeManagerArgs,
   username,
   profile,
   ...
@@ -32,7 +31,7 @@
     "/Applications/Obsidian.app"
     "/Applications/Asana.app"
     "/Applications/Slack.app"
-    "/Applications/Google Chrome.app"
+    "/Applications/Firefox.app"
     "/Applications/TablePlus.app"
     "/Applications/Claude.app"
     "/Applications/Bitwarden.app"
@@ -53,12 +52,9 @@ in
         home-manager.useUserPackages = true;
         home-manager.users."${username}" = {
           imports = [home-manager-config];
-          _module.args = {
-            inherit lib username profile private-assets;
-            navi-cheatsheets = navi-cheatsheets.packages.${system}.default;
-          };
+          _module.args = homeManagerArgs;
         };
-        home-manager.backupFileExtension = "backup";
+        home-manager.backupFileExtension = homeManagerArgs.backupFileExtension;
       }
 
       # Shareable system level configuration

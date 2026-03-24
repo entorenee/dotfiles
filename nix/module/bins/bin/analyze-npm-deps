@@ -1,0 +1,201 @@
+#!/bin/bash
+
+# Dependency Analysis Script
+#
+# Analyzes outdated dependencies and categorizes them by version difference.
+#
+# Usage:
+#   analyze-dependencies.sh [path-to-project]
+#
+# If no path is provided, runs in current directory.
+# Requires: jq
+
+set -e
+
+# Check for jq
+if ! command -v jq &> /dev/null; then
+    echo "Error: jq is required but not installed."
+    echo "Install with: brew install jq"
+    exit 1
+fi
+
+# Change to project directory if provided
+if [ -n "$1" ]; then
+    cd "$1" || exit 1
+fi
+
+echo "Running npm outdated..."
+echo
+
+# Get npm outdated JSON (exits 1 when outdated packages exist, so || true)
+OUTDATED_JSON=$(npm outdated --json 2>/dev/null || true)
+
+if [ -z "$OUTDATED_JSON" ] || [ "$OUTDATED_JSON" = "{}" ]; then
+    echo "All dependencies are up to date!"
+    exit 0
+fi
+
+# Parse versions and categorize
+parse_version() {
+    echo "$1" | grep -oE '^[0-9]+\.[0-9]+\.[0-9]+' | head -1
+}
+
+get_major() {
+    echo "$1" | cut -d. -f1
+}
+
+get_minor() {
+    echo "$1" | cut -d. -f2
+}
+
+get_patch() {
+    echo "$1" | cut -d. -f3
+}
+
+# Initialize category files
+PATCH_ONLY=$(mktemp)
+MINOR_ONLY=$(mktemp)
+MAJOR_1=$(mktemp)
+MAJOR_2_PLUS=$(mktemp)
+ZERO_X=$(mktemp)
+
+trap "rm -f $PATCH_ONLY $MINOR_ONLY $MAJOR_1 $MAJOR_2_PLUS $ZERO_X" EXIT
+
+TOTAL=0
+
+# Process each dependency
+for name in $(echo "$OUTDATED_JSON" | jq -r 'keys[]'); do
+    current=$(echo "$OUTDATED_JSON" | jq -r --arg n "$name" '.[$n].current // empty')
+    latest=$(echo "$OUTDATED_JSON" | jq -r --arg n "$name" '.[$n].latest // empty')
+
+    # Skip if missing versions
+    [ -z "$current" ] || [ -z "$latest" ] && continue
+
+    # Parse versions
+    current_parsed=$(parse_version "$current")
+    latest_parsed=$(parse_version "$latest")
+
+    [ -z "$current_parsed" ] || [ -z "$latest_parsed" ] && continue
+
+    current_major=$(get_major "$current_parsed")
+    current_minor=$(get_minor "$current_parsed")
+    current_patch=$(get_patch "$current_parsed")
+
+    latest_major=$(get_major "$latest_parsed")
+    latest_minor=$(get_minor "$latest_parsed")
+    latest_patch=$(get_patch "$latest_parsed")
+
+    # Skip if same version
+    [ "$current_major" = "$latest_major" ] && \
+    [ "$current_minor" = "$latest_minor" ] && \
+    [ "$current_patch" = "$latest_patch" ] && continue
+
+    TOTAL=$((TOTAL + 1))
+
+    major_diff=$((latest_major - current_major))
+
+    # Track 0.x dependencies
+    if [ "$current_major" = "0" ]; then
+        echo "$name|$current|$latest|$major_diff" >> "$ZERO_X"
+    fi
+
+    # Categorize by version difference
+    if [ "$major_diff" -eq 0 ]; then
+        if [ "$current_minor" = "$latest_minor" ]; then
+            echo "$name|$current|$latest" >> "$PATCH_ONLY"
+        else
+            echo "$name|$current|$latest" >> "$MINOR_ONLY"
+        fi
+    elif [ "$major_diff" -eq 1 ]; then
+        echo "$name|$current|$latest" >> "$MAJOR_1"
+    else
+        echo "$name|$current|$latest|$major_diff" >> "$MAJOR_2_PLUS"
+    fi
+done
+
+# Count functions
+count_file() {
+    if [ -f "$1" ] && [ -s "$1" ]; then
+        wc -l < "$1" | tr -d ' '
+    else
+        echo "0"
+    fi
+}
+
+PATCH_COUNT=$(count_file "$PATCH_ONLY")
+MINOR_COUNT=$(count_file "$MINOR_ONLY")
+MAJOR_1_COUNT=$(count_file "$MAJOR_1")
+MAJOR_2_COUNT=$(count_file "$MAJOR_2_PLUS")
+ZERO_X_COUNT=$(count_file "$ZERO_X")
+
+# Print formatted table
+print_table() {
+    local file=$1
+    local show_behind=$2
+
+    if [ ! -s "$file" ]; then
+        echo "  (none)"
+        return
+    fi
+
+    if [ "$show_behind" = "true" ]; then
+        printf "  %-45s | %-12s | %-12s | %s\n" "Package" "Current" "Latest" "Behind"
+        printf "  %-45s | %-12s | %-12s | %s\n" "$(printf '%0.s-' {1..45})" "------------" "------------" "------"
+        sort "$file" | while IFS='|' read -r name current latest behind; do
+            printf "  %-45s | %-12s | %-12s | %s\n" "$name" "$current" "$latest" "$behind"
+        done
+    else
+        printf "  %-45s | %-12s | %s\n" "Package" "Current" "Latest"
+        printf "  %-45s | %-12s | %s\n" "$(printf '%0.s-' {1..45})" "------------" "------------"
+        sort "$file" | while IFS='|' read -r name current latest _; do
+            printf "  %-45s | %-12s | %s\n" "$name" "$current" "$latest"
+        done
+    fi
+}
+
+# Print report
+echo "============================================================"
+echo "DEPENDENCY ANALYSIS REPORT"
+echo "============================================================"
+echo
+echo "SUMMARY"
+echo "----------------------------------------"
+printf "  %-24s %d\n" "Total Outdated:" "$TOTAL"
+printf "  %-24s %d\n" "Patch Only:" "$PATCH_COUNT"
+printf "  %-24s %d\n" "Minor Only:" "$MINOR_COUNT"
+printf "  %-24s %d\n" "1 Major Behind:" "$MAJOR_1_COUNT"
+printf "  %-24s %d\n" "2+ Majors Behind:" "$MAJOR_2_COUNT"
+printf "  %-24s %d\n" "Currently at 0.x:" "$ZERO_X_COUNT"
+echo
+
+echo
+echo "PATCH ONLY ($PATCH_COUNT)"
+echo "----------------------------------------"
+print_table "$PATCH_ONLY"
+echo
+
+echo
+echo "MINOR ONLY ($MINOR_COUNT)"
+echo "----------------------------------------"
+print_table "$MINOR_ONLY"
+echo
+
+echo
+echo "1 MAJOR BEHIND ($MAJOR_1_COUNT)"
+echo "----------------------------------------"
+print_table "$MAJOR_1"
+echo
+
+echo
+echo "2+ MAJORS BEHIND ($MAJOR_2_COUNT)"
+echo "----------------------------------------"
+print_table "$MAJOR_2_PLUS" "true"
+echo
+
+echo
+echo "0.x DEPENDENCIES ($ZERO_X_COUNT)"
+echo "----------------------------------------"
+print_table "$ZERO_X" "true"
+echo
+
+echo "============================================================"

@@ -54,6 +54,8 @@
       fi
 
       export PATH=$HOME/bin:$HOME/.local/bin:/usr/local/bin:/usr/local/share/npm/bin:$PATH
+      export PATH="/opt/homebrew/opt/openjdk@17/bin:$PATH"
+
 
       # Preferred editor for local and remote sessions
       if [[ -n $SSH_CONNECTION ]]; then

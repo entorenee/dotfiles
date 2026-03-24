@@ -20,6 +20,8 @@
       url = "path:./module/navi";
     };
 
+    tmux-powerkit.url = "github:fabioluciano/tmux-powerkit";
+
     # Private assets - for initial setup without SSH, use:
     # --override-input private-assets 'path:/dev/null'
     private-assets = {
@@ -34,26 +36,27 @@
     nixpkgs,
     navi-cheatsheets,
     private-assets,
+    tmux-powerkit,
     ...
   }: let
+    lib = nixpkgs.lib;
+    home-manager-config = import ./module/home-manager.nix;
+
+    mkHomeManagerArgs = system: username: profile: {
+      inherit lib username profile private-assets tmux-powerkit;
+      navi-cheatsheets = navi-cheatsheets.packages.${system}.default;
+      backupFileExtension = "hm-backup";
+    };
+
     mkDarwinConfig = username: profile: system:
       import ./system/darwin.nix {
-        inherit
-          home-manager
-          darwin
-          nixpkgs
-          navi-cheatsheets
-          private-assets
-          username
-          profile
-          ;
+        inherit darwin home-manager nixpkgs username profile;
+        homeManagerArgs = mkHomeManagerArgs system username profile;
       }
       system;
 
     mkHomeManagerConfig = username: profile: system: let
-      lib = nixpkgs.lib;
       pkgs = nixpkgs.legacyPackages.${system};
-      home-manager-config = import ./module/home-manager.nix;
     in
       home-manager.lib.homeManagerConfiguration {
         inherit pkgs;
@@ -63,11 +66,7 @@
           {
             home.username = username;
             home.homeDirectory = "/home/${username}";
-            _module.args = {
-              inherit lib username profile private-assets;
-              navi-cheatsheets = navi-cheatsheets.packages.${system}.default;
-              backupFileExtension = "hm-backup";
-            };
+            _module.args = mkHomeManagerArgs system username profile;
           }
         ];
       };
