@@ -17,6 +17,7 @@
   ];
 
   linuxPkgs = with pkgs; [
+    arduino-ide
     calibre
     cryptsetup # TODO: Confirm if this is a needed dependency
     cspell
@@ -25,6 +26,7 @@
     docker-compose
     freefilesync
     insomnia
+    jellyfin-web
     keepassxc
     libreoffice
     nextcloud-client
