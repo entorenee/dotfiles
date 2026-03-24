@@ -21,11 +21,9 @@ in {
   xdg.enable = true;
   targets.genericLinux.enable = true;
 
-  home.username = username;
-  home.homeDirectory = "/home/skyler.lemay";
-
   imports =
     [
+      ./alacritty
       ./bins
       ./cspell
       ./firefox
