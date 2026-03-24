@@ -21,7 +21,6 @@
     calibre
     cryptsetup # TODO: Confirm if this is a needed dependency
     cspell
-    discord
     docker
     docker-compose
     freefilesync
@@ -33,13 +32,13 @@
     obsidian
     pinentry-gnome3
     protonmail-desktop
-    protonvpn-gui
+    rpi-imager
     signal-desktop
     slack
-    syncthing # TODO: confirm if this can be set up in Home Manager
     spotify
     tor
-    veracrypt # TODO see if this still applies of switch to luks
+    veracrypt
+    zoom-us
     z-lua
   ];
 in {
