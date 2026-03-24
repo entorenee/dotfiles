@@ -65,7 +65,6 @@
         # Misc privacy‑related tweaks
         "signon.rememberSignons" = false; # no built‑in password manager
         "browser.formfill.enable" = false; # no form autofill
-        "browser.privatebrowsing.autostart" = true; # always start private window
         "browser.sessionstore.restore_on_demand" = true;
         "browser.startup.homepage_override.mstone" = "ignore";
 
