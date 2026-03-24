@@ -1,0 +1,12 @@
+{
+    "brim_type": "no_brim",
+    "enable_support": "1",
+    "from": "User",
+    "inherits": "0.20mm Standard @Qidi Q2",
+    "is_custom_defined": "0",
+    "name": "0.20mm Standard Gridfinity @Qidi Q2",
+    "print_settings_id": "0.20mm Standard Gridfinity @Qidi Q2",
+    "sparse_infill_density": "25%",
+    "version": "2.3.1.10",
+    "wall_loops": "3"
+}

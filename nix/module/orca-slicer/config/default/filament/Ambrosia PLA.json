@@ -1,0 +1,31 @@
+{
+    "filament_settings_id": [
+        "Ambrosia PLA"
+    ],
+    "filament_stamping_loading_speed": [
+        "20"
+    ],
+    "from": "User",
+    "inherits": "Generic PLA @System",
+    "is_custom_defined": "0",
+    "name": "Ambrosia PLA",
+    "nozzle_temperature": [
+        "210"
+    ],
+    "nozzle_temperature_initial_layer": [
+        "210"
+    ],
+    "textured_cool_plate_temp": [
+        "50"
+    ],
+    "textured_cool_plate_temp_initial_layer": [
+        "50"
+    ],
+    "textured_plate_temp": [
+        "60"
+    ],
+    "textured_plate_temp_initial_layer": [
+        "60"
+    ],
+    "version": "2.3.1.10"
+}
