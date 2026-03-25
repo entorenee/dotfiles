@@ -2,11 +2,9 @@
   config,
   pkgs,
   ...
-}:
-let
+}: let
   gnupgPath = "${config.home.homeDirectory}/dotfiles/nix/module/gnupg/common.conf";
-in
-{
+in {
   programs.gpg = {
     enable = true;
     settings = {
@@ -48,7 +46,9 @@ in
   };
 
   programs.zsh.initContent = ''
+    export GPG_TTY=$(tty)
     export SSH_AUTH_SOCK=$(gpgconf --list-dirs agent-ssh-socket)
+    gpg-connect-agent updatestartuptty /bye >/dev/null 2>&1
   '';
 
   services.gpg-agent = {
@@ -60,9 +60,6 @@ in
     pinentry = {
       package = pkgs.pinentry_mac;
     };
-    extraConfig = ''
-      ttyname $GPG_TTY
-    '';
   };
 
   xdg.configFile.".gnupg/common.conf".source = config.lib.file.mkOutOfStoreSymlink gnupgPath;
