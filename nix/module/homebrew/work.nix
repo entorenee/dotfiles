@@ -4,6 +4,7 @@
       "cocoapods"
       "mysql"
       "openjdk@17"
+      "rtk"
       "vercel-cli"
     ];
 

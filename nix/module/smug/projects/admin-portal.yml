@@ -12,3 +12,7 @@ windows:
   - name: server
     commands:
       - npm run dev
+    panes:
+      - type: horizontal
+        commands:
+          - ngrok http 3002 --domain skyler-fw.ngrok-free.dev
