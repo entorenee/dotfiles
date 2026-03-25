@@ -1,4 +1,5 @@
-{...}: {
+{ lib, pkgs, ... }:
+lib.mkIf pkgs.stdenv.isLinux {
   programs.alacritty = {
     enable = true;
     theme = "tokyo_night";

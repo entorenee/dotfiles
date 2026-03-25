@@ -8,10 +8,9 @@
 }: let
   ghDashModule = import ./gh-dash {inherit config lib profile;};
   pkgsModule = import ./pkgs.nix {inherit lib pkgs profile;};
-  sshModule = import ./ssh {inherit lib username pkgs profile;};
   isPersonalProfile = profile == "personal";
 
-  personalPkgs = [
+  personalModules = [
     ./keepassxc
     ./orca-slicer
   ];
@@ -19,7 +18,7 @@ in {
   programs.home-manager.enable = true;
   home.stateVersion = "26.05";
   xdg.enable = true;
-  targets.genericLinux.enable = true;
+  targets.genericLinux.enable = pkgs.stdenv.isLinux;
 
   imports =
     [
@@ -28,23 +27,23 @@ in {
       ./cspell
       ./firefox
       ./fonts
-      ./karabiner
       ./gh
       ghDashModule
       ./ghostty
       ./git
       ./gnupg
+      ./karabiner
       ./lazygit
       ./navi
       ./nvim
       ./nvm
       pkgsModule
-      sshModule
+      ./ssh
       ./starship
       ./tmux
       ./tmuxinator
       ./yamlfmt
       ./zsh
     ]
-    ++ lib.optionals isPersonalProfile personalPkgs;
+    ++ lib.optionals isPersonalProfile personalModules;
 }

@@ -18,12 +18,11 @@
       "libreoffice"
       "little-snitch"
       "nextcloud"
-      # "ollama"  not currently using and may revisit in the near future
       "orcaslicer"
       "proton-mail"
       "proton-pass" #deprecating usage of
       "protonvpn"
-      "raspberry-pi-imager" # TODO find Linux version
+      "raspberry-pi-imager"
       "signal"
       "sweet-home3d"
       "steam"

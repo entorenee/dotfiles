@@ -45,12 +45,11 @@
     mkHomeManagerArgs = system: username: profile: {
       inherit lib username profile private-assets tmux-powerkit;
       navi-cheatsheets = navi-cheatsheets.packages.${system}.default;
-      backupFileExtension = "hm-backup";
     };
 
     mkDarwinConfig = username: profile: system:
       import ./system/darwin.nix {
-        inherit darwin home-manager nixpkgs username profile;
+        inherit darwin home-manager nixpkgs home-manager-config username profile;
         homeManagerArgs = mkHomeManagerArgs system username profile;
       }
       system;

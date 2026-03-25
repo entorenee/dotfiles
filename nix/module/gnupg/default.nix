@@ -23,18 +23,16 @@
     )
   );
 in {
-  programs.gpg = {
-    publicKeys = [
-      {
-        source = ./public-keys/personal-pub.asc;
-        trust = "ultimate";
-      }
-      {
-        source = ./public-keys/freeworld-pub.asc;
-        trust = "ultimate";
-      }
-    ];
-  };
+  programs.gpg.publicKeys = [
+    {
+      source = ./public-keys/personal-pub.asc;
+      trust = "ultimate";
+    }
+    {
+      source = ./public-keys/freeworld-pub.asc;
+      trust = "ultimate";
+    }
+  ];
 
   programs.zsh.initContent = ''
     export SSH_AUTH_SOCK=$(gpgconf --list-dirs agent-ssh-socket)

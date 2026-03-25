@@ -3,12 +3,12 @@
   darwin,
   nixpkgs,
   homeManagerArgs,
+  home-manager-config,
   username,
   profile,
   ...
 }: system: let
   lib = nixpkgs.lib;
-  home-manager-config = import ../module/home-manager.nix;
   homebrew-config = import ../module/homebrew/default.nix {inherit lib profile;};
   system-config = import ../module/system-configuration.nix {inherit username;};
   launch-agents-config = import ../module/launch-agents/default.nix {inherit profile;};
@@ -54,7 +54,7 @@ in
           imports = [home-manager-config];
           _module.args = homeManagerArgs;
         };
-        home-manager.backupFileExtension = homeManagerArgs.backupFileExtension;
+        home-manager.backupFileExtension = "hm-backup";
       }
 
       # Shareable system level configuration

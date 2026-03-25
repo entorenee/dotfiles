@@ -1,6 +1,6 @@
 {
   lib,
-  username,
+  config,
   pkgs,
   profile,
   ...
@@ -8,10 +8,6 @@
   personalKeyPath = ./public-ssh-keys/id_rsa_yubikey_personal.pub;
   workKeyPath = ./public-ssh-keys/id_rsa_yubikey_work.pub;
   isWorkProfile = profile == "work";
-  rootUserFolder =
-    if pkgs.stdenv.isLinux
-    then "home"
-    else "Users";
 in {
   programs.ssh = {
     enable = true;
@@ -20,10 +16,8 @@ in {
       github = {
         host = "github.com";
         identityFile =
-          [
-            "/${rootUserFolder}/${username}/.ssh/id_rsa_yubikey_personal.pub"
-          ]
-          ++ lib.optional isWorkProfile "/${rootUserFolder}/${username}/.ssh/id_rsa_yubikey_work.pub";
+          ["${config.home.homeDirectory}/.ssh/id_rsa_yubikey_personal.pub"]
+          ++ lib.optional isWorkProfile "${config.home.homeDirectory}/.ssh/id_rsa_yubikey_work.pub";
         identitiesOnly = true;
       };
     };
