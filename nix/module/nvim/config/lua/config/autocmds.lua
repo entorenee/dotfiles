@@ -16,10 +16,10 @@ autocmd("BufEnter", {
 				-- Only restart if mason-lspconfig is ready
 				local mason_ok, mason_lspconfig = pcall(require, "mason-lspconfig")
 				if mason_ok then
-					-- Stop any cspell_ls instances before restarting
+					-- Stop any typos_lsp instances before restarting
 					local all_clients = vim.lsp.get_clients()
 					for _, client in ipairs(all_clients) do
-						if client.name == "cspell_ls" then
+						if client.name == "typos_lsp" then
 							client.stop()
 						end
 					end

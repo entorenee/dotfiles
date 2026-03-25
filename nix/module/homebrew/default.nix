@@ -20,7 +20,6 @@ in {
       };
 
       brews = [
-        "cspell"
         "nvm"
         "pinentry"
         "pinentry-mac"
