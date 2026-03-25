@@ -22,8 +22,6 @@ in {
       brews = [
         "cspell" # TODO: test using Nix pkg
         "nvm" # TODO find Linux alternative
-        "pinentry" # TODO: May be able to substitue with pinentry-tty and pinentry_mac in Nix
-        "pinentry-mac"
         "Z" # TODO test moving Mac to pkgs
       ];
 

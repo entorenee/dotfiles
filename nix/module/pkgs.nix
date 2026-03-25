@@ -69,11 +69,11 @@ in {
       tree
       update-nix-fetchgit
       wget
-      # yubikey-manager TODO only apply this to Mac. Nix and Pop OS run into a pcscd protocol mismatch
     ]
     ++ lib.optionals isWorkProfile workPkgs
     ++ lib.optionals isPersonalProfile personalPkgs
-    ++ lib.optionals pkgs.stdenv.isLinux linuxPkgs;
+    ++ lib.optionals pkgs.stdenv.isLinux linuxPkgs
+    ++ lib.optionals pkgs.stdenv.isDarwin [ pkgs.yubikey-manager ];
 
   services.syncthing.enable = isPersonalProfile;
 }

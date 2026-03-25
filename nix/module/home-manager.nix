@@ -25,6 +25,7 @@ in {
       ./alacritty
       ./bins
       ./cspell
+      ./docker
       ./firefox
       ./fonts
       ./gh
@@ -36,6 +37,7 @@ in {
       ./lazygit
       ./navi
       ./nvim
+      ./npm
       ./nvm
       pkgsModule
       ./ssh
