@@ -24,8 +24,7 @@ in {
     [
       ./alacritty
       ./bins
-      ./cspell
-      ./docker
+./docker
       ./firefox
       ./fonts
       ./gh
@@ -40,10 +39,12 @@ in {
       ./npm
       ./nvm
       pkgsModule
+      ./smug
       ./ssh
       ./starship
       ./tmux
       ./tmuxinator
+      ./typos
       ./yamlfmt
       ./zsh
     ]

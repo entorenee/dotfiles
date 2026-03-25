@@ -1,0 +1,18 @@
+# typos configuration
+# https://github.com/crate-ci/typos/blob/master/docs/reference.md
+
+[files]
+extend-exclude = [
+  ".git/",
+  "node_modules/",
+  "dist/",
+  "*.lock",
+]
+
+[default]
+# Use default locale (en-us)
+locale = "en-us"
+
+[default.extend-words]
+# Add project-specific words that typos flags incorrectly
+# Example: crate = "crate"

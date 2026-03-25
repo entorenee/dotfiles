@@ -1,0 +1,8 @@
+session: pr-review
+root: ~/
+
+windows:
+  - name: editor
+    layout: main-vertical
+    commands:
+      - gh dash

@@ -20,8 +20,7 @@
     arduino-ide
     calibre
     cryptsetup # TODO: Confirm if this is a needed dependency
-    cspell
-    docker
+docker
     docker-compose
     freefilesync
     insomnia

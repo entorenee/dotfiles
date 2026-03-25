@@ -133,11 +133,11 @@
         "nixpkgs": "nixpkgs_3"
       },
       "locked": {
-        "lastModified": 1772251367,
-        "narHash": "sha256-u4CygpWtwZXOCJI4uhN9qvj2jSsjWsxQBG+0ty8M4iY=",
+        "lastModified": 1772816839,
+        "narHash": "sha256-mhjlRp/siX+RtuUrqXnaAIkZS8U2vaQ/IR1stReRnhM=",
         "owner": "fabioluciano",
         "repo": "tmux-powerkit",
-        "rev": "1976b4bfa99ed6811f8752ab356df47a0c709d1e",
+        "rev": "8e95c5f17f430beb1280a97de502b04a24d57e46",
         "type": "github"
       },
       "original": {

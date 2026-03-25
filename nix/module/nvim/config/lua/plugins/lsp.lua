@@ -14,11 +14,22 @@ return {
 						package_uninstalled = "✗",
 					},
 				},
+			})
+		end,
+	},
+
+	-- Auto-install Mason tools (formatters, linters)
+	{
+		"WhoIsSethDaniel/mason-tool-installer.nvim",
+		lazy = false,
+		priority = 950,
+		dependencies = { "williamboman/mason.nvim" },
+		config = function()
+			require("mason-tool-installer").setup({
 				ensure_installed = {
 					"eslint_d", -- ESLint daemon for fast linting
 					"prettier", -- Code formatter
 					"alejandra", -- Nix formatter
-					"cspell-lsp", -- Spell checker
 					"yamlfmt", -- YAML formatter
 					"stylua", -- Lua formatter
 					"shfmt", -- Shell script formatter
@@ -29,7 +40,8 @@ return {
 					"taplo", -- TOML formatter
 					"sqlfluff", -- SQL formatter and linter
 				},
-				automatic_installation = true,
+				auto_update = false,
+				run_on_start = true,
 			})
 		end,
 	},
@@ -68,12 +80,11 @@ return {
 			"williamboman/mason-lspconfig.nvim",
 		},
 		config = function()
-			vim.lsp.config("cspell_ls", {
-				cmd = {
-					"cspell-lsp",
-					"--config",
-					vim.fn.expand("~/.config/cspell/cspell.json"),
-					"--stdio",
+			vim.lsp.config("typos_lsp", {
+				cmd = { "typos-lsp" },
+				init_options = {
+					config = vim.fn.expand("~/.config/typos/typos.toml"),
+					diagnosticSeverity = "Hint",
 				},
 				root_dir = vim.fs.root(0, { ".git" }),
 			})

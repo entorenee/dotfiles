@@ -20,9 +20,10 @@ in {
       };
 
       brews = [
-        "cspell" # TODO: test using Nix pkg
-        "nvm" # TODO find Linux alternative
-        "Z" # TODO test moving Mac to pkgs
+        "nvm"
+        "pinentry"
+        "pinentry-mac"
+        "Z"
       ];
 
       casks = [

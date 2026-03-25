@@ -35,7 +35,9 @@ in {
   ];
 
   programs.zsh.initContent = ''
+    export GPG_TTY=$(tty)
     export SSH_AUTH_SOCK=$(gpgconf --list-dirs agent-ssh-socket)
+    gpg-connect-agent updatestartuptty /bye >/dev/null 2>&1
   '';
 
   home.file.".gnupg/gpg.conf".source = config.lib.file.mkOutOfStoreSymlink "${gnupgPath}/gpg.conf";
