@@ -1,6 +1,7 @@
 {
   lib,
-  username,
+  config,
+  pkgs,
   profile,
   ...
 }: let
@@ -15,10 +16,8 @@ in {
       github = {
         host = "github.com";
         identityFile =
-          [
-            "/Users/${username}/.ssh/id_rsa_yubikey_personal.pub"
-          ]
-          ++ lib.optional isWorkProfile "/Users/${username}/.ssh/id_rsa_yubikey_work.pub";
+          ["${config.home.homeDirectory}/.ssh/id_rsa_yubikey_personal.pub"]
+          ++ lib.optional isWorkProfile "${config.home.homeDirectory}/.ssh/id_rsa_yubikey_work.pub";
         identitiesOnly = true;
       };
     };

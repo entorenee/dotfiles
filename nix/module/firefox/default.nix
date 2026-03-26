@@ -1,5 +1,5 @@
-{...}: {
-  programs.firefox = {
+{lib, pkgs, ...}: {
+  programs.firefox = lib.mkIf pkgs.stdenv.isLinux {
     enable = true;
     policies = {
       #  DNS‑over‑HTTPS (Cloudflare – change the URL if you prefer another resolver)
@@ -43,6 +43,12 @@
       # Disable browser password manager
       PasswordManagerEnabled = false;
 
+      Homepage = {
+        StartPage = "previous-session";
+        URL = "about:blank";
+      };
+      NewTabPage = false;
+
       Preferences = {
         #  Block WebRTC IP leakage
         "media.peerconnection.enabled" = false;
@@ -59,9 +65,7 @@
         # Misc privacy‑related tweaks
         "signon.rememberSignons" = false; # no built‑in password manager
         "browser.formfill.enable" = false; # no form autofill
-        "browser.sessionstore.max_tabs_undo" = 0; # no session restore
         "browser.sessionstore.restore_on_demand" = true;
-        "browser.startup.page" = 0; # blank page on launch
         "browser.startup.homepage_override.mstone" = "ignore";
 
         # Optional: disable speculative DNS (extra safety)
@@ -85,14 +89,27 @@
             Alias = "@nh";
             URLTemplate = "https://home-manager-options.extranix.com/?query={searchTerms}";
           }
+          {
+            Name = "GitHub";
+            Alias = "@gh";
+            URLTemplate = "https://github.com/search?q={searchTerms}";
+          }
         ];
         Default = "SearXNG";
         Remove = [
+          "Bing"
+          "eBay"
           "Google"
           "Amazon.com"
         ];
       };
       SearchSuggestEnabled = false;
+
+      Extensions.Install = [
+        "https://addons.mozilla.org/firefox/downloads/latest/react-devtools/latest.xpi"
+        "https://addons.mozilla.org/firefox/downloads/latest/keepassxc-browser/latest.xpi"
+        "https://addons.mozilla.org/firefox/downloads/latest/ublock-origin/latest.xpi"
+      ];
     };
   };
 }

@@ -17,7 +17,7 @@
         # tmuxPlugins.sensible
         tmuxPlugins.vim-tmux-navigator
         {
-          plugin = tmux-powerkit.packages.${pkgs.system}.default;
+          plugin = tmux-powerkit.packages.${pkgs.stdenv.hostPlatform.system}.default;
           extraConfig = ''
             set -g @powerkit_status_position "bottom"
             set -g @powerkit_theme "tokyo-night"

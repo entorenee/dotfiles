@@ -1,40 +1,47 @@
 {
   config,
   lib,
-  username,
   pkgs,
   profile,
   ...
 }: let
   ghDashModule = import ./gh-dash {inherit config lib profile;};
   pkgsModule = import ./pkgs.nix {inherit lib pkgs profile;};
-  sshModule = import ./ssh {inherit lib username profile;};
+  keepassxcModule = import ./keepassxc {inherit config lib profile;};
+  orcaSlicerModule = import ./orca-slicer {inherit config lib pkgs profile;};
 in {
   programs.home-manager.enable = true;
-  home.stateVersion = "24.05";
+  home.stateVersion = "26.05";
   xdg.enable = true;
+  targets.genericLinux.enable = pkgs.stdenv.isLinux;
 
   imports = [
+    ./alacritty
     ./bins
+    ./docker
+    ./firefox
     ./fonts
-    ./karabiner
     ./gh
     ghDashModule
     ./ghostty
     ./git
     ./gnupg
+    ./karabiner
     ./lazygit
     ./navi
     ./nvim
+    ./npm
     ./nvm
     pkgsModule
-    sshModule
+    ./smug
+    ./ssh
     ./starship
     ./tmux
     ./tmuxinator
-    ./smug
     ./typos
     ./yamlfmt
     ./zsh
+    keepassxcModule
+    orcaSlicerModule
   ];
 }

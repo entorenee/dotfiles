@@ -2,17 +2,14 @@
   home-manager,
   darwin,
   nixpkgs,
-  navi-cheatsheets,
-  private-assets,
-  tmux-powerkit,
+  homeManagerArgs,
+  home-manager-config,
   username,
   profile,
   ...
 }: system: let
   lib = nixpkgs.lib;
-  home-manager-config = import ../module/home-manager.nix;
   homebrew-config = import ../module/homebrew/default.nix {inherit lib profile;};
-  system-config = import ../module/system-configuration.nix {inherit username;};
   launch-agents-config = import ../module/launch-agents/default.nix {inherit profile;};
 
   personalDock = [
@@ -54,24 +51,35 @@ in
         home-manager.useUserPackages = true;
         home-manager.users."${username}" = {
           imports = [home-manager-config];
-          _module.args = {
-            inherit lib username profile private-assets tmux-powerkit;
-            navi-cheatsheets = navi-cheatsheets.packages.${system}.default;
-          };
+          _module.args = homeManagerArgs;
         };
-        home-manager.backupFileExtension = "backup";
+        home-manager.backupFileExtension = "hm-backup";
       }
-
-      # Shareable system level configuration
-      system-config
 
       # Homebrew configuration
       homebrew-config
 
       # System settings
       {
-        launchd.user.agents = launch-agents-config;
+        security.pam.services.sudo_local = {
+          enable = true;
+          touchIdAuth = true;
+          reattach = true;
+        };
+
+        ids.gids.nixbld = 350;
+
+        users.users.${username}.home = "/Users/${username}";
+
+        nix = {
+          enable = false;
+          settings.experimental-features = "nix-command flakes";
+        };
+
+        nixpkgs.hostPlatform = system;
+
         system = {
+          stateVersion = 4;
           primaryUser = username;
           defaults = {
             controlcenter = {
@@ -142,9 +150,10 @@ in
             remapCapsLockToEscape = true;
           };
         };
-        time = {
-          timeZone = "America/Los_Angeles";
-        };
+
+        launchd.user.agents = launch-agents-config;
+
+        time.timeZone = "America/Los_Angeles";
       }
     ];
   }

@@ -1,6 +1,10 @@
 # Skyler Lemay dotfiles
 
-This repository contains dotfiles shared across multiple computer systems, differentiating between work and personal profiles in terms of package installation and configuration. Under the hood it uses [Nix](https://nixos.org/) for package management and system configuration. [Nix Darwin](https://github.com/nix-darwin/nix-darwin) is also utilized to handle MacOS specific configuration.
+This repository contains dotfiles shared across multiple computer systems, differentiating between work and personal profiles in terms of package installation and configuration. Key tools used:
+
+* **[Nix](https://nixos.org/)** — package management and system configuration across all platforms
+* **[Home Manager](https://github.com/nix-community/home-manager)** — user-space configuration management; used standalone on Linux and in conjunction with Nix Darwin on macOS
+* **[Nix Darwin](https://github.com/nix-darwin/nix-darwin)** — macOS-specific system configuration
 
 Most files are public and can be shared across systems. Some files are private and are consequently encrypted with the unencrypted versions placed in gitignore. This may be due to licensing restrictions, paid products including fonts, or sensitive/confidential information. These files are encrypted using GPG with the respective public keys of one or more of my profiles. They will not be accessible to others using the repository.
 
@@ -27,17 +31,27 @@ Install Nix using the Determinate Systems installer:
 curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install
 ```
 
-### Install nix-darwin
+### macOS
 
 Install nix-darwin to manage system configuration:
 ```
 nix run nix-darwin -- switch --flake ~/dotfiles/nix#[personal|work]
 ```
 
+### Linux
+
+On Linux, Home Manager is used standalone without Nix Darwin. Apply the configuration with:
+```
+make linux
+```
+
+This targets the `personal@linux` flake configuration using Home Manager directly.
+
 ### Maintenance scripts
 
 Several Makefile commands have been created to help manage the Nix configuration after the initial install:
 
+* **linux**: Apply the Home Manager configuration for the Linux personal profile.
 * **[p|w]Rebuild**: This command with the corresponded `p` or `w` prefix will rebuild the configuration file for the personal or work flake targets.
 * **update**: This updates the `flake.lock` file which corresponds to the Nix package inputs. The lock file can be committed, and a rebuild should be run after the lock file changes.
 * **generations**: Nix creates generations each time there is a change in configuration. This is great in the aspect that it allows Nix to rollback to a previous version of the configuration for debugging or temporarily unblocking a broken step. This comman lists the generations of builds available on the machine.

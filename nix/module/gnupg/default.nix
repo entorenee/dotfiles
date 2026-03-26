@@ -1,49 +1,38 @@
 {
   config,
+  lib,
   pkgs,
   ...
 }: let
-  gnupgPath = "${config.home.homeDirectory}/dotfiles/nix/module/gnupg/common.conf";
+  gnupgPath = "${config.home.homeDirectory}/dotfiles/nix/module/gnupg/config";
+
+  # Dynamically assemble agent conf
+  baseAgentConf = builtins.readFile ./config/gpg-agent.base;
+  pinentryLine =
+    if pkgs.stdenv.isLinux
+    then "pinentry-program ${pkgs.pinentry-gnome3}/bin/pinentry-gnome3"
+    else if pkgs.stdenv.isDarwin
+    then "pinentry-program ${pkgs.pinentry_mac}/bin/pinentry-mac"
+    else "";
+  gpgAgentConf = lib.concatStringsSep "\n" (
+    [baseAgentConf]
+    ++ (
+      if pinentryLine != ""
+      then [pinentryLine]
+      else []
+    )
+  );
 in {
-  programs.gpg = {
-    enable = true;
-    settings = {
-      personal-cipher-preferences = "AES256 AES192 AES";
-      personal-digest-preferences = "SHA512 SHA384 SHA256";
-      personal-compress-preferences = "ZLIB BZIP2 ZIP Uncompressed";
-      default-preference-list = "SHA512 SHA384 SHA256 AES256 AES192 AES ZLIB BZIP2 ZIP Uncompressed";
-      cert-digest-algo = "SHA512";
-      s2k-digest-algo = "SHA512";
-      s2k-cipher-algo = "AES256";
-      charset = "utf-8";
-      no-comments = true;
-      no-emit-version = true;
-      no-greeting = true;
-      keyid-format = "0xlong";
-      list-options = "show-uid-validity";
-      verify-options = "show-uid-validity";
-      with-fingerprint = true;
-      require-cross-certification = true;
-      require-secmem = true;
-      no-symkey-cache = true;
-      armor = true;
-      use-agent = true;
-      throw-keyids = true;
-    };
-    scdaemonSettings = {
-      disable-ccid = true;
-    };
-    publicKeys = [
-      {
-        source = ./public-keys/personal-pub.asc;
-        trust = "ultimate";
-      }
-      {
-        source = ./public-keys/freeworld-pub.asc;
-        trust = "ultimate";
-      }
-    ];
-  };
+  programs.gpg.publicKeys = [
+    {
+      source = ./public-keys/personal-pub.asc;
+      trust = "ultimate";
+    }
+    {
+      source = ./public-keys/freeworld-pub.asc;
+      trust = "ultimate";
+    }
+  ];
 
   programs.zsh.initContent = ''
     export GPG_TTY=$(tty)
@@ -51,16 +40,7 @@ in {
     gpg-connect-agent updatestartuptty /bye >/dev/null 2>&1
   '';
 
-  services.gpg-agent = {
-    enable = true;
-    enableScDaemon = true;
-    enableSshSupport = true;
-    defaultCacheTtl = 60;
-    maxCacheTtl = 120;
-    pinentry = {
-      package = pkgs.pinentry_mac;
-    };
-  };
-
-  xdg.configFile.".gnupg/common.conf".source = config.lib.file.mkOutOfStoreSymlink gnupgPath;
+  home.file.".gnupg/gpg.conf".source = config.lib.file.mkOutOfStoreSymlink "${gnupgPath}/gpg.conf";
+  home.file.".gnupg/scdaemon.conf".source = config.lib.file.mkOutOfStoreSymlink "${gnupgPath}/scdaemon.conf";
+  home.file.".gnupg/gpg-agent.conf".text = gpgAgentConf;
 }

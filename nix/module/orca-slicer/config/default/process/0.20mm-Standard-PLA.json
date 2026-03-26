@@ -1,0 +1,11 @@
+{
+  "filename_format": "{if plate_name!=\"\"}{plate_name}{else}{input_filename_base}{endif}_{print_time}_{filament_type[initial_tool]}_{nozzle_diameter[0]}.gcode",
+  "from": "User",
+  "inherits": "0.20mm Standard @Creality Ender-3 V3",
+  "initial_layer_speed": "30",
+  "is_custom_defined": "0",
+  "name": "0.20mm-Standard-PLA",
+  "print_settings_id": "0.20mm-Standard-PLA",
+  "slow_down_layers": "3",
+  "version": "2.3.1.10"
+}

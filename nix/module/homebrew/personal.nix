@@ -18,7 +18,6 @@
       "libreoffice"
       "little-snitch"
       "nextcloud"
-      # "ollama"  not currently using and may revisit in the near future
       "orcaslicer"
       "proton-mail"
       "proton-pass" #deprecating usage of

@@ -20,6 +20,7 @@ in {
       };
 
       brews = [
+        "gnupg"
         "nvm"
         "pinentry"
         "pinentry-mac"
@@ -29,7 +30,8 @@ in {
       casks = [
         "claude"
         "docker-desktop"
-        "elgato-control-center"
+        "elgato-control-center" # TODO find linux pkg
+        "firefox" # TODO: look into migrating to Home Manager
         "ghostty"
         "insomnia"
         "jordanbaird-ice"

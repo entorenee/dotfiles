@@ -1,5 +1,8 @@
 .PHONY: help
 
+linux:
+	nix run home-manager -- --extra-experimental-features 'nix-command flakes' switch --flake nix/#personal@linux
+
 ## Run Darwin rebuild for Personal profile
 pRebuild:
 	sudo darwin-rebuild switch --flake nix/#personal

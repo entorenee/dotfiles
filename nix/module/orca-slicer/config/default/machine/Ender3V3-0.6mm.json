@@ -1,0 +1,15 @@
+{
+    "from": "User",
+    "inherits": "Creality Ender-3 V3 0.6 nozzle",
+    "is_custom_defined": "0",
+    "max_layer_height": [
+        "0.45"
+    ],
+    "min_layer_height": [
+        "0.15"
+    ],
+    "name": "Ender3V3-0.6mm",
+    "print_host": "http://192.168.0.100:4408",
+    "printer_settings_id": "Ender3V3-0.6mm",
+    "version": "2.3.1.10"
+}

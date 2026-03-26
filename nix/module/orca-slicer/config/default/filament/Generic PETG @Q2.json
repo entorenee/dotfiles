@@ -1,0 +1,28 @@
+{
+    "compatible_printers": [
+        "Qidi Q2 0.4 nozzle"
+    ],
+    "fan_max_speed": [
+        "60"
+    ],
+    "filament_settings_id": [
+        "Generic PETG @Q2"
+    ],
+    "from": "User",
+    "hot_plate_temp": [
+        "60"
+    ],
+    "hot_plate_temp_initial_layer": [
+        "60"
+    ],
+    "inherits": "Generic PETG @System",
+    "is_custom_defined": "0",
+    "name": "Generic PETG @Q2",
+    "nozzle_temperature": [
+        "245"
+    ],
+    "nozzle_temperature_initial_layer": [
+        "245"
+    ],
+    "version": "2.3.1.10"
+}
