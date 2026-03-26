@@ -1,5 +1,5 @@
-{...}: {
-  programs.firefox = {
+{lib, pkgs, ...}: {
+  programs.firefox = lib.mkIf pkgs.stdenv.isLinux {
     enable = true;
     policies = {
       #  DNS‑over‑HTTPS (Cloudflare – change the URL if you prefer another resolver)

@@ -1,9 +1,17 @@
-{config, ...}: let
+{
+  config,
+  lib,
+  profile,
+  ...
+}: let
   keepassPath = "${config.home.homeDirectory}/dotfiles/nix/module/keepassxc/config";
+  isPersonalProfile = profile == "personal";
 in {
-  programs.keepassxc = {
+  programs.keepassxc = lib.mkIf isPersonalProfile {
     enable = true;
   };
 
-  xdg.configFile."keepassxc".source = config.lib.file.mkOutOfStoreSymlink keepassPath;
+  xdg.configFile."keepassxc" = lib.mkIf isPersonalProfile {
+    source = config.lib.file.mkOutOfStoreSymlink keepassPath;
+  };
 }
