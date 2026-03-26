@@ -20,6 +20,7 @@ in {
       };
 
       brews = [
+        "gnupg"
         "nvm"
         "pinentry"
         "pinentry-mac"
