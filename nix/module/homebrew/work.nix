@@ -2,6 +2,7 @@
   homebrew = {
     brews = [
       "cocoapods"
+      "hookdeck/hookdeck/hookdeck"
       "mysql"
       "openjdk@17"
       "rtk"

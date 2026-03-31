@@ -1,4 +1,4 @@
-#!/usr/bin/env zsh
+#!/usr/bin/env zsh -i
 
 local NOW=$(date +"%Y-%m-%d-%H-%M-%S")
 local LOGS="/tmp/update-all-$NOW.txt"
@@ -16,7 +16,7 @@ echo "Updating Neovim packages"
 gum spin --spinner moon --title "💤 lazy.nvim syncing..." -- nvim --headless "+Lazy! update" +qa
 logTask "✅ 💤 lazy.nvim synced"
 
-gum spin --spinner moon --title "🧰 mason.nvim updating" -- nvim --headless "+MasonUpdate" +qa
+gum spin --spinner moon --title "🧰 mason.nvim updating" -- nvim --headless "+MasonToolsUpdate" "+sleep 10" +qa
 logTask "✅ 🧰 mason.nvim updated"
 
 # Only update Homebrew on Mac systems
