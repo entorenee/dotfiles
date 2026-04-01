@@ -1,3 +1,17 @@
 {
+  "sandbox": {
+    "permissions": {
+      "read": {
+        "allow": [
+          "~/dotfiles"
+        ]
+      },
+      "write": {
+        "allow": [
+          "~/dotfiles"
+        ]
+      }
+    }
+  },
   "mcpServers": {}
 }
