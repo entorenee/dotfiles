@@ -1,5 +1,5 @@
 session: student-portal
-root: ~/code/work/StudentPortal
+root: ~/code/work/StudentPortal/develop
 
 windows:
   - name: editor
