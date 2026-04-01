@@ -85,6 +85,23 @@ This repository also ships with [tmuxinator](https://github.com/tmuxinator/tmuxi
 * You can create your own configuration by typing `tx new [project-name]` using the name you want to reference with `tmux start` as mentioned above.
 * Set the configuration as you would like and save for future use.
 
+## Claude Code
+
+Claude Code configuration is declaratively managed via the `nix/module/claude/` module. Settings, hooks, skills, and agents are version-controlled and symlinked into `~/.claude/`.
+
+- **Settings**: `settings.json` is generated from `settings-base.json` merged with profile-specific overrides (`settings-work.json` / `settings-personal.json`). It is read-only (Nix store symlink). To change settings, edit the JSON files and rebuild.
+- **Hooks**: Stored in `nix/module/claude/config/hooks/` and symlinked to `~/.claude/hooks/`.
+- **Skills & Agents**: Stored in `nix/module/claude/config/skills/` and `agents/`, symlinked to `~/.claude/`.
+
+### Linux note
+
+[RTK](https://github.com/rtk-ai/rtk) (Rust Token Killer) is installed via Homebrew on macOS but must be installed manually on Linux:
+```bash
+cargo install --git https://github.com/rtk-ai/rtk
+# or
+curl -fsSL https://raw.githubusercontent.com/rtk-ai/rtk/master/install.sh | sh
+```
+
 ## Manual configuration
 
 ### Iterm (likely to be deprecated)

@@ -4,7 +4,6 @@
       "hookdeck/hookdeck/hookdeck"
       "mysql"
       "openjdk@17"
-      "rtk"
       "vercel-cli"
     ];
 
