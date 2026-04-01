@@ -6,8 +6,10 @@
 }: let
   isWorkProfile = profile == "work";
   workPkgs = with pkgs; [
+    cocoapods
     doctl
     mkcert
+    ruby
   ];
 
   isPersonalProfile = profile == "personal";
