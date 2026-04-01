@@ -20,6 +20,10 @@
   "sandbox": {
     "enabled": true
   },
+  "statusLine": {
+    "type": "command",
+    "command": "~/.claude/statusline.sh"
+  },
   "hasSentTelemetryConsent": false,
   "preferences": {
     "alwaysThinkingEnabled": true,

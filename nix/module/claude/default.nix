@@ -29,4 +29,7 @@ in {
 
   home.file.".claude/agents".source =
     config.lib.file.mkOutOfStoreSymlink "${configPath}/agents";
+
+  home.file.".claude/statusline.sh".source =
+    config.lib.file.mkOutOfStoreSymlink "${configPath}/statusline.sh";
 }
