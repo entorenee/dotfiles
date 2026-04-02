@@ -5,6 +5,9 @@
     "filament_stamping_loading_speed": [
         "20"
     ],
+    "filament_vendor": [
+        "Ambrosia"
+    ],
     "from": "User",
     "inherits": "Generic PLA @System",
     "is_custom_defined": "0",
