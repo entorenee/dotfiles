@@ -1,0 +1,19 @@
+{
+  "sandbox": {
+    "permissions": {
+      "read": {
+        "allow": [
+          "~/dotfiles",
+          "~/code/work"
+        ]
+      },
+      "write": {
+        "allow": [
+          "~/dotfiles",
+          "~/code/work"
+        ]
+      }
+    }
+  },
+  "mcpServers": {}
+}

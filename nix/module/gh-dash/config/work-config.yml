@@ -64,7 +64,13 @@ defaults:
 
 keybindings:
   issues: []
-  prs: []
+  prs:
+    - key: W
+      name: worktree checkout
+      command: >
+        cd {{.RepoPath}} &&
+        git fetch origin {{.HeadRefName}} &&
+        git worktree add ../{{.HeadRefName}} origin/{{.HeadRefName}}
 
 repoPaths:
   JoinFreeWorld/*: ~/code/work/*

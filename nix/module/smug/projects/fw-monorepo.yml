@@ -1,8 +1,8 @@
 session: fw-monorepo
-root: ~/code/work/fw_monorepo
+root: ~/code/work/fw_monorepo/develop
 
 windows:
-  - name: root
+  - name: develop
     layout: 1654,151x66,0,0[151x47,0,0,135,151x18,0,48{75x18,0,48,137,75x18,76,48,136}]
     commands:
       - nvim
