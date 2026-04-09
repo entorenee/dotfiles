@@ -29,6 +29,30 @@ Configuration files are read-only — do NOT attempt to write to ~/.claude/setti
 - Sandbox permissions with profile-specific paths (e.g., `~/code/work`) must include shared paths (e.g., `~/dotfiles`) in each profile file
 - Keep this in mind when adding any array-valued settings to both base and profile configs
 
+## MCP Servers
+
+MCP servers with OAuth (e.g., Asana) require a two-part setup:
+
+1. **Config (Nix-managed):** Add the non-secret fields (`type`, `url`, `clientId`, `callbackPort`) to the appropriate settings JSON file. This gets deployed via `make darwin-switch`.
+
+2. **Secret (manual, one-time):** Run `claude mcp add` with `--client-secret` to store the secret in the macOS Keychain. This only needs to be done once per machine (survives Nix rebuilds).
+
+Example for Asana:
+
+```bash
+claude mcp add --transport http \
+  --client-id YOUR_CLIENT_ID \
+  --client-secret \
+  --callback-port 8080 \
+  asana https://mcp.asana.com/v2/mcp
+```
+
+If the server entry already exists from Nix, you only need to re-run this command to populate the keychain secret (e.g., after a credential rotation or on a new machine).
+
+## Git
+
+- **Never run `git add`, `git commit`, or any staging/committing commands.** I use a Yubikey for GPG commit signing which requires physical touch and does not work with automated commits. Skip all git steps — just report what files changed.
+
 ## Git Worktree Workflow
 
 I use the **sibling worktree pattern** for all repositories:

@@ -15,5 +15,14 @@
       }
     }
   },
-  "mcpServers": {}
+  "mcpServers": {
+    "asana": {
+      "type": "http",
+      "url": "https://mcp.asana.com/v2/mcp",
+      "oauth": {
+        "clientId": "1213890292395119",
+        "callbackPort": 8080
+      }
+    }
+  }
 }
