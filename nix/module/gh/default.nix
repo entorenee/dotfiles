@@ -1,5 +1,4 @@
-{ ... }:
-{
+{...}: {
   programs.gh = {
     enable = true;
     settings = {
@@ -11,6 +10,7 @@
       spinner = "enabled";
       aliases = {
         co = "pr checkout";
+        cpr = "pr create --web";
         vpr = "pr view --web";
         vr = "repo view --web";
       };
