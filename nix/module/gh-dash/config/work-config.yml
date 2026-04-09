@@ -5,14 +5,13 @@ prSections:
       is:open
       draft:false
       involves:@me
-      -review-requested:@me
       -author:@me
   - title: Review Requested
     filters: >-
       owner:JoinFreeWorld
       is:open
       draft:false
-      -commenter:@me
+      -involves:@me
       -author:@me
       -author:dependabot[bot]
   - title: Me
