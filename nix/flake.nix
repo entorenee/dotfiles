@@ -69,7 +69,7 @@
     in
       home-manager.lib.homeManagerConfiguration {
         inherit pkgs;
-        extraSpecialArgs = {inherit profile;};
+        extraSpecialArgs = {inherit profile worktrunk;};
         modules = [
           home-manager-config
           {
