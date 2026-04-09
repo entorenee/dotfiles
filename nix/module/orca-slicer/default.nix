@@ -8,7 +8,7 @@
   orcaConfigPath = "${config.home.homeDirectory}/dotfiles/nix/module/orca-slicer/config";
   isPersonalProfile = profile == "personal";
 in {
-  home.packages = lib.mkIf isPersonalProfile (with pkgs; [
+  home.packages = lib.mkIf pkgs.stdenv.isLinux (with pkgs; [
     orca-slicer
   ]);
 
