@@ -3,6 +3,7 @@
   lib,
   pkgs,
   profile,
+  worktrunk,
   ...
 }: let
   claudeModule = import ./claude {inherit config lib profile;};
@@ -45,5 +46,6 @@ in {
     ./zsh
     keepassxcModule
     orcaSlicerModule
+    ./worktrunk
   ];
 }
