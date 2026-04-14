@@ -59,7 +59,7 @@
 
     mkDarwinConfig = username: profile: system:
       import ./system/darwin.nix {
-        inherit darwin home-manager nixpkgs home-manager-config username profile;
+        inherit darwin home-manager nixpkgs home-manager-config username profile worktrunk;
         homeManagerArgs = mkHomeManagerArgs system username profile;
       }
       system;
@@ -72,6 +72,7 @@
         extraSpecialArgs = {inherit profile worktrunk;};
         modules = [
           home-manager-config
+          worktrunk.homeModules.default
           {
             home.username = username;
             home.homeDirectory = "/home/${username}";

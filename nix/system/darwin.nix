@@ -6,6 +6,7 @@
   home-manager-config,
   username,
   profile,
+  worktrunk,
   ...
 }: system: let
   lib = nixpkgs.lib;
@@ -50,7 +51,7 @@ in
         home-manager.useGlobalPkgs = false;
         home-manager.useUserPackages = true;
         home-manager.users."${username}" = {
-          imports = [home-manager-config];
+          imports = [home-manager-config worktrunk.homeModules.default];
           _module.args = homeManagerArgs;
         };
         home-manager.backupFileExtension = "hm-backup";
