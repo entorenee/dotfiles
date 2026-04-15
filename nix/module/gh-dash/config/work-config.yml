@@ -1,29 +1,22 @@
 prSections:
-  - title: Involved
+  - title: Reviewed
     filters: >-
       owner:JoinFreeWorld
       is:open
       draft:false
-      involves:@me
+      reviewed-by:@me
       -author:@me
-  - title: Review Requested
+  - title: Needs My Review
     filters: >-
       owner:JoinFreeWorld
       is:open
       draft:false
-      -involves:@me
-      -author:@me
-      -author:dependabot[bot]
+      review-requested:@me
   - title: Me
     filters: >-
       owner:JoinFreeWorld
       is:open
       author:@me
-  - title: Assigned
-    filters: >-
-      owner:JoinFreeWorld
-      is:open
-      assignee:@me
 
 defaults:
   preview:
