@@ -3,8 +3,10 @@
   lib,
   pkgs,
   profile,
+  worktrunk,
   ...
 }: let
+  claudeModule = import ./claude {inherit config lib profile;};
   ghDashModule = import ./gh-dash {inherit config lib profile;};
   pkgsModule = import ./pkgs.nix {inherit lib pkgs profile;};
   keepassxcModule = import ./keepassxc {inherit config lib profile;};
@@ -18,6 +20,7 @@ in {
   imports = [
     ./alacritty
     ./bins
+    claudeModule
     ./docker
     ./firefox
     ./fonts
@@ -43,5 +46,6 @@ in {
     ./zsh
     keepassxcModule
     orcaSlicerModule
+    ./worktrunk
   ];
 }

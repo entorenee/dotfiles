@@ -1,0 +1,5 @@
+# Worktrunk user configuration (Nix-managed)
+# Do not edit directly - modify nix/module/worktrunk/config/config.toml in dotfiles
+
+[post-switch]
+tmux = "$HOME/dotfiles/nix/module/worktrunk/hooks/tmux-switch.sh {{ branch | sanitize }} {{ worktree_path }}"

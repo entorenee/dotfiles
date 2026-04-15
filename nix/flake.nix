@@ -26,6 +26,11 @@
 
     tmux-powerkit.url = "github:fabioluciano/tmux-powerkit";
 
+    worktrunk = {
+      url = "github:max-sixty/worktrunk";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
     # Private assets - for initial setup without SSH, use:
     # --override-input private-assets 'path:/dev/null'
     private-assets = {
@@ -41,19 +46,20 @@
     navi-cheatsheets,
     private-assets,
     tmux-powerkit,
+    worktrunk,
     ...
   }: let
     lib = nixpkgs.lib;
     home-manager-config = import ./module/home-manager.nix;
 
     mkHomeManagerArgs = system: username: profile: {
-      inherit lib username profile private-assets tmux-powerkit;
+      inherit lib username profile private-assets tmux-powerkit worktrunk;
       navi-cheatsheets = navi-cheatsheets.packages.${system}.default;
     };
 
     mkDarwinConfig = username: profile: system:
       import ./system/darwin.nix {
-        inherit darwin home-manager nixpkgs home-manager-config username profile;
+        inherit darwin home-manager nixpkgs home-manager-config username profile worktrunk;
         homeManagerArgs = mkHomeManagerArgs system username profile;
       }
       system;
@@ -63,9 +69,10 @@
     in
       home-manager.lib.homeManagerConfiguration {
         inherit pkgs;
-        extraSpecialArgs = {inherit profile;};
+        extraSpecialArgs = {inherit profile worktrunk;};
         modules = [
           home-manager-config
+          worktrunk.homeModules.default
           {
             home.username = username;
             home.homeDirectory = "/home/${username}";

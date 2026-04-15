@@ -1,5 +1,5 @@
 session: admin-portal
-root: ~/code/work/AdminPortal
+root: ~/code/work/AdminPortal/develop
 
 windows:
   - name: editor

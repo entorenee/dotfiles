@@ -20,9 +20,10 @@
 
   linuxPkgs = with pkgs; [
     arduino-ide
+    bubblewrap
     calibre
     cryptsetup # TODO: Confirm if this is a needed dependency
-docker
+    docker
     docker-compose
     freefilesync
     insomnia
@@ -36,6 +37,7 @@ docker
     rpi-imager
     signal-desktop
     slack
+    socat
     spotify
     tor
     veracrypt
@@ -54,7 +56,7 @@ in {
       bat
       caddy
       cargo # Nix LSP dependency
-      claude-code
+
       fd
       glow
       git-lfs
@@ -74,7 +76,7 @@ in {
     ++ lib.optionals isWorkProfile workPkgs
     ++ lib.optionals isPersonalProfile personalPkgs
     ++ lib.optionals pkgs.stdenv.isLinux linuxPkgs
-    ++ lib.optionals pkgs.stdenv.isDarwin [ pkgs.yubikey-manager ];
+    ++ lib.optionals pkgs.stdenv.isDarwin [pkgs.yubikey-manager];
 
   services.syncthing.enable = isPersonalProfile;
 }

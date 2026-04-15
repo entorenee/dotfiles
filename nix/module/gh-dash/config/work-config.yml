@@ -1,30 +1,22 @@
 prSections:
-  - title: Involved
+  - title: Reviewed
     filters: >-
       owner:JoinFreeWorld
       is:open
       draft:false
-      involves:@me
-      -review-requested:@me
+      reviewed-by:@me
       -author:@me
-  - title: Review Requested
+  - title: Needs My Review
     filters: >-
       owner:JoinFreeWorld
       is:open
       draft:false
-      -commenter:@me
-      -author:@me
-      -author:dependabot[bot]
+      review-requested:@me
   - title: Me
     filters: >-
       owner:JoinFreeWorld
       is:open
       author:@me
-  - title: Assigned
-    filters: >-
-      owner:JoinFreeWorld
-      is:open
-      assignee:@me
 
 defaults:
   preview:
@@ -64,7 +56,12 @@ defaults:
 
 keybindings:
   issues: []
-  prs: []
+  prs:
+    - key: W
+      name: worktree checkout
+      command: >
+        cd {{.RepoPath}}/develop &&
+        wt switch pr:{{.PrNumber}} --yes
 
 repoPaths:
   JoinFreeWorld/*: ~/code/work/*

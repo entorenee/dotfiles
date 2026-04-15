@@ -24,6 +24,7 @@ in {
         "nvm"
         "pinentry"
         "pinentry-mac"
+        "rtk"
         "Z"
       ];
 
