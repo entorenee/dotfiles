@@ -22,6 +22,8 @@ in {
         "typescript-lsp@claude-plugins-official" = true;
         "superpowers@superpowers-marketplace" = true;
         "frontend-design@claude-plugins-official" = true;
+        "lua-lsp@claude-plugins-official" = true;
+        "pr-review-toolkit@claude-plugins-official" = true;
       };
       sandbox.enabled = true;
       statusLine = {
@@ -33,6 +35,20 @@ in {
         alwaysThinkingEnabled = true;
         cleanupPeriodDays = 365;
       };
+      permissions.allow = [
+        "Bash(gh issue list*)"
+        "Bash(gh issue view*)"
+        "Bash(gh pr list*)"
+        "Bash(gh pr view*)"
+        "Bash(gh pr status*)"
+        "Bash(gh pr checks*)"
+        "Bash(gh pr diff*)"
+        "Bash(gh run list*)"
+        "Bash(gh run view*)"
+        "Bash(gh repo view*)"
+        "Bash(gh api repos/*/issues*)"
+        "Bash(gh api repos/*/pulls*)"
+      ];
       permissions.deny = [
         "Bash(rm -rf *)"
         "Bash(rm -fr *)"
