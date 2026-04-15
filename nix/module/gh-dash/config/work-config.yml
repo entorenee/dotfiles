@@ -67,9 +67,8 @@ keybindings:
     - key: W
       name: worktree checkout
       command: >
-        cd {{.RepoPath}} &&
-        git fetch origin {{.HeadRefName}} &&
-        git worktree add ../{{.HeadRefName}} origin/{{.HeadRefName}}
+        cd {{.RepoPath}}/develop &&
+        wt switch pr:{{.PrNumber}} --yes
 
 repoPaths:
   JoinFreeWorld/*: ~/code/work/*

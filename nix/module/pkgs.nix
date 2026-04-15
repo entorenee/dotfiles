@@ -56,7 +56,7 @@ in {
       bat
       caddy
       cargo # Nix LSP dependency
-      claude-code
+
       fd
       glow
       git-lfs

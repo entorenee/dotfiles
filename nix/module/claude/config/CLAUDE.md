@@ -7,14 +7,15 @@ Configuration files are read-only — do NOT attempt to write to ~/.claude/setti
 
 ## How to make changes
 
-| Change             | Where to edit                                                                                                                | Then run                                   |
-| ------------------ | ---------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------ |
-| Add MCP server     | `nix/module/claude/config/settings-base.json` (shared) or `settings-work.json` / `settings-personal.json` (profile-specific) | `make darwin-switch` or `make home-switch` |
-| Add hook           | Create script in `nix/module/claude/config/hooks/`, add to settings JSON                                                     | Rebuild                                    |
-| Add skill          | Add to `nix/module/claude/config/skills/`                                                                                    | Automatic (symlinked)                      |
-| Add agent          | Add to `nix/module/claude/config/agents/`                                                                                    | Automatic (symlinked)                      |
-| Change plugin      | Edit `enabledPlugins` in `settings-base.json`                                                                                | Rebuild                                    |
-| Change permissions | Edit `permissions` in settings JSON                                                                                          | Rebuild                                    |
+| Change             | Where to edit                                                                       | Then run                                   |
+| ------------------ | ----------------------------------------------------------------------------------- | ------------------------------------------ |
+| Add MCP server     | `nix/module/claude/work.nix` or `personal.nix` (profile-specific)                   | `make darwin-switch` or `make home-switch` |
+| Add hook           | Create script in `nix/module/claude/config/hooks/`, add to `default.nix` settings   | Rebuild                                    |
+| Add skill          | Add to `nix/module/claude/config/skills/`                                           | Automatic (symlinked)                      |
+| Add agent          | Add to `nix/module/claude/config/agents/`                                           | Automatic (symlinked)                      |
+| Change plugin      | Edit `enabledPlugins` in `nix/module/claude/default.nix`                            | Rebuild                                    |
+| Change permissions | Edit `permissions` in `nix/module/claude/default.nix` (base) or profile `.nix` file | Rebuild                                    |
+| Change setting     | Edit `nix/module/claude/default.nix` (base) or profile `.nix` file (override)       | Rebuild                                    |
 
 ## Important
 
@@ -24,30 +25,28 @@ Configuration files are read-only — do NOT attempt to write to ~/.claude/setti
 
 ## Settings Merge Behavior
 
-- `lib.recursiveUpdate` performs a deep merge of base + profile settings
-- **Arrays are replaced, not appended** — profile arrays overwrite base arrays at the same path
-- Sandbox permissions with profile-specific paths (e.g., `~/code/work`) must include shared paths (e.g., `~/dotfiles`) in each profile file
-- Keep this in mind when adding any array-valued settings to both base and profile configs
+- Base settings in `default.nix` use `lib.mkDefault`, so profile `.nix` files can override them
+- Profile-specific settings in `work.nix` / `personal.nix` are gated with `lib.mkIf` on the active profile
+- Nix module system deep-merges attribute sets and concatenates lists
+- For scalar values (bools, strings), profile settings override base defaults
 
 ## MCP Servers
 
+MCP servers are declared in profile `.nix` files (e.g., `work.nix`) under `programs.claude-code.mcpServers`. The home-manager module writes these to `~/.claude.json` and they appear as `plugin:claude-code-home-manager:<name>`.
+
 MCP servers with OAuth (e.g., Asana) require a two-part setup:
 
-1. **Config (Nix-managed):** Add the non-secret fields (`type`, `url`, `clientId`, `callbackPort`) to the appropriate settings JSON file. This gets deployed via `make darwin-switch`.
+1. **Config (Nix-managed):** Add the server to the `mcpServers` attrset in the profile `.nix` file. This gets deployed via `make darwin-switch`.
 
-2. **Secret (manual, one-time):** Run `claude mcp add` with `--client-secret` to store the secret in the macOS Keychain. This only needs to be done once per machine (survives Nix rebuilds).
-
-Example for Asana:
+2. **Auth (manual, one-time):** Run the following command to store OAuth credentials in the macOS Keychain. This only needs to be done once per machine (survives Nix rebuilds).
 
 ```bash
 claude mcp add --transport http \
-  --client-id YOUR_CLIENT_ID \
+  --client-id "$ASANA_CLIENT_ID" \
   --client-secret \
   --callback-port 8080 \
   asana https://mcp.asana.com/v2/mcp
 ```
-
-If the server entry already exists from Nix, you only need to re-run this command to populate the keychain secret (e.g., after a credential rotation or on a new machine).
 
 ## Git
 
