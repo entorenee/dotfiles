@@ -6,9 +6,9 @@
 lib.mkIf (profile == "work") {
   programs.claude-code = {
     settings = {
-      sandbox.permissions = {
-        read.allow = ["~/dotfiles" "~/code/work"];
-        write.allow = ["~/dotfiles" "~/code/work"];
+      sandbox.filesystem = {
+        allowRead = ["~/dotfiles" "~/code/work"];
+        allowWrite = ["~/dotfiles" "~/code/work"];
       };
     };
 

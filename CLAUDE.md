@@ -14,7 +14,14 @@ Personal dotfiles managed with Nix Darwin, including comprehensive configuration
 Always prefer native home-manager modules and options over custom activation scripts or manual config file edits. When settings need to diverge based on profile, pick from the following options:
 
 1. If the settings are minimal (eg. enabling a feature, sourcing a different file, etc) prefer maintaining the configuration within the single Nix file.
-2. If there are more substantial configuration settings, including merging of settings (such as the Claude Nix module configuration) utilize a default.nix file for shared settings and a work|personal.nix file for the respective profile settings to merge. In this case, utilize Nix's `lib.mkDefault` as needed to allow profile settings to override the shared settings.
+2. If there are more substantial configuration settings, including merging of settings (such as the Claude Nix module configuration) utilize a default.nix file for shared settings and a work|personal.nix file for the respective profile settings to merge. Profile files should be gated with `lib.mkIf (profile == "work")` / `lib.mkIf (profile == "personal")`.
+
+### `lib.mkDefault` usage
+
+`lib.mkDefault` only works correctly on **leaf values** or on options backed by **structured types** (submodules, `listOf`, typed options). It does **not** work on freeform/JSON-typed options (like `programs.claude-code.settings` which uses `pkgs.formats.json`).
+
+- **Structured types** (e.g., `homebrew.brews`, `homebrew.onActivation`): `mkDefault` works as expected. Lists concatenate; submodule fields merge individually.
+- **Freeform JSON types**: Wrapping the entire attrset with `lib.mkDefault` makes it a single opaque value. A higher-priority definition replaces it entirely instead of deep-merging. For these options, omit `mkDefault` on the attrset and only apply it to individual leaf values that need to be overridable.
 
 ## Key Components
 
@@ -83,10 +90,10 @@ The Claude Code configuration is Nix-managed in `nix/module/claude/`. The global
 
 ### Settings Merge Behavior
 
-- Base settings in `default.nix` use `lib.mkDefault`, so profile `.nix` files can override them
+- `programs.claude-code.settings` uses a freeform JSON type (`pkgs.formats.json`) — do **not** wrap the entire attrset with `lib.mkDefault` (it prevents merging; see Architecture section above)
+- Base settings in `default.nix` are set without `mkDefault`; the JSON type merges attrsets across definitions automatically
 - Profile-specific settings in `work.nix` / `personal.nix` are gated with `lib.mkIf` on the active profile
-- Nix module system deep-merges attribute sets and concatenates lists
-- For scalar values (bools, strings), profile settings override base defaults
+- For individual leaf values that a profile needs to override, apply `lib.mkDefault` to that specific value in `default.nix`
 
 ### MCP Servers
 

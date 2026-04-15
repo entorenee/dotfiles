@@ -6,7 +6,7 @@ in {
 
   programs.claude-code = {
     enable = true;
-    settings = lib.mkDefault {
+    settings = {
       hooks.PreToolUse = [
         {
           matcher = "Bash";
