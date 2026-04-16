@@ -48,6 +48,23 @@ in {
         "Bash(gh repo view*)"
         "Bash(gh api repos/*/issues*)"
         "Bash(gh api repos/*/pulls*)"
+        # npm read-only
+        "Bash(npm ls*)"
+        "Bash(npm outdated*)"
+        "Bash(npm explain*)"
+        "Bash(npm view*)"
+        "Bash(npm pkg get*)"
+        "Bash(npm audit*)"
+        "Bash(npm run --list*)"
+        # npm build/test
+        "Bash(npm test*)"
+        "Bash(npm run test*)"
+        "Bash(npm run lint*)"
+        "Bash(npm run tsc*)"
+        "Bash(npm run build*)"
+        "Bash(npm run dev*)"
+        "Bash(npm ci*)"
+        "Bash(npm install*)"
       ];
       permissions.deny = [
         "Bash(rm -rf *)"
