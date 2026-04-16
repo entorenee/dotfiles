@@ -21,6 +21,7 @@
   linuxPkgs = with pkgs; [
     arduino-ide
     bubblewrap
+    caffeine-ng
     calibre
     cryptsetup # TODO: Confirm if this is a needed dependency
     docker
