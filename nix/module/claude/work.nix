@@ -25,7 +25,7 @@ lib.mkIf (profile == "work") {
         "mcp__asana__get_status_overview"
       ];
       sandbox.filesystem = {
-        allowRead = ["~/dotfiles" "~/code/work"];
+        allowRead = ["~/dotfiles" "~/code/work" "/nix/store"];
         allowWrite = ["~/dotfiles" "~/code/work"];
       };
     };
