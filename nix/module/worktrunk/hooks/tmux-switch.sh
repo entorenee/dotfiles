@@ -29,7 +29,7 @@ tmux split-window -v -t "$WINDOW_NAME" -c "$WORKTREE_PATH" -l '30%'
 tmux split-window -h -t "$WINDOW_NAME" -c "$WORKTREE_PATH" -l '50%'
 
 # Start claude in the bottom-left pane
-tmux send-keys -t "$WINDOW_NAME.1" 'claude' Enter
+tmux send-keys -t "$WINDOW_NAME.2" 'claude' Enter
 
 # Focus the nvim pane (top)
-tmux select-pane -t "$WINDOW_NAME.0"
+tmux select-pane -t "$WINDOW_NAME.1"

@@ -34,7 +34,7 @@ Always prefer native home-manager modules and options over custom activation scr
 ### Development Tools
 
 - **Neovim** - Primary editor with LSP, formatting, linting via Mason
-- **Tmux** - Terminal multiplexer with custom theme and keybindings
+- **Tmux** - Terminal multiplexer with custom theme and keybindings (`pane-base-index 1` — panes are 1-indexed)
 - **Git** - Version control with profile-specific configurations
 - **Shell** - Zsh with Starship prompt
 
