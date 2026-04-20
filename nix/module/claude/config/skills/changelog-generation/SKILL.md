@@ -103,6 +103,8 @@ Organize changes into these categories:
 
 **Monorepo detection**: If the repo has a `turbo.json`, workspace config in `package.json`, or multiple distinct project directories, use multi-project format. Group changes by project, with a "System-Wide Changes" section for shared code.
 
+**Formatting rule**: Do not insert blank lines between subsection headings and their bullet lists.
+
 ## Quality Checklist
 
 Before finalizing:
