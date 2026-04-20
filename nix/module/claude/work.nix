@@ -23,6 +23,20 @@ lib.mkIf (profile == "work") {
         "mcp__asana__get_portfolios"
         "mcp__asana__get_items_for_portfolio"
         "mcp__asana__get_status_overview"
+        # vercel read-only
+        "mcp__plugin_claude-code-home-manager_vercel__get_deployment"
+        "mcp__plugin_claude-code-home-manager_vercel__get_deployment_build_logs"
+        "mcp__plugin_claude-code-home-manager_vercel__get_runtime_logs"
+        "mcp__plugin_claude-code-home-manager_vercel__get_project"
+        "mcp__plugin_claude-code-home-manager_vercel__list_projects"
+        "mcp__plugin_claude-code-home-manager_vercel__list_deployments"
+        "mcp__plugin_claude-code-home-manager_vercel__list_teams"
+        "mcp__plugin_claude-code-home-manager_vercel__list_toolbar_threads"
+        "mcp__plugin_claude-code-home-manager_vercel__get_toolbar_thread"
+        "mcp__plugin_claude-code-home-manager_vercel__check_domain_availability_and_price"
+        "mcp__plugin_claude-code-home-manager_vercel__search_vercel_documentation"
+        "mcp__plugin_claude-code-home-manager_vercel__get_access_to_vercel_url"
+        "mcp__plugin_claude-code-home-manager_vercel__web_fetch_vercel_url"
       ];
       sandbox.filesystem = {
         allowRead = ["~/dotfiles" "~/code/work" "/nix/store"];
@@ -42,6 +56,10 @@ lib.mkIf (profile == "work") {
       posthog = {
         type = "http";
         url = "https://mcp.posthog.com/mcp";
+      };
+      vercel = {
+        type = "http";
+        url = "https://mcp.vercel.com";
       };
     };
   };
