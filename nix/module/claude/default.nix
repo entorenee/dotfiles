@@ -25,6 +25,9 @@ in {
         "lua-lsp@claude-plugins-official" = true;
         "pr-review-toolkit@claude-plugins-official" = true;
       };
+      env = {
+        ENABLE_CLAUDEAI_MCP_SERVERS = "false";
+      };
       sandbox.enabled = true;
       statusLine = {
         type = "command";
@@ -48,6 +51,8 @@ in {
         "Bash(gh repo view*)"
         "Bash(gh api repos/*/issues*)"
         "Bash(gh api repos/*/pulls*)"
+        # rtk wrapper (transparent proxy for token savings)
+        "Bash(rtk *)"
         # npm read-only
         "Bash(npm ls*)"
         "Bash(npm outdated*)"
@@ -65,6 +70,21 @@ in {
         "Bash(npm run dev*)"
         "Bash(npm ci*)"
         "Bash(npm install*)"
+        # pnpm read-only
+        "Bash(pnpm ls*)"
+        "Bash(pnpm list*)"
+        "Bash(pnpm outdated*)"
+        "Bash(pnpm view*)"
+        "Bash(pnpm audit*)"
+        # pnpm build/test
+        "Bash(pnpm test*)"
+        "Bash(pnpm run test*)"
+        "Bash(pnpm run lint*)"
+        "Bash(pnpm run tsc*)"
+        "Bash(pnpm run build*)"
+        "Bash(pnpm run dev*)"
+        "Bash(pnpm install*)"
+        "Bash(pnpm add*)"
       ];
       permissions.deny = [
         "Bash(rm -rf *)"

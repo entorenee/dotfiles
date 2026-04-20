@@ -66,6 +66,7 @@ in {
       htop
       jq
       npm-check-updates
+      pnpm
       postgresql
       python314
       ripgrep
