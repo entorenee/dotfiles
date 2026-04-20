@@ -39,6 +39,10 @@ in {
         cleanupPeriodDays = 365;
       };
       permissions.allow = [
+        # Read access for dotfiles (skills, agents, nix modules)
+        "Read(~/dotfiles/**)"
+        "Read(/nix/store/**)"
+        # gh cli read-only
         "Bash(gh issue list*)"
         "Bash(gh issue view*)"
         "Bash(gh pr list*)"
@@ -53,6 +57,20 @@ in {
         "Bash(gh api repos/*/pulls*)"
         # rtk wrapper (transparent proxy for token savings)
         "Bash(rtk *)"
+        # git read-only
+        "Bash(git log*)"
+        "Bash(git diff*)"
+        "Bash(git show*)"
+        "Bash(git branch*)"
+        "Bash(git blame*)"
+        "Bash(git stash list*)"
+        "Bash(git worktree list*)"
+        "Bash(git remote*)"
+        "Bash(git rev-parse*)"
+        "Bash(git merge-base*)"
+        "Bash(git tag*)"
+        "Bash(git describe*)"
+        "Bash(git ls-files*)"
         # npm read-only
         "Bash(npm ls*)"
         "Bash(npm outdated*)"
@@ -81,10 +99,26 @@ in {
         "Bash(pnpm run test*)"
         "Bash(pnpm run lint*)"
         "Bash(pnpm run tsc*)"
+        "Bash(pnpm run typecheck*)"
         "Bash(pnpm run build*)"
         "Bash(pnpm run dev*)"
         "Bash(pnpm install*)"
         "Bash(pnpm add*)"
+        "Bash(pnpm exec *)"
+        # turbo
+        "Bash(pnpm turbo *)"
+        "Bash(npx turbo *)"
+        # typescript direct
+        "Bash(npx tsc*)"
+        "Bash(tsc *)"
+        # expo
+        "Bash(npx expo *)"
+        # nix read-only
+        "Bash(nix eval *)"
+        "Bash(nix flake show*)"
+        "Bash(nix flake metadata*)"
+        "Bash(nix run home-manager*)"
+        "Bash(darwin-rebuild switch*--dry-run*)"
       ];
       permissions.deny = [
         "Bash(rm -rf *)"

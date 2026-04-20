@@ -7,6 +7,9 @@ lib.mkIf (profile == "work") {
   programs.claude-code = {
     settings = {
       permissions.allow = [
+        # Read access for cross-project paths (worktrees, sibling packages)
+        "Read(~/code/work/**)"
+        # asana read-only
         "mcp__asana__get_me"
         "mcp__asana__get_task"
         "mcp__asana__get_tasks"
