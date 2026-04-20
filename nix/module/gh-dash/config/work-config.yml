@@ -11,7 +11,9 @@ prSections:
       owner:JoinFreeWorld
       is:open
       draft:false
-      review-requested:@me
+      -reviewed-by:@me
+      -author:@me
+      -author:dependabot[bot]
   - title: Me
     filters: >-
       owner:JoinFreeWorld
