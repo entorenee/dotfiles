@@ -1,11 +1,13 @@
-{ config, ... }:
+{ config, pkgs, ... }:
 let
- nvimPath = "${config.home.homeDirectory}/dotfiles/nix/module/nvim/config";
+  nvimPath = "${config.home.homeDirectory}/dotfiles/nix/module/nvim/config";
 in
 {
-  programs.neovim = {
-    enable = true;
-    defaultEditor = true;
+  home.packages = [ pkgs.neovim ];
+  home.sessionVariables = {
+    EDITOR = "nvim";
+    VISUAL = "nvim";
+    MANPAGER = "nvim -c 'Man!' -o -";
   };
 
   programs.zsh.initContent = ''
