@@ -177,6 +177,10 @@ in {
     };
   };
 
+  programs.zsh.shellAliases = {
+    claude-yolo = "claude --dangerously-skip-permissions";
+  };
+
   home.file.".claude/CLAUDE.md".source =
     config.lib.file.mkOutOfStoreSymlink "${configPath}/CLAUDE.md";
   home.file.".claude/RTK.md".source =
