@@ -42,6 +42,8 @@ digraph upgrade_flow {
     engineer -> phase [label="rejected\nfix issues"];
     done -> memory -> phase [label="no\nnext phase"];
     done -> complete [label="yes"];
+    complete -> pr [label="engineer\nasks for PR"];
+    pr [label="8. Create PR\nDraft mode ONLY\nWait for engineer\nto request this"];
 }
 ```
 
@@ -55,6 +57,7 @@ digraph upgrade_flow {
 | **Validation** | Zero TS errors, zero lint errors, all tests pass, build succeeds - after EVERY phase |
 | **Never do** | Delete package-lock.json, skip build step, proceed with broken state, rollback without approval |
 | **AI boundary** | Run tsc/lint/test. NEVER run build, commit, push, or rollback without explicit engineer approval |
+| **PR creation** | NEVER auto-create. Wait for engineer to ask. Always use `--draft` mode |
 
 ## Peer Dependency Conflicts
 
@@ -86,6 +89,62 @@ For upgrades spanning multiple sessions, create a progress file in `.claude/` tr
 ## Communication Protocol
 
 After each phase, report: validation results, packages updated (old -> new), issues encountered, and next phase plan. Always remind engineer to run `npm run build` before approving.
+
+## Pull Request Creation
+
+**NEVER auto-create a PR.** Wait for the engineer to explicitly ask you to create one. When asked:
+
+- Always create in **draft** mode (`--draft`)
+- Use the PR template below
+
+### PR Template
+
+```markdown
+## Summary
+
+{1-2 sentence overview: what this PR covers and how it fits into the larger upgrade effort.}
+
+### Phase 1: Minor & Patch Updates ({count} packages)
+
+**Phase 1a — {description} ({count} packages):**
+{comma-separated list of package names}
+
+**Phase 1b — {description} ({count} packages):**
+{comma-separated list with notable version jumps called out, e.g. "@aws-sdk/client-s3 (3.629→3.1034)"}
+
+### Phase 2: Major Version Bumps ({count} packages)
+
+| Package | From | To | Risk | Blast Radius |
+|---------|------|----|------|-------------|
+| `{package}` | {old} | {new} | {Very Low/Low/Medium} | {N files — brief justification} |
+
+### Code Changes (beyond package.json)
+
+- **`{file path}`** — {what changed and why}
+
+### Other
+
+- {Deferred upgrades with reasons}
+- {Removed unused packages with justification}
+- {Notable peer dep resolutions}
+
+## Test plan
+
+- [x] `npm run tsc` — {result}
+- [x] `npm run test` — {result}
+- [x] `npm run build` — verified by engineer
+- [ ] Verify dev server starts cleanly
+- [ ] Smoke test critical paths (auth, navigation, data tables)
+
+🤖 Generated with [Claude Code](https://claude.com/claude-code)
+```
+
+### Key Principles
+
+- **Risk column**: Rate each major bump (Very Low / Low / Medium) based on blast radius and API surface change
+- **Blast radius**: State file count and why it's safe (e.g., "1 file — dev dep for test data only", "0 files — CLI-only usage")
+- **Deferred section**: Document what was intentionally skipped and why (peer dep blockers, resolution conflicts, risk too high for this batch)
+- **Code changes section**: Only list changes beyond package.json/lock — import path fixes, API adaptations, test updates, snapshot refreshes
 
 ## Full Reference
 
