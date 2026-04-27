@@ -13,6 +13,10 @@ in {
           hooks = [
             {
               type = "command";
+              command = "~/.claude/hooks/pnpm-guard.sh";
+            }
+            {
+              type = "command";
               command = "~/.claude/hooks/rtk-rewrite.sh";
             }
           ];
