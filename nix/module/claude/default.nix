@@ -54,6 +54,7 @@ in {
         "Bash(gh pr status*)"
         "Bash(gh pr checks*)"
         "Bash(gh pr diff*)"
+        "Bash(gh pr create*)"
         "Bash(gh run list*)"
         "Bash(gh run view*)"
         "Bash(gh repo view*)"
@@ -97,6 +98,7 @@ in {
         "Bash(pnpm list*)"
         "Bash(pnpm outdated*)"
         "Bash(pnpm view*)"
+        "Bash(pnpm why *)"
         "Bash(pnpm audit*)"
         # pnpm build/test
         "Bash(pnpm test*)"
@@ -115,6 +117,10 @@ in {
         # typescript direct
         "Bash(npx tsc*)"
         "Bash(tsc *)"
+        # test runner
+        "Bash(npx vitest *)"
+        # linter (read-only by default; --fix mutates)
+        "Bash(npx eslint *)"
         # expo
         "Bash(npx expo *)"
         # nix read-only
