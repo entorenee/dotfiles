@@ -48,6 +48,10 @@ lib.mkIf (profile == "work") {
     };
 
     mcpServers = {
+      expo = {
+        type = "http";
+        url = "https://mcp.expo.dev/mcp";
+      };
       betterstack = {
         type = "http";
         url = "https://mcp.betterstack.com";
