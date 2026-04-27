@@ -24,9 +24,12 @@ switch-gen:
 	@read -p "Enter generation number: " gen; \
 	home-manager switch --switch-generation $$gen
 
-## Cleanup generations older than 7 days
+## Cleanup generations older than 7 days (user + system profiles on Darwin)
 cleanup:
 	nix-collect-garbage --delete-older-than 7d
+	@if [ "$$(uname)" = "Darwin" ]; then \
+		sudo nix-collect-garbage --delete-older-than 7d; \
+	fi
 
 help:
 	@awk '/^## / \
