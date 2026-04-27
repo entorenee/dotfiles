@@ -15,14 +15,6 @@
       KeepAlive = false;
     };
   };
-  google-chrome = {
-    serviceConfig = {
-      Label = "Chrome";
-      ProgramArguments = ["/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"];
-      RunAtLoad = true;
-      KeepAlive = false;
-    };
-  };
   google-drive = {
     serviceConfig = {
       Label = "GDrive";
