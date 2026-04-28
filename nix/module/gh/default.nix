@@ -6,7 +6,6 @@
       git_protocol = "ssh";
       editor = "nvim";
       prompt = "enabled";
-      prefer_editor_prompt = "enabled";
       spinner = "enabled";
       aliases = {
         co = "pr checkout";

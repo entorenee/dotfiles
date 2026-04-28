@@ -48,8 +48,7 @@
     '';
 
     sessionVariables = {
-      DOCKER_HIDE_LEGACY_COMMANDS = true;
-      DISABLE_AUTOUPDATER = true; # Handle Claude Code updates via Nix
+      DOCKER_HIDE_LEGACY_COMMANDS = "1";
       HOMEBREW_NO_AUTO_UPDATE = 1;
       NIX_PROFILE = "${profile}";
     };
