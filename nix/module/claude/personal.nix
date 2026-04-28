@@ -6,8 +6,8 @@ lib.mkIf (profile == "personal") {
         "gopls-lsp@claude-plugins-official" = true;
       };
       sandbox.filesystem = {
-        allowRead = ["~/dotfiles" "/nix/store"];
-        allowWrite = ["~/dotfiles"];
+        allowRead = ["~/dotfiles" "/nix/store" "/tmp" "/private/tmp"];
+        allowWrite = ["~/dotfiles" "/tmp" "/private/tmp"];
       };
     };
   };

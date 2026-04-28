@@ -31,8 +31,10 @@ in {
       };
       env = {
         ENABLE_CLAUDEAI_MCP_SERVERS = "false";
+        DISABLE_AUTOUPDATER = "1";
       };
       sandbox.enabled = true;
+      sandbox.network.allowedDomains = [ "registry.npmjs.org" ];
       statusLine = {
         type = "command";
         command = "~/.claude/statusline.sh";

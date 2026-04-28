@@ -42,8 +42,8 @@ lib.mkIf (profile == "work") {
         "mcp__plugin_claude-code-home-manager_vercel__web_fetch_vercel_url"
       ];
       sandbox.filesystem = {
-        allowRead = ["~/dotfiles" "~/code/work" "/nix/store" "/private/tmp/jest_dx/"];
-        allowWrite = ["~/dotfiles" "~/code/work" "/private/tmp/jest_dx/"];
+        allowRead = ["~/dotfiles" "~/code/work" "/nix/store" "/tmp" "/private/tmp"];
+        allowWrite = ["~/dotfiles" "~/code/work" "/tmp" "/private/tmp"];
       };
     };
 
