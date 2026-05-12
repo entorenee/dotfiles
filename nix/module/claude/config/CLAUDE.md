@@ -72,3 +72,9 @@ wt remove                   # Remove current worktree; deletes branch if merged
 
 - All feature work, bug fixes, and implementation tasks should use a worktree
 - Proactively create a worktree without asking — the preference is always worktrees
+
+### Memory across worktrees
+
+Claude's per-project memory directory (`~/.claude/projects/<encoded-cwd>/memory/`) is keyed by the working directory, so each worktree gets its own isolated memory. Memories saved in a feature worktree's directory disappear when that worktree is removed and are invisible from sibling worktrees.
+
+**Rule:** When saving project- or repo-wide memory (e.g., `project` or `feedback` types that apply beyond the current task), write it to the **default-branch worktree's** memory directory, not the current feature worktree's. For AdminPortal that's `~/.claude/projects/-Users-fw-skylerlemay-code-work-AdminPortal-develop/memory/`. Use the current worktree's memory only for memories scoped to the in-progress branch work that won't be relevant after the branch merges.
