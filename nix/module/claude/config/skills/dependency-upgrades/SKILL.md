@@ -54,10 +54,43 @@ digraph upgrade_flow {
 | **Phase order** | Dev tools -> TypeScript -> Core framework -> Data layer -> UI libs -> External services |
 | **Coupled packages** | Update together: React+ReactDOM+types, Prisma client+CLI, MUI suite, tRPC stack, TS+eslint-typescript |
 | **Version jumps** | One major at a time (v5->v6->v7, never v5->v7) |
+| **Phase 1 completeness** | Bump every package to its latest within-current-major. Don't trust `npm outdated` alone — see below |
 | **Validation** | Zero TS errors, zero lint errors, all tests pass, build succeeds - after EVERY phase |
 | **Never do** | Delete package-lock.json, skip build step, proceed with broken state, rollback without approval |
 | **AI boundary** | Run tsc/lint/test. NEVER run build, commit, push, or rollback without explicit engineer approval |
+| **Commit scope** | Don't bump packages unprompted between explicit phases. Each commit/phase covers only what the engineer approved |
 | **PR creation** | NEVER auto-create. Wait for engineer to ask. Always use `--draft` mode |
+
+## Phase 1 Completeness: Latest Within-Major
+
+`npm outdated` reports the absolute `latest` for each package. When `current == wanted`, it tells you nothing about whether a newer minor/patch exists *within your current major*. This is a frequent miss: a package pinned at `5.6.0` shows up as outdated against `7.8.0` (deferred major), but the `5.22.0` patch within v5 silently gets skipped.
+
+**Always check latest-in-major for every package whose major is being deferred**, then include those bumps in Phase 1.
+
+Quick check (substitute the major and package list):
+
+```bash
+# For each package whose major you're keeping, find the highest version in that major
+for pkg in "@prisma/client@5" "next@15" "stripe@15"; do
+  v=$(npm view "$pkg" version 2>/dev/null | tail -1)
+  echo "$pkg => $v"
+done
+```
+
+Or with a `package.json` driving the list:
+
+```bash
+node -e "
+const p = require('./package.json');
+const deps = {...p.dependencies, ...p.devDependencies};
+for (const [name, ver] of Object.entries(deps)) {
+  const major = ver.replace(/^[\^~]/, '').split('.')[0];
+  console.log(\`\${name}@\${major}\`);
+}
+" | xargs -I {} sh -c 'echo "{} => $(npm view "{}" version 2>/dev/null | tail -1)"'
+```
+
+Then diff that list against current pins to catch every available within-major bump. Bundle them all into Phase 1.
 
 ## Peer Dependency Conflicts
 
