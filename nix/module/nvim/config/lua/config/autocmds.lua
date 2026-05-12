@@ -23,7 +23,7 @@ autocmd("BufEnter", {
 							client.stop()
 						end
 					end
-					vim.cmd("LspRestart")
+					vim.cmd("lsp restart")
 				end
 			end
 		end, 100)

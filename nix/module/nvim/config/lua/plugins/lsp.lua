@@ -158,6 +158,14 @@ return {
 
 			vim.lsp.config("nil_ls", {
 				filetypes = { "nix" },
+				settings = {
+					["nil"] = {
+						flake = {
+							autoArchive = true,
+							autoEvalInputs = false,
+						},
+					},
+				},
 				on_attach = on_attach,
 				capabilities = capabilities,
 			})
