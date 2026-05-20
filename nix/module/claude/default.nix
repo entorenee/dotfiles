@@ -32,15 +32,45 @@ in {
       env = {
         ENABLE_CLAUDEAI_MCP_SERVERS = "false";
         DISABLE_AUTOUPDATER = "1";
+        # Force Node's DNS resolution to prefer IPv4. The Claude Code sandbox
+        # proxy binds to 127.0.0.1; Node 18+ defaults to IPv6-first lookups,
+        # which fail before falling back. Tools like Vite/Vitest run lots of
+        # short-lived Node processes that hit this constantly.
+        NODE_OPTIONS = "--dns-result-order=ipv4first";
       };
       sandbox.enabled = true;
       sandbox.network.allowedDomains = [
         "registry.npmjs.org"
+        "www.npmjs.com"
         "api.github.com"
+        "github.com"
         "raw.githubusercontent.com"
         "objects.githubusercontent.com"
         "codeload.github.com"
         "asanausercontent.com"
+      ];
+      # Read-only registry-metadata queries run outside the sandbox so they
+      # reuse the user's real ~/.npm and ~/.local/share/pnpm caches. The
+      # sandbox still gates everything else (installs, builds, arbitrary
+      # commands), and permissions / PreToolUse hooks still apply. These
+      # commands cannot mutate the project — they only query the registry
+      # and read package.json / lockfiles.
+      sandbox.excludedCommands = [
+        "npm outdated*"
+        "npm view *"
+        "npm explain*"
+        "npm audit*"
+        "npx npm-check-updates*"
+        "npx --yes npm-check-updates*"
+        "npx ncu*"
+        "npx --yes ncu*"
+        "pnpm outdated*"
+        "pnpm view *"
+        "pnpm why *"
+        "pnpm audit*"
+        "pnpm dlx npm-check-updates*"
+        "pnpm dlx ncu*"
+        "pnpm exec ncu*"
       ];
       statusLine = {
         type = "command";
@@ -110,6 +140,14 @@ in {
         "Bash(npm pkg get*)"
         "Bash(npm audit*)"
         "Bash(npm run --list*)"
+        # npm-check-updates (read-only when --jsonUpgraded; mutates only with -u/--upgrade)
+        "Bash(npx --yes npm-check-updates*)"
+        "Bash(npx npm-check-updates*)"
+        "Bash(npx --yes ncu*)"
+        "Bash(npx ncu*)"
+        "Bash(pnpm dlx npm-check-updates*)"
+        "Bash(pnpm dlx ncu*)"
+        "Bash(pnpm exec ncu*)"
         # npm build/test
         "Bash(npm test*)"
         "Bash(npm run test*)"
@@ -166,6 +204,12 @@ in {
         "Bash(nix flake show*)"
         "Bash(nix flake metadata*)"
         "Bash(darwin-rebuild switch*--dry-run*)"
+        # WebFetch — general-purpose research surface for dependency upgrades
+        # and migration guides. Mirrors the sandbox.network.allowedDomains list.
+        "WebFetch(domain:github.com)"
+        "WebFetch(domain:raw.githubusercontent.com)"
+        "WebFetch(domain:www.npmjs.com)"
+        "WebFetch(domain:registry.npmjs.org)"
       ];
       permissions.deny = [
         "Bash(rm -rf *)"
@@ -231,6 +275,14 @@ in {
         "Read(~/.kube/**)"
         "Read(~/.npmrc)"
         "Read(~/.npm/**)"
+        # Project-level .npmrc may contain private registry tokens (_authToken).
+        # Block all reads to prevent secret exfiltration via the Read tool or
+        # common shell utilities.
+        "Read(**/.npmrc)"
+        "Bash(cat *.npmrc*)"
+        "Bash(grep *.npmrc*)"
+        "Bash(head *.npmrc*)"
+        "Bash(tail *.npmrc*)"
         "Read(~/.pypirc)"
         "Read(~/.gem/credentials)"
         "Read(~/Library/Keychains/**)"
