@@ -4,16 +4,16 @@
 
 ### Dependency Assessment
 
-Before starting any upgrade work:
+Before starting any upgrade work, dispatch the `dependency-scoper` agent to produce the structured plan (within-major, deferred majors, coupled groups). Do not run `npm outdated` or per-package `npm view` loops in the main thread — the scoper handles this and keeps the registry chatter out of conversation context.
 
-- **Identify outdated packages**: `npm outdated`
-- **Categorize by risk level**:
-  - **Low Risk**: Dev dependencies, utility libraries with minimal API surface
-  - **Medium Risk**: UI libraries, build tools, testing frameworks
-  - **High Risk**: Core frameworks (React, Next.js), database ORMs, authentication
-  - **Critical Risk**: Packages with known breaking changes or complex migrations
-- **Check interdependencies**: Identify packages that must be updated together
-- **Verify peer dependency requirements**: Check compatibility before attempting updates
+The scoper output drives risk categorization:
+
+- **Low Risk**: Dev dependencies, utility libraries with minimal API surface (typically the `withinMajor` set)
+- **Medium Risk**: UI libraries, build tools, testing frameworks
+- **High Risk**: Core frameworks (React, Next.js), database ORMs, authentication
+- **Critical Risk**: Packages with known breaking changes or complex migrations (typically `majorJump >= 2` entries in `deferredMajors`)
+
+Use the scoper's `coupled` field to identify packages that must be updated together, and verify peer dependency requirements with `npm ls` / `pnpm ls` before attempting any major update.
 
 ### Baseline Establishment
 
@@ -105,12 +105,14 @@ The following MUST be maintained at every phase:
 
 ## Migration Research Protocol
 
-Before ANY major version update:
+Before ANY major version update, dispatch a `migration-researcher` agent. When multiple majors are being researched, send them in a single message so they run concurrently. Each agent covers:
 
 1. **Find Official Documentation**: Migration guides, CHANGELOG.md, GitHub release notes
 2. **Identify Breaking Changes**: Removed/deprecated APIs, config changes, new peer deps, behavioral changes
 3. **Check for Migration Tools**: Codemods, migration CLIs, ESLint migration plugins
 4. **Assess Compatibility**: Verify dependent packages support the new version, check peer alignment
+
+The agent filters breaking changes to ones the codebase actually uses (via grep), so the brief is scoped to real impact rather than a generic changelog.
 
 ## Anti-Patterns
 
@@ -264,11 +266,12 @@ After each phase, report:
 ## Quick Reference Commands
 
 ```bash
-# Analysis
-npm outdated                    # Show outdated packages
-npm ls <package>                # Show dependency tree
+# Analysis — prefer dispatching the dependency-scoper agent over running these inline
+npm ls <package>                # Show dependency tree (peer-dep checks)
+npx --yes npm-check-updates --jsonUpgraded                # npm/yarn project
+pnpm dlx npm-check-updates --jsonUpgraded                 # pnpm project
 
-# AI Validation Suite
+# AI Validation Suite (discover exact scripts from package.json first)
 npm run tsc                     # TypeScript check
 npm run lint                    # ESLint check
 npm run test                    # Test suite

@@ -25,9 +25,9 @@ digraph upgrade_flow {
     rankdir=TB;
     node [shape=box];
 
-    assess [label="1. Assess\nnpm outdated\nCategorize risk"];
+    scope [label="1. Scope\nDispatch dependency-scoper agent\nReturns JSON: within-major, deferred-majors, coupled"];
     baseline [label="2. Baseline\nPin versions\nVerify zero errors\nCommit clean state"];
-    research [label="3. Research\nMigration guides\nBreaking changes\nPeer deps"];
+    research [label="3. Research\nDispatch migration-researcher agents IN PARALLEL\n(one per deferred major, single Agent block)"];
     phase [label="4. Execute Phase\nSmallest working set\nof major updates"];
     validate [label="5. Validate\ntsc + lint + test\n(AI runs these)"];
     engineer [label="6. Engineer Gate\nnpm run build\nManual testing\n(MUST NOT skip)"];
@@ -35,7 +35,7 @@ digraph upgrade_flow {
     memory [label="7. Update Memory\nVersions, issues,\nlessons learned"];
     complete [label="Complete"];
 
-    assess -> baseline -> research -> phase -> validate;
+    scope -> baseline -> research -> phase -> validate;
     validate -> engineer [label="pass"];
     validate -> phase [label="fail\nfix first"];
     engineer -> done [label="approved"];
@@ -46,6 +46,21 @@ digraph upgrade_flow {
     pr [label="8. Create PR\nDraft mode ONLY\nWait for engineer\nto request this"];
 }
 ```
+
+## Subagent Orchestration (required)
+
+This skill is parallelizable and **must** use subagents to keep registry/web chatter out of the main conversation:
+
+- **Scoping** — dispatch the `dependency-scoper` agent once. It returns the structured upgrade plan. Do not run `npm outdated` or per-package `npm view` loops in the main thread.
+- **Migration research** — for each entry in `deferredMajors` from the scoper output, dispatch a `migration-researcher` agent. **Send them in a single message** so they run concurrently. Aggregate the briefs into the phase plan you present to the engineer.
+
+Inline (non-agent) work in the main thread is limited to: presenting plans, editing package.json, running validation (`tsc`/`lint`/`test`), and creating commits/PRs when the engineer asks.
+
+### Sandbox notes (do not invent workarounds)
+
+Registry-metadata queries (`npm outdated`, `npm view`, `npx npm-check-updates`, `pnpm outdated`, `pnpm dlx ncu`, etc.) are listed in `sandbox.excludedCommands` and run **outside** the sandbox. They use the user's real `~/.npm` / pnpm caches directly — no `--cache /tmp/...` flag, no `HTTP_PROXY=...` prelude, no `--registry=...` overrides are needed. If one of these commands fails, the failure is the real failure — debug it, don't paper over it with per-command sandbox workarounds.
+
+Installs and mutating commands (`npm install`, `pnpm install`, `pnpm add`, builds, tests) still run inside the sandbox. The `NODE_OPTIONS=--dns-result-order=ipv4first` env var is already set globally for those.
 
 ## Quick Reference
 
@@ -63,34 +78,9 @@ digraph upgrade_flow {
 
 ## Phase 1 Completeness: Latest Within-Major
 
-`npm outdated` reports the absolute `latest` for each package. When `current == wanted`, it tells you nothing about whether a newer minor/patch exists *within your current major*. This is a frequent miss: a package pinned at `5.6.0` shows up as outdated against `7.8.0` (deferred major), but the `5.22.0` patch within v5 silently gets skipped.
+The `dependency-scoper` agent's `withinMajor` output already covers this — it uses `npm-check-updates --target minor`, which finds the highest version in each package's current major (the most frequent miss when relying on `npm outdated` alone).
 
-**Always check latest-in-major for every package whose major is being deferred**, then include those bumps in Phase 1.
-
-Quick check (substitute the major and package list):
-
-```bash
-# For each package whose major you're keeping, find the highest version in that major
-for pkg in "@prisma/client@5" "next@15" "stripe@15"; do
-  v=$(npm view "$pkg" version 2>/dev/null | tail -1)
-  echo "$pkg => $v"
-done
-```
-
-Or with a `package.json` driving the list:
-
-```bash
-node -e "
-const p = require('./package.json');
-const deps = {...p.dependencies, ...p.devDependencies};
-for (const [name, ver] of Object.entries(deps)) {
-  const major = ver.replace(/^[\^~]/, '').split('.')[0];
-  console.log(\`\${name}@\${major}\`);
-}
-" | xargs -I {} sh -c 'echo "{} => $(npm view "{}" version 2>/dev/null | tail -1)"'
-```
-
-Then diff that list against current pins to catch every available within-major bump. Bundle them all into Phase 1.
+Bundle every entry from `withinMajor` into Phase 1 unless the engineer explicitly defers one.
 
 ## Peer Dependency Conflicts
 
@@ -102,10 +92,11 @@ Resolution order of preference:
 
 ## Migration Research (Before ANY Major Bump)
 
-1. Read official migration guide and CHANGELOG
-2. Identify removed/deprecated APIs and new peer deps
-3. Check for codemods or migration CLI tools
-4. Verify downstream packages support the new version
+Dispatch one `migration-researcher` agent per deferred major from the scoper output. **Send them all in a single message** so they run concurrently — sequential dispatch defeats the purpose.
+
+Each agent returns a brief covering: risk rating, breaking changes filtered to actual codebase usage, codemods, coupled upgrades, and verification steps. Aggregate these into the phase plan presented to the engineer.
+
+Only do this research inline in the main thread if a single ad-hoc bump is being assessed and dispatching an agent would be overkill.
 
 ## Memory File for Multi-Session Upgrades
 
