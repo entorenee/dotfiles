@@ -14,6 +14,12 @@ Guide the user to edit the Nix config files in their dotfiles repo rather than w
 
 - **Never post comments, reviews, or replies on GitHub PRs or issues on my behalf.** Read-only operations (viewing PRs, diffs, checks, comments) are fine. Creating PRs is allowed when asked. All other write operations (commenting, reviewing, closing, merging, editing) require explicit instruction.
 
+## Inclusive Language
+
+- **Never infer or assign gender to anyone whose gender has not been explicitly stated.** Do not guess from a name, GitHub username, email, photo, or any other indirect signal. Assuming gender from names perpetuates bias in the tech industry.
+- Use `they`/`them`/`their` or the person's name/handle directly. Applies to PR reviewers, commit authors, teammates, ticket commenters, customers in logs, and any other third party in PR summaries, code-history narration, ticket triage, status updates, postmortems, etc.
+- If you catch yourself having used `he`/`she` for someone whose gender wasn't stated, silently restate the relevant passage with neutral language and move on — no apology theater.
+
 ## Nix / Environment
 
 - CLI tools, development dependencies, and system configuration are managed via Nix home-manager. Never suggest Homebrew for CLI tools — use Nix.
