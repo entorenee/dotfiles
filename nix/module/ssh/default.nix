@@ -12,14 +12,11 @@ in {
   programs.ssh = {
     enable = true;
     enableDefaultConfig = false;
-    matchBlocks = {
-      github = {
-        host = "github.com";
-        identityFile =
-          ["${config.home.homeDirectory}/.ssh/id_rsa_yubikey_personal.pub"]
-          ++ lib.optional isWorkProfile "${config.home.homeDirectory}/.ssh/id_rsa_yubikey_work.pub";
-        identitiesOnly = true;
-      };
+    settings."github.com" = {
+      IdentityFile =
+        ["${config.home.homeDirectory}/.ssh/id_rsa_yubikey_personal.pub"]
+        ++ lib.optional isWorkProfile "${config.home.homeDirectory}/.ssh/id_rsa_yubikey_work.pub";
+      IdentitiesOnly = true;
     };
   };
 
