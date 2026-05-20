@@ -113,6 +113,47 @@ claude mcp add --transport http \
   asana https://mcp.asana.com/v2/mcp
 ```
 
+### Permissions
+
+Claude Code permissions live in `nix/module/claude/default.nix` (base) with profile-specific additions in `work.nix` / `personal.nix`. Three coordinated layers:
+
+| Layer | Field | Behavior |
+| --- | --- | --- |
+| Allow | `permissions.allow` | Glob patterns auto-approve matching tool calls |
+| Deny | `permissions.deny` | Always wins over allow — use for defense in depth |
+| Sandbox | `sandbox.network.allowedDomains`, `sandbox.filesystem.allowRead/Write` | Hard boundary that no per-call approval can bypass |
+
+#### Pattern syntax
+
+All tools use the same glob style — `*` matches any string, anywhere in the pattern:
+
+- `Bash(git --no-pager *)` — wildcard after a flag
+- `Bash(gh api repos/*/issues*)` — wildcard mid-path
+- `mcp__plugin_claude-code-home-manager_expo__*_info` — wildcard mid-name (matches `build_info`, `workflow_info`)
+- `Skill(superpowers:*)` — wildcard after plugin namespace
+
+#### Condensing MCP allowlists
+
+MCP tools typically share verb prefixes: `get_`, `list_`, `search_`, `find_`, `whoami` (read) vs. `create_`, `delete_`, `edit_`, `update_`, `add_`, `remove_`, `move_`, `import_`, `rename_`, `toggle_`, `acknowledge_`, `escalate_`, `resolve_`, `reopen_` (write). Use glob patterns on the read-only verb prefixes (e.g., `mcp__asana__get_*`, `mcp__asana__search_*`) instead of enumerating each tool — mutating tools won't match because their verbs are different.
+
+When verb prefixes are mixed (e.g., Expo's `build_info` is read but `build_run` is write), use suffix globs like `*_info`, `*_list`, `*_logs` to capture the read shape without catching writes.
+
+#### Defense-in-depth for broad allows
+
+`Bash(gh api*)` is allowlisted broadly because the deny list blocks every write verb (`-X POST/PATCH/PUT/DELETE`, `-f`, `--field`). Pattern: broad allow on the read surface + targeted denies on the write verbs. Deny wins, so the broad allow is safe.
+
+#### Custom skills and commands — **important**
+
+Custom skills (in `nix/module/claude/config/skills/`) and custom slash commands (in `nix/module/claude/config/commands/`) both have no plugin namespace, so they can't be matched by a wildcard. They also share the same permission gate — `/<name>` invokes the Skill tool whether the underlying file is a `SKILL.md` or a command `.md`.
+
+**When adding a new custom skill OR command, also add a matching `Skill(<name>)` entry to `permissions.allow`** in `default.nix`. Otherwise it prompts for approval the first time it's used in every new worktree.
+
+Plugin-distributed skills *are* namespaced (e.g., `superpowers:executing-plans`, `pr-review-toolkit:review-pr`), so a single glob per plugin namespace (`Skill(superpowers:*)`) trusts the entire plugin's skill set in one entry.
+
+#### Built-in auto-allows
+
+Claude Code auto-approves many read-only commands by default — most `git` subcommands (`status`, `log`, `diff`, `show`, `blame`, `branch`, `tag`, `remote`, `ls-files`, `rev-parse`, `describe`, `stash list`, `worktree list`), `gh pr/issue/run view/list`, `gh api` GET, and common Unix utilities (`ls`, `cat`, `head`, `tail`, `grep`, `rg`, `find`, etc.). Explicit allowlist entries for these are redundant but harmless — they document intent and remain stable if built-in behavior changes.
+
 ## GitHub CLI Usage
 
 The `gh` config has `prefer_editor_prompt: enabled`, which blocks in non-TTY contexts like Claude Code. When creating GitHub issues or PRs programmatically, use `gh api` directly:

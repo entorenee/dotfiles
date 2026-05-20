@@ -34,7 +34,14 @@ in {
         DISABLE_AUTOUPDATER = "1";
       };
       sandbox.enabled = true;
-      sandbox.network.allowedDomains = [ "registry.npmjs.org" ];
+      sandbox.network.allowedDomains = [
+        "registry.npmjs.org"
+        "api.github.com"
+        "raw.githubusercontent.com"
+        "objects.githubusercontent.com"
+        "codeload.github.com"
+        "asanausercontent.com"
+      ];
       statusLine = {
         type = "command";
         command = "~/.claude/statusline.sh";
@@ -48,6 +55,22 @@ in {
         # Read access for dotfiles (skills, agents, nix modules)
         "Read(~/dotfiles/**)"
         "Read(/nix/store/**)"
+        # Trusted skill namespaces (plugins explicitly enabled above)
+        "Skill(superpowers:*)"
+        "Skill(pr-review-toolkit:*)"
+        "Skill(frontend-design:*)"
+        # Custom skills and slash commands authored in this repo
+        # (nix/module/claude/config/{skills,commands}/) — both share the
+        # Skill() permission gate since /<name> invokes the Skill tool.
+        "Skill(asana-review)"
+        "Skill(build-doctor)"
+        "Skill(changelog-generation)"
+        "Skill(code-hygiene)"
+        "Skill(dependency-upgrades)"
+        "Skill(investigate)"
+        "Skill(npm-cve)"
+        "Skill(pre-pr)"
+        "Skill(pre-pr-autonomous)"
         # gh cli read-only
         "Bash(gh issue list*)"
         "Bash(gh issue view*)"
@@ -60,8 +83,8 @@ in {
         "Bash(gh run list*)"
         "Bash(gh run view*)"
         "Bash(gh repo view*)"
-        "Bash(gh api repos/*/issues*)"
-        "Bash(gh api repos/*/pulls*)"
+        # gh api — broad allow; permissions.deny blocks all write verbs and -f/--field
+        "Bash(gh api*)"
         # rtk wrapper (transparent proxy for token savings)
         "Bash(rtk *)"
         # git read-only
@@ -78,6 +101,7 @@ in {
         "Bash(git tag*)"
         "Bash(git describe*)"
         "Bash(git ls-files*)"
+        "Bash(git --no-pager *)"
         # npm read-only
         "Bash(npm ls*)"
         "Bash(npm outdated*)"
@@ -95,6 +119,7 @@ in {
         "Bash(npm run dev*)"
         "Bash(npm ci*)"
         "Bash(npm install*)"
+        "Bash(pnpm --version*)"
         # pnpm read-only
         "Bash(pnpm ls*)"
         "Bash(pnpm list*)"
@@ -102,8 +127,12 @@ in {
         "Bash(pnpm view*)"
         "Bash(pnpm why *)"
         "Bash(pnpm audit*)"
-        # pnpm build/test
+        # pnpm build/test (both `pnpm <script>` and `pnpm run <script>` forms)
         "Bash(pnpm test*)"
+        "Bash(pnpm jest*)"
+        "Bash(pnpm typecheck*)"
+        "Bash(pnpm lint*)"
+        "Bash(pnpm build*)"
         "Bash(pnpm run test*)"
         "Bash(pnpm run lint*)"
         "Bash(pnpm run tsc*)"
@@ -112,7 +141,14 @@ in {
         "Bash(pnpm run dev*)"
         "Bash(pnpm install*)"
         "Bash(pnpm add*)"
-        "Bash(pnpm exec *)"
+        # pnpm exec — narrow to specific binaries; broader form previously allowed
+        # `pnpm exec node`/`sh`/etc which is an arbitrary-code escape hatch
+        "Bash(pnpm exec eslint*)"
+        "Bash(pnpm exec jest*)"
+        "Bash(pnpm exec tsc*)"
+        "Bash(pnpm exec vitest*)"
+        # pnpm monorepo filter (typecheck/lint:ci/test:ci against specific packages)
+        "Bash(pnpm --filter*)"
         # turbo
         "Bash(pnpm turbo *)"
         "Bash(npx turbo *)"
@@ -129,12 +165,13 @@ in {
         "Bash(nix eval *)"
         "Bash(nix flake show*)"
         "Bash(nix flake metadata*)"
-        "Bash(nix run home-manager*)"
         "Bash(darwin-rebuild switch*--dry-run*)"
       ];
       permissions.deny = [
         "Bash(rm -rf *)"
         "Bash(rm -fr *)"
+        "Bash(rm -r *)"
+        "Bash(rm -f *)"
         "Bash(sudo *)"
         "Bash(mkfs *)"
         "Bash(dd *)"
@@ -147,8 +184,20 @@ in {
         "Bash(chmod 777 *)"
         "Bash(git push --force*)"
         "Bash(git push *--force*)"
+        "Bash(git push --force-with-lease*)"
+        "Bash(git push *--force-with-lease*)"
         "Bash(git reset --hard*)"
         "Bash(git commit*)"
+        # rtk proxy is an arbitrary-command escape hatch (per RTK.md)
+        "Bash(rtk proxy*)"
+        # pnpm exec sandbox escapes — block interpreters / shells / rm via pnpm exec
+        "Bash(pnpm exec node*)"
+        "Bash(pnpm exec sh*)"
+        "Bash(pnpm exec bash*)"
+        "Bash(pnpm exec rm*)"
+        # accidental package publish guards
+        "Bash(npm publish*)"
+        "Bash(pnpm publish*)"
         # Block posting comments/reviews on GitHub on my behalf
         "Bash(gh pr comment*)"
         "Bash(gh pr review*)"
