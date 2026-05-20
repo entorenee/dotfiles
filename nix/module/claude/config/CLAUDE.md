@@ -23,6 +23,28 @@ Guide the user to edit the Nix config files in their dotfiles repo rather than w
 - For MCP server configuration, prefer updating the corresponding Nix profile (`work.nix` or `personal.nix`) for deterministic, reproducible config. Fall back to `claude mcp add` only for quick testing.
 - **Do not auto-run `@nix-validator` after every Nix edit.** For simple, low-risk changes, ask before running it. For large refactors, use your judgment to validate at critical checkpoints.
 
+## Project Command Discovery
+
+These are **hard requirements**, not suggestions:
+
+Before running any build, test, lint, typecheck, format, or package-manager command in a project, you MUST first discover the project's actual conventions. Do not guess from defaults (`npm test`, `npm run lint`, etc.) — guessing wastes attempts and pollutes diffs.
+
+**Required discovery steps, in order:**
+
+1. **Read `package.json`** at the repo root. Look at the `scripts` block and use the exact key names defined there:
+   - typecheck: commonly `typecheck`, `tsc`, `type-check` — sometimes only via the monorepo orchestrator
+   - lint: prefer a non-mutating variant if one exists (`lint:ci`, `lint:check`) over `lint` or `lint:fix`
+   - test: prefer `test:ci` over `test` when both exist (CI variants are usually deterministic and non-interactive)
+   - build: prefer `build:ci` over `build` when both exist
+2. **Detect the package manager** from the lockfile present at the repo root: `pnpm-lock.yaml` → pnpm, `yarn.lock` → yarn, `bun.lockb` → bun, `package-lock.json` → npm. Use that package manager consistently — never default to `npm` if another lockfile is present.
+3. **Detect monorepo orchestrators**: `turbo.json` → use `<pm> turbo <task>` and prefer `--filter='...[<merge-base>]'` to scope to affected packages. `nx.json` → use `nx affected`. `lerna.json`, `pnpm-workspace.yaml` → respect workspace boundaries.
+4. **Read the nearest `CLAUDE.md`** — repo root first, then any that sits closer to the files you're editing. Capture documented conventions: logging helpers (e.g. `logError` vs `console.error` vs `logger.error`), error wrappers, banned APIs, import alias rules, test file patterns. These override generic defaults.
+5. **Non-JS projects:** read the equivalent manifest — `Cargo.toml`, `pyproject.toml` / `uv.lock`, `go.mod`, `Gemfile`, `mix.exs`, plus any `Makefile` / `justfile` — and use those canonical commands instead of inventing your own.
+
+**When delegating to subagents:** pass the discovered commands and conventions verbatim in the prompt. Subagents do not inherit your discovery work — if you tell them to "run the tests," they will guess. Tell them "run `pnpm test:ci`" with the full PROJECT_COMMANDS block.
+
+**When you don't have access to `package.json`** (e.g. running in a directory above the project root): say so explicitly and ask before running any command. Do not fall back to defaults.
+
 ## Plan Execution
 
 These are **hard requirements**, not suggestions:
