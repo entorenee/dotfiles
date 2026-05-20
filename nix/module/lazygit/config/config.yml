@@ -3,3 +3,7 @@ git:
   # on Yubikey. Constantly having it fetch and having to touch the key sucks.
   autoFetch: false
   autoRefresh: false
+  mainBranches:
+    - master
+    - main
+    - develop
