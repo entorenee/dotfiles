@@ -51,7 +51,9 @@ digraph debug {
   "6. Red-Green-Blue fix" -> "7. Verify";
   "7. Verify" -> "Pass?" [shape=diamond];
   "Pass?" -> "8. Blast radius check" [label="yes"];
-  "Pass?" -> "6. Minimal fix" [label="no"];
+  "Pass?" -> "Attempts < 3?" [label="no", shape=diamond];
+  "Attempts < 3?" -> "6. Minimal fix" [label="yes"];
+  "Attempts < 3?" -> "Stop; hand back to user" [label="no — reconsider root cause"];
   "8. Blast radius check" -> "Done";
 }
 ```
@@ -140,6 +142,26 @@ npm test -- <affected-test-files>
 
 Also manually confirm the original reproduction case no longer triggers the bug.
 
+#### Verification via subagent (when context is precious)
+
+If the fix is in a context-heavy session — long debug trace, many files already read, large diffs — dispatch the verification run as a Task subagent instead of running it inline. The subagent returns a structured pass/fail report with the relevant failure excerpts, keeping the main thread focused on the fix itself.
+
+Use this when **any** of the following are true:
+- The verification suite is slow or produces a lot of output
+- The main thread is already heavily loaded with investigation context
+- You expect to iterate on the fix more than once
+
+The subagent's charter: run the three commands above on the affected files, return a structured report (pass/fail per check + failure excerpts + the specific assertions or types that broke). Do not modify code.
+
+#### Iteration cap
+
+If verification fails, return to step 6 and apply a minimal targeted fix based on the failure. **Cap the loop at 3 fix attempts.** If still failing after 3 attempts, stop and hand back to the user with:
+- What each attempt changed
+- What each attempt's verification produced
+- Your current best hypothesis for why the fix isn't landing
+
+Repeated failures usually mean the root cause from step 4 is wrong, not that the fix needs more iteration — returning to step 4 with fresh eyes is usually more productive than a 4th attempt.
+
 ### 8. Blast Radius Check
 
 If the fix touches shared code (utilities, types, base classes), run the broader test suite to verify nothing outside the intended scope broke:
@@ -225,4 +247,5 @@ These tools are especially valuable when the developer has not been able to repr
 | Typecheck | `tsc --noEmit` passes |
 | Lint | `eslint` clean on affected files |
 | Tests | All affected tests pass |
+| Fix iteration | Capped at 3 attempts; revisit root cause if still failing |
 | Blast radius | Broader suite passes if shared code touched |
