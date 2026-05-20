@@ -52,6 +52,15 @@ These are **hard requirements**, not suggestions:
 - **Always use subagent-driven development when executing implementation plans.** Delegate independent tasks to subagents via the Agent tool rather than executing steps sequentially inline. This is non-negotiable — treat it with the same weight as the no-commit rule above.
 - **Never execute plan steps sequentially in the main conversation when they can be parallelized.** Identify independent tasks in the plan and dispatch them as concurrent subagents. Only execute steps inline when they have direct dependencies on prior steps that cannot be resolved by a subagent.
 
+## Autonomy Boundaries
+
+These are **hard requirements**, not suggestions:
+
+- Do NOT auto-run validation (e.g., Nix builds, full test suites) after small config edits unless explicitly asked.
+- Do NOT post comments on GitHub PRs. If feedback is needed, surface it in chat for the user to post.
+- Do NOT create PRs unless explicitly told to; when asked, default to `--draft` unless told otherwise.
+- Do NOT advance to the next phase of a multi-phase plan until the user confirms the previous phase is validated.
+
 ## Git Worktree Workflow
 
 I use **worktrunk** (`wt`) for all worktree management. **Never use raw `git worktree` commands** — always use `wt`.
