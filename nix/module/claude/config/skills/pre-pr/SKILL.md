@@ -107,6 +107,12 @@ Dispatch the `superpowers:code-reviewer` agent using the existing `code-reviewer
 
 The code reviewer operates on the branch **after** hygiene auto-fixes, so it won't flag artifacts that were already cleaned up.
 
+**Append these focus areas to the reviewer prompt.** The default checklist reads files in isolation; these checks require reasoning across files and across time, and are exactly what single-file review misses:
+
+- **Cross-component render ordering.** When an effect closes/dismisses an overlay, modal, or branch in response to a prop or hook return that changed elsewhere, trace what the render tree looks like *the frame after* the trigger flips but *before* the effect runs. Look for a gap where neither branch's guard holds (blank/placeholder render) or where a child fully remounts (expensive re-init, re-fetch, re-attach). Prefer `useLayoutEffect` or a combined guard over `useEffect` for synchronous close.
+- **Sync vs. async / timing primitives.** Flag `setTimeout`/`requestAnimationFrame` used to wait for a platform transition (orientation change, layout settle, navigation animation). These are guesses against device-dependent durations. The correct fix is an event/callback (`addOrientationChangeListener`, `onLayout`, transition-end). When the diff offers a fixed-delay timer, treat it as a known-fragile fallback that needs human sign-off — do not bless it as equivalent to the event-driven approach.
+- **Author hedge comments are unsolved problems, not design intent.** If a changed region carries a comment hedging about fragility/timing/races ("if QA reveals flicker…", "on slow devices…", "might need to bump this"), surface it verbatim as an Important issue. Do not adopt the comment's suggested workaround as the fix.
+
 ### Step 5 — Assemble Combined Report
 
 Combine all outputs into a single sequential report.

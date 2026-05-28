@@ -50,7 +50,8 @@ digraph code_hygiene {
   rankdir=TB;
   "1. Setup" -> "2. Auto-fix artifacts";
   "2. Auto-fix artifacts" -> "3. Auto-add tests";
-  "3. Auto-add tests" -> "4. Findings report";
+  "3. Auto-add tests" -> "3.5. Convention compliance scan";
+  "3.5. Convention compliance scan" -> "4. Findings report";
   "4. Findings report" -> "Engineer reviews findings";
   "Engineer reviews findings" -> "Apply approved changes" [label="approves some"];
   "Engineer reviews findings" -> "Done" [label="no action needed"];
@@ -76,6 +77,15 @@ git diff $MERGE_BASE...HEAD --diff-filter=AM
 Parse the scope reference per the priority order above. If an Asana task ID is provided, fetch the task description. If a GH issue number, fetch the issue body.
 
 **Empty diff guard:** If `git diff --name-only` returns nothing, report "No changes found between HEAD and $BASE_BRANCH — nothing to review." and stop.
+
+**Load project convention docs.** Locate and read the project's own convention sources — this is what makes the Phase 3.5 scan project-specific instead of generic:
+
+1. The nearest `CLAUDE.md` chain — repo root first, then any `CLAUDE.md` closer to the changed files (e.g. an app subdirectory). A root `CLAUDE.md` often `@`-imports a project doc (e.g. `@fwapp2proto/docs/CODE_CONVENTIONS.md`); follow those imports.
+2. Any dedicated convention doc the `CLAUDE.md` points at or that sits beside the changed files: `CODE_CONVENTIONS.md`, `STYLE.md`, `CONTRIBUTING.md`, `docs/conventions*`.
+
+From those docs, extract an explicit **documented-bans list** — the "never do X", "always use Y instead of X", banned-API, and banned-pattern rules. For each, record the rule text and its source `file:line` so findings can cite it. Examples of the *kind* of rule to capture (do not assume these exist — only capture what the docs actually state): banned logging calls, banned styling patterns (styled `Pressable` used as a button, hardcoded hex colors in `className` **or** in color props like `color="#fff"`, arbitrary-bracket Tailwind values), banned state/data-layer patterns, required wrappers. Also note any explicit **exceptions** the doc grants (e.g. "`bg-red-600` is allowed for destructive semantics") so the Phase 3.5 scan doesn't flag a sanctioned pattern.
+
+If the project has no convention docs, record that and skip Phase 3.5 (note it in the report). **Never invent bans** — Phase 3.5 only enforces what a project doc explicitly states.
 
 ### Phase 2 — Auto-fix Artifacts
 
@@ -121,6 +131,24 @@ For each new export, look for a corresponding test file:
 
 **Scope:** Unit tests only — utilities, hooks, pure functions. Never auto-add integration or E2E tests.
 
+### Phase 3.5 — Convention Compliance Scan
+
+Mechanically check the branch diff against the **documented-bans list** captured in Phase 1. This catches convention violations that linters miss and that single-file review tends to overlook — the rules already exist in the project's docs; this step operationalizes them.
+
+**Process:**
+
+1. For each documented ban, derive a concrete search pattern and grep the **diff-added lines only** (`git diff $MERGE_BASE...HEAD --diff-filter=AM`). Examples of turning a doc rule into a pattern:
+   - "never styled `Pressable` buttons" → flag `<Pressable` additions carrying both `className=` and `onPress=` (not wrapped in an allowed component)
+   - "no hardcoded hex" → flag `text-[#`, `bg-[#`, `border-[#`, and color-prop literals like `color="#`, `color={'#`
+   - "no arbitrary brackets" → flag `p-[`, `gap-[`, `text-[NNpx]`, etc. where a preset exists
+   - "banned API X, use Y" → flag additions calling `X(`
+2. Respect documented **exceptions** — if the doc sanctions a pattern (e.g. `bg-red-600` for destructive, `text-white` on dark backgrounds), do not flag it.
+3. Scope to the projects the docs apply to. A convention doc under `fwapp2proto/` governs `fwapp2proto/**`; do not flag files in sibling projects against another project's rules.
+
+**Output:** every violation becomes a Phase 4 finding under "Convention Violations", citing the offending `file:line`, the diff content, and the rule's source `file:line`.
+
+**Do not auto-fix convention violations.** The correct replacement (which token? which Button variant?) requires judgment, and some are codebase-wide patterns the engineer may legitimately defer. Surface them; let the engineer decide.
+
 ### Phase 4 — Findings Report
 
 Present all findings that require engineer judgment. **Do not act on any of these without explicit approval.**
@@ -142,6 +170,10 @@ Present all findings that require engineer judgment. **Do not act on any of thes
 - `prisma/schema.prisma` was modified but not referenced in ticket scope — intentional?
 - `src/components/unrelated/Footer.tsx` changed but ticket describes header work
 
+#### Convention Violations
+- `components/video/ScreenshareLandscapeView.tsx:88` — styled `<Pressable>` used as a button (`className` + `onPress`) — rule: `docs/CODE_CONVENTIONS.md:117` "never create styled Pressable buttons — use Button/FWButton"
+- `components/video/CallScreen.tsx:142` — hardcoded hex `color="#fff"` on icon — rule: `docs/CODE_CONVENTIONS.md:378` "no `text-[#...]`/color literals — use the matching token"
+
 #### TODO/FIXME Comments
 - `src/components/FWButton.tsx:42` — `// TODO: add haptic feedback` — remove or keep?
 - `src/lib/api/client.ts:89` — `// FIXME: retry logic` — remove or keep?
@@ -159,6 +191,7 @@ Present all findings that require engineer judgment. **Do not act on any of thes
 ## Rules
 
 - **Never auto-fix anything in Phase 4** — all findings require explicit engineer approval before action
+- **Convention checks come from the project's own docs, never hardcoded** — if a project documents no bans, skip Phase 3.5 and say so. Never auto-fix a convention violation; surface it with the rule citation and respect documented exceptions.
 - **Never touch pre-existing code** — only lines introduced in the branch diff
 - **Never create new test files** — only extend existing test suites
 - **Never auto-add integration or E2E tests** — suggest only
