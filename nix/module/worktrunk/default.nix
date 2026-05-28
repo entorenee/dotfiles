@@ -1,6 +1,4 @@
-{config, ...}: let
-  worktrunkConfigPath = "${config.home.homeDirectory}/dotfiles/nix/module/worktrunk/config";
-in {
+{...}: {
   programs.worktrunk = {
     enable = true;
     enableZshIntegration = true;
@@ -14,5 +12,8 @@ in {
     fi
   '';
 
-  xdg.configFile."worktrunk".source = config.lib.file.mkOutOfStoreSymlink worktrunkConfigPath;
+  # In-store symlink (not mkOutOfStoreSymlink) so the resulting
+  # ~/.config/worktrunk/config.toml is read-only — prevents worktrunk
+  # from rewriting it during interactive prompts.
+  xdg.configFile."worktrunk/config.toml".source = ./config/config.toml;
 }

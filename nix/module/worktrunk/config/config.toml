@@ -1,6 +1,8 @@
 # Worktrunk user configuration (Nix-managed)
 # Do not edit directly - modify nix/module/worktrunk/config/config.toml in dotfiles
 
+skip-shell-integration-prompt = true
+
 [[post-start]]
 copy = "wt step copy-ignored"
 
