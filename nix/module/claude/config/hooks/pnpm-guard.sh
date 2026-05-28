@@ -14,6 +14,22 @@ INPUT=$(cat)
 CMD=$(echo "$INPUT" | jq -r '.tool_input.command // empty')
 [ -z "$CMD" ] && exit 0
 
+# Reject `rtk proxy` early with a clearer reason than the generic
+# permissions.deny message. rtk proxy is denied in this config because it
+# bypasses the rewrite hook (arbitrary-command escape hatch). Assistants
+# sometimes try it after reading RTK.md.
+if echo "$CMD" | grep -qE '^[[:space:]]*rtk[[:space:]]+proxy([[:space:]]|$)'; then
+  REASON="rtk proxy is denied. Use the bare command (e.g., 'pnpm install') — the rtk-rewrite hook handles rewriting automatically."
+  jq -n --arg reason "$REASON" '{
+    "hookSpecificOutput": {
+      "hookEventName": "PreToolUse",
+      "permissionDecision": "deny",
+      "permissionDecisionReason": $reason
+    }
+  }'
+  exit 0
+fi
+
 # Strip leading whitespace and optional "cd ... &&" prefix so we detect npm
 # in commands like `cd packages/foo && npm install`.
 NORMALIZED=$(echo "$CMD" | sed -E 's/^[[:space:]]*//;s/^cd [^&]+&&[[:space:]]*//')
