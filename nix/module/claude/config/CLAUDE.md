@@ -10,6 +10,10 @@ Guide the user to edit the Nix config files in their dotfiles repo rather than w
 
 - **Never run `git add`, `git commit`, or any staging/committing commands.** I use a Yubikey for GPG commit signing which requires physical touch and does not work with automated commits. Skip all git steps — just report what files changed.
 
+## Bash
+
+- **Never use a bare `~` in a variable assignment value** (e.g. `F=~/path`). Bash expands the tilde at assignment time, which trips a safety warning on every such command. Use `F="$HOME/path"` or an absolute path instead — identical behavior, no prompt.
+
 ## GitHub
 
 - **Never post comments, reviews, or replies on GitHub PRs or issues on my behalf.** Read-only operations (viewing PRs, diffs, checks, comments) are fine. Creating PRs is allowed when asked. All other write operations (commenting, reviewing, closing, merging, editing) require explicit instruction.
