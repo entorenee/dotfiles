@@ -54,7 +54,7 @@ lib.mkIf (profile == "work") {
         # allowlisted (arbitrary query/command surface; should prompt each time)
       ];
       sandbox.filesystem = {
-        allowRead = ["~/dotfiles" "~/code/work" "/nix/store" "/tmp" "/private/tmp"];
+        allowRead = ["~/dotfiles" "~/code/work" "~/.config/gh" "/nix/store" "/tmp" "/private/tmp"];
         allowWrite = ["~/dotfiles" "~/code/work" "/tmp" "/private/tmp"];
       };
     };

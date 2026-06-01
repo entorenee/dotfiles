@@ -55,6 +55,11 @@ in {
       # commands), and permissions / PreToolUse hooks still apply. These
       # commands cannot mutate the project — they only query the registry
       # and read package.json / lockfiles.
+      # Block read access to gh's hosts.yml in case the OAuth token ever lands
+      # there (e.g., a future gh login without Keychain). Profiles allow the
+      # gh config dir so `gh` can read config.yml; this denies the one file
+      # that could contain a token. denyRead wins over allowRead.
+      sandbox.filesystem.denyRead = ["~/.config/gh/hosts.yml"];
       sandbox.excludedCommands = [
         "npm outdated*"
         "npm view *"
