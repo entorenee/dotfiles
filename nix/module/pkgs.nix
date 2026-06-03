@@ -28,10 +28,10 @@
     docker-compose
     freefilesync
     insomnia
-    jellyfin-web
+    jellyfin-desktop
     libreoffice
     nextcloud-client
-    nodejs_20 # TODO determine dynamic sourcing of Node
+    nodejs_22 # TODO determine dynamic sourcing of Node
     obsidian
     pinentry-gnome3
     protonmail-desktop
