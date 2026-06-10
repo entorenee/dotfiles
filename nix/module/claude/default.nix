@@ -117,7 +117,9 @@ in {
         "Bash(gh pr status*)"
         "Bash(gh pr checks*)"
         "Bash(gh pr diff*)"
-        "Bash(gh pr create*)"
+        # Draft PRs only — non-draft `gh pr create` falls through to a prompt
+        # so nothing reaches review-ready state without explicit confirmation.
+        "Bash(gh pr create *--draft*)"
         "Bash(gh run list*)"
         "Bash(gh run view*)"
         "Bash(gh repo view*)"
@@ -250,12 +252,15 @@ in {
         # accidental package publish guards
         "Bash(npm publish*)"
         "Bash(pnpm publish*)"
-        # Block posting comments/reviews on GitHub on my behalf
+        # Block posting comments/reviews on GitHub on my behalf.
+        # `gh pr edit` is NOT here — it edits my own PR's title/body, which is
+        # part of the normal create-draft → write-body flow. It lives in
+        # permissions.ask so it confirms per-use ("editing requires explicit
+        # instruction") instead of being hard-blocked.
         "Bash(gh pr comment*)"
         "Bash(gh pr review*)"
         "Bash(gh pr close*)"
         "Bash(gh pr merge*)"
-        "Bash(gh pr edit*)"
         "Bash(gh issue comment*)"
         "Bash(gh issue create*)"
         "Bash(gh issue close*)"
@@ -294,6 +299,12 @@ in {
         "Read(~/.pypirc)"
         "Read(~/.gem/credentials)"
         "Read(~/Library/Keychains/**)"
+      ];
+      permissions.ask = [
+        # Editing my own PR's title/body is allowed "with explicit instruction"
+        # (per global CLAUDE.md) — so confirm per-use rather than deny outright.
+        # Catches reviewer/assignee edits too, which is the desired gate.
+        "Bash(gh pr edit*)"
       ];
     };
   };
