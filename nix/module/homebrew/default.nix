@@ -17,6 +17,9 @@ in {
         cleanup = "uninstall"; # Uninstall anything not declared in Nix
         autoUpdate = false;
         upgrade = false;
+        # Homebrew >=5.1.15 requires --force/--force-cleanup/$HOMEBREW_ASK
+        # when `brew bundle --cleanup` is used non-interactively.
+        extraFlags = ["--force"];
       };
 
       brews = [
@@ -24,7 +27,6 @@ in {
         "nvm"
         "pinentry"
         "pinentry-mac"
-        "rtk"
         "Z"
       ];
 

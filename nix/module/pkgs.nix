@@ -70,7 +70,6 @@ in {
       postgresql
       python314
       ripgrep
-      rtk
       tmuxinator
       tree
       update-nix-fetchgit

@@ -1,0 +1,29 @@
+# rtk (Rust Token Killer) configuration.
+#
+# Managed by Nix — see nix/module/rtk/default.nix. This file is symlinked to
+# the rtk config location (macOS: ~/Library/Application Support/rtk/config.toml,
+# Linux: ~/.config/rtk/config.toml). Edits here apply live, no rebuild needed.
+#
+# Only the [hooks] section is set; every other section (tracking, display,
+# filters, tee, limits, …) falls back to rtk's built-in defaults.
+
+[hooks]
+# Commands the rtk-rewrite hook must NOT rewrite into `rtk <cmd>`. These are
+# read-only commands used during PR review where rtk's wrapping actively hurts:
+#
+#   gh run view  — rtk's wrapper errors `Run ID required` on the `--job <id>
+#                  --log` form (viewing a single job's log), so it can't be used
+#                  to inspect CI job failures at all.
+#   gh pr diff   — rtk compacts the diff; line-by-line review needs the full one.
+#   gh api       — used to fetch raw file contents at a ref (base64 piped through
+#                  `base64 -d`); rtk's wrapping corrupts the clean output.
+#
+# Excluding these lets the bare command run, which matches the existing
+# `Bash(gh …*)` allowlist entries — so no `command gh` bypass and no permission
+# prompt. The write-verb deny rules in the Claude config still apply unchanged.
+exclude_commands = [
+  "gh run view",
+  "gh pr diff",
+  "gh api",
+]
+transparent_prefixes = []

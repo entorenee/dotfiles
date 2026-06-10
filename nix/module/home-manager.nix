@@ -36,6 +36,7 @@ in {
     ./npm
     ./nvm
     pkgsModule
+    ./rtk
     ./smug
     ./ssh
     ./starship
