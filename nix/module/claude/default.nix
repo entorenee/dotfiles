@@ -76,6 +76,16 @@ in {
         "pnpm dlx npm-check-updates*"
         "pnpm dlx ncu*"
         "pnpm exec ncu*"
+        # `gh` is a Go binary and can't reach the sandbox's HTTP proxy: it
+        # dials the proxy over IPv6 (`[::1]:PORT`) but the proxy only listens
+        # on 127.0.0.1, so every call fails with `proxyconnect ... connection
+        # refused` before the allowedDomains check even runs. This is the same
+        # IPv6-first issue the NODE_OPTIONS env var fixes for Node, but Go has
+        # no equivalent knob — Claude Code's docs prescribe excludedCommands for
+        # Go CLIs (gh/gcloud/terraform) under the macOS sandbox. Safe because
+        # permissions.deny still blocks all gh write verbs independently of the
+        # sandbox; excludedCommands only governs sandbox network/fs, not perms.
+        "gh *"
       ];
       statusLine = {
         type = "command";
