@@ -13,6 +13,15 @@
     };
 
     initContent = ''
+      # Deduplicate XDG_DATA_DIRS for non-login interactive shells (terminals).
+      # hm-session-vars.sh and nix.sh both prepend/append nix paths; without
+      # this, opening a terminal after COSMIC session startup produces 3× copies.
+      if [[ -n "$XDG_DATA_DIRS" ]]; then
+        typeset -aU _xdg=("''${(@s/:/)XDG_DATA_DIRS}")
+        export XDG_DATA_DIRS="''${(j/:/)_xdg}"
+        unset _xdg
+      fi
+
       # Functions
       scripts () {
         bat package.json | jq .scripts
@@ -21,6 +30,18 @@
     '';
 
     profileExtra = ''
+      # Deduplicate XDG_DATA_DIRS for login shells.
+      # start-cosmic spawns a login shell to capture the user environment and
+      # then imports all changed vars into systemd via import-environment.
+      # hm-session-vars.sh (.zprofile) + nix.sh (sourced from it) both add nix
+      # paths, creating 2× duplicates that get pushed into the entire COSMIC
+      # session. Dedup here before start-cosmic imports the result to systemd.
+      if [[ -n "$XDG_DATA_DIRS" ]]; then
+        typeset -aU _xdg=("''${(@s/:/)XDG_DATA_DIRS}")
+        export XDG_DATA_DIRS="''${(j/:/)_xdg}"
+        unset _xdg
+      fi
+
       if [[ $(uname) = "Darwin" ]]; then
         eval "$(/opt/homebrew/bin/brew shellenv)"
         source "/opt/homebrew/etc/profile.d/z.sh"
