@@ -50,6 +50,17 @@ in {
     config = {
       allowUnfree = true;
     };
+    overlays = [
+      (_final: prev: {
+        protonmail-desktop = prev.protonmail-desktop.overrideAttrs (old: {
+          postInstall =
+            (old.postInstall or "")
+            + ''
+              echo "StartupWMClass=proton-mail" >> $out/share/applications/proton-mail.desktop
+            '';
+        });
+      })
+    ];
   };
   home.packages = with pkgs;
     [
@@ -79,6 +90,12 @@ in {
     ++ lib.optionals isPersonalProfile personalPkgs
     ++ lib.optionals pkgs.stdenv.isLinux linuxPkgs
     ++ lib.optionals pkgs.stdenv.isDarwin [pkgs.yubikey-manager];
+
+  # proton-mail.png is actually SVG content; placing it in hicolor/scalable lets
+  # GNOME find it reliably (pixmaps/ is not consistently searched from Nix profiles).
+  home.file.".local/share/icons/hicolor/scalable/apps/proton-mail.svg" = lib.mkIf pkgs.stdenv.isLinux {
+    source = "${pkgs.protonmail-desktop}/share/pixmaps/proton-mail.png";
+  };
 
   services.syncthing.enable = isPersonalProfile;
 }
