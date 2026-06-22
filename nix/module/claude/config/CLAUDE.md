@@ -55,6 +55,30 @@ Before running any build, test, lint, typecheck, format, or package-manager comm
 
 **When you don't have access to `package.json`** (e.g. running in a directory above the project root): say so explicitly and ask before running any command. Do not fall back to defaults.
 
+## Scope & Approach
+
+These are **hard requirements**, not suggestions:
+
+- **For any non-trivial change, state scope before editing.** Before touching code on a task that isn't a one-line or mechanical edit, post: (1) a one-sentence scope statement, (2) a 3-bullet approach, and (3) what is explicitly **out of scope**. Then pause for confirmation. This applies to ad-hoc tasks too — not just work routed through the `feature-design-doc` / `feature-plan` skills.
+- **Spend at most a couple of tool calls locating relevant code before proposing the plan.** For pure lookups ("where is X?"), return the answer only — do not begin changes. Do not investigate at length before acting; surface a short plan first, then execute.
+- **Remove obsolete logic rather than layering new code beside it.** When a change supersedes existing logic (e.g. replacing a text-based check with a status-code check), delete the old path in the same change unless told to keep it. Do not leave both alive.
+- **Do not expand scope or bundle out-of-scope work into a commit without explicit approval.** If you discover adjacent work worth doing, name it and ask — do not fold it in.
+- **Route bug, test-failure, and unexpected-behavior investigations through the `investigate` skill.** It enforces the scope control and root-cause verification above. Invoke it before proposing a fix rather than debugging ad-hoc.
+
+## Code Review & Diagnosis
+
+These are **hard requirements**, not suggestions:
+
+- **Do not label a finding "Critical" (or assert a root cause) without evidence from the actual code.** Quote the exact diff line or error message that supports the claim, and rate severity only on what is literally present in the changed code — never on an agent's summary, a theory, or an assumption.
+- **When relaying subagent review findings, verify each against the real diff before presenting it.** Agent summaries overstate; downgrade or drop any finding you cannot ground in the actual change.
+
+## Verification
+
+These are **hard requirements**, not suggestions:
+
+- **After code changes, run typecheck, lint, and tests, and report pass/fail per check before claiming the task is complete.** Use the commands discovered via Project Command Discovery above — do not guess them.
+- **If a worktree is missing the binaries to verify** (broken symlink, uninstalled deps, etc.), say so explicitly and report what could not be run. Never silently skip verification and imply it passed.
+
 ## Plan Execution
 
 These are **hard requirements**, not suggestions:
@@ -75,9 +99,9 @@ These are **hard requirements**, not suggestions:
 
 I use **worktrunk** (`wt`) for all worktree management. **Never use raw `git worktree` commands** — always use `wt`.
 
-- The parent directory (e.g., `project/`) is a container — NOT a git directory
-- The primary worktree is the default branch (e.g., `project/develop`)
-- Feature worktrees are siblings: `project/<branch-name>`
+- The parent directory (e.g., `fw_monorepo/`) is a container — NOT a git directory
+- The primary worktree is the default branch (e.g., `fw_monorepo/develop`)
+- Feature worktrees are siblings named `<primary-dir>.<sanitized-branch>` — e.g. branch `feat/my-feature` lives at `fw_monorepo/develop.feat-my-feature`. This is worktrunk's default `{{ repo }}.{{ branch | sanitize }}` template, where `{{ repo }}` is the primary worktree's dir name and `/` in branch names becomes `-`.
 
 ### Branch naming
 

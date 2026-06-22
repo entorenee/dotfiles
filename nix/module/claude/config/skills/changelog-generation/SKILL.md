@@ -59,10 +59,15 @@ Organize changes into these categories:
 
 ### 4. Formatting
 
+**Heading hierarchy**: The heading levels differ between monorepos and single-project repos. The rule is that each format uses every level down from H1 without gaps:
+
+- **Monorepo**: H1 = release date/version → H2 = project → H3 = category section. The date stands alone at the top because it spans every project.
+- **Single project**: there is only one project, so the date and project name are merged into the H1, freeing categories to move up to H2.
+
 #### Single Project
 
 ```markdown
-# Release Notes - [Date or Version]
+# [Project Name] Release Notes — [Date or Version]
 
 ## New Features
 - [Brief description]
@@ -80,7 +85,7 @@ Organize changes into these categories:
 #### Monorepo (Multi-Project)
 
 ```markdown
-# Release Notes - [Date or Version]
+# Release Notes — [Date or Version]
 
 ## [Project Name]
 
