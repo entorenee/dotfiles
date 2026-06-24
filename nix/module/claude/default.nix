@@ -119,6 +119,7 @@ in {
         "Skill(npm-cve)"
         "Skill(pre-pr)"
         "Skill(pre-pr-autonomous)"
+        "Skill(regression-analysis)"
         # gh cli read-only
         "Bash(gh issue list*)"
         "Bash(gh issue view*)"
