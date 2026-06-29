@@ -76,6 +76,8 @@ Read the ticket, error message, or user description. Identify:
   - Propose concrete steps and try them together
   - If error logging references Sentry or Posthog, check for available MCP tools (see "External Observability Tools" below)
 
+**For "it reverts / changes on refresh" bugs, localize the layer first.** Determine whether the value actually changed in the datastore (persisted) or only in the response/cache/serialization. A refresh that re-reads the source of truth distinguishes a real write from a cache/read artifact. **Inspect the actual request payload and response body** (network tab, server logs): the gap between *what the client sent* and *what came back* often names the responsible layer directly. (In this kind of bug, a request carrying only field A coming back with field B changed points away from the form/client and toward server-side validation, an ORM/serialization layer, or a trigger.)
+
 Confirm the issue exists before touching any code. Run the failing test, hit the endpoint, or trigger the UI flow. If you cannot reproduce after exhausting these approaches, clarify with the user — do not guess at fixes.
 
 ### 3. Confirm Scope with User
@@ -93,9 +95,15 @@ Identify the correct abstraction layer for the fix. Use `superpowers:systematic-
 
 Ask: **"Why does this happen?"** not just **"Where does it break?"**
 
+- **Search for prior art of the same bug class.** Grep the codebase and git history (`git log -S '<symbol>'`, `--diff-filter=A`) for the same symptom or an existing fix elsewhere. The same class fixed in one place but not another both confirms the mechanism and exposes the blast radius.
+- **Date regressions via provenance.** If the bug appeared after an upgrade or integration, use git history and lockfile/dependency diffs to pin the behavior change to a specific dependency version or migration. "It started after we pulled in X" is a testable claim, not a hunch.
+- **Fix the class, not the instance.** Decide whether the bug is one reachable instance of a shared root cause. Prefer a fix at the altitude that eliminates the whole class (e.g. a generation/serialization chokepoint) over a per-site patch, and state the blast radius to the user before choosing.
+
 ### 5. Confirm Root Cause
 
 Before writing any fix, articulate the root cause — not the symptom. If you can only describe the symptom, you haven't found the root cause yet.
+
+**Prove the mechanism in isolation.** Reproduce the suspected mechanism in the smallest possible standalone form — a few-line script or a focused unit test — using the project's *actual* dependency versions. A theory you can describe but cannot reproduce in isolation is still a hypothesis. When the evidence is "the response shows X," reproduce X from the raw inputs rather than inferring it; the isolated repro is what turns a plausible story into a confirmed root cause (and it usually becomes the Red test in step 6).
 
 ### 5b. Check Existing Tests
 
@@ -108,6 +116,8 @@ After confirming root cause and before writing any fix, check if tests already c
 **If tests exist and are failing** — good, the test already catches the bug. Proceed to the fix.
 
 **If no tests cover this case** — proceed to the fix, using a test-driven approach to add coverage.
+
+**A passing test may encode the buggy behavior as "expected."** If you find a test asserting the wrong outcome (e.g. asserting the very value the bug produces), that is a signal the bug is systemic — not evidence the code is correct. Flipping that assertion is part of the fix, not a regression; call it out explicitly when you do.
 
 ### 6. Red-Green-Blue Fix
 
@@ -240,9 +250,12 @@ These tools are especially valuable when the developer has not been able to repr
 | Step | Gate |
 |---|---|
 | Reproduce | Asked dev; can trigger the bug on demand |
+| Localize layer | Decided persisted vs cache/serialization; inspected request/response payloads |
 | Scope | User confirmed fix boundary |
 | Root cause | Can explain WHY, not just WHERE |
-| Existing tests | Checked; passing tests on buggy code investigated |
+| Mechanism proof | Reproduced the root cause in isolation with the real dependency versions |
+| Prior art | Grepped code + git history for the same class; blast radius stated |
+| Existing tests | Checked; passing tests on buggy code investigated; bug-encoding tests flipped |
 | Fix | Red-Green-Blue TDD; minimal, no scope creep |
 | Typecheck | `tsc --noEmit` passes |
 | Lint | `eslint` clean on affected files |
