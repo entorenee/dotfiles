@@ -63,8 +63,7 @@ Always prefer native home-manager modules and options over custom activation scr
 
 ## Management Commands
 
-- **Build system:** `make darwin-build` / `make home-build`
-- **Switch configurations:** `make darwin-switch` / `make home-switch`
+- **Rebuild and switch:** `make rebuild` — auto-detects OS (Darwin vs Linux) and profile (personal vs work) from the current username (`fw-skylerlemay` → work, otherwise personal). Override with `PROFILE=work make rebuild`.
 - **Profile management:** Controlled via `profile` variable in flake
 
 ## Claude Code Nix Module

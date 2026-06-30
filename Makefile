@@ -1,15 +1,15 @@
 .PHONY: help
 
-linux:
-	nix run home-manager -- --extra-experimental-features 'nix-command flakes' switch -b hm-backup --flake nix/#personal@linux
+PROFILE ?= $(shell [ "$$(id -un)" = "fw-skylerlemay" ] && echo work || echo personal)
 
-## Run Darwin rebuild for Personal profile
-pRebuild:
-	sudo darwin-rebuild switch --flake nix/#personal
-
-## Run Darwin rebuild for Work profile
-wRebuild:
-	sudo darwin-rebuild switch --flake nix/#work
+## Rebuild and switch the system configuration (auto-detects OS and profile)
+rebuild:
+	@if [ "$$(uname)" = "Darwin" ]; then \
+		sudo darwin-rebuild switch --flake "nix/#$(PROFILE)"; \
+	else \
+		nix run home-manager -- --extra-experimental-features 'nix-command flakes' \
+			switch -b hm-backup --flake "nix/#$(PROFILE)@linux"; \
+	fi
 
 ## Update the flake.lock file
 update:
