@@ -8,14 +8,20 @@
   personalKeyPath = ./public-ssh-keys/id_rsa_yubikey_personal.pub;
   workKeyPath = ./public-ssh-keys/id_rsa_yubikey_work.pub;
   isWorkProfile = profile == "work";
+  personalYubikeyIdentity = "${config.home.homeDirectory}/.ssh/id_rsa_yubikey_personal.pub";
+  workYubikeyIdentity = "${config.home.homeDirectory}/.ssh/id_rsa_yubikey_work.pub";
 in {
   programs.ssh = {
     enable = true;
     enableDefaultConfig = false;
+    settings."192.168.1.*" = {
+      IdentityFile = personalYubikeyIdentity;
+      IdentitiesOnly = true;
+    };
     settings."github.com" = {
       IdentityFile =
-        ["${config.home.homeDirectory}/.ssh/id_rsa_yubikey_personal.pub"]
-        ++ lib.optional isWorkProfile "${config.home.homeDirectory}/.ssh/id_rsa_yubikey_work.pub";
+        [personalYubikeyIdentity]
+        ++ lib.optional isWorkProfile workYubikeyIdentity;
       IdentitiesOnly = true;
     };
   };
