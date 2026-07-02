@@ -92,6 +92,7 @@ in {
         command = "~/.claude/statusline.sh";
       };
       hasSentTelemetryConsent = false;
+      tui = "fullscreen";
       preferences = {
         alwaysThinkingEnabled = true;
         cleanupPeriodDays = 365;
