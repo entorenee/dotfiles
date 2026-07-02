@@ -138,6 +138,12 @@ wt remove                   # Remove current worktree; deletes branch if merged
 - All feature work, bug fixes, and implementation tasks should use a worktree
 - Proactively create a worktree without asking — the preference is always worktrees
 
+### Moving a session into a new worktree mid-session
+
+A session is anchored to the directory `claude` launched in; `wt switch` inside a Bash tool call runs in a subshell and cannot move it, so the conversation history and memory stay on the branch you started on. If you create a worktree partway through a session and want to keep the current conversation, run `/cd <new-worktree-path>` from the existing session — it relocates the session to the new worktree's project storage so the history follows. (`/branch` forks in the same directory and resume always re-anchors to the original directory; neither moves the session. `/cd` requires Claude Code v2.1.169+.)
+
+Prefer creating the worktree *before* launching `claude` when the work is planned — the worktrunk `post-switch` hook already spawns a fresh session in the new worktree. Use `/cd` for the mid-thought pivot case.
+
 ### Memory across worktrees
 
 Claude's per-project memory directory (`~/.claude/projects/<encoded-cwd>/memory/`) is keyed by the working directory, so each worktree gets its own isolated memory. Memories saved in a feature worktree's directory disappear when that worktree is removed and are invisible from sibling worktrees.
