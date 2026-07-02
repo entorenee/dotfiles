@@ -236,8 +236,9 @@ If fail: <fix path from design doc>.
 After writing the plan + QA:
 
 1. **Print both file paths.**
-2. **Confirm the phase count and rough commit cadence** with the user before any execution begins.
-3. Do NOT auto-invoke `superpowers:executing-plans`. Wait for the user to say "execute" or similar.
+2. **Get explicit sign-off on the commit chunks before execution.** Each phase = one commit-sized chunk = one review unit. List each phase (files touched, what's reviewed at its checkpoint), then ask: *"These are the N commits I'll build. I stop after each for you to review and sign it. Confirm or adjust the boundaries before I start."* Negotiate granularity here: too many stops = over-fragmented (see the Commit Cadence Rule); too few = the user can't review in reasonable units. Settle it now so execution never has to guess where to stop.
+3. **Resolve every stop/continue question now, never at execution time.** If you are unsure whether something is a review boundary, that is a planning question — surface it in step 2. Do not carry the ambiguity into execution and quietly resolve it as "keep going."
+4. Do NOT auto-invoke `superpowers:executing-plans`. Wait for the user to say "execute" or similar.
 
 ## Common Mistakes
 

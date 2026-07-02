@@ -83,8 +83,9 @@ These are **hard requirements**, not suggestions:
 
 These are **hard requirements**, not suggestions:
 
+- **The commit boundary is the stop, and the user owns the commit.** Since the user GPG-signs every commit by hand (Yubikey touch) and you never commit, each commit-sized chunk — a phase in a `feature-plan`, or an agreed chunk in ad-hoc work — is a mandatory hand-back: build the chunk, report the files changed, then STOP and wait for the user to review and commit before starting the next chunk. Never stack a second chunk's changes onto an uncommitted one — that buries the review and breaks the one-commit-per-phase cadence. Treat a plan's `MANUAL REVIEW CHECKPOINT` / `STOP here` markers as control flow, not narration. Do not invent extra stops between agreed boundaries, and do not run past them — the cadence was agreed at planning time; execution honors it, it does not renegotiate it.
 - **Always use subagent-driven development when executing implementation plans.** Delegate independent tasks to subagents via the Agent tool rather than executing steps sequentially inline. This is non-negotiable — treat it with the same weight as the no-commit rule above.
-- **Never execute plan steps sequentially in the main conversation when they can be parallelized.** Identify independent tasks in the plan and dispatch them as concurrent subagents. Only execute steps inline when they have direct dependencies on prior steps that cannot be resolved by a subagent.
+- **Fan out within a chunk, halt at its boundary.** Subagent parallelism applies to independent tasks inside the current phase only; it never licenses crossing into the next commit. Only execute steps inline when they have direct dependencies on prior steps that cannot be resolved by a subagent.
 
 ## Autonomy Boundaries
 
