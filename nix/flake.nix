@@ -37,16 +37,28 @@
       url = "git+ssh://git@github.com/entorenee/dotfiles-private-assets.git";
       flake = false;
     };
+
+    nixpkgs-stable.url = "github:nixos/nixpkgs/nixos-26.05";
+
+    nixos-hardware.url = "github:nixos/nixos-hardware";
+
+    yubikey-guide = {
+      url = "github:drduh/yubikey-guide";
+      flake = false;
+    };
   };
 
   outputs = {
     home-manager,
     darwin,
     nixpkgs,
+    nixpkgs-stable,
     navi-cheatsheets,
+    nixos-hardware,
     private-assets,
     tmux-powerkit,
     worktrunk,
+    yubikey-guide,
     ...
   }: let
     lib = nixpkgs.lib;
@@ -63,6 +75,13 @@
         homeManagerArgs = mkHomeManagerArgs system username profile;
       }
       system;
+
+    mkNixosConfig = system: module:
+      nixpkgs-stable.lib.nixosSystem {
+        inherit system;
+        specialArgs = {inherit nixos-hardware yubikey-guide;};
+        modules = [module];
+      };
 
     mkHomeManagerConfig = username: profile: system: let
       pkgs = nixpkgs.legacyPackages.${system};
@@ -88,6 +107,11 @@
 
     homeConfigurations = {
       "personal@linux" = mkHomeManagerConfig "skyler.lemay" "personal" "x86_64-linux";
+    };
+
+    nixosConfigurations = {
+      pi4 = mkNixosConfig "aarch64-linux" ./airgap/pi4.nix;
+      zero = mkNixosConfig "aarch64-linux" ./airgap/zero.nix;
     };
   };
 }
