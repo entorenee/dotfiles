@@ -52,6 +52,16 @@ lib.mkIf (profile == "work") {
         "mcp__plugin_claude-code-home-manager_betterstack__uptime_get_*"
         # NOTE: posthog exposes only a generic `exec` tool — intentionally NOT
         # allowlisted (arbitrary query/command surface; should prompt each time)
+        # google drive read-only (get_/search_/list_/read_/download_ prefixes)
+        "googledrive__get_*"
+        "googledrive__search_*"
+        "googledrive__list_*"
+        "googledrive__read_*"
+        "googledrive__download_*"
+        # create_file is the one mutating tool deliberately allowed — it lets
+        # the investigation skills export reports as native Google Docs.
+        # copy_file (the other write verb) is left to prompt each time.
+        "googledrive__create_file"
       ];
       sandbox.filesystem = {
         allowRead = ["~/dotfiles" "~/code/work" "~/.config/gh" "/nix/store" "/tmp" "/private/tmp"];
