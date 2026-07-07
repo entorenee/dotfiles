@@ -17,6 +17,14 @@ Generate stakeholder-friendly changelogs from pull request merges. Analyzes indi
 
 ## Workflow
 
+> **Model tiering.** This skill is mechanical — extract PRs, classify into fixed buckets, and rewrite
+> titles/descriptions into non-technical bullets against the style guide below. There is no
+> architectural judgment here. When a merge spans **many PRs** (roughly 8+), delegate the PR-analysis
+> pass (steps 1–2) to a subagent dispatched with `model: sonnet`, handing it the PR list and the
+> content/categorization rules; it returns the classified, rewritten items and keeps the per-PR `gh`
+> chatter out of the main context. For a handful of PRs, run inline — the subagent overhead isn't
+> worth it. Either way the work is Sonnet-appropriate; reserve the top tier for other skills.
+
 ### 1. PR Analysis
 
 1. **Receive PR link or branch range** from user

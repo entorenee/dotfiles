@@ -163,6 +163,8 @@ Use this when **any** of the following are true:
 
 The subagent's charter: run the three commands above on the affected files, return a structured report (pass/fail per check + failure excerpts + the specific assertions or types that broke). Do not modify code.
 
+**Dispatch it with `model: sonnet`.** This is command execution plus failure-excerpt extraction — no diagnostic judgment (that stays in the main thread, which decides the next fix). The cheaper tier is sufficient and keeps a verification run that may repeat up to 3 times off the top tier.
+
 #### Iteration cap
 
 If verification fails, return to step 6 and apply a minimal targeted fix based on the failure. **Cap the loop at 3 fix attempts.** If still failing after 3 attempts, stop and hand back to the user with:

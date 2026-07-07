@@ -166,6 +166,8 @@ When in doubt, round up — surprise breakage is more expensive than a conservat
 
 Remaining-advisory research is parallelizable and context-heavy (changelogs, migration guides, release notes, web searches). Dispatch one Explore-type subagent per advisory or per coupled group, with the gathered output, then synthesize into the report. Do not pull all the changelogs into the main conversation.
 
+**Dispatch these research subagents with `model: sonnet`** — the same tier the `migration-researcher` agent already uses for equivalent work. They gather and summarize sources; the synthesis, remediation ordering, and the major-upgrade go/no-go call stay in the main thread on the stronger model.
+
 ### 8. Report and stop
 
 Stop here. Do not proceed to majors without explicit user approval. Use the report template below — every remaining advisory and every proposed major upgrade path must carry an LoE estimate.
