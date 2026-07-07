@@ -108,11 +108,15 @@ in {
         # Custom skills and slash commands authored in this repo
         # (nix/module/claude/config/{skills,commands}/) — both share the
         # Skill() permission gate since /<name> invokes the Skill tool.
+        "Skill(analytics-friction-analysis)"
         "Skill(asana-review)"
         "Skill(build-doctor)"
         "Skill(changelog-generation)"
         "Skill(code-hygiene)"
         "Skill(dependency-upgrades)"
+        "Skill(error-triage)"
+        "Skill(evidence-analysis-core)"
+        "Skill(evidence-consolidation)"
         "Skill(feature-design-doc)"
         "Skill(feature-plan)"
         "Skill(feature-spec)"
