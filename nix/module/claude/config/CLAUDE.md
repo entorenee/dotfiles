@@ -24,6 +24,12 @@ Guide the user to edit the Nix config files in their dotfiles repo rather than w
 - Use `they`/`them`/`their` or the person's name/handle directly. Applies to PR reviewers, commit authors, teammates, ticket commenters, customers in logs, and any other third party in PR summaries, code-history narration, ticket triage, status updates, postmortems, etc.
 - If you catch yourself having used `he`/`she` for someone whose gender wasn't stated, silently restate the relevant passage with neutral language and move on — no apology theater.
 
+## Communication Style
+
+- **During iterative work (reading files, running commands, searching), stay terse.** Do not narrate each step ("Now let me…", "That confirms…, next I'll…"). Work through the steps and report at decision points, not between every tool call.
+- **Speak when it earns attention:** a completed unit of work with a result or finding, a blocker needing input, or a genuine decision point (as already defined by the Scope, investigate, and commit-boundary rules below). Otherwise, work quietly.
+- This lowers output-token cost and keeps signal high. It does NOT relax any decision-point communication the other sections require.
+
 ## Nix / Environment
 
 - CLI tools, development dependencies, and system configuration are managed via Nix home-manager. Never suggest Homebrew for CLI tools — use Nix.
