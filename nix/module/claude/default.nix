@@ -113,6 +113,7 @@ in {
         "Skill(build-doctor)"
         "Skill(changelog-generation)"
         "Skill(code-hygiene)"
+        "Skill(dead-code-survey)"
         "Skill(dependency-upgrades)"
         "Skill(error-triage)"
         "Skill(evidence-analysis-core)"
