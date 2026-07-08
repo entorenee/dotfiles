@@ -1,6 +1,6 @@
 ---
 name: investigate
-description: Use when investigating bugs, test failures, or unexpected behavior in TypeScript projects — enforces disciplined scope control, root cause verification, and type-safe fixes
+description: Use when investigating bugs, test failures, or unexpected behavior — enforces disciplined scope control, root cause verification, and (for TypeScript) type-safe fixes
 ---
 
 # Debug Workflow
@@ -19,6 +19,31 @@ Disciplined debugging workflow for TypeScript projects. Enforces reproduction-fi
 
 - Greenfield feature work (use brainstorming/TDD skills instead)
 - Refactoring without a known bug
+
+## Step 0 — Intake
+
+Before reproducing or analyzing, assemble the inputs below.
+
+1. **Read linked sources first.** If the user linked or named a ticket, issue,
+   or doc, read it before asking anything — use the matching tool:
+   Asana (Asana MCP), GitHub issue/PR (`gh`), or any URL (WebFetch). Pull the
+   symptom, repro steps, affected area, and any stated hypothesis from it.
+2. **Reconcile against the input slots** and fill every slot you can from the
+   ticket + the user's message.
+3. **Ask once for what's still missing or ambiguous.** Batch all gaps into a
+   single round of questions — do not ask one at a time, and do not ask for
+   anything you already have or can reasonably infer (note the inference so the
+   user can correct it). If **Symptom** is still unclear after reading, that is
+   the one blocker — stop and ask.
+
+Only after intake is settled do you proceed to Reproduce.
+
+| Slot | Required? | If still missing after reading sources |
+|---|---|---|
+| **Symptom** | Yes | Blocker — ask; can't investigate without it |
+| **Platform / component** | No | Infer from symptom + ticket, state the inference |
+| **Repro status / steps** | No | Ask in this round (step 2 needs it anyway) |
+| **Hypothesis / suspected area** | No | Fine to omit — you'll generate your own in step 4 |
 
 ## Workflow
 
@@ -92,6 +117,13 @@ Get explicit confirmation. Do not expand scope beyond the confirmed bug.
 ### 4. Root Cause Analysis
 
 Identify the correct abstraction layer for the fix. Use `superpowers:systematic-debugging` for complex investigations.
+
+**A user-supplied hypothesis is the first lead to test — and to actively
+disprove — not the answer.** A confident-sounding steer ("it's almost certainly
+X") narrows the search usefully, but treat it as hypothesis #1 in a set, not a
+conclusion. Look for evidence that would *falsify* it before you build on it. If
+you find yourself only gathering support for the user's guess, that's the
+confirmation-bias failure mode step 5b guards against.
 
 Ask: **"Why does this happen?"** not just **"Where does it break?"**
 
