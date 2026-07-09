@@ -1,6 +1,4 @@
-{config, ...}: let
-  worktrunkConfigPath = "${config.home.homeDirectory}/dotfiles/nix/module/worktrunk/config";
-in {
+{pkgs, ...}: {
   programs.worktrunk = {
     enable = true;
     enableZshIntegration = true;
@@ -14,5 +12,13 @@ in {
     fi
   '';
 
-  xdg.configFile."worktrunk".source = config.lib.file.mkOutOfStoreSymlink worktrunkConfigPath;
+  # Deploy worktrunk's declarative settings as its read-only SYSTEM config
+  # (profile etc/xdg), NOT the writable user config. worktrunk owns
+  # ~/.config/worktrunk/config.toml and writes machine-local state there
+  # ([projects], prompt flags, a .lock); the old mkOutOfStoreSymlink pointed a
+  # git-tracked file at that path, so every worktrunk write dirtied the repo.
+  home.packages = [
+    (pkgs.writeTextDir "etc/xdg/worktrunk/config.toml"
+      (builtins.readFile ./config/config.toml))
+  ];
 }
