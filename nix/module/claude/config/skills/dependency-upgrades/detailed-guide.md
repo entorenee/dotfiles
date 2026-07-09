@@ -8,12 +8,14 @@ Before starting any upgrade work, dispatch the `dependency-scoper` agent to prod
 
 The scoper output drives risk categorization:
 
-- **Low Risk**: Dev dependencies, utility libraries with minimal API surface (typically the `withinMajor` set)
+- **Low Risk**: Dev dependencies, utility leaf libraries with minimal API surface (much of the `withinMajor` set)
 - **Medium Risk**: UI libraries, build tools, testing frameworks
 - **High Risk**: Core frameworks (React, Next.js), database ORMs, authentication
 - **Critical Risk**: Packages with known breaking changes or complex migrations (typically `majorJump >= 2` entries in `deferredMajors`)
 
-Use the scoper's `coupled` field to identify packages that must be updated together, and verify peer dependency requirements with `npm ls` / `pnpm ls` before attempting any major update.
+**"Low risk" is per-package, not per-batch.** A within-major bump that is low-risk in isolation can still break the tree via a duplicate/split install or a transitive pin (see the SKILL "Within-Major Isn't Automatically Safe" section). This is why `withinMajor` ships in small validated chunks, not as one commit — the risk is emergent from *resolution*, not just API surface.
+
+Use the scoper's `coupled` field to identify packages that must be updated together, and verify peer dependency requirements with `npm ls` / `pnpm ls` before attempting any update. After each chunk installs, confirm no unexpected **duplicate** copies appeared (`npm ls <pkg>` / `find node_modules -name <pkg> -type d`) — duplicates of type packages and shared cores are the silent killers.
 
 ### Baseline Establishment
 
@@ -272,13 +274,16 @@ npx --yes npm-check-updates --jsonUpgraded                # npm/yarn project
 pnpm dlx npm-check-updates --jsonUpgraded                 # pnpm project
 
 # AI Validation Suite (discover exact scripts from package.json first)
-npm run tsc                     # TypeScript check
-npm run lint                    # ESLint check
-npm run test                    # Test suite
+# In a workspace/monorepo, run through the PACKAGE'S OWN binary, never root-hoisted
+# (root .bin hoists whichever version won — often an older sibling's — and silently
+#  uses the wrong toolchain; a flood of identical fundamental errors is usually this).
+pnpm --filter <pkg> tsc         # or <pkg>/node_modules/.bin/tsc
+pnpm --filter <pkg> lint        # match CI's invocation
+pnpm --filter <pkg> test        # NOT <root>/node_modules/.bin/vitest
 
 # Engineer Validation (REQUIRED)
-npm run build                   # Production build - MUST RUN
-npm run dev                     # Dev server check
+pnpm --filter <pkg> build       # Production build - MUST RUN
+pnpm --filter <pkg> dev         # Dev server check
 
 # Installation
 npm ci                          # Clean install from lock file
