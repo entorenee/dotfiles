@@ -7,7 +7,7 @@ description: Use when starting a new feature from a ticket or spec and need a te
 
 ## Overview
 
-Produce a self-contained technical design document for a new feature, written to `<project>/docs/plans/YYYY-MM-DD-<slug>.md`. The design doc is the **authoritative spec** — every later artifact (implementation plan, QA checklist, PR description) references it.
+Produce a self-contained technical design document for a new feature, written to `.claude/local-docs/plans/YYYY-MM-DD-<slug>.md` (repo-root-relative; git-ignored dev artifact). The design doc is the **authoritative spec** — every later artifact (implementation plan, QA checklist, PR description) references it.
 
 This skill writes the design only. It does **not** produce an implementation plan or QA checklist — those come from `feature-plan`. For the full ticket-to-plan flow, use `feature-spec` instead.
 
@@ -56,7 +56,7 @@ digraph design_doc_flow {
 Resolve before writing:
 
 1. **Ticket reference** — Asana task ID/URL, GitHub issue number, or freeform description. Fetch it via the relevant MCP / `gh` command. If no reference, ask.
-2. **Target file path** — default `<project>/docs/plans/YYYY-MM-DD-<slug>.md`. Use today's date and a kebab-case slug from the ticket title (e.g. `2026-05-20-stream-screenshare-landscape.md`).
+2. **Target file path** — default `.claude/local-docs/plans/YYYY-MM-DD-<slug>.md` (repo-root-relative). Use today's date and a kebab-case slug from the ticket title (e.g. `2026-05-20-stream-screenshare-landscape.md`).
 3. **Branch + base branch** — capture from `git status` / `git remote`. Goes in the header.
 4. **Existing patterns to mirror** — `grep` for similar features that already exist in the codebase. The design's strongest move is "we already do X for Y, mirror that here."
 

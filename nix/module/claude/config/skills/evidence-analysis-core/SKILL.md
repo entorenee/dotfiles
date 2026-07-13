@@ -142,13 +142,15 @@ Segment findings by **app version / release** — it is a primary axis, not an a
 Always write the report as **local markdown** to:
 
 ```
-docs/<area>/YYYY-MM-DD-slug.md
+.claude/local-docs/<area>/YYYY-MM-DD-slug.md
 ```
 
-where `<area>` is the leaf's domain (e.g. `analytics`, `error-triage`, `regressions`).
+where `<area>` is the leaf's domain (e.g. `analytics`, `error-triage`, `regressions`). The path is
+relative to the repo root (the same repo whose `.claude/` holds settings); create the directory if
+it does not exist.
 
-> **The artifact is local and UNCOMMITTED.** Never `git add` or `git commit` it — writing the file
-> is the side effect; version control is the user's call.
+> **The artifact is a local dev artifact and is git-ignored (`**/.claude/local-docs/`).** It is not
+> meant to be committed — writing the file is the side effect; version control is the user's call.
 
 Standard report skeleton (leaves may add domain sections, not remove these; §5-numbered
 "For engineering discussion" is the one **optional** section — include it when qualifying

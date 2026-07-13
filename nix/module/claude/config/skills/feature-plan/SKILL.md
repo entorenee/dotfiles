@@ -9,8 +9,8 @@ description: Use after a feature design doc is approved and an implementation pl
 
 Produce two paired documents from an approved design doc:
 
-1. **Implementation plan** — `<project>/docs/plans/YYYY-MM-DD-<slug>-plan.md`. Phased structure with explicit checkpoints between phases.
-2. **QA checklist** — `<project>/docs/plans/YYYY-MM-DD-<slug>-qa.md`. Risk-ordered manual test matrix.
+1. **Implementation plan** — `.claude/local-docs/plans/YYYY-MM-DD-<slug>-plan.md` (repo-root-relative; git-ignored dev artifact). Phased structure with explicit checkpoints between phases.
+2. **QA checklist** — `.claude/local-docs/plans/YYYY-MM-DD-<slug>-qa.md`. Risk-ordered manual test matrix.
 
 This skill writes the plan + QA only. It does **not** write the design doc — `feature-design-doc` does that. For the full ticket-to-plan flow, use `feature-spec`.
 

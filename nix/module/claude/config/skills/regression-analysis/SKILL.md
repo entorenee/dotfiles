@@ -126,7 +126,7 @@ ruled out" with *why*. Ranking never precedes this pass.
 
 ## Phase 6 — Report + optional tickets
 
-Write the report as local markdown per the base (§7) to `docs/regressions/YYYY-MM-DD-<slug>.md`,
+Write the report as local markdown per the base (§7) to `.claude/local-docs/regressions/YYYY-MM-DD-<slug>.md`,
 using the base's standard skeleton. Regression-specific emphasis within it:
 
 - **Summary** — the regression quantified (what, how much, since when).
