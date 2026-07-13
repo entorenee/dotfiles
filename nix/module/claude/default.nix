@@ -330,23 +330,39 @@ in {
     claude-yolo = "claude --dangerously-skip-permissions";
   };
 
-  home.file.".claude/CLAUDE.md".source =
-    config.lib.file.mkOutOfStoreSymlink "${configPath}/CLAUDE.md";
-  home.file.".claude/RTK.md".source =
-    config.lib.file.mkOutOfStoreSymlink "${configPath}/RTK.md";
+  home.file = {
+    ".claude/CLAUDE.md".source =
+      config.lib.file.mkOutOfStoreSymlink "${configPath}/CLAUDE.md";
+    ".claude/RTK.md".source =
+      config.lib.file.mkOutOfStoreSymlink "${configPath}/RTK.md";
 
-  home.file.".claude/hooks".source =
-    config.lib.file.mkOutOfStoreSymlink "${configPath}/hooks";
+    ".claude/hooks".source =
+      config.lib.file.mkOutOfStoreSymlink "${configPath}/hooks";
 
-  home.file.".claude/skills".source =
-    config.lib.file.mkOutOfStoreSymlink "${configPath}/skills";
+    ".claude/agents".source =
+      config.lib.file.mkOutOfStoreSymlink "${configPath}/agents";
 
-  home.file.".claude/agents".source =
-    config.lib.file.mkOutOfStoreSymlink "${configPath}/agents";
+    ".claude/commands".source =
+      config.lib.file.mkOutOfStoreSymlink "${configPath}/commands";
 
-  home.file.".claude/commands".source =
-    config.lib.file.mkOutOfStoreSymlink "${configPath}/commands";
-
-  home.file.".claude/statusline.sh".source =
-    config.lib.file.mkOutOfStoreSymlink "${configPath}/statusline.sh";
+    ".claude/statusline.sh".source =
+      config.lib.file.mkOutOfStoreSymlink "${configPath}/statusline.sh";
+  }
+  # Symlink each skill individually rather than the whole skills/ directory.
+  # home-manager ≥ 2026-07 installs the generated MCP plugin as a personal
+  # plugin at ~/.claude/skills/claude-code-home-manager (for Claude Code
+  # ≥ 2.1.157). A single out-of-store symlink for the entire skills/ dir
+  # collides with that nested entry ("Error installing file ... outside $HOME").
+  # Per-skill symlinks let ~/.claude/skills be a real directory the module can
+  # also write into. Skill names are read from the flake source at eval time,
+  # so adding a new skill directory requires a rebuild.
+  // builtins.listToAttrs (
+    map
+      (name: {
+        name = ".claude/skills/${name}";
+        value.source =
+          config.lib.file.mkOutOfStoreSymlink "${configPath}/skills/${name}";
+      })
+      (builtins.attrNames (builtins.readDir ./config/skills))
+  );
 }
