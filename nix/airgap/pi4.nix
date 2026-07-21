@@ -12,6 +12,11 @@
     settings.PasswordAuthentication = false;
   };
 
+  # skyler is in the wheel group but has no password, so password-authenticated
+  # sudo can't work. Allow wheel to sudo without a password (login is SSH-key
+  # only) so USB drives can be mounted when staging the airgapped Pi's files.
+  security.sudo.wheelNeedsPassword = false;
+
   users.users.skyler.openssh.authorizedKeys.keyFiles = [
     ../module/ssh/public-ssh-keys/id_rsa_yubikey_personal.pub
   ];
