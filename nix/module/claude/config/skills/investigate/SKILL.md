@@ -269,6 +269,8 @@ When investigating code that logs errors to **Sentry** or **Posthog**, check whe
 
 These tools are especially valuable when the developer has not been able to reproduce the bug locally — production error data can reveal the conditions needed for reproduction.
 
+**Confirm which system each platform actually reports to before citing telemetry as evidence.** Different platforms in the same product often route to different backends (e.g. one platform's analytics/errors go to Posthog while another's go to Sentry). Do not assume the mapping — verify it against config or the project's CLAUDE.md, then query the correct source. Building an evidence chain on the wrong observability system produces a confident but false diagnosis.
+
 ## Common TypeScript Bug Patterns
 
 | Pattern | Symptom | Fix approach |
