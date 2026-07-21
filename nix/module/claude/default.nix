@@ -144,6 +144,11 @@ in {
         "Bash(gh api*)"
         # rtk wrapper (transparent proxy for token savings)
         "Bash(rtk *)"
+        # worktrunk — the mandated worktree workflow (see CLAUDE.md). Allow the
+        # read/create/switch verbs; `wt remove` falls through to a prompt since
+        # it deletes the branch when merged.
+        "Bash(wt switch*)"
+        "Bash(wt list*)"
         # git read-only
         "Bash(git log*)"
         "Bash(git diff*)"
