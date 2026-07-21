@@ -53,10 +53,12 @@
         [ -s "/opt/homebrew/opt/nvm/etc/bash_completion.d/nvm" ] && \. "/opt/homebrew/opt/nvm/etc/bash_completion.d/nvm"  # This loads nvm bash_completion
       fi
 
-      # pnpm global binaries (global bin dir is $PNPM_HOME/bin, not $PNPM_HOME)
+      # pnpm global binaries. pnpm 10.x uses $PNPM_HOME itself as the global
+      # bin dir, so it must be on PATH; the legacy $PNPM_HOME/bin entry is kept
+      # for older shims (e.g. eas) installed under the previous layout.
       export PNPM_HOME="$HOME/.local/share/pnpm"
 
-      export PATH=$HOME/bin:$HOME/.local/bin:$PNPM_HOME/bin:/usr/local/bin:/usr/local/share/npm/bin:$PATH
+      export PATH=$HOME/bin:$HOME/.local/bin:$PNPM_HOME:$PNPM_HOME/bin:/usr/local/bin:/usr/local/share/npm/bin:$PATH
 
       # Preferred editor for local and remote sessions
       if [[ -n $SSH_CONNECTION ]]; then
