@@ -13,6 +13,9 @@ Guide the user to edit the Nix config files in their dotfiles repo rather than w
 ## Bash
 
 - **Never use a bare `~` in a variable assignment value** (e.g. `F=~/path`). Bash expands the tilde at assignment time, which trips a safety warning on every such command. Use `F="$HOME/path"` or an absolute path instead — identical behavior, no prompt.
+- **Don't bundle unrelated commands into one `&&`/`;`/`|` chain when you want them auto-approved.** The permission engine splits compound commands and requires *every* segment to match an allow rule — one un-allowlistable segment forces a prompt for the whole chain. Run independent steps as separate Bash calls so each matches on its own. Reserve chaining for genuine dependencies.
+- **Never use `node -e`, `python -c`, or similar to inspect files or config.** Arbitrary code execution can't be allowlisted (it's the escape hatch the `pnpm exec node`/`sh` denies exist to block), so it prompts every time. To read `package.json` scripts, lockfiles, or any file, use the Read tool — that's what Project Command Discovery already requires.
+- **Invoke project binaries via an allowlisted form, not a relative path.** Use `pnpm exec eslint …` / `npx eslint …` / `pnpm exec tsc …`, never `../node_modules/.bin/eslint …`. Relative `.bin/` paths match no allow pattern and prompt; the `pnpm exec <bin>` / `npx <bin>` forms are explicitly allowlisted.
 
 ## GitHub
 
