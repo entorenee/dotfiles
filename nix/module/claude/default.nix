@@ -19,6 +19,12 @@ in {
               type = "command";
               command = "~/.claude/hooks/pnpm-guard.sh";
             }
+            # Runs before rtk-rewrite so it inspects the command as written,
+            # not the rewritten `rtk ...` form.
+            {
+              type = "command";
+              command = "~/.claude/hooks/exec-form-guard.sh";
+            }
             {
               type = "command";
               command = "~/.claude/hooks/rtk-rewrite.sh";
