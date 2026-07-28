@@ -1,4 +1,4 @@
-{pkgs, ...}: {
+{...}: {
   programs.worktrunk = {
     enable = true;
     enableZshIntegration = true;
@@ -12,13 +12,15 @@
     fi
   '';
 
-  # Deploy worktrunk's declarative settings as its read-only SYSTEM config
-  # (profile etc/xdg), NOT the writable user config. worktrunk owns
-  # ~/.config/worktrunk/config.toml and writes machine-local state there
-  # ([projects], prompt flags, a .lock); the old mkOutOfStoreSymlink pointed a
-  # git-tracked file at that path, so every worktrunk write dirtied the repo.
-  home.packages = [
-    (pkgs.writeTextDir "etc/xdg/worktrunk/config.toml"
-      (builtins.readFile ./config/config.toml))
-  ];
+  # Deploy worktrunk's declarative settings to the ONE path worktrunk reads:
+  # the user config at ~/.config/worktrunk/config.toml. worktrunk (36ba57b)
+  # has no system/XDG_CONFIG_DIRS layer, so the previous etc/xdg deployment was
+  # never picked up (and home.packages doesn't link an etc/ tree anyway).
+  #
+  # A read-only store symlink is safe here because worktrunk keeps its
+  # machine-local state in <repo>/.git/wt/ (branch markers, caches, logs, prev
+  # branch), NOT in config.toml — so nothing tries to write this file and the
+  # old repo-dirtying problem doesn't apply. User-invoked `wt config` writes
+  # (approvals, aliases) must instead be declared in ./config/config.toml.
+  xdg.configFile."worktrunk/config.toml".source = ./config/config.toml;
 }
