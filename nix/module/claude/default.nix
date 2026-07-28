@@ -134,6 +134,7 @@ in {
         "Skill(build-doctor)"
         "Skill(changelog-generation)"
         "Skill(code-hygiene)"
+        "Skill(config-health)"
         "Skill(dead-code-survey)"
         "Skill(dependency-upgrades)"
         "Skill(error-triage)"
@@ -147,6 +148,7 @@ in {
         "Skill(permission-audit)"
         "Skill(pre-pr)"
         "Skill(pre-pr-autonomous)"
+        "Skill(pr-review)"
         "Skill(regression-analysis)"
         # gh cli read-only
         "Bash(gh issue list*)"
