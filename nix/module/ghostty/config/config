@@ -10,3 +10,8 @@ clipboard-write = allow
 font-size = 16
 font-family = "Dank Mono"
 font-family = "SauceCodePro Nerd Font"
+
+# Support Shift+Enter as a newline. Emit ESC+CR (same bytes as Option+Enter),
+# which survives the tmux passthrough; a bare \n gets eaten before Claude Code
+# sees it as a newline insert.
+keybind = shift+enter=text:\x1b\r
