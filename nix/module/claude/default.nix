@@ -138,6 +138,7 @@ in {
         "Skill(feature-spec)"
         "Skill(investigate)"
         "Skill(npm-cve)"
+        "Skill(permission-audit)"
         "Skill(pre-pr)"
         "Skill(pre-pr-autonomous)"
         "Skill(regression-analysis)"
