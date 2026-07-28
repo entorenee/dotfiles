@@ -91,7 +91,6 @@ in {
       fd
       glow
       git-lfs
-      git-up
       gum
       htop
       jq
@@ -100,6 +99,7 @@ in {
       postgresql
       python314
       ripgrep
+      shellcheck
       tmuxinator
       tree
       update-nix-fetchgit
