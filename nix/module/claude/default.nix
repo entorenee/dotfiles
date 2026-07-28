@@ -1,5 +1,9 @@
-{ config, lib, profile, ... }:
-let
+{
+  config,
+  lib,
+  profile,
+  ...
+}: let
   configPath = "${config.home.homeDirectory}/dotfiles/nix/module/claude/config";
 in {
   imports = [./work.nix ./personal.nix];
@@ -151,6 +155,7 @@ in {
         "Bash(gh run list*)"
         "Bash(gh run view*)"
         "Bash(gh repo view*)"
+        "Bash(gh release list*)"
         # gh api — broad allow; permissions.deny blocks all write verbs and -f/--field
         "Bash(gh api*)"
         # rtk wrapper (transparent proxy for token savings)
@@ -228,8 +233,11 @@ in {
         "Bash(pnpm exec jest*)"
         "Bash(pnpm exec tsc*)"
         "Bash(pnpm exec vitest*)"
-        # pnpm monorepo filter (typecheck/lint:ci/test:ci against specific packages)
+        # pnpm monorepo filter (typecheck/lint:ci/test:ci against specific packages).
+        # Both orderings occur in practice: `pnpm --filter <pkg> run <script>` and
+        # `pnpm run --filter <pkg> exec <bin>`.
         "Bash(pnpm --filter*)"
+        "Bash(pnpm run --filter*)"
         # turbo
         "Bash(pnpm turbo *)"
         "Bash(npx turbo *)"
@@ -346,39 +354,35 @@ in {
     claude-yolo = "claude --dangerously-skip-permissions";
   };
 
-  home.file = {
-    ".claude/CLAUDE.md".source =
-      config.lib.file.mkOutOfStoreSymlink "${configPath}/CLAUDE.md";
-    ".claude/RTK.md".source =
-      config.lib.file.mkOutOfStoreSymlink "${configPath}/RTK.md";
-
-    ".claude/hooks".source =
-      config.lib.file.mkOutOfStoreSymlink "${configPath}/hooks";
-
-    ".claude/agents".source =
-      config.lib.file.mkOutOfStoreSymlink "${configPath}/agents";
-
-    ".claude/commands".source =
-      config.lib.file.mkOutOfStoreSymlink "${configPath}/commands";
-
-    ".claude/statusline.sh".source =
-      config.lib.file.mkOutOfStoreSymlink "${configPath}/statusline.sh";
-  }
-  # Symlink each skill individually rather than the whole skills/ directory.
-  # home-manager ≥ 2026-07 installs the generated MCP plugin as a personal
-  # plugin at ~/.claude/skills/claude-code-home-manager (for Claude Code
-  # ≥ 2.1.157). A single out-of-store symlink for the entire skills/ dir
-  # collides with that nested entry ("Error installing file ... outside $HOME").
-  # Per-skill symlinks let ~/.claude/skills be a real directory the module can
-  # also write into. Skill names are read from the flake source at eval time,
-  # so adding a new skill directory requires a rebuild.
-  // builtins.listToAttrs (
+  # Every managed entry is the same mapping: ~/.claude/<path> is an out-of-store
+  # symlink to config/<path>. Listing the relative paths once keeps the
+  # ".claude/" prefix and the mkOutOfStoreSymlink call in a single place.
+  #
+  # Skills are enumerated individually rather than symlinking the whole skills/
+  # directory. home-manager ≥ 2026-07 installs the generated MCP plugin as a
+  # personal plugin at ~/.claude/skills/claude-code-home-manager (for Claude Code
+  # ≥ 2.1.157). A single out-of-store symlink for the entire skills/ dir collides
+  # with that nested entry ("Error installing file ... outside $HOME"). Per-skill
+  # symlinks let ~/.claude/skills be a real directory the module can also write
+  # into. Skill names are read from the flake source at eval time, so adding a
+  # new skill directory requires a rebuild.
+  home.file = builtins.listToAttrs (
     map
-      (name: {
-        name = ".claude/skills/${name}";
-        value.source =
-          config.lib.file.mkOutOfStoreSymlink "${configPath}/skills/${name}";
-      })
+    (path: {
+      name = ".claude/${path}";
+      value.source = config.lib.file.mkOutOfStoreSymlink "${configPath}/${path}";
+    })
+    (
+      [
+        "CLAUDE.md"
+        "RTK.md"
+        "hooks"
+        "agents"
+        "commands"
+        "statusline.sh"
+      ]
+      ++ map (name: "skills/${name}")
       (builtins.attrNames (builtins.readDir ./config/skills))
+    )
   );
 }
