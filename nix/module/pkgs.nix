@@ -29,6 +29,7 @@
     freefilesync
     insomnia
     jellyfin-desktop
+    libnotify # notify-send, for the claude-code Notification hook banner
     libreoffice
     nextcloud-client
     nodejs_22 # TODO determine dynamic sourcing of Node
@@ -107,7 +108,10 @@ in {
     ++ lib.optionals isWorkProfile workPkgs
     ++ lib.optionals isPersonalProfile personalPkgs
     ++ lib.optionals pkgs.stdenv.isLinux linuxPkgs
-    ++ lib.optionals pkgs.stdenv.isDarwin [pkgs.yubikey-manager];
+    ++ lib.optionals pkgs.stdenv.isDarwin [
+      pkgs.terminal-notifier # claude-code Notification hook banner
+      pkgs.yubikey-manager
+    ];
 
   # proton-mail.png is actually SVG content; placing it in hicolor/scalable lets
   # GNOME find it reliably (pixmaps/ is not consistently searched from Nix profiles).

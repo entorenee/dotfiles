@@ -22,6 +22,17 @@ in {
           ];
         }
       ];
+      hooks.Notification = [
+        {
+          matcher = "permission_prompt|idle_prompt";
+          hooks = [
+            {
+              type = "command";
+              command = "~/.claude/hooks/notify-attention.sh";
+            }
+          ];
+        }
+      ];
       enabledPlugins = {
         "typescript-lsp@claude-plugins-official" = true;
         "superpowers@superpowers-marketplace" = true;
