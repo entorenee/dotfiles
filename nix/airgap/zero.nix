@@ -1,7 +1,8 @@
-{ pkgs, nixos-hardware, ... }: {
+{ pkgs, modulesPath, nixos-hardware, ... }: {
   imports = [
     # Zero 2W uses BCM2710A1 (same SoC family as Pi 3)
     nixos-hardware.nixosModules.raspberry-pi-3
+    "${modulesPath}/installer/sd-card/sd-image-aarch64.nix"
     ./common.nix
   ];
 
@@ -33,11 +34,6 @@
     yubikey-personalization
   ];
 
-  boot.loader.grub.enable = false;
-  boot.loader.generic-extlinux-compatible.enable = true;
-
-  fileSystems."/" = {
-    device = "/dev/disk/by-label/NIXOS_SD";
-    fsType = "ext4";
-  };
+  # boot.loader.*, fileSystems."/", and fileSystems."/boot/firmware" are
+  # already set by sd-image-aarch64.nix.
 }

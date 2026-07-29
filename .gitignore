@@ -7,6 +7,7 @@ nix/module/nvim/config/lazy-lock.json
 
 # Nix artifacts from testing build
 result/
+result-*/
 
 # AI Ignore
 .claude/settings.local.json
