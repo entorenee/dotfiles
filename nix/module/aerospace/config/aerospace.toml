@@ -1,0 +1,254 @@
+# AeroSpace configuration
+#
+# Deployed to ~/.config/aerospace/aerospace.toml via an out-of-store symlink
+# (see ../default.nix), so edits here are live immediately. Apply them with:
+#
+#   aerospace reload-config
+#
+# Reference for every option: https://nikitabobko.github.io/AeroSpace/guide
+# Full default config:        https://github.com/nikitabobko/AeroSpace/blob/main/docs/config-examples/default-config.toml
+
+# Opt in to config-version 2. Under version 1 `persistent-workspaces` was
+# inferred from the right-hand side of the keybindings below; version 2 makes
+# that fallback an empty array, so the list is declared explicitly further down.
+# See: https://nikitabobko.github.io/AeroSpace/guide#config-version
+config-version = 2
+
+# `after-login-command` runs at macOS login; `after-startup-command` runs when
+# AeroSpace itself starts. Seeding belongs in the latter, because it guarantees
+# AeroSpace is already running to catch the new windows with the
+# on-window-detected rules at the bottom of this file.
+#
+# Only the always-open apps are seeded here. Chrome, Zoom and TablePlus stay on
+# demand — add another `open -b <bundle-id>` line to include one.
+after-login-command = []
+after-startup-command = [
+  'exec-and-forget open -b com.mitchellh.ghostty',
+  'exec-and-forget open -b org.mozilla.firefox',
+  'exec-and-forget open -b com.tinyspeck.slackmacgap',
+  'exec-and-forget open -b com.electron.asana',
+]
+
+# AeroSpace manages its own login item, so this replaces a launchd agent.
+start-at-login = true
+
+# This file is an out-of-store symlink into the dotfiles repo, so saving it is
+# enough to apply a change — no rebuild, and no `aerospace reload-config`.
+# Enabling this needs one manual reload before the auto-reloading takes over.
+auto-reload-config = true
+
+# Workspaces that stay alive while empty, which config-version = 2 requires
+# stating outright. Purpose of each (monitor pinning is set further down):
+#   1  code + primary browser        4  scratch, main monitor
+#   2  second browser, Zoom, SQL     5  scratch, laptop
+#   3  Slack + Asana
+persistent-workspaces = ["1", "2", "3", "4", "5"]
+
+# Normalization keeps the window tree tidy by collapsing redundant containers
+# and alternating orientation as you nest. Disable these only if you want the
+# raw tree exactly as built.
+enable-normalization-flatten-containers = true
+enable-normalization-opposite-orientation-for-nested-containers = true
+
+# Visible slice of each background window when a container is in accordion mode.
+accordion-padding = 30
+
+default-root-container-layout = 'tiles'
+# 'auto' picks horizontal on a wide monitor, vertical on a tall one.
+default-root-container-orientation = 'auto'
+
+# Keep the mouse with the focus so the pointer never lands on a stale monitor.
+on-focused-monitor-changed = ['move-mouse monitor-lazy-center']
+
+# Leave macOS "hide application" (cmd-h) alone rather than fighting it.
+automatically-unhide-macos-hidden-apps = false
+
+[key-mapping]
+preset = 'qwerty'
+
+[gaps]
+inner.horizontal = 8
+inner.vertical = 8
+outer.left = 8
+outer.bottom = 8
+outer.top = 8
+outer.right = 8
+
+# Pin each workspace to a monitor so a given number always lands on the same
+# screen. 'main' tracks the System Settings primary display — currently the LG
+# ULTRAGEAR — which is what makes 1/2/4 fall back to the laptop panel on their
+# own when the external monitor is unplugged. 'built-in' is a case-insensitive
+# match on "Built-in Retina Display", so it always resolves to the laptop.
+[workspace-to-monitor-force-assignment]
+1 = 'main'
+2 = 'main'
+3 = 'built-in'
+4 = 'main'
+5 = 'built-in'
+
+# --------------------------------------------------------------------------
+# Main mode
+#
+# 'alt' is AeroSpace's conventional modifier and is chosen here because macOS
+# itself claims very little of it. Bindings are vim-directional (h/j/k/l) to
+# match the tmux and Neovim muscle memory in this repo.
+# --------------------------------------------------------------------------
+[mode.main.binding]
+
+# Layout toggles. Each command cycles through its listed values, so pressing
+# alt-slash flips between horizontal and vertical tiles.
+alt-slash = 'layout tiles horizontal vertical'
+alt-comma = 'layout accordion horizontal vertical'
+
+# Move focus.
+alt-h = 'focus left'
+alt-j = 'focus down'
+alt-k = 'focus up'
+alt-l = 'focus right'
+
+# Move the focused window within the tree.
+alt-shift-h = 'move left'
+alt-shift-j = 'move down'
+alt-shift-k = 'move up'
+alt-shift-l = 'move right'
+
+# Resize the focused window. 'smart' resizes along the parent's orientation.
+alt-minus = 'resize smart -50'
+alt-equal = 'resize smart +50'
+alt-shift-equal = 'balance-sizes'
+
+# Float / unfloat — needed for dialogs and anything that tiles badly
+# (System Settings, some Zoom windows).
+alt-f = 'layout floating tiling'
+# Momentarily maximize the focused window to fill the workspace, and toggle back.
+# This is AeroSpace's own fullscreen, not the macOS one (`macos-native-fullscreen`),
+# so no Space is created and the window returns to its exact slot in the tree.
+# Add --no-outer-gaps to ignore the gap settings while maximized.
+alt-shift-f = 'fullscreen'
+
+# Five workspaces, each with a fixed purpose. AeroSpace workspaces are virtual
+# and independent of macOS Spaces, which is why switching is instant with no
+# Space animation.
+alt-1 = 'workspace 1' # code + primary browser
+alt-2 = 'workspace 2' # second browser, Zoom, TablePlus
+alt-3 = 'workspace 3' # Slack + Asana
+alt-4 = 'workspace 4' # scratch, main monitor
+alt-5 = 'workspace 5' # scratch, laptop
+
+# Send the focused window to a workspace and follow it there.
+alt-shift-1 = ['move-node-to-workspace 1', 'workspace 1']
+alt-shift-2 = ['move-node-to-workspace 2', 'workspace 2']
+alt-shift-3 = ['move-node-to-workspace 3', 'workspace 3']
+alt-shift-4 = ['move-node-to-workspace 4', 'workspace 4']
+alt-shift-5 = ['move-node-to-workspace 5', 'workspace 5']
+
+# Jump back to the previous workspace, and push the current workspace to the
+# next monitor.
+alt-tab = 'workspace-back-and-forth'
+alt-shift-tab = 'move-workspace-to-monitor --wrap-around next'
+
+# Enter service mode for the less-frequent operations below.
+alt-shift-semicolon = 'mode service'
+
+# --------------------------------------------------------------------------
+# Service mode
+#
+# A one-shot mode: every binding ends by returning to main mode, so it behaves
+# like a small command palette rather than a sticky state.
+# --------------------------------------------------------------------------
+[mode.service.binding]
+
+esc = ['reload-config', 'mode main']
+# Reset a workspace whose tree has become awkward.
+r = ['flatten-workspace-tree', 'mode main']
+f = ['layout floating tiling', 'mode main']
+backspace = ['close-all-windows-but-current', 'mode main']
+
+# Join the focused window into its neighbour, changing the tree shape.
+alt-shift-h = ['join-with left', 'mode main']
+alt-shift-j = ['join-with down', 'mode main']
+alt-shift-k = ['join-with up', 'mode main']
+alt-shift-l = ['join-with right', 'mode main']
+
+# --------------------------------------------------------------------------
+# Per-app rules
+#
+# Find the identifiers for a running window with:
+#   aerospace list-apps
+#   aerospace list-windows --focused
+#
+# `run` takes a list, so one rule can both place a window and set its layout
+# without depending on how AeroSpace orders multiple matching rules. Every
+# bundle ID below was read off this machine rather than guessed.
+# --------------------------------------------------------------------------
+
+# Workspace 1 — code + primary browser.
+[[on-window-detected]]
+if.app-id = 'com.mitchellh.ghostty'
+run = 'move-node-to-workspace 1'
+
+# Only the startup-seeded window is pinned here. Later Firefox windows stay on
+# whatever workspace is focused when they open, so a second instance can live on
+# workspace 2 alongside Chrome instead of being yanked back to 1.
+[[on-window-detected]]
+if.app-id = 'org.mozilla.firefox'
+if.during-aerospace-startup = true
+run = 'move-node-to-workspace 1'
+
+# Workspace 2 — second browser, calls, and the occasional DB client.
+[[on-window-detected]]
+if.app-id = 'com.google.Chrome'
+run = 'move-node-to-workspace 2'
+
+[[on-window-detected]]
+if.app-id = 'us.zoom.xos'
+run = 'move-node-to-workspace 2'
+
+[[on-window-detected]]
+if.app-id = 'com.tinyapp.TablePlus'
+run = 'move-node-to-workspace 2'
+
+# Workspace 3 — comms, pinned to the laptop panel by the monitor assignment.
+#
+# The layout pair makes workspace 3 a horizontal accordion: one window at full
+# width at a time, with `accordion-padding` leaving a sliver of the others
+# visible. `--workspace 3 --root` targets the workspace's root container
+# directly, so this does not depend on which window happens to be focused. It
+# is repeated on both apps so the layout survives the container normalization
+# that happens when the second window arrives.
+[[on-window-detected]]
+if.app-id = 'com.tinyspeck.slackmacgap'
+run = [
+  'move-node-to-workspace 3',
+  'layout --workspace 3 --root accordion',
+  'layout --workspace 3 --root horizontal',
+]
+
+[[on-window-detected]]
+if.app-id = 'com.electron.asana'
+run = [
+  'move-node-to-workspace 3',
+  'layout --workspace 3 --root accordion',
+  'layout --workspace 3 --root horizontal',
+]
+
+# Transient windows that tile badly. All deliberately unpinned, so they float on
+# whatever workspace is active rather than dragging focus to another one — which
+# matters most for the credential apps, since they get reached for from
+# anywhere.
+[[on-window-detected]]
+if.app-id = 'com.bitwarden.desktop'
+run = 'layout floating'
+
+[[on-window-detected]]
+if.app-id = 'com.yubico.yubioath'
+run = 'layout floating'
+
+[[on-window-detected]]
+if.app-id = 'com.apple.systempreferences'
+run = 'layout floating'
+
+[[on-window-detected]]
+if.app-id = 'com.apple.finder'
+if.window-title-regex-substring = 'Info'
+run = 'layout floating'

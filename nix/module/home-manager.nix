@@ -38,6 +38,7 @@ in {
   };
 
   imports = [
+    ./aerospace
     ./alacritty
     ./bins
     claudeModule

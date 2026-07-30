@@ -22,6 +22,11 @@ in {
         extraFlags = ["--force"];
       };
 
+      # AeroSpace ships from the maintainer's tap, not homebrew-cask core.
+      taps = [
+        "nikitabobko/tap"
+      ];
+
       brews = [
         "gnupg"
         "nvm"
@@ -31,6 +36,7 @@ in {
       ];
 
       casks = [
+        "nikitabobko/tap/aerospace"
         "claude"
         "docker-desktop"
         "elgato-control-center" # TODO find linux pkg
