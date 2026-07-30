@@ -9,24 +9,9 @@ windows:
     panes:
       - commands: []
       - commands: []
-
-  - name: marketing
-    manual: true
-    root: MarketingSite
-    layout: 1654,151x66,0,0[151x47,0,0,135,151x18,0,48{75x18,0,48,137,75x18,76,48,136}]
-    commands:
-      - nvim
+  - name: server
+    layout: d853,111x70,0,0[111x45,0,0,152,111x24,0,46{38x24,0,46,154,39x24,39,46,155,32x24,79,46,156}]
     panes:
-      - type: horizontal
-        commands:
-          - npm run dev
-
-  - name: mobile
-    manual: true
-    root: fwapp2proto
-    layout: 1654,151x66,0,0[151x47,0,0,135,151x18,0,48{75x18,0,48,137,75x18,76,48,136}]
-    commands:
-      - nvim
-    panes:
+      - commands: []
       - commands: []
       - commands: []
