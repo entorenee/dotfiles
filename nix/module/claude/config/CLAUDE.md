@@ -169,6 +169,8 @@ wt remove                   # Remove current worktree; deletes branch if merged
 - All feature work, bug fixes, and implementation tasks should use a worktree
 - Proactively create a worktree without asking — the preference is always worktrees
 
+**Exception — the `dotfiles` repo itself does not use worktrees.** Work directly in `~/dotfiles`; do not create a worktree for dotfiles changes. Many of its home-manager modules deploy config through `config.lib.file.mkOutOfStoreSymlink` against a hardcoded `${config.home.homeDirectory}/dotfiles/...` path (see `nix/module/ghostty/default.nix`, `nix/module/karabiner/default.nix`, `nix/module/aerospace/default.nix`). A rebuild from a worktree therefore points `~/.config/*` back at the *primary* checkout, so config added on the branch never resolves and cannot be tested until it merges. The symlink stitching requires the real path.
+
 ### Moving a session into a new worktree mid-session
 
 A session is anchored to the directory `claude` launched in; `wt switch` inside a Bash tool call runs in a subshell and cannot move it, so the conversation history and memory stay on the branch you started on. If you create a worktree partway through a session and want to keep the current conversation, run `/cd <new-worktree-path>` from the existing session — it relocates the session to the new worktree's project storage so the history follows. (`/branch` forks in the same directory and resume always re-anchors to the original directory; neither moves the session. `/cd` requires Claude Code v2.1.169+.)
