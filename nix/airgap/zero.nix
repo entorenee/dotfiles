@@ -10,6 +10,11 @@
   networking.useDHCP = false;
   networking.wireless.enable = false;
 
+  # Otherwise the serial output will be garbled. sd-image-aarch64.nix sets this
+  # under [pi3], but nixos-hardware mkForce-replaces its config.txt generation
+  # (see the uboot note in common.nix), so set it again for the Zero 2W's filter.
+  hardware.raspberry-pi.configtxt.settings.pi02.core_freq = 250;
+
   services.openssh.enable = false;
 
   services.pcscd.enable = true;
