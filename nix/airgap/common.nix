@@ -7,7 +7,6 @@
   environment.etc."yubikey-guide".source = yubikey-guide;
 
   boot.supportedFilesystems.zfs = lib.mkForce false;
-  hardware.raspberry-pi.firmware.uboot.enable = true;
 
   users.users.skyler = {
     isNormalUser = true;
