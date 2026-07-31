@@ -7,6 +7,7 @@
 in {
   programs.keepassxc = lib.mkIf isPersonalProfile {
     enable = true;
+    autostart = true;
     settings = {
       General = {
         AutoSaveAfterEveryChange = false;
@@ -17,9 +18,10 @@ in {
       };
       GUI = {
         ApplicationTheme = "dark";
-        HidePasswords = false;
         LaunchAtStartup = true;
+        MinimizeOnClose = true;
         MinimizeOnStartup = true;
+        ShowTrayIcon = true;
         TrayIconAppearance = "monochrome-light";
       };
     };

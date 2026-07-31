@@ -15,6 +15,7 @@ in {
   programs.home-manager.enable = true;
   home.stateVersion = "26.05";
   xdg.enable = true;
+  xdg.autostart.enable = true;
   targets.genericLinux.enable = pkgs.stdenv.isLinux;
 
   # Suppress system-installed autostart entries that degrade the user systemd
