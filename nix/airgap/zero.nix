@@ -1,7 +1,9 @@
-{ pkgs, modulesPath, nixos-hardware, ... }: {
+{
+  pkgs,
+  modulesPath,
+  ...
+}: {
   imports = [
-    # Zero 2W uses BCM2710A1 (same SoC family as Pi 3)
-    nixos-hardware.nixosModules.raspberry-pi-3
     "${modulesPath}/installer/sd-card/sd-image-aarch64.nix"
     ./common.nix
   ];
@@ -9,11 +11,6 @@
   networking.hostName = "zero-airgap";
   networking.useDHCP = false;
   networking.wireless.enable = false;
-
-  # Otherwise the serial output will be garbled. sd-image-aarch64.nix sets this
-  # under [pi3], but nixos-hardware mkForce-replaces its config.txt generation
-  # (see the uboot note in common.nix), so set it again for the Zero 2W's filter.
-  hardware.raspberry-pi.configtxt.settings.pi02.core_freq = 250;
 
   services.openssh.enable = false;
 
