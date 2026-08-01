@@ -13,7 +13,7 @@
     extraGroups = ["wheel"];
   };
 
-  environment.systemPackages = with pkgs; [tmux];
+  environment.systemPackages = with pkgs; [neovim tmux];
 
   system.stateVersion = "26.05";
 }

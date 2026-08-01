@@ -7,6 +7,7 @@
     "${modulesPath}/installer/sd-card/sd-image-aarch64.nix"
     ./common.nix
   ];
+  users.users.skyler.hashedPassword = "$y$j9T$XiFnrrsKYy0ea0nf/iafR1$a4koktWLZR18TfOVCvkUGmQkoSRrqBM17XR8DyI97jA";
 
   networking.hostName = "zero-airgap";
   networking.useDHCP = false;
