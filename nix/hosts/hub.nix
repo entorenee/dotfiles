@@ -1,11 +1,27 @@
-{ pkgs, nixos-hardware, ... }: {
+{
+  pkgs,
+  nixos-hardware,
+  ...
+}: {
   imports = [
+    # Safe here, unlike on the sd-image hosts: this Pi is installed in place and
+    # rebuilt with `make hub-switch`, so it never runs the sd-image module whose
+    # populateFirmwareCommands nixos-hardware would mkForce over. Do not copy
+    # this import into an image-built host. See CLAUDE.md.
     nixos-hardware.nixosModules.raspberry-pi-4
     ./common.nix
   ];
 
-  networking.hostName = "pi4-online";
+  networking.hostName = "hub";
   networking.useDHCP = true;
+
+  users.users.skyler = {
+    isNormalUser = true;
+    extraGroups = ["wheel"];
+    openssh.authorizedKeys.keyFiles = [
+      ../module/ssh/public-ssh-keys/id_rsa_yubikey_personal.pub
+    ];
+  };
 
   services.openssh = {
     enable = true;
@@ -17,11 +33,7 @@
   # only) so USB drives can be mounted when staging the airgapped Pi's files.
   security.sudo.wheelNeedsPassword = false;
 
-  users.users.skyler.openssh.authorizedKeys.keyFiles = [
-    ../module/ssh/public-ssh-keys/id_rsa_yubikey_personal.pub
-  ];
-
-  nix.settings.experimental-features = [ "nix-command" "flakes" ];
+  nix.settings.experimental-features = ["nix-command" "flakes"];
 
   environment.systemPackages = with pkgs; [
     git

@@ -110,8 +110,8 @@
     };
 
     nixosConfigurations = {
-      pi4 = mkNixosConfig "aarch64-linux" ./airgap/pi4.nix;
-      zero = mkNixosConfig "aarch64-linux" ./airgap/zero.nix;
+      hub = mkNixosConfig "aarch64-linux" ./hosts/hub.nix;
+      airgap = mkNixosConfig "aarch64-linux" ./hosts/airgap.nix;
     };
   };
 }

@@ -56,13 +56,13 @@ cleanup:
 		sudo nix-collect-garbage --delete-older-than 7d; \
 	fi
 
-## Build a flashable SD image for the airgapped Pi Zero (run on the Pi 4)
-zero-image:
-	nix build "nix/#nixosConfigurations.zero.config.system.build.sdImage" --out-link result-zero-image
+## Build a flashable SD image for the airgapped Pi Zero (run on the hub)
+airgap-image:
+	nix build "nix/#nixosConfigurations.airgap.config.system.build.sdImage" --out-link result-airgap-image
 
-## Rebuild and switch the Pi 4's own NixOS system (run on the Pi 4)
-pi4-switch:
-	sudo nixos-rebuild switch --flake "nix/#pi4"
+## Rebuild and switch the hub's own NixOS system (run on the hub)
+hub-switch:
+	sudo nixos-rebuild switch --flake "nix/#hub"
 
 help:
 	@awk '/^## / \
