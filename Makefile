@@ -2,6 +2,9 @@
 
 PROFILE ?= $(shell [ "$$(id -un)" = "fw-skylerlemay" ] && echo work || echo personal)
 
+# Hostname or IP of the uptime-kuma Pi Zero, used by uptime-switch.
+UPTIME_HOST ?= uptime
+
 ## List running Claude Code sessions (PID, start time, working directory)
 claude-sessions:
 	@pids=$$(pgrep -x claude 2>/dev/null); \
@@ -63,6 +66,16 @@ airgap-image:
 ## Rebuild and switch the hub's own NixOS system (run on the hub)
 hub-switch:
 	sudo nixos-rebuild switch --flake "nix/#hub"
+
+## Build a flashable SD image for the uptime-kuma Pi Zero (run on the hub)
+uptime-image:
+	nix build "nix/#nixosConfigurations.uptime.config.system.build.sdImage" --out-link result-uptime-image
+
+## Deploy the uptime host (run on the hub; the Zero cannot rebuild itself)
+uptime-switch:
+	nixos-rebuild switch --flake "nix/#uptime" --target-host "uptime@$(UPTIME_HOST)" --sudo
+
+
 
 help:
 	@awk '/^## / \

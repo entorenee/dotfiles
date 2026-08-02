@@ -112,6 +112,7 @@
     nixosConfigurations = {
       hub = mkNixosConfig "aarch64-linux" ./hosts/hub.nix;
       airgap = mkNixosConfig "aarch64-linux" ./hosts/airgap.nix;
+      uptime = mkNixosConfig "aarch64-linux" ./hosts/uptime.nix;
     };
   };
 }

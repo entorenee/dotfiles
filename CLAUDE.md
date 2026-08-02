@@ -51,6 +51,11 @@ Always prefer native home-manager modules and options over custom activation scr
 ├── nix/
 │   ├── flake.nix                 # Main flake configuration
 │   ├── system/darwin.nix         # macOS system configuration
+│   ├── hosts/                    # NixOS hosts (Raspberry Pi)
+│   │   ├── common.nix            # Shared base for every Pi host
+│   │   ├── uptime.nix            # uptime-kuma + cloudflared (Pi Zero 2W)
+│   │   ├── hub.nix               # Building hub (Pi 4, always-on)
+│   │   └── airgap.nix            # Yubikey airgap workflow (Pi Zero 2W)
 │   └── module/                   # Individual tool modules
 │       ├── home-manager.nix      # Main home-manager config
 │       ├── nvim/                 # Neovim configuration
@@ -65,6 +70,42 @@ Always prefer native home-manager modules and options over custom activation scr
 
 - **Rebuild and switch:** `make rebuild` — auto-detects OS (Darwin vs Linux) and profile (personal vs work) from the current username (`fw-skylerlemay` → work, otherwise personal). Override with `PROFILE=work make rebuild`.
 - **Profile management:** Controlled via `profile` variable in flake
+
+## NixOS Pi Hosts
+
+Three `nixosConfigurations` live in `nix/hosts/`, all `aarch64-linux`: `hub` (the always-on Pi 4, general building hub), `airgap` (the airgapped Yubikey Pi Zero 2W), and `uptime` (the uptime-kuma Pi Zero 2W).
+
+| Task | Command | Run from |
+| --- | --- | --- |
+| Build the airgap Zero image | `make airgap-image` | hub |
+| Build the uptime image | `make uptime-image` | hub |
+| Deploy to the uptime Zero | `make uptime-switch` (override `UPTIME_HOST`) | hub |
+| Rebuild the hub itself | `make hub-switch` | hub |
+
+### Never import nixos-hardware into an sd-image host
+
+`nixos-hardware`'s `raspberry-pi-*` modules `mkForce`-replace `populateFirmwareCommands` from `sd-image-aarch64.nix`. Their replacement only installs `u-boot.bin` (and the matching `kernel=` / `arm_64bit=1` lines in `config.txt`) when `hardware.raspberry-pi.firmware.uboot.enable` is set. Left off, the firmware partition gets `bootcode.bin`/`start.elf`/dtbs but **no kernel**, so the GPU firmware has nothing to hand off to and the board dies with **7 LED flashes**.
+
+Enabling `uboot` papers over it; dropping `nixos-hardware` is the actual fix, and also removes the need to re-set `hardware.raspberry-pi.configtxt.settings.pi02.core_freq = 250` to keep serial output from garbling. So an image-built host imports **stock `sd-image-aarch64.nix` and nothing else**.
+
+`hub.nix` is the exception and is correct as written: it is installed in place and rebuilt with `nixos-rebuild switch`, so the sd-image module is never in play. Do not "fix" the asymmetry, and do not use `hub.nix` as the template for a new image-built host.
+
+`nix/hosts/common.nix` also sets `boot.supportedFilesystems.zfs = lib.mkForce false`. This is load-bearing, not cosmetic — the sd-image default pulls ZFS in and it will not build for the aarch64 image.
+
+### A Pi Zero cannot rebuild itself
+
+A Zero 2W has 512MB of RAM. *Evaluating* a NixOS closure peaks well above that before any compilation starts, so an on-device `nixos-rebuild` means swapping onto the SD card for a very long time. Deploy instead: `make uptime-switch` runs on the hub, which evaluates and builds natively for aarch64 and pushes only the resulting closure. The Zero just activates it. The dotfiles clone on the Zero is for reading and editing config, not for rebuilding.
+
+### Secrets on the uptime host
+
+Nothing about the Cloudflare tunnel is in this repo. `nix/hosts/uptime.nix` runs a hand-rolled `cloudflared-tunnel` unit rather than `services.cloudflared`, because that module takes the tunnel UUID as an attribute name and renders ingress rules into a store-built `config.yml` — both eval-time inputs, and both things that would end up published in this repo.
+
+Seed the host by placing two files in `/etc/cloudflared`, either on the mounted image before flashing or over SSH afterwards:
+
+- `config.yml` — tunnel UUID, `credentials-file: /etc/cloudflared/credentials.json`, and an ingress rule pointing the public hostname at `http://127.0.0.1:3001`
+- `credentials.json` — from `cloudflared tunnel create`
+
+`systemd.tmpfiles` `z` rules re-apply `root:cloudflared` `0640` to both on every boot, so seeding them on a build machine where the `cloudflared` uid does not exist yet still works. Until `config.yml` exists the unit's `ConditionPathExists` keeps it inert instead of crash-looping.
 
 ## Claude Code Nix Module
 
