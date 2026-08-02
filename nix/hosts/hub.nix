@@ -10,6 +10,7 @@
     # this import into an image-built host. See CLAUDE.md.
     nixos-hardware.nixosModules.raspberry-pi-4
     ./common.nix
+    ./modules/gpg-yubikey.nix
   ];
 
   networking.hostName = "hub";
@@ -40,6 +41,27 @@
     gnumake
     rsync
   ];
+
+  # System-wide git config (no home-manager on this host, so there's no
+  # ~/.gitconfig to take precedence). Signing-relevant subset of
+  # module/git/config/{config,config-personal} — commits are signed with the
+  # personal Yubikey plugged in for the occasion.
+  environment.etc."gitconfig".text = ''
+    [user]
+      email = 26767995+entorenee@users.noreply.github.com
+      name = Skyler Lemay
+      signingkey = 785A45A23EA2C574!
+
+    [commit]
+      gpgsign = true
+    [tag]
+      gpgsign = true
+    [init]
+      defaultBranch = main
+
+    [url "git@github.com:"]
+      insteadOf = https://github.com/
+  '';
 
   boot.loader.grub.enable = false;
   boot.loader.generic-extlinux-compatible.enable = true;

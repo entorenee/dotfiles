@@ -11,6 +11,7 @@
     # also set, which boots to 7 LED flashes. See CLAUDE.md.
     "${modulesPath}/installer/sd-card/sd-image-aarch64.nix"
     ./common.nix
+    ./modules/gpg-yubikey.nix
   ];
 
   environment.etc."yubikey-guide".source = yubikey-guide;
@@ -29,26 +30,15 @@
     hashedPassword = "$y$j9T$XiFnrrsKYy0ea0nf/iafR1$a4koktWLZR18TfOVCvkUGmQkoSRrqBM17XR8DyI97jA";
   };
 
-  services.pcscd.enable = true;
-
-  programs.gnupg.agent = {
-    enable = true;
-    pinentryPackage = pkgs.pinentry-curses;
-  };
-
   environment.systemPackages = with pkgs; [
     cryptsetup
     diceware
     ent
-    gnupg
     paperkey
     parted
     pgpdump
-    pinentry-curses
     pwgen
     rng-tools
-    yubikey-manager
-    yubikey-personalization
   ];
 
   # boot.loader.*, fileSystems."/", and fileSystems."/boot/firmware" are
