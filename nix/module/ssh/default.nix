@@ -18,6 +18,14 @@ in {
       IdentityFile = personalYubikeyIdentity;
       IdentitiesOnly = true;
     };
+    settings.hub = {
+      HostName = "192.168.1.160";
+      User = "skyler";
+      IdentityFile = personalYubikeyIdentity;
+      IdentitiesOnly = true;
+      ServerAliveInterval = 60;
+      ServerAliveCountMax = 3;
+    };
     settings."github.com" = {
       IdentityFile =
         [personalYubikeyIdentity]

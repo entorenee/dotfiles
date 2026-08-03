@@ -9,6 +9,11 @@
       tl = "tmux list-sessions";
       tx = "tmuxinator";
 
+      # Long builds on the hub must be rooted in a tmux server on the *hub*, not
+      # on this laptop -- a laptop-side pane still loses its ssh connection on
+      # sleep, and the build dies with the sshd session. Reattaches if present.
+      hubb = "ssh -t hub 'tmux new -As build'";
+
       tree = "tree -C -F -a -h --gitignore -I \".git\"";
     };
 
