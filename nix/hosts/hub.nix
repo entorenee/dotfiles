@@ -16,6 +16,13 @@
   networking.hostName = "hub";
   networking.useDHCP = true;
 
+  # The account set is fully declared here, so /etc/shadow should not be able to
+  # drift out from under it -- an imperative `passwd` would otherwise persist
+  # across rebuilds and quietly re-open the password paths closed below.
+  # skyler stays passwordless: SSH keys get in, wheelNeedsPassword = false
+  # covers sudo, and console recovery is by pulling the SD card.
+  users.mutableUsers = false;
+
   users.users.skyler = {
     isNormalUser = true;
     extraGroups = ["wheel"];
@@ -24,9 +31,18 @@
     ];
   };
 
+  # KbdInteractiveAuthentication defaults to true and UsePAM is on, which leaves
+  # a PAM keyboard-interactive path to password auth that PasswordAuthentication
+  # = false does not cover. PermitRootLogin defaults to "prohibit-password",
+  # which still permits key-based root login. Both are closed explicitly, and
+  # match uptime.nix.
   services.openssh = {
     enable = true;
-    settings.PasswordAuthentication = false;
+    settings = {
+      PasswordAuthentication = false;
+      KbdInteractiveAuthentication = false;
+      PermitRootLogin = "no";
+    };
   };
 
   # skyler is in the wheel group but has no password, so password-authenticated

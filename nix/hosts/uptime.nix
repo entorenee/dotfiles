@@ -12,6 +12,12 @@
   # The Zero 2W has no on-board ethernet; this is a USB OTG adapter.
   networking.useDHCP = true;
 
+  # As on hub.nix: the account set is fully declared, so an imperative `passwd`
+  # cannot persist and re-open what the openssh settings below close. uptime
+  # stays passwordless -- key-only SSH in, wheelNeedsPassword = false for the
+  # `--sudo` in `make uptime-switch`.
+  users.mutableUsers = false;
+
   users.users.uptime = {
     isNormalUser = true;
     extraGroups = ["wheel"];
