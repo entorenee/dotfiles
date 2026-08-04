@@ -189,7 +189,7 @@ allowlisted or built-in read-only. Chaining alone does not force a prompt.
 
 ## Step 5 — Report
 
-Write to `.claude/local-docs/config-health/YYYY-MM-DD-config-health.md` in the
+Write to `docs/local/config-health/YYYY-MM-DD-config-health.md` in the
 dotfiles repo, and summarize inline. Order sections by actionability:
 
 1. **Config defects (facts)** — Step 1 `FAIL` lines, each with its one-line fix.

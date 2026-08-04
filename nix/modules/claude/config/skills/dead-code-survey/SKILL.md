@@ -172,8 +172,8 @@ consumes them, and a wrong "safe to delete" on staged scaffolding is the expensi
 
 ## Phase 2 — Report (read-only)
 
-Write to `.claude/local-docs/dead-code/YYYY-MM-DD-survey.md` (local dev artifact, git-ignored via
-`**/.claude/local-docs/` — the user owns version control; never `git add`/`commit` it).
+Write to `docs/local/dead-code/YYYY-MM-DD-survey.md` (local dev artifact, git-ignored via
+`**/docs/local/` — the user owns version control; never `git add`/`commit` it).
 
 1. **Summary** — counts: N unused files, N dead exports, N unused deps, est. LOC removable.
 2. **Safe to remove** — grouped into proposed commit-sized chunks; each item with

@@ -161,7 +161,7 @@ For upgrades spanning multiple sessions, create a progress tracking file.
 
 ### Naming Convention
 
-`{project-name}-{upgrade-type}-memory.md` in `.claude/` directory
+`{project-name}-{upgrade-type}-memory.md` in `docs/local/plans/` directory
 
 ### Template
 

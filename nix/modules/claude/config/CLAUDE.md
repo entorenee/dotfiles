@@ -69,21 +69,21 @@ Before running any build, test, lint, typecheck, format, or package-manager comm
 
 These are **hard requirements**, not suggestions:
 
-- **Non-committed dev artifacts go in `<repo-root>/.claude/local-docs/`, never in `docs/`.** Plans, design docs, QA checklists, PR/code reviews, error-triage reports, analytics/regression/consolidated write-ups, dead-code surveys — anything I generate as a working artifact rather than product documentation — is a dev artifact. Write it under `.claude/local-docs/<area>/` at the repo root, keeping the existing per-area subfolders:
+- **Non-committed dev artifacts go in `<repo-root>/docs/local/`, never elsewhere under `docs/`.** Plans, design docs, QA checklists, PR/code reviews, error-triage reports, analytics/regression/consolidated write-ups, dead-code surveys — anything I generate as a working artifact rather than product documentation — is a dev artifact. Write it under `docs/local/<area>/` at the repo root, keeping the existing per-area subfolders:
 
   | Area | Path |
   |---|---|
-  | Plans / design docs / QA | `.claude/local-docs/plans/` |
-  | PR & code reviews | `.claude/local-docs/reviews/` |
-  | Error triage | `.claude/local-docs/error-triage/` |
-  | Analytics friction | `.claude/local-docs/analytics/` |
-  | Regression analysis | `.claude/local-docs/regressions/` |
-  | Consolidated analysis | `.claude/local-docs/consolidated/` |
-  | Dead-code surveys | `.claude/local-docs/dead-code/` |
+  | Plans / design docs / QA | `docs/local/plans/` |
+  | PR & code reviews | `docs/local/reviews/` |
+  | Error triage | `docs/local/error-triage/` |
+  | Analytics friction | `docs/local/analytics/` |
+  | Regression analysis | `docs/local/regressions/` |
+  | Consolidated analysis | `docs/local/consolidated/` |
+  | Dead-code surveys | `docs/local/dead-code/` |
 
-- **`.claude/local-docs/` is git-ignored** (`**/.claude/local-docs/` in the repo's `.gitignore`) so these never get committed. Create the directory if it does not exist; never `git add`/`commit` anything under it — version control of a dev artifact is my explicit call, not the default.
-- **Real product documentation still belongs in `docs/`** and is committed as normal. The distinction is intent: a throwaway working artifact → `.claude/local-docs/`; documentation meant to ship with the repo → `docs/`.
-- If a repo has **no `.gitignore` entry** for `**/.claude/local-docs/` yet, add one as part of the first artifact write in that repo (and tell me), so the folder stays uncommitted.
+- **`docs/local/` is git-ignored** (`**/docs/local/` in the repo's `.gitignore`) so these never get committed. Create the directory if it does not exist; never `git add`/`commit` anything under it — version control of a dev artifact is my explicit call, not the default.
+- **Real product documentation still belongs in `docs/`** and is committed as normal. The distinction is intent: a throwaway working artifact → `docs/local/`; documentation meant to ship with the repo → `docs/`.
+- If a repo has **no `.gitignore` entry** for `**/docs/local/` yet, add one as part of the first artifact write in that repo (and tell me), so the folder stays uncommitted.
 
 ## Scope & Approach
 

@@ -133,7 +133,7 @@ Only do this research inline in the main thread if a single ad-hoc bump is being
 
 ## Memory File for Multi-Session Upgrades
 
-For upgrades spanning multiple sessions, create a progress file in `.claude/` tracking: current phase, completed phases with exact versions, validation results, issues/lessons, remaining phases, and next actions. See `detailed-guide.md` in this skill directory for the full template.
+For upgrades spanning multiple sessions, create a progress file in `docs/local/plans/` tracking: current phase, completed phases with exact versions, validation results, issues/lessons, remaining phases, and next actions. See `detailed-guide.md` in this skill directory for the full template.
 
 ## Anti-Patterns
 

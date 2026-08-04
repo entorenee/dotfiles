@@ -38,7 +38,7 @@ Agents overstate severity, misremember how a helper behaves, and assert root cau
 
 - **Never post to GitHub** (comments, reviews, approvals). Surface everything in chat.
 - **Surface decisions and forks as plain chat text**, not a modal picker.
-- Default to producing the review as a markdown artifact/file when the review is substantial, so it can be iterated on. Write it to `.claude/local-docs/reviews/YYYY-MM-DD-<slug>-review.md` (repo-root-relative, git-ignored dev artifact — never `git add`/`commit` it).
+- Default to producing the review as a markdown artifact/file when the review is substantial, so it can be iterated on. Write it to `docs/local/reviews/YYYY-MM-DD-<slug>-review.md` (repo-root-relative, git-ignored dev artifact — never `git add`/`commit` it).
 
 ## Common mistakes
 
