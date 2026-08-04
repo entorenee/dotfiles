@@ -20,16 +20,9 @@ fi
 
 # Create new window with nvim in main pane (remain-on-exit keeps pane alive)
 tmux new-window -n "$WINDOW_NAME" -c "$WORKTREE_PATH"
-tmux send-keys -t "$WINDOW_NAME" 'nvim' Enter
 
 # Split horizontally (top/bottom) with shell in bottom pane at 30%
 tmux split-window -v -t "$WINDOW_NAME" -c "$WORKTREE_PATH" -l '30%'
-
-# Split the bottom pane vertically (left/right) at 50%
-tmux split-window -h -t "$WINDOW_NAME" -c "$WORKTREE_PATH" -l '50%'
-
-# Start claude in the bottom-left pane
-tmux send-keys -t "$WINDOW_NAME.2" 'claude' Enter
-
-# Focus the nvim pane (top)
+#
+# Focus the top pane
 tmux select-pane -t "$WINDOW_NAME.1"
