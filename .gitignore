@@ -11,4 +11,4 @@ result-*/
 
 # AI Ignore
 .claude/settings.local.json
-docs/plans
+**/docs/local/
