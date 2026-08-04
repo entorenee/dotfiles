@@ -79,6 +79,9 @@
       insteadOf = https://github.com/
   '';
 
+  # Kernel comes from the mainline pin in common.nix. The profile above stays
+  # imported for the bcm2711 deviceTree filter and the pcie-brcmstb /
+  # reset-raspberrypi initrd modules this board's PCIe bus and ethernet need.
   boot.loader.grub.enable = false;
   boot.loader.generic-extlinux-compatible.enable = true;
 
