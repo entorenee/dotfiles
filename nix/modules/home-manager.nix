@@ -32,7 +32,7 @@
   };
 
   imports = [
-    ./darwin/aerospace
+    ./aerospace
     ./alacritty
     ./bins
     ./claude
@@ -44,7 +44,7 @@
     ./ghostty
     ./git
     ./gnupg
-    ./darwin/karabiner
+    ./karabiner
     ./lazygit
     ./navi
     ./nvim
