@@ -14,6 +14,7 @@
       "firefox"
       "google-chrome"
       "google-drive"
+      "granola"
       "loom"
       "ngrok"
       "surfshark"
