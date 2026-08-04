@@ -10,8 +10,8 @@
   ...
 }: system: let
   lib = nixpkgs.lib;
-  homebrew-config = import ../modules/homebrew/default.nix {inherit lib profile;};
-  launch-agents-config = import ../modules/launch-agents/default.nix {inherit profile;};
+  homebrew-config = import ../modules/darwin/homebrew/default.nix {inherit lib profile;};
+  launch-agents-config = import ../modules/darwin/launch-agents/default.nix {inherit profile;};
 
   personalDock = [
     "/Applications/Ghostty.app"

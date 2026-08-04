@@ -8,7 +8,7 @@
     enable = true;
 
     # On macOS, Firefox is installed via the Homebrew cask (see
-    # nix/modules/homebrew). Setting package = null tells home-manager to manage
+    # nix/modules/darwin/homebrew). Setting package = null tells home-manager to manage
     # configuration only and skip installing its own Firefox. Policies are still
     # applied on Darwin via `targets.darwin.defaults."org.mozilla.firefox.plist"`
     # (EnterprisePoliciesEnabled), which Firefox honors regardless of how it was

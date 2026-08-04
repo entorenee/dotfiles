@@ -4,7 +4,7 @@
   pkgs,
   ...
 }: let
-  aerospacePath = "${config.home.homeDirectory}/dotfiles/nix/modules/aerospace/config";
+  aerospacePath = "${config.home.homeDirectory}/dotfiles/nix/modules/darwin/aerospace/config";
 in
   # AeroSpace is a macOS-only GUI app installed as a Homebrew cask (see
   # ../homebrew/default.nix), so this module is a no-op on Linux.

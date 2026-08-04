@@ -68,7 +68,7 @@ Overall, Nix is preferred for package installation whenever possible. However, b
 
 TLDR: Nix determines what Homebrew installs, and the end user manages the upgrade maintenances of the binaries on the host computer.
 
-If the repository is forked, or updated for a different use case the Homebrew cleanup can be altered within `nix/modules/homebrew/default.nix` in the `onActivation.cleanup` setting. Allowed settings are:
+If the repository is forked, or updated for a different use case the Homebrew cleanup can be altered within `nix/modules/darwin/homebrew/default.nix` in the `onActivation.cleanup` setting. Allowed settings are:
 
 * `none`: Nix does nothing to manage Homebrew outside of brews and casks it has installed. Ie removing a brew from the Nix configuration will uninstall it. However, items installed via the brew CLI directly will not be uninstalled.
 * `uninstall`: This is the current setting which uninstalls anything not specified in the Nix Homebrew configuration. This is the moderate setting.

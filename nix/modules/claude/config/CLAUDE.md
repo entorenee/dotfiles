@@ -169,7 +169,7 @@ wt remove                   # Remove current worktree; deletes branch if merged
 - All feature work, bug fixes, and implementation tasks should use a worktree
 - Proactively create a worktree without asking — the preference is always worktrees
 
-**Exception — the `dotfiles` repo itself does not use worktrees.** Work directly in `~/dotfiles`; do not create a worktree for dotfiles changes. Many of its home-manager modules deploy config through `config.lib.file.mkOutOfStoreSymlink` against a hardcoded `${config.home.homeDirectory}/dotfiles/...` path (see `nix/modules/ghostty/default.nix`, `nix/modules/karabiner/default.nix`, `nix/modules/aerospace/default.nix`). A rebuild from a worktree therefore points `~/.config/*` back at the *primary* checkout, so config added on the branch never resolves and cannot be tested until it merges. The symlink stitching requires the real path.
+**Exception — the `dotfiles` repo itself does not use worktrees.** Work directly in `~/dotfiles`; do not create a worktree for dotfiles changes. Many of its home-manager modules deploy config through `config.lib.file.mkOutOfStoreSymlink` against a hardcoded `${config.home.homeDirectory}/dotfiles/...` path (see `nix/modules/ghostty/default.nix`, `nix/modules/darwin/karabiner/default.nix`, `nix/modules/darwin/aerospace/default.nix`). A rebuild from a worktree therefore points `~/.config/*` back at the *primary* checkout, so config added on the branch never resolves and cannot be tested until it merges. The symlink stitching requires the real path.
 
 ### Moving a session into a new worktree mid-session
 

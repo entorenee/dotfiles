@@ -39,7 +39,7 @@ in {
   };
 
   imports = [
-    ./aerospace
+    ./darwin/aerospace
     ./alacritty
     ./bins
     claudeModule
@@ -51,7 +51,7 @@ in {
     ./ghostty
     ./git
     ./gnupg
-    ./karabiner
+    ./darwin/karabiner
     ./lazygit
     ./navi
     ./nvim
