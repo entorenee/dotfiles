@@ -62,7 +62,10 @@
     ...
   }: let
     lib = nixpkgs.lib;
-    home-manager-config = import ./modules/home-manager.nix;
+    # Every current machine is a graphical workstation, so they all take the
+    # `gui` role; it stacks onto `cli` and `base`. Headless hosts (the Pis) will
+    # import a lower role instead of gating pieces off.
+    home-manager-config = ./roles/home/gui.nix;
 
     mkHomeManagerArgs = system: username: profile: {
       inherit lib username profile private-assets tmux-powerkit worktrunk;
@@ -71,7 +74,7 @@
 
     mkDarwinConfig = username: profile: system:
       import ./system/darwin.nix {
-        inherit darwin home-manager nixpkgs home-manager-config username profile worktrunk;
+        inherit darwin home-manager home-manager-config username profile worktrunk;
         homeManagerArgs = mkHomeManagerArgs system username profile;
       }
       system;

@@ -56,8 +56,14 @@ Always prefer native home-manager modules and options over custom activation scr
 │   │   ├── uptime.nix            # uptime-kuma + cloudflared (Pi Zero 2W)
 │   │   ├── hub.nix               # Building hub (Pi 4, always-on)
 │   │   └── airgap.nix            # Yubikey airgap workflow (Pi Zero 2W)
-│   └── module/                   # Individual tool modules
-│       ├── home-manager.nix      # Main home-manager config
+│   ├── roles/                    # POLICY — which modules a class of machine wants
+│   │   └── home/
+│   │       ├── base.nix          # Shell, editor, VCS, secrets (safe headless)
+│   │       ├── cli.nix           # base + terminal workstation tooling
+│   │       └── gui.nix           # cli + terminal emulators, fonts, desktop apps
+│   └── modules/                  # MECHANISM — how each tool is configured
+│       ├── options.nix           # The `my.*` capability options
+│       ├── darwin/               # nix-darwin modules (homebrew, launch-agents)
 │       ├── nvim/                 # Neovim configuration
 │       ├── tmux/                 # Tmux configuration
 │       ├── git/                  # Git configuration
@@ -65,6 +71,20 @@ Always prefer native home-manager modules and options over custom activation scr
 ├── templates/                    # Configuration templates
 └── .claude/                      # Claude AI memory files
 ```
+
+### Adding a home-manager module
+
+`nix/modules/<tool>/` defines *how* a tool is configured and says nothing about who wants it. A module is not live until a role imports it — add it to exactly one of `nix/roles/home/{base,cli,gui}.nix`, which stack (`gui` → `cli` → `base`). Every current machine takes `gui`, so anything added there reaches all of them.
+
+Divergence follows a three-way rule:
+
+| Kind | Mechanism |
+| --- | --- |
+| Platform truth | `pkgs.stdenv.isDarwin` / `isLinux` |
+| Capability | a `my.*` option in `nix/modules/options.nix` |
+| Identity (work vs personal) | the `profile` argument — being retired, see the redesign doc |
+
+Do **not** reach for `pkgs.stdenv.isLinux` to mean "has a GUI" — that only reads correctly while the sole Linux host happens to be a desktop. Use `config.my.gui`.
 
 ## Management Commands
 

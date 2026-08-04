@@ -8,20 +8,15 @@
 
   # Dynamically assemble agent conf
   baseAgentConf = builtins.readFile ./config/gpg-agent.base;
+  # `my.gui` rather than `isLinux`: a headless host has no display for
+  # pinentry-gnome3 to draw on and must fall back to the curses prompt.
   pinentryLine =
-    if pkgs.stdenv.isLinux
-    then "pinentry-program ${pkgs.pinentry-gnome3}/bin/pinentry-gnome3"
-    else if pkgs.stdenv.isDarwin
+    if pkgs.stdenv.isDarwin
     then "pinentry-program ${pkgs.pinentry_mac}/bin/pinentry-mac"
-    else "";
-  gpgAgentConf = lib.concatStringsSep "\n" (
-    [baseAgentConf]
-    ++ (
-      if pinentryLine != ""
-      then [pinentryLine]
-      else []
-    )
-  );
+    else if config.my.gui
+    then "pinentry-program ${pkgs.pinentry-gnome3}/bin/pinentry-gnome3"
+    else "pinentry-program ${pkgs.pinentry-curses}/bin/pinentry-curses";
+  gpgAgentConf = lib.concatStringsSep "\n" [baseAgentConf pinentryLine];
 in {
   programs.gpg.publicKeys = [
     {

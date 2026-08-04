@@ -2,15 +2,34 @@
   config,
   lib,
   pkgs,
-  worktrunk,
   ...
 }: {
+  # The irreducible home-manager baseline: shell, editor, VCS, secrets.
+  # Everything here must be safe on a headless, resource-constrained host.
+  imports = [
+    ../../modules/options.nix
+
+    ../../modules/bins
+    ../../modules/git
+    ../../modules/gnupg
+    ../../modules/nvim
+    ../../modules/pkgs.nix
+    ../../modules/ssh
+    ../../modules/starship
+    ../../modules/zsh
+  ];
+
   programs.home-manager.enable = true;
   home.stateVersion = "26.05";
   xdg.enable = true;
   xdg.autostart.enable = true;
   targets.genericLinux.enable = pkgs.stdenv.isLinux;
 
+  # TODO: The autostart suppression below is specific to the personal Linux
+  # desktop (System76 HiDPI daemon, NVIDIA settings), not to this role. It lives
+  # here only because there is no `nix/hosts/` file for that machine yet. Move it
+  # once the Linux desktop gets one — see the redesign doc §4 target layout.
+  #
   # Suppress system-installed autostart entries that degrade the user systemd
   # session on this machine (System76 HiDPI daemon, NVIDIA settings).
   # User-level Hidden=true overrides prevent the XDG autostart generator from
@@ -30,38 +49,4 @@
       XDG_DATA_DIRS=/nix/var/nix/profiles/default/share:${config.home.homeDirectory}/.nix-profile/share:/usr/share/ubuntu:/usr/local/share:/usr/share:/var/lib/snapd/desktop
     '';
   };
-
-  imports = [
-    ./aerospace
-    ./alacritty
-    ./bins
-    ./claude
-    ./docker
-    ./firefox
-    ./fonts
-    ./gh
-    ./gh-dash
-    ./ghostty
-    ./git
-    ./gnupg
-    ./karabiner
-    ./lazygit
-    ./navi
-    ./nvim
-    ./npm
-    ./nvm
-    ./pkgs.nix
-    ./rtk
-    ./smug
-    ./ssh
-    ./starship
-    ./tmux
-    ./tmuxinator
-    ./typos
-    ./yamlfmt
-    ./zsh
-    ./keepassxc
-    ./orca-slicer
-    ./worktrunk
-  ];
 }

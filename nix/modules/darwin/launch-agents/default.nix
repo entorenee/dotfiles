@@ -14,5 +14,6 @@
     if builtins.pathExists ./${profile}.nix
     then import ./${profile}.nix {}
     else {};
-in
-  shared // profileConfig
+in {
+  launchd.user.agents = shared // profileConfig;
+}

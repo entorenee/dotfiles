@@ -1,7 +1,6 @@
 {
   home-manager,
   darwin,
-  nixpkgs,
   homeManagerArgs,
   home-manager-config,
   username,
@@ -9,10 +8,6 @@
   worktrunk,
   ...
 }: system: let
-  lib = nixpkgs.lib;
-  homebrew-config = import ../modules/darwin/homebrew/default.nix {inherit lib profile;};
-  launch-agents-config = import ../modules/darwin/launch-agents/default.nix {inherit profile;};
-
   personalDock = [
     "/Applications/Ghostty.app"
     "/Applications/Obsidian.app"
@@ -44,6 +39,10 @@ in
   darwin.lib.darwinSystem {
     inherit system;
 
+    # `profile` reaches the nix-darwin modules below through the module system,
+    # so they can be listed as plain paths rather than pre-applied by hand.
+    specialArgs = {inherit profile;};
+
     modules = [
       # home-manager
       home-manager.darwinModules.home-manager
@@ -57,8 +56,8 @@ in
         home-manager.backupFileExtension = "hm-backup";
       }
 
-      # Homebrew configuration
-      homebrew-config
+      ../modules/darwin/homebrew
+      ../modules/darwin/launch-agents
 
       # System settings
       {
@@ -151,8 +150,6 @@ in
             remapCapsLockToEscape = true;
           };
         };
-
-        launchd.user.agents = launch-agents-config;
 
         time.timeZone = "America/Los_Angeles";
       }
