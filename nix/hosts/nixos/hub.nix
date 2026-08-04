@@ -27,7 +27,7 @@
     isNormalUser = true;
     extraGroups = ["wheel"];
     openssh.authorizedKeys.keyFiles = [
-      ../modules/ssh/public-ssh-keys/id_rsa_yubikey_personal.pub
+      ../../modules/ssh/public-ssh-keys/id_rsa_yubikey_personal.pub
     ];
   };
 
