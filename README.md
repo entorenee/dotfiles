@@ -68,7 +68,7 @@ Overall, Nix is preferred for package installation whenever possible. However, b
 
 TLDR: Nix determines what Homebrew installs, and the end user manages the upgrade maintenances of the binaries on the host computer.
 
-If the repository is forked, or updated for a different use case the Homebrew cleanup can be altered within `nix/module/homebrew/default.nix` in the `onActivation.cleanup` setting. Allowed settings are:
+If the repository is forked, or updated for a different use case the Homebrew cleanup can be altered within `nix/modules/homebrew/default.nix` in the `onActivation.cleanup` setting. Allowed settings are:
 
 * `none`: Nix does nothing to manage Homebrew outside of brews and casks it has installed. Ie removing a brew from the Nix configuration will uninstall it. However, items installed via the brew CLI directly will not be uninstalled.
 * `uninstall`: This is the current setting which uninstalls anything not specified in the Nix Homebrew configuration. This is the moderate setting.
@@ -87,11 +87,11 @@ This repository also ships with [tmuxinator](https://github.com/tmuxinator/tmuxi
 
 ## Claude Code
 
-Claude Code configuration is declaratively managed via the `nix/module/claude/` module. Settings, hooks, skills, and agents are version-controlled and symlinked into `~/.claude/`.
+Claude Code configuration is declaratively managed via the `nix/modules/claude/` module. Settings, hooks, skills, and agents are version-controlled and symlinked into `~/.claude/`.
 
 - **Settings**: `settings.json` is generated from `settings-base.json` merged with profile-specific overrides (`settings-work.json` / `settings-personal.json`). It is read-only (Nix store symlink). To change settings, edit the JSON files and rebuild.
-- **Hooks**: Stored in `nix/module/claude/config/hooks/` and symlinked to `~/.claude/hooks/`.
-- **Skills & Agents**: Stored in `nix/module/claude/config/skills/` and `agents/`, symlinked to `~/.claude/`.
+- **Hooks**: Stored in `nix/modules/claude/config/hooks/` and symlinked to `~/.claude/hooks/`.
+- **Skills & Agents**: Stored in `nix/modules/claude/config/skills/` and `agents/`, symlinked to `~/.claude/`.
 
 ### Linux note
 

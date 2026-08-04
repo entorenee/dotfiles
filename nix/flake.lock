@@ -78,11 +78,11 @@
         "nixpkgs": "nixpkgs"
       },
       "locked": {
-        "path": "./module/navi",
+        "path": "./modules/navi",
         "type": "path"
       },
       "original": {
-        "path": "./module/navi",
+        "path": "./modules/navi",
         "type": "path"
       },
       "parent": []

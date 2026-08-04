@@ -21,7 +21,7 @@
 
     # Custom navi cheatsheets
     navi-cheatsheets = {
-      url = "path:./module/navi";
+      url = "path:./modules/navi";
     };
 
     tmux-powerkit.url = "github:fabioluciano/tmux-powerkit";
@@ -62,7 +62,7 @@
     ...
   }: let
     lib = nixpkgs.lib;
-    home-manager-config = import ./module/home-manager.nix;
+    home-manager-config = import ./modules/home-manager.nix;
 
     mkHomeManagerArgs = system: username: profile: {
       inherit lib username profile private-assets tmux-powerkit worktrunk;

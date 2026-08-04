@@ -109,19 +109,19 @@ Seed the host by placing two files in `/etc/cloudflared`, either on the mounted 
 
 ## Claude Code Nix Module
 
-The Claude Code configuration is Nix-managed in `nix/module/claude/`. The global `~/.claude/CLAUDE.md`, `~/.claude/settings.json`, hooks, skills, and agents are all symlinks managed by this repo.
+The Claude Code configuration is Nix-managed in `nix/modules/claude/`. The global `~/.claude/CLAUDE.md`, `~/.claude/settings.json`, hooks, skills, and agents are all symlinks managed by this repo.
 
 ### How to make changes
 
 | Change             | Where to edit                                                                       | Then run                                   |
 | ------------------ | ----------------------------------------------------------------------------------- | ------------------------------------------ |
-| Add MCP server     | `nix/module/claude/work.nix` or `personal.nix` (profile-specific)                   | `make darwin-switch` or `make home-switch` |
-| Add hook           | Create script in `nix/module/claude/config/hooks/`, add to `default.nix` settings   | Rebuild                                    |
-| Add skill          | Add to `nix/module/claude/config/skills/`                                           | Automatic (symlinked)                      |
-| Add agent          | Add to `nix/module/claude/config/agents/`                                           | Automatic (symlinked)                      |
-| Change plugin      | Edit `enabledPlugins` in `nix/module/claude/default.nix`                            | Rebuild                                    |
-| Change permissions | Edit `permissions` in `nix/module/claude/default.nix` (base) or profile `.nix` file | Rebuild                                    |
-| Change setting     | Edit `nix/module/claude/default.nix` (base) or profile `.nix` file (override)       | Rebuild                                    |
+| Add MCP server     | `nix/modules/claude/work.nix` or `personal.nix` (profile-specific)                   | `make darwin-switch` or `make home-switch` |
+| Add hook           | Create script in `nix/modules/claude/config/hooks/`, add to `default.nix` settings   | Rebuild                                    |
+| Add skill          | Add to `nix/modules/claude/config/skills/`                                           | Automatic (symlinked)                      |
+| Add agent          | Add to `nix/modules/claude/config/agents/`                                           | Automatic (symlinked)                      |
+| Change plugin      | Edit `enabledPlugins` in `nix/modules/claude/default.nix`                            | Rebuild                                    |
+| Change permissions | Edit `permissions` in `nix/modules/claude/default.nix` (base) or profile `.nix` file | Rebuild                                    |
+| Change setting     | Edit `nix/modules/claude/default.nix` (base) or profile `.nix` file (override)       | Rebuild                                    |
 
 ### Symlink Layout
 
@@ -189,7 +189,7 @@ The server exposes `create_file`, which converts uploaded markdown into a native
 
 ### Permissions
 
-Claude Code permissions live in `nix/module/claude/default.nix` (base) with profile-specific additions in `work.nix` / `personal.nix`. Three coordinated layers:
+Claude Code permissions live in `nix/modules/claude/default.nix` (base) with profile-specific additions in `work.nix` / `personal.nix`. Three coordinated layers:
 
 | Layer | Field | Behavior |
 | --- | --- | --- |
@@ -218,7 +218,7 @@ When verb prefixes are mixed (e.g., Expo's `build_info` is read but `build_run` 
 
 #### Custom skills and commands — **important**
 
-Custom skills (in `nix/module/claude/config/skills/`) and custom slash commands (in `nix/module/claude/config/commands/`) both have no plugin namespace, so they can't be matched by a wildcard. They also share the same permission gate — `/<name>` invokes the Skill tool whether the underlying file is a `SKILL.md` or a command `.md`.
+Custom skills (in `nix/modules/claude/config/skills/`) and custom slash commands (in `nix/modules/claude/config/commands/`) both have no plugin namespace, so they can't be matched by a wildcard. They also share the same permission gate — `/<name>` invokes the Skill tool whether the underlying file is a `SKILL.md` or a command `.md`.
 
 **When adding a new custom skill OR command, also add a matching `Skill(<name>)` entry to `permissions.allow`** in `default.nix`. Otherwise it prompts for approval the first time it's used in every new worktree.
 
