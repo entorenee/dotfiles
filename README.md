@@ -87,11 +87,11 @@ This repository also ships with [tmuxinator](https://github.com/tmuxinator/tmuxi
 
 ## Claude Code
 
-Claude Code configuration is declaratively managed via the `nix/modules/claude/` module. Settings, hooks, skills, and agents are version-controlled and symlinked into `~/.claude/`.
+Claude Code configuration is declaratively managed via the `nix/modules/home/claude/` module. Settings, hooks, skills, and agents are version-controlled and symlinked into `~/.claude/`.
 
 - **Settings**: `settings.json` is generated from `settings-base.json` merged with profile-specific overrides (`settings-work.json` / `settings-personal.json`). It is read-only (Nix store symlink). To change settings, edit the JSON files and rebuild.
-- **Hooks**: Stored in `nix/modules/claude/config/hooks/` and symlinked to `~/.claude/hooks/`.
-- **Skills & Agents**: Stored in `nix/modules/claude/config/skills/` and `agents/`, symlinked to `~/.claude/`.
+- **Hooks**: Stored in `nix/modules/home/claude/config/hooks/` and symlinked to `~/.claude/hooks/`.
+- **Skills & Agents**: Stored in `nix/modules/home/claude/config/skills/` and `agents/`, symlinked to `~/.claude/`.
 
 ### Linux note
 

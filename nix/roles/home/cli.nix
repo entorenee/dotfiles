@@ -4,20 +4,20 @@
   imports = [
     ./base.nix
 
-    ../../modules/claude
-    ../../modules/docker
-    ../../modules/gh
-    ../../modules/gh-dash
-    ../../modules/lazygit
-    ../../modules/navi
-    ../../modules/npm
-    ../../modules/nvm
-    ../../modules/rtk
-    ../../modules/smug
-    ../../modules/tmux
-    ../../modules/tmuxinator
-    ../../modules/typos
-    ../../modules/worktrunk
-    ../../modules/yamlfmt
+    ../../modules/home/claude
+    ../../modules/home/docker
+    ../../modules/home/gh
+    ../../modules/home/gh-dash
+    ../../modules/home/lazygit
+    ../../modules/home/navi
+    ../../modules/home/npm
+    ../../modules/home/nvm
+    ../../modules/home/rtk
+    ../../modules/home/smug
+    ../../modules/home/tmux
+    ../../modules/home/tmuxinator
+    ../../modules/home/typos
+    ../../modules/home/worktrunk
+    ../../modules/home/yamlfmt
   ];
 }

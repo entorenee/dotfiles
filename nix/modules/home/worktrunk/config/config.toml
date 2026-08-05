@@ -1,0 +1,18 @@
+# Worktrunk SYSTEM config (Nix-managed, read-only).
+#
+# Deployed by nix/modules/home/worktrunk/default.nix into the home-manager profile at
+# ~/.nix-profile/etc/xdg/worktrunk/config.toml, which worktrunk reads as shared
+# defaults. This is intentionally NOT the user config
+# (~/.config/worktrunk/config.toml): worktrunk owns that file and writes
+# machine-local state to it ([projects], prompt flags, a .lock). Keeping our
+# declarative settings in the read-only system config stops worktrunk from
+# mutating a git-tracked file. Edit here, then `make darwin-switch`.
+
+skip-shell-integration-prompt = true
+
+[post-start]
+copy = "wt step copy-ignored"
+
+[post-switch]
+tmux = "$HOME/dotfiles/nix/modules/home/worktrunk/hooks/tmux-switch.sh {{ branch | sanitize }} {{ worktree_path }}"
+pnpm-warm = "$HOME/dotfiles/nix/modules/home/worktrunk/hooks/pnpm-warm.sh {{ worktree_path }}"

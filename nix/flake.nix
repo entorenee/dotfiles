@@ -21,7 +21,7 @@
 
     # Custom navi cheatsheets
     navi-cheatsheets = {
-      url = "path:./modules/navi";
+      url = "path:./modules/home/navi";
     };
 
     tmux-powerkit.url = "github:fabioluciano/tmux-powerkit";

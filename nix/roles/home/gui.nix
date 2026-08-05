@@ -6,14 +6,14 @@
   imports = [
     ./cli.nix
 
-    ../../modules/aerospace
-    ../../modules/alacritty
-    ../../modules/firefox
-    ../../modules/fonts
-    ../../modules/ghostty
-    ../../modules/karabiner
-    ../../modules/keepassxc
-    ../../modules/orca-slicer
+    ../../modules/home/aerospace
+    ../../modules/home/alacritty
+    ../../modules/home/firefox
+    ../../modules/home/fonts
+    ../../modules/home/ghostty
+    ../../modules/home/karabiner
+    ../../modules/home/keepassxc
+    ../../modules/home/orca-slicer
   ];
 
   my.gui = true;

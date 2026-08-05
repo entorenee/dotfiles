@@ -9,14 +9,14 @@
   imports = [
     ../../modules/options.nix
 
-    ../../modules/bins
-    ../../modules/git
-    ../../modules/gnupg
-    ../../modules/nvim
-    ../../modules/pkgs.nix
-    ../../modules/ssh
-    ../../modules/starship
-    ../../modules/zsh
+    ../../modules/home/bins
+    ../../modules/home/git
+    ../../modules/home/gnupg
+    ../../modules/home/nvim
+    ../../modules/home/pkgs.nix
+    ../../modules/home/ssh
+    ../../modules/home/starship
+    ../../modules/home/zsh
   ];
 
   programs.home-manager.enable = true;
