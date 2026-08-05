@@ -1,10 +1,4 @@
-{
-  config,
-  pkgs,
-  ...
-}: let
-  smugPath = "${config.home.homeDirectory}/dotfiles/nix/modules/home/smug/projects";
-in {
+{pkgs, ...}: {
   home.packages = [pkgs.smug];
-  xdg.configFile."smug".source = config.lib.file.mkOutOfStoreSymlink smugPath;
+  xdg.configFile."smug".source = ./projects;
 }

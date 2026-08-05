@@ -4,8 +4,6 @@
   pkgs,
   ...
 }: let
-  gnupgPath = "${config.home.homeDirectory}/dotfiles/nix/modules/home/gnupg/config";
-
   # Dynamically assemble agent conf
   baseAgentConf = builtins.readFile ./config/gpg-agent.base;
   # `my.gui` rather than `isLinux`: a headless host has no display for
@@ -35,7 +33,7 @@ in {
     gpg-connect-agent updatestartuptty /bye >/dev/null 2>&1
   '';
 
-  home.file.".gnupg/gpg.conf".source = config.lib.file.mkOutOfStoreSymlink "${gnupgPath}/gpg.conf";
-  home.file.".gnupg/scdaemon.conf".source = config.lib.file.mkOutOfStoreSymlink "${gnupgPath}/scdaemon.conf";
+  home.file.".gnupg/gpg.conf".source = ./config/gpg.conf;
+  home.file.".gnupg/scdaemon.conf".source = ./config/scdaemon.conf;
   home.file.".gnupg/gpg-agent.conf".text = gpgAgentConf;
 }
