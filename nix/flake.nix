@@ -180,7 +180,7 @@
     };
 
     homeConfigurations = {
-      hester-prynne = mkHomeHost ./hosts/home/hester-prynne.nix;
+      hester-prynne = mkHomeHost ./hosts/home/hester-prynne;
     };
 
     nixosConfigurations = {
