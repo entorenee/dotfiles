@@ -12,8 +12,6 @@
     ../../modules/home/fonts
     ../../modules/home/ghostty
     ../../modules/home/karabiner
-    ../../modules/home/keepassxc
-    ../../modules/home/orca-slicer
   ];
 
   my.gui = true;

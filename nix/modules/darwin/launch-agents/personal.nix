@@ -1,4 +1,0 @@
-{ ... }:
-{
-  # Personal-only launch agents
-}

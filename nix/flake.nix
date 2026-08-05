@@ -67,15 +67,17 @@
     # import a lower role instead of gating pieces off.
     home-manager-config = ./roles/home/gui.nix;
 
-    mkHomeManagerArgs = system: username: profile: {
-      inherit lib username profile private-assets tmux-powerkit worktrunk;
+    mkHomeManagerArgs = system: username: {
+      inherit lib username private-assets tmux-powerkit worktrunk;
       navi-cheatsheets = navi-cheatsheets.packages.${system}.default;
     };
 
-    mkDarwinConfig = username: profile: system:
+    # `user` is a path into ./users — persona is selected by importing a
+    # directory, not by threading a string down to every module that cares.
+    mkDarwinConfig = username: user: system:
       import ./system/darwin.nix {
-        inherit darwin home-manager home-manager-config username profile worktrunk;
-        homeManagerArgs = mkHomeManagerArgs system username profile;
+        inherit darwin home-manager home-manager-config username user worktrunk;
+        homeManagerArgs = mkHomeManagerArgs system username;
       }
       system;
 
@@ -86,30 +88,31 @@
         modules = [module];
       };
 
-    mkHomeManagerConfig = username: profile: system: let
+    mkHomeManagerConfig = username: user: system: let
       pkgs = nixpkgs.legacyPackages.${system};
     in
       home-manager.lib.homeManagerConfiguration {
         inherit pkgs;
-        extraSpecialArgs = {inherit profile worktrunk;};
+        extraSpecialArgs = {inherit worktrunk;};
         modules = [
           home-manager-config
+          (user + "/home.nix")
           worktrunk.homeModules.default
           {
             home.username = username;
             home.homeDirectory = "/home/${username}";
-            _module.args = mkHomeManagerArgs system username profile;
+            _module.args = mkHomeManagerArgs system username;
           }
         ];
       };
   in {
     darwinConfigurations = {
-      personal = mkDarwinConfig "skyler.lemay" "personal" "aarch64-darwin";
-      work = mkDarwinConfig "fw-skylerlemay" "work" "aarch64-darwin";
+      personal = mkDarwinConfig "skyler.lemay" ./users/personal "aarch64-darwin";
+      work = mkDarwinConfig "fw-skylerlemay" ./users/work "aarch64-darwin";
     };
 
     homeConfigurations = {
-      "personal@linux" = mkHomeManagerConfig "skyler.lemay" "personal" "x86_64-linux";
+      "personal@linux" = mkHomeManagerConfig "skyler.lemay" ./users/personal "x86_64-linux";
     };
 
     nixosConfigurations = {

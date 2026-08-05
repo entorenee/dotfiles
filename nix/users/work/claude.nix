@@ -1,9 +1,4 @@
-{
-  lib,
-  profile,
-  ...
-}:
-lib.mkIf (profile == "work") {
+{...}: {
   programs.claude-code = {
     settings = {
       permissions.allow = [

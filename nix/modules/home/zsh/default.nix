@@ -1,4 +1,4 @@
-{profile, ...}: {
+{...}: {
   programs.zsh = {
     enable = true;
     shellAliases = {
@@ -81,7 +81,6 @@
     sessionVariables = {
       DOCKER_HIDE_LEGACY_COMMANDS = "1";
       HOMEBREW_NO_AUTO_UPDATE = 1;
-      NIX_PROFILE = "${profile}";
     };
 
     oh-my-zsh = {

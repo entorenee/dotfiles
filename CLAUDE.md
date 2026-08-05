@@ -11,10 +11,9 @@ Personal dotfiles managed with Nix Darwin, including comprehensive configuration
 - **Modular structure** with separate modules for each tool/service
 - **Profile-based separation** (personal vs work configurations)
 
-Always prefer native home-manager modules and options over custom activation scripts or manual config file edits. When settings need to diverge based on profile, pick from the following options:
+Always prefer native home-manager modules and options over custom activation scripts or manual config file edits.
 
-1. If the settings are minimal (eg. enabling a feature, sourcing a different file, etc) prefer maintaining the configuration within the single Nix file.
-2. If there are more substantial configuration settings, including merging of settings (such as the Claude Nix module configuration) utilize a default.nix file for shared settings and a work|personal.nix file for the respective profile settings to merge. Profile files should be gated with `lib.mkIf (profile == "work")` / `lib.mkIf (profile == "personal")`.
+When settings need to diverge by persona, **do not gate on a profile string** — there is no longer one. A module states the mechanism unconditionally, and `nix/users/{work,personal}/` states which persona wants it. See "Personas live in `nix/users/`" below.
 
 ### `lib.mkDefault` usage
 
@@ -22,6 +21,7 @@ Always prefer native home-manager modules and options over custom activation scr
 
 - **Structured types** (e.g., `homebrew.brews`, `homebrew.onActivation`): `mkDefault` works as expected. Lists concatenate; submodule fields merge individually.
 - **Freeform JSON types**: Wrapping the entire attrset with `lib.mkDefault` makes it a single opaque value. A higher-priority definition replaces it entirely instead of deep-merging. For these options, omit `mkDefault` on the attrset and only apply it to individual leaf values that need to be overridable.
+  - That leaf case genuinely works, including *nested* inside a freeform option — priority filtering runs per attribute path, before the type's merge. `programs.ssh.settings."github.com".IdentityFile` relies on this (see "Personas live in `nix/users/`"). Wholesale-replacement is the desired behavior there, not a hazard.
 
 ## Key Components
 
@@ -61,6 +61,9 @@ Always prefer native home-manager modules and options over custom activation scr
 │   │       ├── base.nix          # Shell, editor, VCS, secrets (safe headless)
 │   │       ├── cli.nix           # base + terminal workstation tooling
 │   │       └── gui.nix           # cli + terminal emulators, fonts, desktop apps
+│   ├── users/                    # IDENTITY — what a persona means
+│   │   ├── personal/             # home.nix + darwin.nix + claude.nix + gh-dash.yml
+│   │   └── work/                 # same, plus the work Yubikey public key
 │   └── modules/                  # MECHANISM — how each tool is configured
 │       ├── options.nix           # The `my.*` capability options (both systems)
 │       ├── darwin/               # nix-darwin modules (homebrew, launch-agents)
@@ -83,14 +86,47 @@ Divergence follows a three-way rule:
 | --- | --- |
 | Platform truth | `pkgs.stdenv.isDarwin` / `isLinux` |
 | Capability | a `my.*` option in `nix/modules/options.nix` |
-| Identity (work vs personal) | the `profile` argument — being retired, see the redesign doc |
+| Identity (work vs personal) | an import in `nix/users/{work,personal}/` |
 
 Do **not** reach for `pkgs.stdenv.isLinux` to mean "has a GUI" — that only reads correctly while the sole Linux host happens to be a desktop. Use `config.my.gui`.
 
+### Personas live in `nix/users/`
+
+There is no `profile` argument. A persona is a **directory that gets imported**, and the flake picks it by path:
+
+| File | Sets |
+| --- | --- |
+| `users/<persona>/home.nix` | home-manager options: packages, ssh identities, gh-dash config, persona-only module imports |
+| `users/<persona>/darwin.nix` | nix-darwin options: Homebrew taps/brews/casks, launch agents, the Dock |
+| `users/<persona>/claude.nix` | `programs.claude-code` additions, imported by `home.nix` |
+
+Two files because persona spans both module systems — a home-manager module cannot set `homebrew.casks`.
+
+**A module that only one persona wants is imported from that persona's `home.nix`, not from a role.** `keepassxc` and `orca-slicer` work this way; putting them in `roles/home/gui.nix` would mean gating them back off. Roles carry what a *class of machine* wants; `users/` carries what a *person* wants.
+
+Most options merge across the two, so a persona file **adds** to a module rather than replacing it — `home.packages` and `homebrew.casks` are `listOf` (concatenate), `launchd.user.agents` is an attrset of submodules (merges).
+
+**When a list won't concatenate, use base-default + persona-replacement.** Freeform `types.anything` options (`programs.ssh.settings` is the one in this repo) *throw* on two list definitions rather than concatenating, so a persona cannot append. Don't respond by moving the whole value into the persona files — state the common case in the module as a `lib.mkDefault` and let the persona that needs something else replace it:
+
+```nix
+# modules/home/ssh/default.nix — what most machines need
+settings."github.com" = {
+  IdentityFile = lib.mkDefault [personalYubikeyIdentity];
+  IdentitiesOnly = true;
+};
+
+# users/work/home.nix — the machine that needs more
+programs.ssh.settings."github.com".IdentityFile = [personalYubikeyIdentity workYubikeyIdentity];
+```
+
+This works because **priority filtering runs before the type's merge function**, so exactly one definition ever reaches it and there is nothing to conflict. Sibling attributes are unaffected: `IdentitiesOnly` still comes from the module in all three configurations. The cost is that the replacement restates the whole list.
+
+Persona ordering in merged lists is not stable — `users/` definitions may land before or after a module's. Nothing currently depends on it (Homebrew installs a set; `permissions.allow` matches by any-match), but do not introduce anything that does.
+
 ## Management Commands
 
-- **Rebuild and switch:** `make rebuild` — auto-detects OS (Darwin vs Linux) and profile (personal vs work) from the current username (`fw-skylerlemay` → work, otherwise personal). Override with `PROFILE=work make rebuild`.
-- **Profile management:** Controlled via `profile` variable in flake
+- **Rebuild and switch:** `make rebuild` — auto-detects OS (Darwin vs Linux) and persona from the current username (`fw-skylerlemay` → work, otherwise personal). Override with `PROFILE=work make rebuild`.
+- **Persona selection:** `nix/flake.nix` passes a `./users/<persona>` path to `mkDarwinConfig` / `mkHomeManagerConfig`
 
 ## NixOS Pi Hosts
 
@@ -136,13 +172,13 @@ The Claude Code configuration is Nix-managed in `nix/modules/home/claude/`. The 
 
 | Change             | Where to edit                                                                       | Then run                                   |
 | ------------------ | ----------------------------------------------------------------------------------- | ------------------------------------------ |
-| Add MCP server     | `nix/modules/home/claude/work.nix` or `personal.nix` (profile-specific)                   | `make darwin-switch` or `make home-switch` |
+| Add MCP server     | `nix/users/work/claude.nix` or `nix/users/personal/claude.nix`                            | `make darwin-switch` or `make home-switch` |
 | Add hook           | Create script in `nix/modules/home/claude/config/hooks/`, add to `default.nix` settings   | Rebuild                                    |
 | Add skill          | Add to `nix/modules/home/claude/config/skills/`                                           | Automatic (symlinked)                      |
 | Add agent          | Add to `nix/modules/home/claude/config/agents/`                                           | Automatic (symlinked)                      |
 | Change plugin      | Edit `enabledPlugins` in `nix/modules/home/claude/default.nix`                            | Rebuild                                    |
-| Change permissions | Edit `permissions` in `nix/modules/home/claude/default.nix` (base) or profile `.nix` file | Rebuild                                    |
-| Change setting     | Edit `nix/modules/home/claude/default.nix` (base) or profile `.nix` file (override)       | Rebuild                                    |
+| Change permissions | Edit `permissions` in `nix/modules/home/claude/default.nix` (base) or `nix/users/<persona>/claude.nix` | Rebuild                                    |
+| Change setting     | Edit `nix/modules/home/claude/default.nix` (base) or `nix/users/<persona>/claude.nix` (override)       | Rebuild                                    |
 
 ### Symlink Layout
 
@@ -169,16 +205,17 @@ Do not try to reconstruct the symlink from the home-manager profile paths. Under
 
 - `programs.claude-code.settings` uses a freeform JSON type (`pkgs.formats.json`) — do **not** wrap the entire attrset with `lib.mkDefault` (it prevents merging; see Architecture section above)
 - Base settings in `default.nix` are set without `mkDefault`; the JSON type merges attrsets across definitions automatically
-- Profile-specific settings in `work.nix` / `personal.nix` are gated with `lib.mkIf` on the active profile
-- For individual leaf values that a profile needs to override, apply `lib.mkDefault` to that specific value in `default.nix`
+- Persona settings live in `nix/users/<persona>/claude.nix` and are **not** gated — the file is only imported by the persona that wants it, so no `lib.mkIf` is involved
+- For individual leaf values that a persona needs to override, apply `lib.mkDefault` to that specific value in `default.nix`
+- List-valued settings (`permissions.allow`, `sandbox.filesystem.allowRead`) concatenate across the two files, but **the resulting order is not guaranteed** — persona entries may precede or follow the base ones. Fine for allow-matching; do not add anything order-sensitive. Hook arrays are order-sensitive and are defined only in `default.nix` for this reason.
 
 ### MCP Servers
 
-MCP servers are declared in profile `.nix` files (e.g., `work.nix`) under `programs.claude-code.mcpServers`. The home-manager module writes these to `~/.claude.json` and they appear as `plugin:claude-code-home-manager:<name>`.
+MCP servers are declared in `nix/users/<persona>/claude.nix` under `programs.claude-code.mcpServers`. The home-manager module writes these to `~/.claude.json` and they appear as `plugin:claude-code-home-manager:<name>`.
 
 MCP servers with OAuth (e.g., Asana) require a two-part setup:
 
-1. **Config (Nix-managed):** Add the server to the `mcpServers` attrset in the profile `.nix` file. This gets deployed via `make darwin-switch`.
+1. **Config (Nix-managed):** Add the server to the `mcpServers` attrset in the persona's `claude.nix`. This gets deployed via `make darwin-switch`.
 
 2. **Auth (manual, one-time):** Run the following command to store OAuth credentials in the macOS Keychain. This only needs to be done once per machine (survives Nix rebuilds).
 
@@ -210,7 +247,7 @@ The server exposes `create_file`, which converts uploaded markdown into a native
 
 ### Permissions
 
-Claude Code permissions live in `nix/modules/home/claude/default.nix` (base) with profile-specific additions in `work.nix` / `personal.nix`. Three coordinated layers:
+Claude Code permissions live in `nix/modules/home/claude/default.nix` (base) with persona additions in `nix/users/<persona>/claude.nix`. Three coordinated layers:
 
 | Layer | Field | Behavior |
 | --- | --- | --- |

@@ -1,5 +1,4 @@
-{ lib, profile, ... }:
-lib.mkIf (profile == "personal") {
+{...}: {
   programs.claude-code = {
     settings = {
       enabledPlugins = {

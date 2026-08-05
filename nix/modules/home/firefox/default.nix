@@ -1,7 +1,7 @@
 {
+  config,
   lib,
   pkgs,
-  profile,
   ...
 }: {
   programs.firefox = {
@@ -129,9 +129,9 @@
           "https://addons.mozilla.org/firefox/downloads/latest/react-devtools/latest.xpi"
           "https://addons.mozilla.org/firefox/downloads/latest/ublock-origin/latest.xpi"
         ]
-        # KeePassXC browser extension pairs with the native KeePassXC config,
-        # which is only enabled on the personal profile.
-        ++ lib.optional (profile == "personal") "https://addons.mozilla.org/firefox/downloads/latest/keepassxc-browser/latest.xpi";
+        # The browser extension is only useful alongside the native KeePassXC it
+        # talks to, so it follows that module rather than naming a persona.
+        ++ lib.optional config.programs.keepassxc.enable "https://addons.mozilla.org/firefox/downloads/latest/keepassxc-browser/latest.xpi";
     };
   };
 }

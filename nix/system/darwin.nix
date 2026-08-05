@@ -4,44 +4,15 @@
   homeManagerArgs,
   home-manager-config,
   username,
-  profile,
+  user,
   worktrunk,
   ...
-}: system: let
-  personalDock = [
-    "/Applications/Ghostty.app"
-    "/Applications/Obsidian.app"
-    "/Applications/Firefox.app"
-    "/Applications/Signal.app"
-    "/Applications/Slack.app"
-    "/Applications/Discord.app"
-    "/Applications/KeePassXC.app"
-    "/Applications/Proton Mail.app"
-    "/Applications/ProtonVPN.app"
-    "/Applications/Yubico Authenticator.app"
-    "/Applications/OrcaSlicer.app"
-  ];
-  workDock = [
-    "/Applications/Ghostty.app"
-    "/Applications/Obsidian.app"
-    "/Applications/Asana.app"
-    "/Applications/Slack.app"
-    "/Applications/Firefox.app"
-    "/Applications/TablePlus.app"
-    "/Applications/Claude.app"
-    "/Applications/Bitwarden.app"
-  ];
-  dockPersistentApps = {
-    personal = personalDock;
-    work = workDock;
-  };
-in
+}: system:
+# `user` is a directory under ../users — the persona this machine is. Its two
+# files split along module systems: darwin.nix sets nix-darwin options (Homebrew,
+# launch agents, the Dock), home.nix sets home-manager ones.
   darwin.lib.darwinSystem {
     inherit system;
-
-    # `profile` reaches the nix-darwin modules below through the module system,
-    # so they can be listed as plain paths rather than pre-applied by hand.
-    specialArgs = {inherit profile;};
 
     modules = [
       # home-manager
@@ -50,7 +21,11 @@ in
         home-manager.useGlobalPkgs = false;
         home-manager.useUserPackages = true;
         home-manager.users."${username}" = {
-          imports = [home-manager-config worktrunk.homeModules.default];
+          imports = [
+            home-manager-config
+            (user + "/home.nix")
+            worktrunk.homeModules.default
+          ];
           _module.args = homeManagerArgs;
         };
         home-manager.backupFileExtension = "hm-backup";
@@ -58,6 +33,7 @@ in
 
       ../modules/darwin/homebrew
       ../modules/darwin/launch-agents
+      (user + "/darwin.nix")
 
       # System settings
       {
@@ -97,7 +73,6 @@ in
             dock = {
               autohide = true;
               orientation = "left";
-              persistent-apps = dockPersistentApps.${profile} or null;
               showhidden = true;
               tilesize = 40;
             };

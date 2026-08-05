@@ -1,11 +1,7 @@
-{
-  lib,
-  profile,
-  ...
-}: let
-  isPersonalProfile = profile == "personal";
-in {
-  programs.keepassxc = lib.mkIf isPersonalProfile {
+{...}: {
+  # Imported from users/personal/home.nix, not from a role — the work machine
+  # does not want KeePassXC at all.
+  programs.keepassxc = {
     enable = true;
     autostart = true;
     settings = {

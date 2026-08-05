@@ -2,11 +2,9 @@
   config,
   lib,
   pkgs,
-  profile,
   ...
 }: let
   orcaConfigPath = "${config.home.homeDirectory}/dotfiles/nix/modules/home/orca-slicer/config";
-  isPersonalProfile = profile == "personal";
   # nixpkgs bumped GLEW 2.2.0 → 2.3.1 and added -DGLEW_EGL=ON. The EGL-aware
   # GLEW dispatches through EGL on Wayland and calls glGetString(GL_VERSION)
   # before wxGLCanvas has made its context current, causing every glewInit()
@@ -36,7 +34,7 @@
 in {
   home.packages = lib.mkIf pkgs.stdenv.isLinux [orca-slicer-wrapped];
 
-  xdg.configFile."OrcaSlicer/user" = lib.mkIf isPersonalProfile {
-    source = config.lib.file.mkOutOfStoreSymlink orcaConfigPath;
-  };
+  # Imported from users/personal/home.nix, not from a role.
+  xdg.configFile."OrcaSlicer/user".source =
+    config.lib.file.mkOutOfStoreSymlink orcaConfigPath;
 }

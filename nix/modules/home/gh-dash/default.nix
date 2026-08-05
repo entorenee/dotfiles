@@ -1,14 +1,5 @@
-{ config, lib, profile, ... }:
-let
-  isWorkProfile = profile == "work";
-  workConfig = "${config.home.homeDirectory}/dotfiles/nix/modules/home/gh-dash/config/work-config.yml";
-  starterConfig = "${config.home.homeDirectory}/dotfiles/nix/modules/home/gh-dash/config/starter-config.yml";
-  configPath = if isWorkProfile then workConfig else starterConfig;
-in
-{
-  programs.gh-dash = {
-    enable = true;
-  };
-
-  xdg.configFile."gh-dash/config.yml".source = lib.mkForce (config.lib.file.mkOutOfStoreSymlink configPath);
+{...}: {
+  # The dashboard definitions are identity, not mechanism — each persona points
+  # `gh-dash/config.yml` at its own file from users/<persona>/home.nix.
+  programs.gh-dash.enable = true;
 }

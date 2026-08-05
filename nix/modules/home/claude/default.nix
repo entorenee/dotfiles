@@ -1,13 +1,10 @@
 {
   config,
   lib,
-  profile,
   ...
 }: let
   configPath = "${config.home.homeDirectory}/dotfiles/nix/modules/home/claude/config";
 in {
-  imports = [./work.nix ./personal.nix];
-
   programs.claude-code = {
     enable = true;
     settings = {

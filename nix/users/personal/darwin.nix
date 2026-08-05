@@ -1,4 +1,5 @@
-{
+{...}: {
+  # Personal identity, nix-darwin side. Only the personal Mac imports this.
   homebrew = {
     brews = [
       "tor"
@@ -31,4 +32,18 @@
       "veracrypt"
     ];
   };
+
+  system.defaults.dock.persistent-apps = [
+    "/Applications/Ghostty.app"
+    "/Applications/Obsidian.app"
+    "/Applications/Firefox.app"
+    "/Applications/Signal.app"
+    "/Applications/Slack.app"
+    "/Applications/Discord.app"
+    "/Applications/KeePassXC.app"
+    "/Applications/Proton Mail.app"
+    "/Applications/ProtonVPN.app"
+    "/Applications/Yubico Authenticator.app"
+    "/Applications/OrcaSlicer.app"
+  ];
 }

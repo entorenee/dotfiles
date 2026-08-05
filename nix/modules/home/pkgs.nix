@@ -1,23 +1,10 @@
 {
   lib,
   pkgs,
-  profile,
   ...
 }: let
-  isWorkProfile = profile == "work";
-  workPkgs = with pkgs; [
-    cocoapods
-    doctl
-    mkcert
-    ruby
-  ];
-
-  isPersonalProfile = profile == "personal";
-  personalPkgs = with pkgs; [
-    go
-    hugo
-  ];
-
+  # Persona package sets live in users/<persona>/home.nix; `home.packages` is a
+  # `listOf package`, so their definitions concatenate with this one.
   linuxPkgs = with pkgs; [
     arduino-ide
     bubblewrap
@@ -105,8 +92,6 @@ in {
       update-nix-fetchgit
       wget
     ]
-    ++ lib.optionals isWorkProfile workPkgs
-    ++ lib.optionals isPersonalProfile personalPkgs
     ++ lib.optionals pkgs.stdenv.isLinux linuxPkgs
     ++ lib.optionals pkgs.stdenv.isDarwin [
       pkgs.terminal-notifier # claude-code Notification hook banner
@@ -118,6 +103,4 @@ in {
   home.file.".local/share/icons/hicolor/scalable/apps/proton-mail.svg" = lib.mkIf pkgs.stdenv.isLinux {
     source = "${pkgs.protonmail-desktop}/share/pixmaps/proton-mail.png";
   };
-
-  services.syncthing.enable = isPersonalProfile;
 }
