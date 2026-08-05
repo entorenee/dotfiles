@@ -1,6 +1,6 @@
 {...}: {
-  # Imported from users/personal/home.nix, not from a role — the work machine
-  # does not want KeePassXC at all.
+  # Imported from users/personal/desktop.nix, not from a role — fw-skyler and a
+  # headless personal Pi both do not want KeePassXC.
   programs.keepassxc = {
     enable = true;
     autostart = true;

@@ -34,7 +34,7 @@
 in {
   home.packages = lib.mkIf pkgs.stdenv.isLinux [orca-slicer-wrapped];
 
-  # Imported from users/personal/home.nix, not from a role.
+  # Imported from users/personal/desktop.nix, not from a role.
   xdg.configFile."OrcaSlicer/user".source =
     config.lib.file.mkOutOfStoreSymlink orcaConfigPath;
 }

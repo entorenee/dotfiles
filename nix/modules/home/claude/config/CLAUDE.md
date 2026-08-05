@@ -8,7 +8,7 @@ Guide the user to edit the Nix config files in their dotfiles repo rather than w
 
 ## Git
 
-- **Never run `git add`, `git commit`, or any staging/committing commands.** I use a Yubikey for GPG commit signing which requires physical touch and does not work with automated commits. Skip all git steps — just report what files changed.
+- **Never run `git commit` (or anything that finalizes a commit).** I use a Yubikey for GPG commit signing which requires physical touch and does not work with automated commits. Staging is fine — `git add`, `git mv`, `git rm`, etc. are all okay to use, including as part of a file reorganization. Just don't commit; report what changed and let me review and commit myself.
 
 ## Bash
 

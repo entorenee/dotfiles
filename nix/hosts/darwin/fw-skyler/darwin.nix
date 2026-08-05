@@ -1,5 +1,6 @@
 {...}: {
-  # Work identity, nix-darwin side. Only the work Mac imports this.
+  # fw-skyler nix-darwin config. See the note in home.nix on why this lives
+  # directly on the host instead of in a shared users/ persona.
   homebrew = {
     brews = [
       "hookdeck/hookdeck/hookdeck"

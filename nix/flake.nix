@@ -74,25 +74,29 @@
 
     # `user` is a path into ./users — persona is selected by importing a
     # directory, not by threading a string down to every module that cares.
-    mkDarwinConfig = username: user: system:
+    # `extraHomeImports` lets a host opt into persona pieces that aren't part
+    # of that persona's portable base (e.g. the personal desktop-only add-ons
+    # in users/personal/desktop.nix) without forcing them on every host that
+    # imports the persona — see docs/local/plans/nix-architecture-redesign.md §4c.
+    mkDarwinConfig = username: user: system: extraHomeImports:
       import ./system/darwin.nix {
-        inherit darwin home-manager home-manager-config username user worktrunk;
+        inherit darwin home-manager home-manager-config username user worktrunk extraHomeImports;
         homeManagerArgs = mkHomeManagerArgs system username;
       }
       system;
 
-    # A host file states only which machine this is — username, persona
-    # directory, and system triple — so the flake output key is the hostname
-    # rather than the persona name.
+    # A host file states which machine this is — username, persona directory,
+    # system triple, and any extra home-manager imports it opts into — so the
+    # flake output key is the hostname rather than the persona name.
     mkDarwinHost = path: let
       host = import path;
     in
-      mkDarwinConfig host.username host.user host.system;
+      mkDarwinConfig host.username host.user host.system (host.extraHomeImports or []);
 
     mkHomeHost = path: let
       host = import path;
     in
-      mkHomeManagerConfig host.username host.user host.system;
+      mkHomeManagerConfig host.username host.user host.system (host.extraHomeImports or []);
 
     mkNixosConfig = system: module:
       nixpkgs-stable.lib.nixosSystem {
@@ -101,26 +105,30 @@
         modules = [module];
       };
 
-    mkHomeManagerConfig = username: user: system: let
+    mkHomeManagerConfig = username: user: system: extraHomeImports: let
       pkgs = nixpkgs.legacyPackages.${system};
     in
       home-manager.lib.homeManagerConfiguration {
         inherit pkgs;
         extraSpecialArgs = {inherit worktrunk;};
-        modules = [
-          home-manager-config
-          (user + "/home.nix")
-          worktrunk.homeModules.default
-          {
-            home.username = username;
-            home.homeDirectory = "/home/${username}";
-            _module.args = mkHomeManagerArgs system username;
-          }
-        ];
+        modules =
+          [
+            home-manager-config
+            (user + "/home.nix")
+          ]
+          ++ extraHomeImports
+          ++ [
+            worktrunk.homeModules.default
+            {
+              home.username = username;
+              home.homeDirectory = "/home/${username}";
+              _module.args = mkHomeManagerArgs system username;
+            }
+          ];
       };
   in {
     darwinConfigurations = {
-      fw-skyler = mkDarwinHost ./hosts/darwin/fw-skyler.nix;
+      fw-skyler = mkDarwinHost ./hosts/darwin/fw-skyler;
       lyra-sylvertongue = mkDarwinHost ./hosts/darwin/lyra-sylvertongue.nix;
     };
 

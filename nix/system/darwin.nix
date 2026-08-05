@@ -6,11 +6,13 @@
   username,
   user,
   worktrunk,
+  extraHomeImports ? [],
   ...
 }: system:
 # `user` is a directory under ../users — the persona this machine is. Its two
 # files split along module systems: darwin.nix sets nix-darwin options (Homebrew,
-# launch agents, the Dock), home.nix sets home-manager ones.
+# launch agents, the Dock), home.nix sets home-manager ones. `extraHomeImports`
+# lets the host opt into persona pieces beyond that portable base (see flake.nix).
   darwin.lib.darwinSystem {
     inherit system;
 
@@ -21,11 +23,13 @@
         home-manager.useGlobalPkgs = false;
         home-manager.useUserPackages = true;
         home-manager.users."${username}" = {
-          imports = [
-            home-manager-config
-            (user + "/home.nix")
-            worktrunk.homeModules.default
-          ];
+          imports =
+            [
+              home-manager-config
+              (user + "/home.nix")
+            ]
+            ++ extraHomeImports
+            ++ [worktrunk.homeModules.default];
           _module.args = homeManagerArgs;
         };
         home-manager.backupFileExtension = "hm-backup";

@@ -40,8 +40,8 @@ cd ~/dotfiles && git diff --cached --name-only
 ```
 
 Report which files changed and which hosts they affect:
-- `users/work/*.nix` → affects fw-skyler
-- `users/personal/*.nix` → affects lyra-sylvertongue and hester-prynne
+- `hosts/darwin/fw-skyler/*.nix` → affects fw-skyler only
+- `users/personal/*.nix` → affects lyra-sylvertongue and hester-prynne (`desktop.nix` affects both too — both opt in via `extraHomeImports`)
 - `default.nix`, `flake.nix`, shared modules → affects all hosts
 
 ### Step 2 — Nix Evaluation

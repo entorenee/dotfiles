@@ -1,26 +1,17 @@
 {
   config,
   lib,
-  pkgs,
   ...
 }: let
   ghDashConfig = "${config.home.homeDirectory}/dotfiles/nix/users/personal/gh-dash.yml";
 in {
-  # Personal identity, home-manager side. Imported by every machine that is
-  # "me personally" — the personal Mac and the Linux desktop — alongside a role.
-  #
-  # Modules listed here rather than in a role are ones only this persona wants at
-  # all; a role would have to gate them back off.
+  # Personal identity, home-manager side — the portable subset, safe for any
+  # machine that is "me personally", headless or not. GUI-desktop-only pieces
+  # (keepassxc, orca-slicer, go, hugo) live in ./desktop.nix instead, opted into
+  # per-host via `extraHomeImports` — see
+  # docs/local/plans/nix-architecture-redesign.md §4c.
   imports = [
     ./claude.nix
-
-    ../../modules/home/keepassxc
-    ../../modules/home/orca-slicer
-  ];
-
-  home.packages = with pkgs; [
-    go
-    hugo
   ];
 
   # No ssh block: the personal Yubikey is the module's default identity.

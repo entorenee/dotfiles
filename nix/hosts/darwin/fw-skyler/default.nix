@@ -1,5 +1,5 @@
 {
   username = "fw-skylerlemay";
-  user = ../../users/work;
+  user = ./.;
   system = "aarch64-darwin";
 }

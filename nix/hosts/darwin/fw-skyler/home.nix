@@ -6,9 +6,11 @@
 }: let
   personalYubikeyIdentity = "${config.home.homeDirectory}/.ssh/id_rsa_yubikey_personal.pub";
   workYubikeyIdentity = "${config.home.homeDirectory}/.ssh/id_rsa_yubikey_work.pub";
-  ghDashConfig = "${config.home.homeDirectory}/dotfiles/nix/users/work/gh-dash.yml";
+  ghDashConfig = "${config.home.homeDirectory}/dotfiles/nix/hosts/darwin/fw-skyler/gh-dash.yml";
 in {
-  # Work identity, home-manager side. Imported by the work Mac alongside a role.
+  # fw-skyler is the only work machine, so work identity lives directly on the
+  # host rather than in a shared users/ persona — see
+  # docs/local/plans/nix-architecture-redesign.md §4c.
   imports = [
     ./claude.nix
   ];

@@ -29,7 +29,7 @@ in {
       # `types.anything`, whose merge *throws* on two list definitions instead of
       # concatenating them — so a persona cannot append here. Priority filtering
       # runs before the type's merge, though, so marking this as a default means
-      # a persona that needs more identities (see users/work/home.nix) replaces
+      # a host that needs more identities (see hosts/darwin/fw-skyler/home.nix) replaces
       # the list outright and only one definition ever reaches the merge.
       IdentityFile = lib.mkDefault [personalYubikeyIdentity];
       IdentitiesOnly = true;

@@ -13,7 +13,7 @@ Personal dotfiles managed with Nix Darwin, including comprehensive configuration
 
 Always prefer native home-manager modules and options over custom activation scripts or manual config file edits.
 
-When settings need to diverge by persona, **do not gate on a profile string** — there is no longer one. A module states the mechanism unconditionally, and `nix/users/{work,personal}/` states which persona wants it. See "Personas live in `nix/users/`" below.
+When settings need to diverge by persona, **do not gate on a profile string** — there is no longer one. A module states the mechanism unconditionally, and `nix/users/personal/` (or, for the sole work machine, `nix/hosts/darwin/fw-skyler/` directly) states which persona wants it. See "Personas live in `nix/users/`" below.
 
 ### `lib.mkDefault` usage
 
@@ -57,19 +57,20 @@ When settings need to diverge by persona, **do not gate on a profile string** �
 │   │   │   ├── uptime.nix        # uptime-kuma + cloudflared (Pi Zero 2W)
 │   │   │   ├── hub.nix           # Building hub (Pi 4, always-on)
 │   │   │   └── airgap.nix        # Yubikey airgap workflow (Pi Zero 2W)
-│   │   ├── darwin/                # {username, user, system} for each Mac
-│   │   │   ├── fw-skyler.nix
+│   │   ├── darwin/                # {username, user, system, extraHomeImports?} for each Mac
+│   │   │   ├── fw-skyler/         # work dissolves fully here — only work machine, no users/work/
+│   │   │   │   ├── default.nix   # the host triple ({user = ./.;})
+│   │   │   │   ├── home.nix, darwin.nix, claude.nix, gh-dash.yml, id_rsa_yubikey_work.pub
 │   │   │   └── lyra-sylvertongue.nix
-│   │   └── home/                  # {username, user, system} for standalone home-manager hosts
+│   │   └── home/                  # {username, user, system, extraHomeImports?} for standalone home-manager hosts
 │   │       └── hester-prynne.nix
 │   ├── roles/                    # POLICY — which modules a class of machine wants
 │   │   └── home/
 │   │       ├── base.nix          # Shell, editor, VCS, secrets (safe headless)
 │   │       ├── cli.nix           # base + terminal workstation tooling
 │   │       └── gui.nix           # cli + terminal emulators, fonts, desktop apps
-│   ├── users/                    # IDENTITY — what a persona means
-│   │   ├── personal/             # home.nix + darwin.nix + claude.nix + gh-dash.yml
-│   │   └── work/                 # same, plus the work Yubikey public key
+│   ├── users/                    # IDENTITY — what a persona means (personal only; work lives on its host)
+│   │   └── personal/             # home.nix (portable) + desktop.nix (GUI add-on) + darwin.nix + claude.nix + gh-dash.yml
 │   └── modules/                  # MECHANISM — how each tool is configured
 │       ├── options.nix           # The `my.*` capability options (both systems)
 │       ├── darwin/               # nix-darwin modules (homebrew, launch-agents)
@@ -92,7 +93,7 @@ Divergence follows a three-way rule:
 | --- | --- |
 | Platform truth | `pkgs.stdenv.isDarwin` / `isLinux` |
 | Capability | a `my.*` option in `nix/modules/options.nix` |
-| Identity (work vs personal) | an import in `nix/users/{work,personal}/` |
+| Identity (work vs personal) | an import in `nix/users/personal/` (work: directly on `nix/hosts/darwin/fw-skyler/`) |
 
 Do **not** reach for `pkgs.stdenv.isLinux` to mean "has a GUI" — that only reads correctly while the sole Linux host happens to be a desktop. Use `config.my.gui`.
 
@@ -102,17 +103,21 @@ There is no `profile` argument. A persona is a **directory that gets imported**,
 
 | File | Sets |
 | --- | --- |
-| `users/<persona>/home.nix` | home-manager options: packages, ssh identities, gh-dash config, persona-only module imports |
+| `users/<persona>/home.nix` | home-manager options: portable packages, ssh identities, gh-dash config, persona-only module imports safe on any machine that persona touches, headless or not |
 | `users/<persona>/darwin.nix` | nix-darwin options: Homebrew taps/brews/casks, launch agents, the Dock |
 | `users/<persona>/claude.nix` | `programs.claude-code` additions, imported by `home.nix` |
 
 Two files because persona spans both module systems — a home-manager module cannot set `homebrew.casks`.
 
-**A module that only one persona wants is imported from that persona's `home.nix`, not from a role.** `keepassxc` and `orca-slicer` work this way; putting them in `roles/home/gui.nix` would mean gating them back off. Roles carry what a *class of machine* wants; `users/` carries what a *person* wants.
+**`work` has only one machine, so it isn't a `users/` persona at all — it lives directly on its host.** `nix/hosts/darwin/fw-skyler/` holds `home.nix`/`darwin.nix`/`claude.nix`/`gh-dash.yml`/the work Yubikey public key, exactly the same shape `users/work/` used to be, just with no persona indirection to a second consumer that will never exist. A persona directory only earns its keep once two or more hosts share it — `personal` does (the personal Mac and the Linux desktop), so it stays under `users/`.
+
+**A module that only one persona wants is imported from that persona's `home.nix` (or its GUI-only `desktop.nix`, see below), not from a role.** `keepassxc` and `orca-slicer` work this way; putting them in `roles/home/gui.nix` would mean gating them back off. Roles carry what a *class of machine* wants; `users/` carries what a *person* wants.
+
+**Split a persona's `home.nix` into a portable base plus opt-in add-ons once it needs to reach a headless host.** `users/personal/home.nix` is the portable subset (claude.nix, gh-dash, syncthing) — safe for a future headless personal Pi. The GUI-desktop-only pieces (keepassxc, orca-slicer, `go`/`hugo`) live in `users/personal/desktop.nix` instead, and a host opts into it via `extraHomeImports` on its `nix/hosts/{darwin,home}/<hostname>.nix` file (a list of extra home-manager module paths, spliced in alongside `user + "/home.nix"`). Both current personal hosts (`lyra-sylvertongue`, `hester-prynne`) set it; a future headless personal Pi would import `users/personal` without it. Don't fold `desktop.nix` back into `home.nix` — that's exactly the coupling this split removes.
 
 Most options merge across the two, so a persona file **adds** to a module rather than replacing it — `home.packages` and `homebrew.casks` are `listOf` (concatenate), `launchd.user.agents` is an attrset of submodules (merges).
 
-**When a list won't concatenate, use base-default + persona-replacement.** Freeform `types.anything` options (`programs.ssh.settings` is the one in this repo) *throw* on two list definitions rather than concatenating, so a persona cannot append. Don't respond by moving the whole value into the persona files — state the common case in the module as a `lib.mkDefault` and let the persona that needs something else replace it:
+**When a list won't concatenate, use base-default + host-replacement.** Freeform `types.anything` options (`programs.ssh.settings` is the one in this repo) *throw* on two list definitions rather than concatenating, so a persona (or host) cannot append. Don't respond by moving the whole value into the persona/host files — state the common case in the module as a `lib.mkDefault` and let the one that needs something else replace it:
 
 ```nix
 # modules/home/ssh/default.nix — what most machines need
@@ -121,18 +126,18 @@ settings."github.com" = {
   IdentitiesOnly = true;
 };
 
-# users/work/home.nix — the machine that needs more
+# hosts/darwin/fw-skyler/home.nix — the machine that needs more
 programs.ssh.settings."github.com".IdentityFile = [personalYubikeyIdentity workYubikeyIdentity];
 ```
 
 This works because **priority filtering runs before the type's merge function**, so exactly one definition ever reaches it and there is nothing to conflict. Sibling attributes are unaffected: `IdentitiesOnly` still comes from the module in all three configurations. The cost is that the replacement restates the whole list.
 
-Persona ordering in merged lists is not stable — `users/` definitions may land before or after a module's. Nothing currently depends on it (Homebrew installs a set; `permissions.allow` matches by any-match), but do not introduce anything that does.
+Persona/host ordering in merged lists is not stable — `users/` and `hosts/` definitions may land before or after a module's. Nothing currently depends on it (Homebrew installs a set; `permissions.allow` matches by any-match), but do not introduce anything that does.
 
 ## Management Commands
 
 - **Rebuild and switch:** `make rebuild` — auto-detects OS (Darwin vs Linux) and picks the flake attribute from the machine's hostname (`hostname -s`).
-- **Host selection:** flake outputs are keyed by hostname (`fw-skyler`, `lyra-sylvertongue`, `hester-prynne`). Each `nix/hosts/{darwin,home}/<hostname>.nix` file states `{username, user, system}`; `user` is a `./users/<persona>` path.
+- **Host selection:** flake outputs are keyed by hostname (`fw-skyler`, `lyra-sylvertongue`, `hester-prynne`). Each `nix/hosts/{darwin,home}/<hostname>.nix` file states `{username, user, system, extraHomeImports ? []}`; `user` is a `./users/<persona>` path (`fw-skyler` points at itself, since work has no separate persona directory — see "Personas live in `nix/users/`" below).
 
 ## NixOS Pi Hosts
 
@@ -178,13 +183,13 @@ The Claude Code configuration is Nix-managed in `nix/modules/home/claude/`. The 
 
 | Change             | Where to edit                                                                       | Then run                                   |
 | ------------------ | ----------------------------------------------------------------------------------- | ------------------------------------------ |
-| Add MCP server     | `nix/users/work/claude.nix` or `nix/users/personal/claude.nix`                            | `make darwin-switch` or `make home-switch` |
+| Add MCP server     | `nix/hosts/darwin/fw-skyler/claude.nix` or `nix/users/personal/claude.nix`                 | `make darwin-switch` or `make home-switch` |
 | Add hook           | Create script in `nix/modules/home/claude/config/hooks/`, add to `default.nix` settings   | Rebuild                                    |
 | Add skill          | Add to `nix/modules/home/claude/config/skills/`                                           | Automatic (symlinked)                      |
 | Add agent          | Add to `nix/modules/home/claude/config/agents/`                                           | Automatic (symlinked)                      |
 | Change plugin      | Edit `enabledPlugins` in `nix/modules/home/claude/default.nix`                            | Rebuild                                    |
-| Change permissions | Edit `permissions` in `nix/modules/home/claude/default.nix` (base) or `nix/users/<persona>/claude.nix` | Rebuild                                    |
-| Change setting     | Edit `nix/modules/home/claude/default.nix` (base) or `nix/users/<persona>/claude.nix` (override)       | Rebuild                                    |
+| Change permissions | Edit `permissions` in `nix/modules/home/claude/default.nix` (base), `nix/hosts/darwin/fw-skyler/claude.nix` (work), or `nix/users/personal/claude.nix` (personal) | Rebuild |
+| Change setting     | Edit `nix/modules/home/claude/default.nix` (base), `nix/hosts/darwin/fw-skyler/claude.nix` (work), or `nix/users/personal/claude.nix` (personal) | Rebuild |
 
 ### Symlink Layout
 
@@ -211,17 +216,17 @@ Do not try to reconstruct the symlink from the home-manager profile paths. Under
 
 - `programs.claude-code.settings` uses a freeform JSON type (`pkgs.formats.json`) — do **not** wrap the entire attrset with `lib.mkDefault` (it prevents merging; see Architecture section above)
 - Base settings in `default.nix` are set without `mkDefault`; the JSON type merges attrsets across definitions automatically
-- Persona settings live in `nix/users/<persona>/claude.nix` and are **not** gated — the file is only imported by the persona that wants it, so no `lib.mkIf` is involved
+- Persona settings live in `nix/users/personal/claude.nix` or (for work) `nix/hosts/darwin/fw-skyler/claude.nix`, and are **not** gated — the file is only imported by the machine that wants it, so no `lib.mkIf` is involved
 - For individual leaf values that a persona needs to override, apply `lib.mkDefault` to that specific value in `default.nix`
 - List-valued settings (`permissions.allow`, `sandbox.filesystem.allowRead`) concatenate across the two files, but **the resulting order is not guaranteed** — persona entries may precede or follow the base ones. Fine for allow-matching; do not add anything order-sensitive. Hook arrays are order-sensitive and are defined only in `default.nix` for this reason.
 
 ### MCP Servers
 
-MCP servers are declared in `nix/users/<persona>/claude.nix` under `programs.claude-code.mcpServers`. The home-manager module writes these to `~/.claude.json` and they appear as `plugin:claude-code-home-manager:<name>`.
+MCP servers are declared in `nix/users/personal/claude.nix` or `nix/hosts/darwin/fw-skyler/claude.nix` under `programs.claude-code.mcpServers`. The home-manager module writes these to `~/.claude.json` and they appear as `plugin:claude-code-home-manager:<name>`.
 
 MCP servers with OAuth (e.g., Asana) require a two-part setup:
 
-1. **Config (Nix-managed):** Add the server to the `mcpServers` attrset in the persona's `claude.nix`. This gets deployed via `make darwin-switch`.
+1. **Config (Nix-managed):** Add the server to the `mcpServers` attrset in the relevant `claude.nix`. This gets deployed via `make darwin-switch`.
 
 2. **Auth (manual, one-time):** Run the following command to store OAuth credentials in the macOS Keychain. This only needs to be done once per machine (survives Nix rebuilds).
 
@@ -253,7 +258,7 @@ The server exposes `create_file`, which converts uploaded markdown into a native
 
 ### Permissions
 
-Claude Code permissions live in `nix/modules/home/claude/default.nix` (base) with persona additions in `nix/users/<persona>/claude.nix`. Three coordinated layers:
+Claude Code permissions live in `nix/modules/home/claude/default.nix` (base) with additions in `nix/users/personal/claude.nix` or `nix/hosts/darwin/fw-skyler/claude.nix`. Three coordinated layers:
 
 | Layer | Field | Behavior |
 | --- | --- | --- |
