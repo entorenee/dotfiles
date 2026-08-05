@@ -3,8 +3,9 @@
   pkgs,
   ...
 }: let
-  # Persona package sets live in users/<persona>/home.nix; `home.packages` is a
-  # `listOf package`, so their definitions concatenate with this one.
+  # Persona package sets live in users/personal/{home,desktop}.nix and
+  # hosts/darwin/fw-skyler/home.nix; `home.packages` is a `listOf package`, so
+  # their definitions concatenate with this one.
   linuxPkgs = with pkgs; [
     arduino-ide
     bubblewrap
@@ -34,40 +35,14 @@
     z-lua
   ];
 in {
-  nixpkgs = {
-    config = {
-      allowUnfree = true;
-    };
-    overlays = [
-      (_final: prev: {
-        protonmail-desktop = prev.protonmail-desktop.overrideAttrs (old: {
-          postInstall =
-            (old.postInstall or "")
-            + ''
-              echo "StartupWMClass=proton-mail" >> $out/share/applications/proton-mail.desktop
-            '';
-        });
-
-        # Pin pnpm to the EXACT version fw_monorepo's package.json declares in
-        # its `packageManager` field (pnpm@10.33.0). pnpm's version manager
-        # compares the running binary against that pin; on any mismatch it
-        # re-downloads AND signature-verifies the pinned build from the npm
-        # registry on every command. That verification fetch fails inside
-        # Claude Code's network sandbox and hard-aborts with "npm registry
-        # signature could not be verified". Matching the version exactly means
-        # no switch, no fetch, no failure. A nearby 10.x (nixpkgs pnpm_10 is
-        # 10.34.5) does NOT work — the pin is exact.
-        #
-        # MAINTENANCE: bump both fields together whenever fw_monorepo changes
-        # its packageManager pin. Get the hash with:
-        #   nix store prefetch-file https://registry.npmjs.org/pnpm/-/pnpm-<version>.tgz
-        pnpm = prev.pnpm_10.override {
-          version = "10.33.0";
-          hash = "sha256-v8wby60nmxOlFsRGp1s8WLaQS0XVehlRQRAV5Qt1GoA=";
-        };
-      })
-    ];
-  };
+  # nixpkgs.config/overlays used to live here, but setting them from inside a
+  # home-manager module is a no-op (or an error, on newer home-manager) once a
+  # host uses `useGlobalPkgs = true` — there's no separate pkgs left for a
+  # home-manager module to configure (see
+  # docs/local/plans/nix-architecture-redesign.md §6.3). Both now live in
+  # nix/overlays/ and are applied where each config's pkgs is actually
+  # constructed (flake.nix, system/darwin.nix), which stays correct regardless
+  # of `useGlobalPkgs`.
   home.packages = with pkgs;
     [
       bash # tmux theme needs a more recent version of bash

@@ -78,25 +78,28 @@
     # of that persona's portable base (e.g. the personal desktop-only add-ons
     # in users/personal/desktop.nix) without forcing them on every host that
     # imports the persona — see docs/local/plans/nix-architecture-redesign.md §4c.
-    mkDarwinConfig = username: user: system: extraHomeImports:
+    # `overlays` is the same idea applied to nix/overlays/: a list of overlay
+    # functions this specific host wants (see §6.3), not a set applied globally.
+    mkDarwinConfig = username: user: system: extraHomeImports: overlays:
       import ./system/darwin.nix {
-        inherit darwin home-manager home-manager-config username user worktrunk extraHomeImports;
+        inherit darwin home-manager home-manager-config username user worktrunk extraHomeImports overlays;
         homeManagerArgs = mkHomeManagerArgs system username;
       }
       system;
 
     # A host file states which machine this is — username, persona directory,
-    # system triple, and any extra home-manager imports it opts into — so the
-    # flake output key is the hostname rather than the persona name.
+    # system triple, and any extra home-manager imports / overlays it opts
+    # into — so the flake output key is the hostname rather than the persona
+    # name.
     mkDarwinHost = path: let
       host = import path;
     in
-      mkDarwinConfig host.username host.user host.system (host.extraHomeImports or []);
+      mkDarwinConfig host.username host.user host.system (host.extraHomeImports or []) (host.overlays or []);
 
     mkHomeHost = path: let
       host = import path;
     in
-      mkHomeManagerConfig host.username host.user host.system (host.extraHomeImports or []);
+      mkHomeManagerConfig host.username host.user host.system (host.extraHomeImports or []) (host.overlays or []);
 
     mkNixosConfig = system: module:
       nixpkgs-stable.lib.nixosSystem {
@@ -105,8 +108,11 @@
         modules = [module];
       };
 
-    mkHomeManagerConfig = username: user: system: extraHomeImports: let
-      pkgs = nixpkgs.legacyPackages.${system};
+    mkHomeManagerConfig = username: user: system: extraHomeImports: overlays: let
+      pkgs = import nixpkgs {
+        inherit system overlays;
+        config.allowUnfree = true;
+      };
     in
       home-manager.lib.homeManagerConfiguration {
         inherit pkgs;

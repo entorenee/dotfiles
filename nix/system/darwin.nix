@@ -7,6 +7,7 @@
   user,
   worktrunk,
   extraHomeImports ? [],
+  overlays,
   ...
 }: system:
 # `user` is a directory under ../users — the persona this machine is. Its two
@@ -20,7 +21,10 @@
       # home-manager
       home-manager.darwinModules.home-manager
       {
-        home-manager.useGlobalPkgs = false;
+        # Shares the system's pkgs instance (single eval, and the
+        # nixpkgs.overlays/config set below reach home-manager automatically —
+        # no separate nixpkgs block needed here).
+        home-manager.useGlobalPkgs = true;
         home-manager.useUserPackages = true;
         home-manager.users."${username}" = {
           imports =
@@ -56,7 +60,11 @@
           settings.experimental-features = "nix-command flakes";
         };
 
-        nixpkgs.hostPlatform = system;
+        nixpkgs = {
+          hostPlatform = system;
+          inherit overlays;
+          config.allowUnfree = true;
+        };
 
         system = {
           stateVersion = 4;
