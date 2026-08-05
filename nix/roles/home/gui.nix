@@ -12,6 +12,7 @@
     ../../modules/home/fonts
     ../../modules/home/ghostty
     ../../modules/home/karabiner
+    ../../modules/home/linux-gui-pkgs.nix
   ];
 
   my.gui = true;

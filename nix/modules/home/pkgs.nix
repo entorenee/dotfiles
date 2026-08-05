@@ -1,5 +1,4 @@
 {
-  config,
   lib,
   pkgs,
   ...
@@ -8,42 +7,20 @@
   # hosts/darwin/fw-skyler/home.nix; `home.packages` is a `listOf package`, so
   # their definitions concatenate with this one.
   #
-  # FIXME: gated on `isLinux && config.my.gui` (added the latter as a quick
-  # unblock for giving `hub`, a headless Pi, home-manager — `isLinux` alone
-  # doesn't exclude it) — not every package below is actually GUI-only
-  # (docker, cryptsetup, socat, z-lua, nodejs_22 look headless-safe; arduino-ide,
-  # calibre, jellyfin-desktop, obsidian, signal-desktop, slack, spotify, zoom-us,
-  # veracrypt, tor, nextcloud-client, freefilesync, insomnia, libreoffice,
-  # caffeine-ng, protonmail-desktop, pinentry-gnome3, bubblewrap clearly are).
-  # This list needs a proper split (a real "linux headless" vs "linux desktop"
-  # triage) before the redesign milestone closes — see
-  # docs/local/plans/nix-architecture-redesign.md open questions.
-  linuxPkgs = with pkgs; [
-    arduino-ide
+  # Headless-safe Linux CLI/daemon tools only — no display dependency, so this
+  # stays platform truth (`pkgs.stdenv.isLinux`) rather than a capability
+  # check. GUI-only Linux packages live in modules/home/linux-gui-pkgs.nix,
+  # imported only from roles/home/gui.nix — see
+  # docs/local/plans/nix-architecture-redesign.md step 5 follow-up for why
+  # that split, not an inline `config.my.gui` check here.
+  linuxHeadlessPkgs = with pkgs; [
     bubblewrap
-    caffeine-ng
-    calibre
     cryptsetup # TODO: Confirm if this is a needed dependency
     docker
     docker-compose
-    freefilesync
-    insomnia
-    jellyfin-desktop
-    libnotify # notify-send, for the claude-code Notification hook banner
-    libreoffice
-    nextcloud-client
     nodejs_22 # TODO determine dynamic sourcing of Node
-    obsidian
-    pinentry-gnome3
-    protonmail-desktop
-    rpi-imager
-    signal-desktop
-    slack
     socat
-    spotify
     tor
-    veracrypt
-    zoom-us
     z-lua
   ];
 in {
@@ -79,15 +56,9 @@ in {
       update-nix-fetchgit
       wget
     ]
-    ++ lib.optionals (pkgs.stdenv.isLinux && config.my.gui) linuxPkgs
+    ++ lib.optionals pkgs.stdenv.isLinux linuxHeadlessPkgs
     ++ lib.optionals pkgs.stdenv.isDarwin [
       pkgs.terminal-notifier # claude-code Notification hook banner
       pkgs.yubikey-manager
     ];
-
-  # proton-mail.png is actually SVG content; placing it in hicolor/scalable lets
-  # GNOME find it reliably (pixmaps/ is not consistently searched from Nix profiles).
-  home.file.".local/share/icons/hicolor/scalable/apps/proton-mail.svg" = lib.mkIf (pkgs.stdenv.isLinux && config.my.gui) {
-    source = "${pkgs.protonmail-desktop}/share/pixmaps/proton-mail.png";
-  };
 }
