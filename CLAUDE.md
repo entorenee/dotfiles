@@ -51,11 +51,17 @@ When settings need to diverge by persona, **do not gate on a profile string** �
 ├── nix/
 │   ├── flake.nix                 # Main flake configuration
 │   ├── system/darwin.nix         # macOS system configuration
-│   ├── hosts/                    # NixOS hosts (Raspberry Pi)
-│   │   ├── common.nix            # Shared base for every Pi host
-│   │   ├── uptime.nix            # uptime-kuma + cloudflared (Pi Zero 2W)
-│   │   ├── hub.nix               # Building hub (Pi 4, always-on)
-│   │   └── airgap.nix            # Yubikey airgap workflow (Pi Zero 2W)
+│   ├── hosts/                    # INSTANTIATION — one file per machine, keyed by hostname
+│   │   ├── nixos/                # The three Raspberry Pi hosts
+│   │   │   ├── common.nix        # Shared base for every Pi host
+│   │   │   ├── uptime.nix        # uptime-kuma + cloudflared (Pi Zero 2W)
+│   │   │   ├── hub.nix           # Building hub (Pi 4, always-on)
+│   │   │   └── airgap.nix        # Yubikey airgap workflow (Pi Zero 2W)
+│   │   ├── darwin/                # {username, user, system} for each Mac
+│   │   │   ├── fw-skyler.nix
+│   │   │   └── lyra-sylvertongue.nix
+│   │   └── home/                  # {username, user, system} for standalone home-manager hosts
+│   │       └── hester-prynne.nix
 │   ├── roles/                    # POLICY — which modules a class of machine wants
 │   │   └── home/
 │   │       ├── base.nix          # Shell, editor, VCS, secrets (safe headless)
@@ -125,8 +131,8 @@ Persona ordering in merged lists is not stable — `users/` definitions may land
 
 ## Management Commands
 
-- **Rebuild and switch:** `make rebuild` — auto-detects OS (Darwin vs Linux) and persona from the current username (`fw-skylerlemay` → work, otherwise personal). Override with `PROFILE=work make rebuild`.
-- **Persona selection:** `nix/flake.nix` passes a `./users/<persona>` path to `mkDarwinConfig` / `mkHomeManagerConfig`
+- **Rebuild and switch:** `make rebuild` — auto-detects OS (Darwin vs Linux) and picks the flake attribute from the machine's hostname (`hostname -s`).
+- **Host selection:** flake outputs are keyed by hostname (`fw-skyler`, `lyra-sylvertongue`, `hester-prynne`). Each `nix/hosts/{darwin,home}/<hostname>.nix` file states `{username, user, system}`; `user` is a `./users/<persona>` path.
 
 ## NixOS Pi Hosts
 

@@ -25,10 +25,6 @@ in {
 
   # No ssh block: the personal Yubikey is the module's default identity.
 
-  # TODO: retires with the move to hostname-keyed flake outputs — `dot-apply` is
-  # its only consumer.
-  programs.zsh.sessionVariables.NIX_PROFILE = "personal";
-
   xdg.configFile."gh-dash/config.yml".source =
     lib.mkForce (config.lib.file.mkOutOfStoreSymlink ghDashConfig);
 

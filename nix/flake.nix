@@ -81,6 +81,19 @@
       }
       system;
 
+    # A host file states only which machine this is — username, persona
+    # directory, and system triple — so the flake output key is the hostname
+    # rather than the persona name.
+    mkDarwinHost = path: let
+      host = import path;
+    in
+      mkDarwinConfig host.username host.user host.system;
+
+    mkHomeHost = path: let
+      host = import path;
+    in
+      mkHomeManagerConfig host.username host.user host.system;
+
     mkNixosConfig = system: module:
       nixpkgs-stable.lib.nixosSystem {
         inherit system;
@@ -107,12 +120,12 @@
       };
   in {
     darwinConfigurations = {
-      personal = mkDarwinConfig "skyler.lemay" ./users/personal "aarch64-darwin";
-      work = mkDarwinConfig "fw-skylerlemay" ./users/work "aarch64-darwin";
+      fw-skyler = mkDarwinHost ./hosts/darwin/fw-skyler.nix;
+      lyra-sylvertongue = mkDarwinHost ./hosts/darwin/lyra-sylvertongue.nix;
     };
 
     homeConfigurations = {
-      "personal@linux" = mkHomeManagerConfig "skyler.lemay" ./users/personal "x86_64-linux";
+      hester-prynne = mkHomeHost ./hosts/home/hester-prynne.nix;
     };
 
     nixosConfigurations = {

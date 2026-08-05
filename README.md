@@ -35,7 +35,7 @@ curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix 
 
 Install nix-darwin to manage system configuration:
 ```
-nix run nix-darwin -- switch --flake ~/dotfiles/nix#[personal|work]
+nix run nix-darwin -- switch --flake ~/dotfiles/nix#[fw-skyler|lyra-sylvertongue]
 ```
 
 ### Linux
@@ -45,7 +45,7 @@ On Linux, Home Manager is used standalone without Nix Darwin. Apply the configur
 make linux
 ```
 
-This targets the `personal@linux` flake configuration using Home Manager directly.
+This targets the `hester-prynne` flake configuration using Home Manager directly.
 
 ### Maintenance scripts
 

@@ -30,10 +30,6 @@ in {
 
   home.file.".ssh/id_rsa_yubikey_work.pub".source = ./id_rsa_yubikey_work.pub;
 
-  # TODO: retires with the move to hostname-keyed flake outputs — `dot-apply` is
-  # its only consumer.
-  programs.zsh.sessionVariables.NIX_PROFILE = "work";
-
   xdg.configFile."gh-dash/config.yml".source =
     lib.mkForce (config.lib.file.mkOutOfStoreSymlink ghDashConfig);
 }
