@@ -360,9 +360,10 @@ in {
     claude-yolo = "claude --dangerously-skip-permissions";
   };
 
-  # Every managed entry is the same mapping: ~/.claude/<path> is an out-of-store
-  # symlink to config/<path>. Listing the relative paths once keeps the
-  # ".claude/" prefix and the mkOutOfStoreSymlink call in a single place.
+  # Every managed entry is the same mapping: ~/.claude/<path> maps to
+  # config/<path> (out-of-store symlink when config.my.dotfiles.mutable, a
+  # store copy otherwise — see modules/options.nix). Listing the relative
+  # paths once keeps the ".claude/" prefix and that choice in a single place.
   #
   # Skills are enumerated individually rather than symlinking the whole skills/
   # directory. home-manager ≥ 2026-07 installs the generated MCP plugin as a
@@ -376,7 +377,10 @@ in {
     map
     (path: {
       name = ".claude/${path}";
-      value.source = config.lib.file.mkOutOfStoreSymlink "${configPath}/${path}";
+      value.source =
+        if config.my.dotfiles.mutable
+        then config.lib.file.mkOutOfStoreSymlink "${configPath}/${path}"
+        else ./config/${path};
     })
     (
       [

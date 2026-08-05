@@ -16,5 +16,8 @@ in
     }
   '';
 
-  xdg.configFile."nvim".source = config.lib.file.mkOutOfStoreSymlink nvimPath;
+  xdg.configFile."nvim".source =
+    if config.my.dotfiles.mutable
+    then config.lib.file.mkOutOfStoreSymlink nvimPath
+    else ./config;
 }

@@ -1,4 +1,5 @@
 {
+  config,
   lib,
   pkgs,
   ...
@@ -6,6 +7,17 @@
   # Persona package sets live in users/personal/{home,desktop}.nix and
   # hosts/darwin/fw-skyler/home.nix; `home.packages` is a `listOf package`, so
   # their definitions concatenate with this one.
+  #
+  # FIXME: gated on `isLinux && config.my.gui` (added the latter as a quick
+  # unblock for giving `hub`, a headless Pi, home-manager — `isLinux` alone
+  # doesn't exclude it) — not every package below is actually GUI-only
+  # (docker, cryptsetup, socat, z-lua, nodejs_22 look headless-safe; arduino-ide,
+  # calibre, jellyfin-desktop, obsidian, signal-desktop, slack, spotify, zoom-us,
+  # veracrypt, tor, nextcloud-client, freefilesync, insomnia, libreoffice,
+  # caffeine-ng, protonmail-desktop, pinentry-gnome3, bubblewrap clearly are).
+  # This list needs a proper split (a real "linux headless" vs "linux desktop"
+  # triage) before the redesign milestone closes — see
+  # docs/local/plans/nix-architecture-redesign.md open questions.
   linuxPkgs = with pkgs; [
     arduino-ide
     bubblewrap
@@ -67,7 +79,7 @@ in {
       update-nix-fetchgit
       wget
     ]
-    ++ lib.optionals pkgs.stdenv.isLinux linuxPkgs
+    ++ lib.optionals (pkgs.stdenv.isLinux && config.my.gui) linuxPkgs
     ++ lib.optionals pkgs.stdenv.isDarwin [
       pkgs.terminal-notifier # claude-code Notification hook banner
       pkgs.yubikey-manager
@@ -75,7 +87,7 @@ in {
 
   # proton-mail.png is actually SVG content; placing it in hicolor/scalable lets
   # GNOME find it reliably (pixmaps/ is not consistently searched from Nix profiles).
-  home.file.".local/share/icons/hicolor/scalable/apps/proton-mail.svg" = lib.mkIf pkgs.stdenv.isLinux {
+  home.file.".local/share/icons/hicolor/scalable/apps/proton-mail.svg" = lib.mkIf (pkgs.stdenv.isLinux && config.my.gui) {
     source = "${pkgs.protonmail-desktop}/share/pixmaps/proton-mail.png";
   };
 }

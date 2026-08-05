@@ -17,5 +17,25 @@
         desktop; a headless Pi is Linux and has no display.
       '';
     };
+
+    dotfiles.mutable = lib.mkOption {
+      type = lib.types.bool;
+      default = true;
+      description = ''
+        Whether this machine has a live `~/dotfiles` checkout to symlink
+        config against.
+
+        `true` (the default, matching every host before this option existed)
+        deploys the config via `config.lib.file.mkOutOfStoreSymlink`, so
+        editing the repo file takes effect without a rebuild. `false` (every
+        Pi — see docs/local/plans/nix-architecture-redesign.md §6.1) deploys
+        a plain store copy instead, since a Pi's checkout may not exist or
+        may not have run yet when home-manager activates.
+
+        Transitional: once out-of-store symlinks are retired everywhere,
+        this collapses to a constant and gets deleted (§6.4). Do not grow it
+        into a general mutability framework.
+      '';
+    };
   };
 }
