@@ -78,101 +78,31 @@
     # `nix/overlays/{protonmail-desktop,pnpm-pin}.nix`.
     baseOverlays = [(import ./overlays/claude-code-unstable.nix {inherit nixpkgs-unstable;})];
 
-    mkHomeManagerArgs = system: username: {
-      inherit lib username private-assets tmux-powerkit worktrunk;
-      navi-cheatsheets = navi-cheatsheets.packages.${system}.default;
+    # The mkDarwin/mkNixos/mkHome helpers live in ./lib/, each parameterized
+    # on exactly the flake inputs it needs — see §4's target layout.
+    mkHomeManagerArgs = import ./lib/home-manager-args.nix {
+      inherit lib navi-cheatsheets private-assets tmux-powerkit worktrunk;
     };
 
-    # `user` is a path into ./users — persona is selected by importing a
-    # directory, not by threading a string down to every module that cares.
-    # `extraHomeImports` lets a host opt into persona pieces that aren't part
-    # of that persona's portable base (e.g. the personal desktop-only add-ons
-    # in users/personal/desktop.nix) without forcing them on every host that
-    # imports the persona — see docs/local/plans/nix-architecture-redesign.md §4c.
-    # `overlays` is the same idea applied to nix/overlays/: a list of overlay
-    # functions this specific host wants (see §6.3), not a set applied globally.
-    mkDarwinConfig = username: user: system: extraHomeImports: overlays:
-      import ./system/darwin.nix {
-        inherit darwin home-manager home-manager-config username user worktrunk extraHomeImports;
-        overlays = baseOverlays ++ overlays;
-        homeManagerArgs = mkHomeManagerArgs system username;
-      }
-      system;
+    inherit
+      (import ./lib/darwin.nix {
+        inherit darwin home-manager home-manager-config worktrunk baseOverlays mkHomeManagerArgs;
+      })
+      mkDarwinConfig
+      mkDarwinHost
+      ;
 
-    # A host file states which machine this is — username, persona directory,
-    # system triple, and any extra home-manager imports / overlays it opts
-    # into — so the flake output key is the hostname rather than the persona
-    # name.
-    mkDarwinHost = path: let
-      host = import path;
-    in
-      mkDarwinConfig host.username host.user host.system (host.extraHomeImports or []) (host.overlays or []);
+    inherit
+      (import ./lib/home.nix {
+        inherit nixpkgs home-manager home-manager-config baseOverlays mkHomeManagerArgs worktrunk;
+      })
+      mkHomeManagerConfig
+      mkHomeHost
+      ;
 
-    mkHomeHost = path: let
-      host = import path;
-    in
-      mkHomeManagerConfig host.username host.user host.system (host.extraHomeImports or []) (host.overlays or []);
-
-    # `homeManagerUser` is `null` for a NixOS host with no home-manager (the
-    # airgap/uptime Pis, for now — see redesign doc §8 step 5 / open question
-    # 3), or a username to wire up `roles/home/cli.nix` the same way the
-    # Darwin/home hosts wire `roles/home/gui.nix`: same `_module.args`, same
-    # `worktrunk.homeModules.default` import. `my.dotfiles.mutable = false`
-    # here (not per-host) so any future Pi added this way is immutable by
-    # default too, not just `hub` — see §6.1.
-    mkNixosConfig = system: module: homeManagerUser:
-      nixpkgs.lib.nixosSystem {
-        inherit system;
-        specialArgs = {inherit nixos-hardware yubikey-guide;};
-        modules =
-          [module]
-          ++ lib.optionals (homeManagerUser != null) [
-            home-manager.nixosModules.home-manager
-            {
-              # `useGlobalPkgs = true` means these must be set here at the
-              # NixOS system level, same as system/darwin.nix's "System
-              # settings" block — a home-manager module can't set either once
-              # there's no separate pkgs left for it to configure (§6.3).
-              nixpkgs.overlays = baseOverlays;
-              nixpkgs.config.allowUnfree = true;
-
-              home-manager.useGlobalPkgs = true;
-              home-manager.useUserPackages = true;
-              home-manager.backupFileExtension = "hm-backup";
-              home-manager.users.${homeManagerUser} = {
-                imports = [./roles/home/cli.nix worktrunk.homeModules.default];
-                my.dotfiles.mutable = false;
-                _module.args = mkHomeManagerArgs system homeManagerUser;
-              };
-            }
-          ];
-      };
-
-    mkHomeManagerConfig = username: user: system: extraHomeImports: overlays: let
-      pkgs = import nixpkgs {
-        inherit system;
-        overlays = baseOverlays ++ overlays;
-        config.allowUnfree = true;
-      };
-    in
-      home-manager.lib.homeManagerConfiguration {
-        inherit pkgs;
-        extraSpecialArgs = {inherit worktrunk;};
-        modules =
-          [
-            home-manager-config
-            (user + "/home.nix")
-          ]
-          ++ extraHomeImports
-          ++ [
-            worktrunk.homeModules.default
-            {
-              home.username = username;
-              home.homeDirectory = "/home/${username}";
-              _module.args = mkHomeManagerArgs system username;
-            }
-          ];
-      };
+    mkNixosConfig = import ./lib/nixos.nix {
+      inherit nixpkgs home-manager lib nixos-hardware yubikey-guide baseOverlays mkHomeManagerArgs worktrunk;
+    };
   in {
     darwinConfigurations = {
       fw-skyler = mkDarwinHost ./hosts/darwin/fw-skyler;
