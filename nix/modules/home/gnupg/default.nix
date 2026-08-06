@@ -114,11 +114,4 @@ in {
   # The old `ttyname $GPG_TTY` line in gpg-agent.conf is also gone: gpg-agent
   # does not expand shell variables in its config file, so it never did
   # anything. `updatestartuptty` is the mechanism that actually works.
-  #
-  # ./config/{gpg.conf,scdaemon.conf,gpg-agent.base} are no longer referenced by
-  # this module, but are deliberately NOT deleted yet: the *currently activated*
-  # generation deploys the first two as out-of-store symlinks into this repo, so
-  # removing them dangles ~/.gnupg on the live machine before the rebuild that
-  # replaces those links with store files. Delete them in a follow-up commit
-  # once the new generation is active.
 }
