@@ -1,6 +1,7 @@
 {...}: {
-  # Persona-specific agents are declared in users/<persona>/darwin.nix;
-  # `launchd.user.agents` is an attrset of submodules, so they merge with this.
+  # Identity-specific agents are declared in whatever a host names in its
+  # `darwinImports`; `launchd.user.agents` is an attrset of submodules, so they
+  # merge with this.
   launchd.user.agents.elgatoControlCenter = {
     serviceConfig = {
       Label = "ElgatoControlCenter";

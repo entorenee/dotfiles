@@ -13,7 +13,7 @@ Personal dotfiles managed with Nix Darwin, including comprehensive configuration
 
 Always prefer native home-manager modules and options over custom activation scripts or manual config file edits.
 
-When settings need to diverge by persona, **do not gate on a profile string** — there is no longer one. A module states the mechanism unconditionally, and `nix/users/personal/` (or, for the sole work machine, `nix/hosts/darwin/fw-skyler/` directly) states which persona wants it. See "Personas live in `nix/users/`" below.
+When settings need to diverge by identity, **do not gate on a profile string** — there is no longer one. A module states the mechanism unconditionally, and an identity role file (`nix/roles/home/personal.nix`, `nix/roles/darwin/personal.nix`, or — for the sole work machine — `nix/hosts/darwin/fw-skyler/` directly) states who wants it. See "Identity roles live in `nix/roles/`" below.
 
 ### `lib.mkDefault` usage
 
@@ -21,7 +21,7 @@ When settings need to diverge by persona, **do not gate on a profile string** �
 
 - **Structured types** (e.g., `homebrew.brews`, `homebrew.onActivation`): `mkDefault` works as expected. Lists concatenate; submodule fields merge individually.
 - **Freeform JSON types**: Wrapping the entire attrset with `lib.mkDefault` makes it a single opaque value. A higher-priority definition replaces it entirely instead of deep-merging. For these options, omit `mkDefault` on the attrset and only apply it to individual leaf values that need to be overridable.
-  - That leaf case genuinely works, including *nested* inside a freeform option — priority filtering runs per attribute path, before the type's merge. `programs.ssh.settings."github.com".IdentityFile` relies on this (see "Personas live in `nix/users/`"). Wholesale-replacement is the desired behavior there, not a hazard.
+  - That leaf case genuinely works, including *nested* inside a freeform option — priority filtering runs per attribute path, before the type's merge. `programs.ssh.settings."github.com".IdentityFile` relies on this (see "Identity roles live in `nix/roles/`"). Wholesale-replacement is the desired behavior there, not a hazard.
 
 ## Key Components
 
@@ -52,27 +52,34 @@ When settings need to diverge by persona, **do not gate on a profile string** �
 │   ├── flake.nix                 # Main flake configuration
 │   ├── system/darwin.nix         # macOS system configuration
 │   ├── overlays/                 # one file per overlay; hosts opt into the ones they need
-│   ├── hosts/                    # INSTANTIATION — one file per machine, keyed by hostname
+│   ├── lib/                      # mkDarwinHost / mkHomeHost / mkNixosConfig, one file each
+│   ├── hosts/                    # INSTANTIATION — one file (or directory) per machine, keyed by hostname
 │   │   ├── nixos/                # The three Raspberry Pi hosts
 │   │   │   ├── common.nix        # Shared base for every Pi host
 │   │   │   ├── uptime.nix        # uptime-kuma + cloudflared (Pi Zero 2W)
 │   │   │   ├── hub.nix           # Building hub (Pi 4, always-on)
 │   │   │   └── airgap.nix        # Yubikey airgap workflow (Pi Zero 2W)
-│   │   ├── darwin/                # {username, user, system, extraHomeImports?, overlays?} for each Mac
-│   │   │   ├── fw-skyler/         # work dissolves fully here — only work machine, no users/work/
-│   │   │   │   ├── default.nix   # the host triple ({user = ./.;})
+│   │   ├── darwin/                # {username, system, homeImports, darwinImports?, overlays?} for each Mac
+│   │   │   ├── fw-skyler/         # work dissolves fully here — only work machine, no personal-style role files
+│   │   │   │   ├── default.nix   # the host statement; names ./home.nix and ./darwin.nix in its own import lists
 │   │   │   │   ├── home.nix, darwin.nix, claude.nix, gh-dash.yml, id_rsa_yubikey_work.pub
 │   │   │   └── lyra-silvertongue.nix
-│   │   └── home/                  # {username, user, system, extraHomeImports?, overlays?} for standalone home-manager hosts
-│   │       └── hester-prynne.nix
-│   ├── roles/                    # POLICY — which modules a class of machine wants
-│   │   └── home/
-│   │       ├── minimal.nix       # Shell, prompt, bare editor, small local CLI tools
-│   │       ├── base.nix          # minimal + git, ssh, gnupg, bins, nvim config
-│   │       ├── cli.nix           # base + dev tooling and language runtimes
-│   │       └── gui.nix           # cli + terminal emulators, fonts, desktop apps
-│   ├── users/                    # IDENTITY — what a persona means (personal only; work lives on its host)
-│   │   └── personal/             # home.nix (portable) + desktop.nix (GUI add-on) + darwin.nix + claude.nix + gh-dash.yml
+│   │   └── home/                  # same contract, for standalone home-manager hosts
+│   │       └── hester-prynne/
+│   │           ├── default.nix              # the host statement
+│   │           └── autostart-suppression.nix # host-specific, named in that host's homeImports
+│   ├── roles/                    # POLICY — which modules a class of machine, or a job, wants
+│   │   ├── home/
+│   │   │   ├── minimal.nix       # Shell, prompt, bare editor, small local CLI tools
+│   │   │   ├── base.nix          # minimal + git, ssh, gnupg, bins, nvim config
+│   │   │   ├── cli.nix           # base + dev tooling and language runtimes
+│   │   │   ├── gui.nix           # cli + terminal emulators, fonts, desktop apps
+│   │   │   ├── personal.nix      # IDENTITY — portable personal subset; imports personal-claude.nix
+│   │   │   ├── personal-desktop.nix  # personal GUI-desktop add-on; hosts opt in by name
+│   │   │   ├── personal-claude.nix   # personal `programs.claude-code` additions
+│   │   │   └── personal-gh-dash.yml  # personal gh-dash config, symlinked by personal.nix
+│   │   └── darwin/
+│   │       └── personal.nix      # IDENTITY, nix-darwin side — Homebrew taps/brews/casks, the Dock
 │   └── modules/                  # MECHANISM — how each tool is configured
 │       ├── options.nix           # The `my.*` capability options (both systems)
 │       ├── darwin/               # nix-darwin modules (homebrew, launch-agents)
@@ -87,7 +94,7 @@ When settings need to diverge by persona, **do not gate on a profile string** �
 
 ### Adding a home-manager module
 
-`nix/modules/home/<tool>/` defines *how* a tool is configured and says nothing about who wants it. A module is not live until a role imports it — add it to exactly one of `nix/roles/home/{minimal,base,cli,gui}.nix`, which stack (`gui` → `cli` → `base` → `minimal`). Every current machine takes `gui`, so anything added there reaches all of them. Pick the *lowest* tier that is honest: `minimal` is the floor and must stay safe on an airgapped, memory-constrained host, so nothing there may assume a network, a remote, or a `~/dotfiles` checkout. See `CONVENTIONS.md` for the per-tier table and the "compose downward, don't subtract" rule.
+`nix/modules/home/<tool>/` defines *how* a tool is configured and says nothing about who wants it. A module is not live until a role imports it — add it to exactly one of `nix/roles/home/{minimal,base,cli,gui}.nix`, which stack (`gui` → `cli` → `base` → `minimal`). Every current machine takes `gui`, so anything added there reaches all of them. Pick the *lowest* tier that is honest: `minimal` is the floor and must stay safe on an airgapped, memory-constrained host, so nothing there may assume a network, a remote, or a `~/dotfiles` checkout. See `CONVENTIONS.md` for the per-tier table and the "compose downward, don't subtract" rule. The `personal*` files in the same directory are *identity* roles, not tiers — they don't stack, and a module belongs there only if one job wants it rather than a class of machine (see "Identity roles live in `nix/roles/`" below).
 
 Divergence follows a three-way rule:
 
@@ -95,7 +102,7 @@ Divergence follows a three-way rule:
 | --- | --- |
 | Platform truth | `pkgs.stdenv.isDarwin` / `isLinux` |
 | Capability | a `my.*` option in `nix/modules/options.nix` |
-| Identity (work vs personal) | an import in `nix/users/personal/` (work: directly on `nix/hosts/darwin/fw-skyler/`) |
+| Identity (work vs personal) | an import — the `personal*` role files in `nix/roles/` (work: files directly under `nix/hosts/darwin/fw-skyler/`), named in a host's `homeImports`/`darwinImports` |
 
 Do **not** reach for `pkgs.stdenv.isLinux` to mean "has a GUI" — that only reads correctly while the sole Linux host happens to be a desktop. Use `config.my.gui`.
 
@@ -103,29 +110,34 @@ Do **not** reach for `pkgs.stdenv.isLinux` to mean "has a GUI" — that only rea
 
 Package-level overrides (pin a version, patch a `.desktop` file, override a build flag) go in `nix/overlays/<name>.nix`, one overlay function per file — not inside a home-manager module's `nixpkgs.overlays`. Setting `nixpkgs.overlays`/`nixpkgs.config` from inside a home-manager module is a no-op (or an error, on newer home-manager) once a host sets `home-manager.useGlobalPkgs = true`, since there's no separate pkgs left for the module to configure.
 
-**Overlays are opt-in per host, like `extraHomeImports`, not applied globally.** Each `nix/hosts/{darwin,home}/<hostname>.nix` file can set `overlays = [(import ../../overlays/<name>.nix) ...];` alongside its `{username, user, system}` triple; a host that doesn't need an overlay simply omits the field (`host.overlays or []` in `flake.nix`). `hosts/home/hester-prynne.nix` takes `protonmail-desktop.nix` (the package only ever appears in that host's Linux-only list); `hosts/darwin/fw-skyler/default.nix` takes `pnpm-pin.nix` (the pin is for a work-only monorepo). `lyra-silvertongue.nix` takes neither. `flake.nix`'s `mkDarwinHost`/`mkHomeHost` read the host's `overlays` list and pass it through `mkDarwinConfig`/`mkHomeManagerConfig` to wherever that config's pkgs is actually built (`system/darwin.nix`'s nix-darwin-level `nixpkgs.overlays` for Darwin — both hosts run `home-manager.useGlobalPkgs = true`, so home-manager shares that pkgs automatically; `flake.nix`'s `mkHomeManagerConfig` builds `pkgs` directly for the standalone Linux host).
+**Overlays are named on the host file, like its import lists — opt-in per host, not blanket.** Each `nix/hosts/{darwin,home}/<hostname>` can set `overlays = [(import ../../overlays/<name>.nix) ...];` alongside its `{username, system, homeImports}`; a host that doesn't need an overlay simply omits the field (`host.overlays or []` in `nix/lib/{darwin,home}.nix`). `hosts/home/hester-prynne/default.nix` takes `protonmail-desktop.nix` (the package only ever appears in that host's Linux-only list); `hosts/darwin/fw-skyler/default.nix` takes `pnpm-pin.nix` (the pin is for a work-only monorepo). `lyra-silvertongue.nix` takes neither. `mkDarwinHost`/`mkHomeHost` read the host's `overlays` list, append it to `flake.nix`'s `baseOverlays` (the small universal set — see `CONVENTIONS.md`'s Overlays section), and pass the result through `mkDarwinConfig`/`mkHomeManagerConfig` to wherever that config's pkgs is actually built (`system/darwin.nix`'s nix-darwin-level `nixpkgs.overlays` for Darwin — both hosts run `home-manager.useGlobalPkgs = true`, so home-manager shares that pkgs automatically; `nix/lib/home.nix`'s `mkHomeManagerConfig` builds `pkgs` directly for the standalone Linux host).
 
-### Personas live in `nix/users/`
+### Identity roles live in `nix/roles/`
 
-There is no `profile` argument. A persona is a **directory that gets imported**, and the flake picks it by path:
+There is no `profile` argument and no `nix/users/`. An identity is just **another role file**, sitting flat in `nix/roles/` next to the stacking tier roles, and a host names it directly:
 
 | File | Sets |
 | --- | --- |
-| `users/<persona>/home.nix` | home-manager options: portable packages, ssh identities, gh-dash config, persona-only module imports safe on any machine that persona touches, headless or not |
-| `users/<persona>/darwin.nix` | nix-darwin options: Homebrew taps/brews/casks, launch agents, the Dock |
-| `users/<persona>/claude.nix` | `programs.claude-code` additions, imported by `home.nix` |
+| `roles/home/personal.nix` | home-manager options: the portable personal subset — gh-dash config, syncthing, identity-only module imports safe on any machine doing that job, headless or not |
+| `roles/home/personal-desktop.nix` | the GUI-desktop add-on to the above — keepassxc, orca-slicer, `go`/`hugo` |
+| `roles/home/personal-claude.nix` | `programs.claude-code` additions, imported by `personal.nix` |
+| `roles/darwin/personal.nix` | nix-darwin options: Homebrew taps/brews/casks, launch agents, the Dock |
 
-Two files because persona spans both module systems — a home-manager module cannot set `homebrew.casks`.
+Two module systems, so two directories and two lists: a home-manager module cannot set `homebrew.casks`, which is why `nix/roles/darwin/` exists alongside `nix/roles/home/` and a host splits its imports into `homeImports` and `darwinImports`.
 
-**`work` has only one machine, so it isn't a `users/` persona at all — it lives directly on its host.** `nix/hosts/darwin/fw-skyler/` holds `home.nix`/`darwin.nix`/`claude.nix`/`gh-dash.yml`/the work Yubikey public key, exactly the same shape `users/work/` used to be, just with no persona indirection to a second consumer that will never exist. A persona directory only earns its keep once two or more hosts share it — `personal` does (the personal Mac and the Linux desktop), so it stays under `users/`.
+**Identity role files sit flat beside the tier roles, not in a subdirectory of their own.** `roles/home/` holds `minimal.nix`/`base.nix`/`cli.nix`/`gui.nix` *and* the `personal*` files side by side; the `personal-` filename prefix is the grouping. This is deliberate — nesting them would reintroduce the very layer that was removed.
 
-**A module that only one persona wants is imported from that persona's `home.nix` (or its GUI-only `desktop.nix`, see below), not from a role.** `keepassxc` and `orca-slicer` work this way; putting them in `roles/home/gui.nix` would mean gating them back off. Roles carry what a *class of machine* wants; `users/` carries what a *person* wants.
+**A host states one ordered `homeImports` list, and nothing gets spliced onto it.** `nix/hosts/{darwin,home}/<name>` states `{username, system, homeImports, darwinImports ? [], overlays ? []}`. There is no `user` path field, no `user + "/home.nix"` filename contract, and no separate `extraHomeImports`: `nix/lib/darwin.nix` and `nix/lib/home.nix` read the lists and pass them through verbatim (`system/darwin.nix` puts `homeImports` on `home-manager.users.<username>.imports` and splices `darwinImports` into the nix-darwin module list). Because the tier role is no longer hardcoded in `flake.nix`, a host names its own: `lyra-silvertongue`, `fw-skyler`, and `hester-prynne` each open their `homeImports` with `roles/home/gui.nix` and then add what else they want.
 
-**Split a persona's `home.nix` into a portable base plus opt-in add-ons once it needs to reach a headless host.** `users/personal/home.nix` is the portable subset (claude.nix, gh-dash, syncthing) — safe for a future headless personal Pi. The GUI-desktop-only pieces (keepassxc, orca-slicer, `go`/`hugo`) live in `users/personal/desktop.nix` instead, and a host opts into it via `extraHomeImports` on its `nix/hosts/{darwin,home}/<hostname>.nix` file (a list of extra home-manager module paths, spliced in alongside `user + "/home.nix"`). Both current personal hosts (`lyra-silvertongue`, `hester-prynne`) set it; a future headless personal Pi would import `users/personal` without it. Don't fold `desktop.nix` back into `home.nix` — that's exactly the coupling this split removes.
+**`work` has only one machine, so it has no `roles/` file at all — it lives directly on its host.** `nix/hosts/darwin/fw-skyler/` holds `home.nix`/`darwin.nix`/`claude.nix`/`gh-dash.yml`/the work Yubikey public key, and the host's own `default.nix` names `./home.nix` in `homeImports` and `./darwin.nix` in `darwinImports`. A `roles/` file only earns its keep once two or more hosts share it — `personal` does (the personal Mac and the Linux desktop), so it lives in `roles/`.
 
-Most options merge across the two, so a persona file **adds** to a module rather than replacing it — `home.packages` and `homebrew.casks` are `listOf` (concatenate), `launchd.user.agents` is an attrset of submodules (merges).
+**A module that only one identity wants is imported from that identity's role file (or its GUI-only `personal-desktop.nix`, see below), not from a tier role.** `keepassxc` and `orca-slicer` work this way; putting them in `roles/home/gui.nix` would mean gating them back off. Tier roles carry what a *class of machine* wants; identity roles carry what a *job* wants.
 
-**When a list won't concatenate, use base-default + host-replacement.** Freeform `types.anything` options (`programs.ssh.settings` is the one in this repo) *throw* on two list definitions rather than concatenating, so a persona (or host) cannot append. Don't respond by moving the whole value into the persona/host files — state the common case in the module as a `lib.mkDefault` and let the one that needs something else replace it:
+**Split an identity role into a portable base plus opt-in add-ons once it needs to reach a headless host.** `roles/home/personal.nix` is the portable subset (personal-claude.nix, gh-dash, syncthing) — safe for a future headless personal Pi. The GUI-desktop-only pieces (keepassxc, orca-slicer, `go`/`hugo`) live in `roles/home/personal-desktop.nix` instead, and a host opts into it by naming that file in its own `homeImports`. Both current personal hosts (`lyra-silvertongue`, `hester-prynne`) do; a future headless personal Pi would take `personal.nix` without it. Don't fold `personal-desktop.nix` back into `personal.nix` — that's exactly the coupling this split removes.
+
+Most options merge, so a role file **adds** to a module rather than replacing it — `home.packages` and `homebrew.casks` are `listOf` (concatenate), `launchd.user.agents` is an attrset of submodules (merges).
+
+**When a list won't concatenate, use base-default + host-replacement.** Freeform `types.anything` options (`programs.ssh.settings` is the one in this repo) *throw* on two list definitions rather than concatenating, so a role (or host) cannot append. Don't respond by moving the whole value into the role/host files — state the common case in the module as a `lib.mkDefault` and let the one that needs something else replace it:
 
 ```nix
 # modules/home/ssh/default.nix — what most machines need
@@ -140,12 +152,12 @@ programs.ssh.settings."github.com".IdentityFile = [personalYubikeyIdentity workY
 
 This works because **priority filtering runs before the type's merge function**, so exactly one definition ever reaches it and there is nothing to conflict. Sibling attributes are unaffected: `IdentitiesOnly` still comes from the module in all three configurations. The cost is that the replacement restates the whole list.
 
-Persona/host ordering in merged lists is not stable — `users/` and `hosts/` definitions may land before or after a module's. Nothing currently depends on it (Homebrew installs a set; `permissions.allow` matches by any-match), but do not introduce anything that does.
+Role/host ordering in merged lists is not stable — `roles/` and `hosts/` definitions may land before or after a module's. Nothing currently depends on it (Homebrew installs a set; `permissions.allow` matches by any-match), but do not introduce anything that does.
 
 ## Management Commands
 
 - **Rebuild and switch:** `make rebuild` — auto-detects OS (Darwin vs Linux) and picks the flake attribute from the machine's hostname (`hostname -s`).
-- **Host selection:** flake outputs are keyed by hostname (`fw-skyler`, `lyra-silvertongue`, `hester-prynne`). Each `nix/hosts/{darwin,home}/<hostname>.nix` file states `{username, user, system, extraHomeImports ? [], overlays ? []}`; `user` is a `./users/<persona>` path (`fw-skyler` points at itself, since work has no separate persona directory — see "Personas live in `nix/users/`" below).
+- **Host selection:** flake outputs are keyed by hostname (`fw-skyler`, `lyra-silvertongue`, `hester-prynne`). Each `nix/hosts/{darwin,home}/<hostname>` states `{username, system, homeImports, darwinImports ? [], overlays ? []}`; `homeImports` is one ordered list naming the tier role plus any identity or host-specific modules, and `darwinImports` is its nix-darwin counterpart (see "Identity roles live in `nix/roles/`" below).
 
 ## NixOS Pi Hosts
 
@@ -191,13 +203,13 @@ The Claude Code configuration is Nix-managed in `nix/modules/home/claude/`. The 
 
 | Change             | Where to edit                                                                       | Then run                                   |
 | ------------------ | ----------------------------------------------------------------------------------- | ------------------------------------------ |
-| Add MCP server     | `nix/hosts/darwin/fw-skyler/claude.nix` or `nix/users/personal/claude.nix`                 | `make darwin-switch` or `make home-switch` |
+| Add MCP server     | `nix/hosts/darwin/fw-skyler/claude.nix` or `nix/roles/home/personal-claude.nix`                 | `make darwin-switch` or `make home-switch` |
 | Add hook           | Create script in `nix/modules/home/claude/config/hooks/`, add to `default.nix` settings   | Rebuild                                    |
 | Add skill          | Add to `nix/modules/home/claude/config/skills/`                                           | Automatic (symlinked)                      |
 | Add agent          | Add to `nix/modules/home/claude/config/agents/`                                           | Automatic (symlinked)                      |
 | Change plugin      | Edit `enabledPlugins` in `nix/modules/home/claude/default.nix`                            | Rebuild                                    |
-| Change permissions | Edit `permissions` in `nix/modules/home/claude/default.nix` (base), `nix/hosts/darwin/fw-skyler/claude.nix` (work), or `nix/users/personal/claude.nix` (personal) | Rebuild |
-| Change setting     | Edit `nix/modules/home/claude/default.nix` (base), `nix/hosts/darwin/fw-skyler/claude.nix` (work), or `nix/users/personal/claude.nix` (personal) | Rebuild |
+| Change permissions | Edit `permissions` in `nix/modules/home/claude/default.nix` (base), `nix/hosts/darwin/fw-skyler/claude.nix` (work), or `nix/roles/home/personal-claude.nix` (personal) | Rebuild |
+| Change setting     | Edit `nix/modules/home/claude/default.nix` (base), `nix/hosts/darwin/fw-skyler/claude.nix` (work), or `nix/roles/home/personal-claude.nix` (personal) | Rebuild |
 
 ### Symlink Layout
 
@@ -224,13 +236,13 @@ Do not try to reconstruct the symlink from the home-manager profile paths. Under
 
 - `programs.claude-code.settings` uses a freeform JSON type (`pkgs.formats.json`) — do **not** wrap the entire attrset with `lib.mkDefault` (it prevents merging; see Architecture section above)
 - Base settings in `default.nix` are set without `mkDefault`; the JSON type merges attrsets across definitions automatically
-- Persona settings live in `nix/users/personal/claude.nix` or (for work) `nix/hosts/darwin/fw-skyler/claude.nix`, and are **not** gated — the file is only imported by the machine that wants it, so no `lib.mkIf` is involved
-- For individual leaf values that a persona needs to override, apply `lib.mkDefault` to that specific value in `default.nix`
-- List-valued settings (`permissions.allow`, `sandbox.filesystem.allowRead`) concatenate across the two files, but **the resulting order is not guaranteed** — persona entries may precede or follow the base ones. Fine for allow-matching; do not add anything order-sensitive. Hook arrays are order-sensitive and are defined only in `default.nix` for this reason.
+- Identity settings live in `nix/roles/home/personal-claude.nix` or (for work) `nix/hosts/darwin/fw-skyler/claude.nix`, and are **not** gated — the file is only imported by the machine that wants it, so no `lib.mkIf` is involved
+- For individual leaf values that an identity role needs to override, apply `lib.mkDefault` to that specific value in `default.nix`
+- List-valued settings (`permissions.allow`, `sandbox.filesystem.allowRead`) concatenate across the two files, but **the resulting order is not guaranteed** — identity entries may precede or follow the base ones. Fine for allow-matching; do not add anything order-sensitive. Hook arrays are order-sensitive and are defined only in `default.nix` for this reason.
 
 ### MCP Servers
 
-MCP servers are declared in `nix/users/personal/claude.nix` or `nix/hosts/darwin/fw-skyler/claude.nix` under `programs.claude-code.mcpServers`. The home-manager module writes these to `~/.claude.json` and they appear as `plugin:claude-code-home-manager:<name>`.
+MCP servers are declared in `nix/roles/home/personal-claude.nix` or `nix/hosts/darwin/fw-skyler/claude.nix` under `programs.claude-code.mcpServers`. The home-manager module writes these to `~/.claude.json` and they appear as `plugin:claude-code-home-manager:<name>`.
 
 MCP servers with OAuth (e.g., Asana) require a two-part setup:
 
@@ -266,7 +278,7 @@ The server exposes `create_file`, which converts uploaded markdown into a native
 
 ### Permissions
 
-Claude Code permissions live in `nix/modules/home/claude/default.nix` (base) with additions in `nix/users/personal/claude.nix` or `nix/hosts/darwin/fw-skyler/claude.nix`. Three coordinated layers:
+Claude Code permissions live in `nix/modules/home/claude/default.nix` (base) with additions in `nix/roles/home/personal-claude.nix` or `nix/hosts/darwin/fw-skyler/claude.nix`. Three coordinated layers:
 
 | Layer | Field | Behavior |
 | --- | --- | --- |

@@ -30,7 +30,7 @@ looking at — the mechanism follows directly:
 |---|---|---|
 | **Platform truth** | Is this a fact about the OS/architecture itself? | `pkgs.stdenv.isDarwin` / `isLinux`, inline |
 | **Capability** | Does a *class* of machine have or lack some property? | a `my.*` option in `nix/modules/options.nix` |
-| **Identity** | Does only *this persona/host* want this at all? | an import — `nix/users/<persona>/`, `nix/hosts/<host>/`, or a role file |
+| **Identity** | Does only *this job/host* want this at all? | an import — an identity role file (`nix/roles/home/personal*.nix`, `nix/roles/darwin/personal.nix`), `nix/hosts/<host>/`, or a tier role file |
 
 **Platform truth is legitimate to leave inline**, including inside a shared
 module — `gnupg`'s pinentry selection (`isDarwin` → `pinentry-mac`), `rtk`'s
@@ -63,31 +63,47 @@ signal the identity axis is missing a home, not a reason to gate it on
 platform truth. Give it a `hosts/<name>/` file and import it from there,
 unconditionally.
 
-## The four-layer taxonomy
+## The three-layer taxonomy
 
 | Layer | Says | Example |
 |---|---|---|
 | `nix/modules/` | *how* a tool is configured — mechanism | `modules/home/nvim/` sets up Neovim; says nothing about who wants it |
-| `nix/roles/` | *which class of machine* wants a set of modules — policy | `roles/home/gui.nix` imports every GUI-desktop module; stacks onto `cli.nix` → `base.nix` |
-| `nix/hosts/` | *which machine this is* — instantiation | `hosts/darwin/fw-skyler/` — username, persona, system triple, host-specific overrides |
-| `nix/users/` | *what a persona means* — identity | **Being retired.** See below |
+| `nix/roles/` | *which class of machine, or which job,* wants a set of modules — policy | `roles/home/gui.nix` imports every GUI-desktop module and stacks onto `cli.nix` → `base.nix`; `roles/home/personal.nix` and `roles/darwin/personal.nix` carry the personal job |
+| `nix/hosts/` | *which machine this is* — instantiation | `hosts/darwin/fw-skyler/` — `{username, system, homeImports, darwinImports ? [], overlays ? []}`, plus that machine's own host-specific files |
 
-> **Decided 2026-08-05: `nix/users/` is being dissolved into `nix/roles/`.**
-> Work-vs-personal is not two people, it's two jobs a machine does — which is
-> a question of what gets installed, not of identity. The evidence: `hub`
-> already runs home-manager with no persona at all, and `modules/home/git/`
-> has always resolved work-vs-personal by `includeIf "gitdir:"` — that is,
-> by *checkout*, not by machine. `users/personal/` still exists until the
-> migration chunk lands; don't add to it. See the redesign doc §9.1–9.2.
+> **`nix/users/` has been dissolved into `nix/roles/`.** Work-vs-personal is
+> not two people, it's two jobs a machine does — which is a question of what
+> gets installed, not of identity. The evidence: `hub` already ran
+> home-manager with no persona at all, and `modules/home/git/` has always
+> resolved work-vs-personal by `includeIf "gitdir:"` — that is, by
+> *checkout*, not by machine. `users/personal/` is gone; its files are now
+> `roles/home/personal{,-desktop,-claude}.nix`, `roles/home/personal-gh-dash.yml`,
+> and `roles/darwin/personal.nix`. Work never had a persona directory and
+> still doesn't — `fw-skyler` is the only work machine, so its files stay
+> under `hosts/darwin/fw-skyler/`. See the redesign doc §9.1–9.2.
 >
 > The one thing that would bring a persona layer back is a second *person*
 > (a shared machine, someone else's account). A host file merely getting
 > long is not that.
 
-Roles stack (`gui` → `cli` → `base` → `minimal`); a host should import one or
-two roles, never a long list of individual modules. If a host file's import
-list is growing item by item, that's the signal a role is missing, not a host
-quirk to carry indefinitely.
+**A host composes itself; nothing is spliced onto it.** `homeImports` is one
+ordered list naming a tier role plus whatever identity or host-specific
+modules that machine wants, and `darwinImports` is its nix-darwin counterpart
+— there is no `user` path field, no filename contract for the flake to build
+paths from, and no separate `extraHomeImports`. `nix/lib/{darwin,home}.nix`
+pass both lists through verbatim. Because the tier role is named by the host
+rather than hardcoded in `flake.nix`, a new host that wants `cli` instead of
+`gui` just says so.
+
+**Identity role files sit flat in `roles/home/`, beside the tier roles**, with
+a `personal-` filename prefix doing the grouping. Giving them a subdirectory
+of their own would reintroduce exactly the layer this dissolution removed.
+They do not stack the way the tiers do — a host names the ones it wants.
+
+The tier roles stack (`gui` → `cli` → `base` → `minimal`); a host should name
+one tier role plus the identity roles for the job it does, never a long list
+of individual modules. If a host file's import list is growing item by item,
+that's the signal a role is missing, not a host quirk to carry indefinitely.
 
 | Role | Adds | For |
 |---|---|---|

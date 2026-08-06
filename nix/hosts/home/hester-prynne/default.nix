@@ -1,9 +1,10 @@
 {
   username = "skyler.lemay";
-  user = ../../../users/personal;
   system = "x86_64-linux";
-  extraHomeImports = [
-    ../../../users/personal/desktop.nix
+  homeImports = [
+    ../../../roles/home/gui.nix
+    ../../../roles/home/personal.nix
+    ../../../roles/home/personal-desktop.nix
     ./autostart-suppression.nix
   ];
   # protonmail-desktop (the nixpkgs package, not the Mac Homebrew cask) only

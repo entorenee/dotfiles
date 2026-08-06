@@ -67,10 +67,6 @@
     ...
   }: let
     lib = nixpkgs.lib;
-    # Every current machine is a graphical workstation, so they all take the
-    # `gui` role; it stacks onto `cli` and `base`. Headless hosts (the Pis) will
-    # import a lower role instead of gating pieces off.
-    home-manager-config = ./roles/home/gui.nix;
 
     # Applied to every host regardless of persona — every current and planned
     # host imports the `claude` module via `roles/home/cli.nix`, so the
@@ -86,7 +82,7 @@
 
     inherit
       (import ./lib/darwin.nix {
-        inherit darwin home-manager home-manager-config worktrunk baseOverlays mkHomeManagerArgs;
+        inherit darwin home-manager worktrunk baseOverlays mkHomeManagerArgs;
       })
       mkDarwinConfig
       mkDarwinHost
@@ -94,7 +90,7 @@
 
     inherit
       (import ./lib/home.nix {
-        inherit nixpkgs home-manager home-manager-config baseOverlays mkHomeManagerArgs worktrunk;
+        inherit nixpkgs home-manager baseOverlays mkHomeManagerArgs worktrunk;
       })
       mkHomeManagerConfig
       mkHomeHost

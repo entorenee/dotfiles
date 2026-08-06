@@ -1,6 +1,7 @@
 {...}: {
-  # fw-skyler nix-darwin config. See the note in home.nix on why this lives
-  # directly on the host instead of in a shared users/ persona.
+  # fw-skyler nix-darwin config, named by this host's `darwinImports`. See the
+  # note in home.nix on why this lives directly on the host instead of in a
+  # shared role under roles/darwin/.
   homebrew = {
     brews = [
       "hookdeck/hookdeck/hookdeck"

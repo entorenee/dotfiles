@@ -1,12 +1,11 @@
 {
   nixpkgs,
   home-manager,
-  home-manager-config,
   baseOverlays,
   mkHomeManagerArgs,
   worktrunk,
 }: let
-  mkHomeManagerConfig = username: user: system: extraHomeImports: overlays: let
+  mkHomeManagerConfig = username: system: homeImports: overlays: let
     pkgs = import nixpkgs {
       inherit system;
       overlays = baseOverlays ++ overlays;
@@ -17,11 +16,7 @@
       inherit pkgs;
       extraSpecialArgs = {inherit worktrunk;};
       modules =
-        [
-          home-manager-config
-          (user + "/home.nix")
-        ]
-        ++ extraHomeImports
+        homeImports
         ++ [
           worktrunk.homeModules.default
           {
@@ -35,7 +30,7 @@
   mkHomeHost = path: let
     host = import path;
   in
-    mkHomeManagerConfig host.username host.user host.system (host.extraHomeImports or []) (host.overlays or []);
+    mkHomeManagerConfig host.username host.system host.homeImports (host.overlays or []);
 in {
   inherit mkHomeManagerConfig mkHomeHost;
 }

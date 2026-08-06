@@ -1,5 +1,6 @@
 {...}: {
-  # Personal identity, nix-darwin side. Only the personal Mac imports this.
+  # The personal role, nix-darwin side. Only the personal Mac names this in its
+  # `darwinImports`.
   homebrew = {
     brews = [
       "tor"

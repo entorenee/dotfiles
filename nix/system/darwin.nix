@@ -2,18 +2,16 @@
   home-manager,
   darwin,
   homeManagerArgs,
-  home-manager-config,
   username,
-  user,
   worktrunk,
-  extraHomeImports ? [],
+  homeImports,
+  darwinImports ? [],
   overlays,
   ...
 }: system:
-# `user` is a directory under ../users — the persona this machine is. Its two
-# files split along module systems: darwin.nix sets nix-darwin options (Homebrew,
-# launch agents, the Dock), home.nix sets home-manager ones. `extraHomeImports`
-# lets the host opt into persona pieces beyond that portable base (see flake.nix).
+# The two import lists split along module systems: `darwinImports` carries
+# nix-darwin options (Homebrew, launch agents, the Dock), `homeImports` carries
+# home-manager ones. Both come verbatim from the host file — see ../lib/darwin.nix.
   darwin.lib.darwinSystem {
     inherit system;
 
@@ -27,13 +25,7 @@
         home-manager.useGlobalPkgs = true;
         home-manager.useUserPackages = true;
         home-manager.users."${username}" = {
-          imports =
-            [
-              home-manager-config
-              (user + "/home.nix")
-            ]
-            ++ extraHomeImports
-            ++ [worktrunk.homeModules.default];
+          imports = homeImports ++ [worktrunk.homeModules.default];
           _module.args = homeManagerArgs;
         };
         home-manager.backupFileExtension = "hm-backup";
@@ -41,8 +33,9 @@
 
       ../modules/darwin/homebrew
       ../modules/darwin/launch-agents
-      (user + "/darwin.nix")
-
+    ]
+    ++ darwinImports
+    ++ [
       # System settings
       {
         security.pam.services.sudo_local = {

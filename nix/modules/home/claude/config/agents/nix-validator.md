@@ -41,8 +41,12 @@ cd ~/dotfiles && git diff --cached --name-only
 
 Report which files changed and which hosts they affect:
 - `hosts/darwin/fw-skyler/*.nix` → affects fw-skyler only
-- `users/personal/*.nix` → affects lyra-silvertongue and hester-prynne (`desktop.nix` affects both too — both opt in via `extraHomeImports`)
-- `default.nix`, `flake.nix`, shared modules → affects all hosts
+- `hosts/darwin/lyra-silvertongue.nix` → affects lyra-silvertongue only
+- `hosts/home/hester-prynne/*.nix` → affects hester-prynne only
+- `roles/home/personal*.nix`, `roles/darwin/personal.nix` → affects lyra-silvertongue and hester-prynne (both name `personal.nix` and `personal-desktop.nix` in their own `homeImports`; only the Mac takes the `roles/darwin/` one)
+- `roles/home/{minimal,base,cli,gui}.nix` → affects all three hosts (each opens its `homeImports` with `gui.nix`, and the tiers stack down from there)
+- `system/darwin.nix`, `lib/darwin.nix` → affects fw-skyler and lyra-silvertongue
+- `default.nix`, `flake.nix`, `lib/home-manager-args.nix`, shared modules → affects all hosts
 
 ### Step 2 — Nix Evaluation
 
