@@ -110,6 +110,7 @@ in {
         command = "~/.claude/statusline.sh";
       };
       hasSentTelemetryConsent = false;
+      model = "opus";
       tui = "fullscreen";
       preferences = {
         alwaysThinkingEnabled = true;
