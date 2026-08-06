@@ -10,7 +10,10 @@
 {nixpkgs-unstable}: final: _prev: {
   claude-code =
     (import nixpkgs-unstable {
-      inherit (final) system;
+      # Not `inherit (final) system`: nixpkgs demoted `pkgs.system` to a
+      # warnAlias in pkgs/top-level/aliases.nix, so reading it prints an
+      # evaluation warning on every build. Same string, no warning.
+      inherit (final.stdenv.hostPlatform) system;
       config.allowUnfree = true;
     })
     .claude-code;

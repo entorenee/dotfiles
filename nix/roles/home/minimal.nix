@@ -1,4 +1,4 @@
-{pkgs, ...}: {
+{...}: {
   # The floor: a usable shell and a working editor, and nothing else. Safe on an
   # airgapped or memory-constrained host — nothing here assumes a network, a
   # remote, or a `~/dotfiles` checkout.
@@ -23,5 +23,11 @@
   home.stateVersion = "26.05";
   xdg.enable = true;
   xdg.autostart.enable = true;
-  targets.genericLinux.enable = pkgs.stdenv.isLinux;
+
+  # `targets.genericLinux` is deliberately absent. Upstream describes it as
+  # "settings that make Home Manager work better on GNU/Linux distributions
+  # other than NixOS", and a tier role cannot know which it is on — the
+  # obvious `pkgs.stdenv.isLinux` reads true on NixOS too, which is how hub
+  # ended up with /usr/share/ubuntu and Debian zsh fpaths on its PATH. It is
+  # set in nix/lib/home.nix instead, where the distinction is structural.
 }
