@@ -188,9 +188,11 @@ Home-manager status per Pi — a decided question, not a pending one:
 | --- | --- | --- |
 | `hub` | yes, user `skyler` | `homeImports = [roles/home/cli.nix]` — `cli`, not `gui`: headless board with a real login |
 | `airgap` | no, deliberately and permanently | an air-gapped single-purpose Yubikey appliance; `environment.systemPackages` in `roles/nixos/base.nix` covers everything it needs |
-| `uptime` | not yet | a minimal one is planned in its own commit; until then it simply omits `username` |
+| `uptime` | yes, user `uptime` | `homeImports = [roles/home/minimal.nix]` — `minimal`, not `cli`: 512MB Zero 2W whose job is uptime-kuma. The home-manager exists so SSHing in to read logs is not hostile, not so the box can develop anything |
 
-**A host that omits `username` gets no `nixpkgs.overlays` and no `nixpkgs.config.allowUnfree` either.** `nix/lib/nixos.nix` sets both *inside* the `username != null` branch. That is intentional, not an oversight — it is what `airgap` and `uptime` have always evaluated to, and hoisting them out would silently change those closures.
+`uptime`'s home-manager user is the `users.users.uptime` SSH-administration account from its `configuration.nix`; uptime-kuma itself runs under the upstream module's `DynamicUser` and has no home. Note that `roles/home/minimal.nix` and `roles/nixos/base.nix` both bring in `neovim` — verified to be the same store path, so it is not paid for twice.
+
+**A host that omits `username` gets no `nixpkgs.overlays` and no `nixpkgs.config.allowUnfree` either.** `nix/lib/nixos.nix` sets both *inside* the `username != null` branch. That is intentional, not an oversight — it is what `airgap` has always evaluated to, and hoisting them out would silently change its closure.
 
 ### Never import nixos-hardware into an sd-image host
 
