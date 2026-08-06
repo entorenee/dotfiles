@@ -3,10 +3,6 @@
   pkgs,
   ...
 }: let
-  # Persona package sets live in users/personal/{home,desktop}.nix and
-  # hosts/darwin/fw-skyler/home.nix; `home.packages` is a `listOf package`, so
-  # their definitions concatenate with this one.
-  #
   # Headless-safe Linux CLI/daemon tools only — no display dependency, so this
   # stays platform truth (`pkgs.stdenv.isLinux`) rather than a capability
   # check. GUI-only Linux packages live in modules/home/linux-gui-pkgs.nix,
@@ -21,9 +17,18 @@
     nodejs_22 # TODO determine dynamic sourcing of Node
     socat
     tor
-    z-lua
   ];
 in {
+  # Dev tooling: language runtimes, package managers, databases, servers —
+  # everything a machine that is actually developed on wants, and nothing a
+  # constrained or airgapped host should be made to carry. Split out of the
+  # former pkgs.nix, whose single list reached every host through
+  # roles/home/base.nix and made that role's "safe on a headless,
+  # resource-constrained host" claim false.
+  #
+  # Small local shell tools live in minimal-pkgs.nix (imported from
+  # roles/home/minimal.nix) instead.
+  #
   # nixpkgs.config/overlays used to live here, but setting them from inside a
   # home-manager module is a no-op (or an error, on newer home-manager) once a
   # host uses `useGlobalPkgs = true` — there's no separate pkgs left for a
@@ -35,24 +40,15 @@ in {
   home.packages = with pkgs;
     [
       bash # tmux theme needs a more recent version of bash
-      bat
       caddy
       cargo # Nix LSP dependency
-
-      fd
-      glow
       git-lfs
-      gum
-      htop
-      jq
       npm-check-updates
       pnpm
       postgresql
       python314
-      ripgrep
       shellcheck
       tmuxinator
-      tree
       update-nix-fetchgit
       wget
     ]

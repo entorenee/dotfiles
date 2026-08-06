@@ -67,8 +67,9 @@ When settings need to diverge by persona, **do not gate on a profile string** �
 │   │       └── hester-prynne.nix
 │   ├── roles/                    # POLICY — which modules a class of machine wants
 │   │   └── home/
-│   │       ├── base.nix          # Shell, editor, VCS, secrets (safe headless)
-│   │       ├── cli.nix           # base + terminal workstation tooling
+│   │       ├── minimal.nix       # Shell, prompt, bare editor, small local CLI tools
+│   │       ├── base.nix          # minimal + git, ssh, gnupg, bins, nvim config
+│   │       ├── cli.nix           # base + dev tooling and language runtimes
 │   │       └── gui.nix           # cli + terminal emulators, fonts, desktop apps
 │   ├── users/                    # IDENTITY — what a persona means (personal only; work lives on its host)
 │   │   └── personal/             # home.nix (portable) + desktop.nix (GUI add-on) + darwin.nix + claude.nix + gh-dash.yml
@@ -86,7 +87,7 @@ When settings need to diverge by persona, **do not gate on a profile string** �
 
 ### Adding a home-manager module
 
-`nix/modules/home/<tool>/` defines *how* a tool is configured and says nothing about who wants it. A module is not live until a role imports it — add it to exactly one of `nix/roles/home/{base,cli,gui}.nix`, which stack (`gui` → `cli` → `base`). Every current machine takes `gui`, so anything added there reaches all of them.
+`nix/modules/home/<tool>/` defines *how* a tool is configured and says nothing about who wants it. A module is not live until a role imports it — add it to exactly one of `nix/roles/home/{minimal,base,cli,gui}.nix`, which stack (`gui` → `cli` → `base` → `minimal`). Every current machine takes `gui`, so anything added there reaches all of them. Pick the *lowest* tier that is honest: `minimal` is the floor and must stay safe on an airgapped, memory-constrained host, so nothing there may assume a network, a remote, or a `~/dotfiles` checkout. See `CONVENTIONS.md` for the per-tier table and the "compose downward, don't subtract" rule.
 
 Divergence follows a three-way rule:
 

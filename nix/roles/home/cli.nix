@@ -4,6 +4,7 @@
   imports = [
     ./base.nix
 
+    ../../modules/home/cli-pkgs.nix
     ../../modules/home/claude
     ../../modules/home/docker
     ../../modules/home/gh

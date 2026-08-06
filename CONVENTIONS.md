@@ -70,23 +70,45 @@ unconditionally.
 | `nix/modules/` | *how* a tool is configured — mechanism | `modules/home/nvim/` sets up Neovim; says nothing about who wants it |
 | `nix/roles/` | *which class of machine* wants a set of modules — policy | `roles/home/gui.nix` imports every GUI-desktop module; stacks onto `cli.nix` → `base.nix` |
 | `nix/hosts/` | *which machine this is* — instantiation | `hosts/darwin/fw-skyler/` — username, persona, system triple, host-specific overrides |
-| `nix/users/` | *what a persona means* — identity, only when 2+ hosts share it | `users/personal/` — portable base + `desktop.nix` GUI add-on, shared by two machines |
+| `nix/users/` | *what a persona means* — identity | **Being retired.** See below |
 
-A persona directory (`users/<name>/`) only earns its keep once a second host
-needs it. A persona with exactly one host dissolves directly into that
-host's directory instead (see `hosts/darwin/fw-skyler/` — work never got a
-`users/work/`, because it never had a second machine to justify one).
+> **Decided 2026-08-05: `nix/users/` is being dissolved into `nix/roles/`.**
+> Work-vs-personal is not two people, it's two jobs a machine does — which is
+> a question of what gets installed, not of identity. The evidence: `hub`
+> already runs home-manager with no persona at all, and `modules/home/git/`
+> has always resolved work-vs-personal by `includeIf "gitdir:"` — that is,
+> by *checkout*, not by machine. `users/personal/` still exists until the
+> migration chunk lands; don't add to it. See the redesign doc §9.1–9.2.
+>
+> The one thing that would bring a persona layer back is a second *person*
+> (a shared machine, someone else's account). A host file merely getting
+> long is not that.
 
-> **Open question, not yet resolved:** whether `nix/users/` (identity as a
-> persona directory) survives at all, or whether identity folds entirely into
-> the roles layer instead. Flagged 2026-08-05, not investigated yet — see
-> the redesign doc's open questions. Treat the `nix/users/` row above as
-> current-state, not settled long-term.
+Roles stack (`gui` → `cli` → `base` → `minimal`); a host should import one or
+two roles, never a long list of individual modules. If a host file's import
+list is growing item by item, that's the signal a role is missing, not a host
+quirk to carry indefinitely.
 
-Roles stack (`gui` → `cli` → `base`); a host should import one or two roles,
-never a long list of individual modules. If a host file's import list is
-growing item by item, that's the signal a role is missing, not a host quirk
-to carry indefinitely.
+| Role | Adds | For |
+|---|---|---|
+| `minimal` | shell, prompt, bare editor, small local CLI tools | the floor — nothing assuming a network, a remote, or a `~/dotfiles` checkout |
+| `base` | git, ssh, gnupg, `bins`, the LazyVim config | a networked machine I log into |
+| `cli` | dev tooling, language runtimes, Claude, tmux | a machine that is actually developed on |
+| `gui` | terminal emulators, fonts, desktop apps | a machine with a display |
+
+**Compose downward, don't subtract.** A host that needs less than a role
+provides takes the tier below it and adds the specific modules it wants — it
+does not take the higher tier and remove things. `disabledModules` is built
+for replacing a module with a fork, not opting out, and fails
+silently-wrong if another role adds the module back by a different path;
+per-module `enable` flags would put an options block on every module to serve
+one host. If no existing tier is low enough, the answer is a new tier, not a
+subtraction mechanism.
+
+A role plus one or two deliberate module imports is legitimate composition
+for a host that is permanently a class of one (the airgap Pi wanting `gnupg`
+and nothing else networked). The "import list growing item by item" warning
+above is about hosts that are instances of a *class* — those want a role.
 
 ## `my.*` capability options
 

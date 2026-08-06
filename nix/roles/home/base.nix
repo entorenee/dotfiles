@@ -1,22 +1,19 @@
-{pkgs, ...}: {
-  # The irreducible home-manager baseline: shell, editor, VCS, secrets.
-  # Everything here must be safe on a headless, resource-constrained host.
+{
+  # A machine on the network that I log into: the floor plus version control,
+  # secrets, remote access, and the configured editor.
+  #
+  # This is no longer the bottom of the stack — minimal.nix is. The distinction
+  # is network and state: everything added here assumes a remote to talk to
+  # (git, ssh), a key to hold (gnupg), or a `~/dotfiles` checkout to reach
+  # (bins, the nvim config). A host that cannot assume those takes minimal.nix
+  # and adds what it wants.
   imports = [
-    ../../modules/options.nix
+    ./minimal.nix
 
     ../../modules/home/bins
     ../../modules/home/git
     ../../modules/home/gnupg
     ../../modules/home/nvim
-    ../../modules/home/pkgs.nix
     ../../modules/home/ssh
-    ../../modules/home/starship
-    ../../modules/home/zsh
   ];
-
-  programs.home-manager.enable = true;
-  home.stateVersion = "26.05";
-  xdg.enable = true;
-  xdg.autostart.enable = true;
-  targets.genericLinux.enable = pkgs.stdenv.isLinux;
 }
