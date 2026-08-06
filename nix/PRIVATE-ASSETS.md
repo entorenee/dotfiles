@@ -1,14 +1,46 @@
-# Private Assets Support
+# Private Assets
 
-This configuration supports optional private assets that gracefully fall back when unavailable.
+Some font files live in a private repo rather than in this one. They are the
+only private asset, and `nix/modules/home/fonts/default.nix` is their only
+consumer.
 
 ## How it works
 
-The flake includes `private-assets` as an explicit input. For normal builds with SSH authentication, it fetches the private repository. For initial setup or when SSH isn't available, you can override the input to use an empty directory instead.
+The fonts module fetches the repo itself, with `builtins.fetchGit` pinned to an
+explicit `rev`. It is deliberately **not** a flake input.
 
-## Private Repository Structure
+Stock Nix fetches every locked flake input eagerly, before it knows which
+outputs use them. As an input, a `git+ssh://` private repo therefore forced
+every host to authenticate to GitHub just to *evaluate* — including the
+headless Pi hosts (`hub`, `uptime`, `airgap`), which take `roles/home/cli.nix`
+or `minimal.nix`, never import the fonts module, and have no Yubikey plugged in
+to authenticate with. That is what made `make hub-switch` fail without a
+`--override-input private-assets` flag. Determinate Nix's lazy trees masks the
+problem on the desktop; the Pis run stock Nix and do not.
 
-The private assets repository should have:
+Moved into the module, the fetch is a thunk that only hosts importing
+`roles/home/gui.nix` ever force.
+
+## Does a GUI host authenticate on every rebuild?
+
+No. A pinned `rev` is a locked input to Nix's git fetcher, so it resolves out of
+`~/.cache/nix/gitv3` without touching the network:
+
+```bash
+nix eval --offline --raw --expr 'builtins.fetchGit {
+  url = "ssh://git@github.com/entorenee/dotfiles-private-assets.git";
+  ref = "refs/heads/main";
+  rev = "e6c7e33c2608e6bda2891ca45a319694657292a3";
+}'
+```
+
+Authentication is needed only on a cold cache — the first evaluation on a new
+machine, or after `~/.cache/nix/gitv3` is cleared. `nix-collect-garbage` does
+*not* trigger it, since that cache lives outside the store. This is the same
+fetcher and cache the flake input used, so nothing about how often a GUI host
+authenticates has changed.
+
+## Repository structure
 
 ```
 fonts/
@@ -17,45 +49,14 @@ fonts/
 └── ...
 ```
 
-## Usage
+## Bumping the pin
 
-### Normal build (with SSH authentication)
-```bash
-# Using Makefile targets (recommended)
-make pRebuild  # Personal profile
-make wRebuild  # Work profile
+`nix flake update` no longer covers this. Push to the private repo, then update
+`rev` in `nix/modules/home/fonts/default.nix` by hand and rebuild.
 
-# Or directly with nix-darwin
-sudo darwin-rebuild switch --flake nix/#personal
-```
-
-### Bootstrap build (without SSH authentication)
-```bash
-# For initial setup when private repo is unavailable
-sudo darwin-rebuild switch --override-input private-assets 'path:nix/.empty-private-assets' --flake nix/#personal
-```
-
-### Testing
-
-```bash
-# Test normal mode (requires SSH authentication)
-cd nix && nix flake check --no-build
-
-# Test fallback mode (works without authentication)
-cd nix && nix flake check --override-input private-assets 'path:./.empty-private-assets' --no-build
-
-# Test fonts config evaluation in fallback mode
-cd nix && nix eval --override-input private-assets 'path:./.empty-private-assets' '.#darwinConfigurations.lyra-silvertongue.config.home-manager.users."USERNAME".fonts.fontconfig.enable'
-```
-
-## Implementation Details
-
-- Single `flake.nix` file with explicit `private-assets` input
-- Uses `--override-input` for graceful fallback during initial setup
-- The `fonts/default.nix` module checks if `private-assets` is available and contains a `fonts/` directory
-- If available, fonts are copied into the Nix store and added to the font packages
-- If unavailable (empty override), the system continues with only public fonts
-- Pure evaluation - no `--impure` flag needed
-- Proper dependency tracking and caching via flake.lock
-- Reproducible builds in both modes
-
+That manual step is the price of the current shape, and it is the right trade
+only while the assets repo stays near-static (one commit, unchanged since July
+2025). If it starts changing often enough that hand-bumping is the bigger
+annoyance, move it back to a flake input — and accept that the Pi hosts then
+need `--override-input private-assets 'path:/dev/null'` again. Whichever gets
+bumped less should be the one done by hand.

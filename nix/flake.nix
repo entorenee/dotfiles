@@ -38,12 +38,9 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    # Private assets - for initial setup without SSH, use:
-    # --override-input private-assets 'path:/dev/null'
-    private-assets = {
-      url = "git+ssh://git@github.com/entorenee/dotfiles-private-assets.git";
-      flake = false;
-    };
+    # No `private-assets` input. The private font repo is fetched by its only
+    # consumer, modules/home/fonts, so hosts that never import that module
+    # never authenticate to GitHub to evaluate. See that file for why.
 
     nixos-hardware.url = "github:nixos/nixos-hardware";
 
@@ -60,7 +57,6 @@
     nixpkgs-unstable,
     navi-cheatsheets,
     nixos-hardware,
-    private-assets,
     tmux-powerkit,
     worktrunk,
     yubikey-guide,
@@ -77,7 +73,7 @@
     # The mkDarwin/mkNixos/mkHome helpers live in ./lib/, each parameterized
     # on exactly the flake inputs it needs — see §4's target layout.
     mkHomeManagerArgs = import ./lib/home-manager-args.nix {
-      inherit lib navi-cheatsheets private-assets tmux-powerkit worktrunk;
+      inherit lib navi-cheatsheets tmux-powerkit worktrunk;
     };
 
     inherit

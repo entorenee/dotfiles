@@ -120,6 +120,16 @@ Package-level overrides (pin a version, patch a `.desktop` file, override a buil
 
 **Overlays are named on the host file, like its import lists — opt-in per host, not blanket.** Each `nix/hosts/{darwin,home}/<hostname>` can set `overlays = [(import ../../overlays/<name>.nix) ...];` alongside its `{username, system, homeImports}`; a host that doesn't need an overlay simply omits the field (`host.overlays or []` in `nix/lib/{darwin,home}.nix`). `hosts/home/hester-prynne/default.nix` takes `protonmail-desktop.nix` (the package only ever appears in that host's Linux-only list); `hosts/darwin/fw-skyler/default.nix` takes `pnpm-pin.nix` (the pin is for a work-only monorepo). `lyra-silvertongue.nix` takes neither. `mkDarwinHost`/`mkHomeHost` read the host's `overlays` list, append it to `flake.nix`'s `baseOverlays` (the small universal set — see `CONVENTIONS.md`'s Overlays section), and pass the result through `mkDarwinConfig`/`mkHomeManagerConfig` to wherever that config's pkgs is actually built (`system/darwin.nix`'s nix-darwin-level `nixpkgs.overlays` for Darwin — both hosts run `home-manager.useGlobalPkgs = true`, so home-manager shares that pkgs automatically; `nix/lib/home.nix`'s `mkHomeManagerConfig` builds `pkgs` directly for the standalone Linux host).
 
+### Never make a private, auth-requiring repo a flake input
+
+**Stock Nix fetches every locked flake input eagerly, before it knows which outputs actually use them.** So an input whose fetch needs credentials — a `git+ssh://` private repo — makes *every* host authenticate just to evaluate, including hosts that never reference it. Gating the consumer behind `lib.mkIf`, a `my.*` option, or a role import does not help; the fetch happens before any of that is reached.
+
+This is easy to miss on the desktops, which run Determinate Nix with lazy trees and therefore skip unused inputs. The Pi hosts run stock Nix and do not. It is what made `make hub-switch` fail on `private-assets` — a font repo `hub` never reads, since `modules/home/fonts` is only imported by `roles/home/gui.nix` and `hub` takes `cli.nix`.
+
+**Fetch it in the module that consumes it instead**, with `builtins.fetchGit` pinned to an explicit `rev` (`nix/modules/home/fonts/default.nix` is the worked example). That makes the fetch a thunk only the importing hosts force. Use `builtins.fetchGit`, not a fixed-output `pkgs.fetchgit`: the former runs in the evaluator as the invoking user and can reach the agent holding the Yubikey, while an FOD builds as `nixbld` and has no SSH access at all. A pinned rev resolves offline from `~/.cache/nix/gitv3`, so this costs an authentication only on a cold cache, not per rebuild.
+
+The tradeoff is that `nix flake update` no longer manages the pin. Worth it while the private repo is near-static; see `nix/PRIVATE-ASSETS.md` for when to reverse the decision.
+
 ### Identity roles live in `nix/roles/`
 
 There is no `profile` argument and no `nix/users/`. An identity is just **another role file**, sitting flat in `nix/roles/` next to the stacking tier roles, and a host names it directly:

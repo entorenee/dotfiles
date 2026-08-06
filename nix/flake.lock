@@ -184,22 +184,6 @@
         "type": "github"
       }
     },
-    "private-assets": {
-      "flake": false,
-      "locked": {
-        "lastModified": 1752621565,
-        "narHash": "sha256-FVjeI59/8VspucZoLFMJ5SB1qmEvO2zvoyWgO7RddKo=",
-        "ref": "refs/heads/main",
-        "rev": "e6c7e33c2608e6bda2891ca45a319694657292a3",
-        "revCount": 1,
-        "type": "git",
-        "url": "ssh://git@github.com/entorenee/dotfiles-private-assets.git"
-      },
-      "original": {
-        "type": "git",
-        "url": "ssh://git@github.com/entorenee/dotfiles-private-assets.git"
-      }
-    },
     "root": {
       "inputs": {
         "darwin": "darwin",
@@ -208,7 +192,6 @@
         "nixos-hardware": "nixos-hardware",
         "nixpkgs": "nixpkgs_3",
         "nixpkgs-unstable": "nixpkgs-unstable",
-        "private-assets": "private-assets",
         "tmux-powerkit": "tmux-powerkit",
         "worktrunk": "worktrunk",
         "yubikey-guide": "yubikey-guide"
