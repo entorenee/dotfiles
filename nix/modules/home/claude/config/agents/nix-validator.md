@@ -1,6 +1,6 @@
 ---
 name: nix-validator
-description: Validates Nix/home-manager configuration changes by running nix eval and dry-run rebuild across all hosts (fw-skyler, lyra-sylvertongue, hester-prynne). Use after editing any Nix files in the dotfiles repo.
+description: Validates Nix/home-manager configuration changes by running nix eval and dry-run rebuild across all hosts (fw-skyler, lyra-silvertongue, hester-prynne). Use after editing any Nix files in the dotfiles repo.
 tools: Read, Grep, Glob, Bash
 model: sonnet
 ---
@@ -18,7 +18,7 @@ The dotfiles repo is at `~/dotfiles`. The flake is at `~/dotfiles/nix/`.
 | Host | Dry-run command |
 |---------|----------------|
 | fw-skyler (work Mac) | `darwin-rebuild switch --flake ~/dotfiles/nix/#fw-skyler --dry-run` |
-| lyra-sylvertongue (personal Mac) | `darwin-rebuild switch --flake ~/dotfiles/nix/#lyra-sylvertongue --dry-run` |
+| lyra-silvertongue (personal Mac) | `darwin-rebuild switch --flake ~/dotfiles/nix/#lyra-silvertongue --dry-run` |
 | hester-prynne (personal Linux desktop) | `nix run home-manager -- --extra-experimental-features 'nix-command flakes' switch --flake ~/dotfiles/nix/#hester-prynne --dry-run` |
 
 **Important:** The macOS darwin-rebuild commands normally use `sudo`. For dry-run validation, attempt without `sudo` first. If it fails due to permissions, note it in the report — do not run `sudo` commands.
@@ -41,7 +41,7 @@ cd ~/dotfiles && git diff --cached --name-only
 
 Report which files changed and which hosts they affect:
 - `hosts/darwin/fw-skyler/*.nix` → affects fw-skyler only
-- `users/personal/*.nix` → affects lyra-sylvertongue and hester-prynne (`desktop.nix` affects both too — both opt in via `extraHomeImports`)
+- `users/personal/*.nix` → affects lyra-silvertongue and hester-prynne (`desktop.nix` affects both too — both opt in via `extraHomeImports`)
 - `default.nix`, `flake.nix`, shared modules → affects all hosts
 
 ### Step 2 — Nix Evaluation
@@ -51,7 +51,7 @@ Run `nix eval` to catch syntax errors, infinite recursion, and type mismatches. 
 ```bash
 # Evaluate each host's configuration
 nix eval ~/dotfiles/nix/#darwinConfigurations.fw-skyler.system --no-write-lock-file 2>&1
-nix eval ~/dotfiles/nix/#darwinConfigurations.lyra-sylvertongue.system --no-write-lock-file 2>&1
+nix eval ~/dotfiles/nix/#darwinConfigurations.lyra-silvertongue.system --no-write-lock-file 2>&1
 nix eval ~/dotfiles/nix/#homeConfigurations.hester-prynne.activationPackage --no-write-lock-file 2>&1
 ```
 
@@ -85,14 +85,14 @@ Present results in this format:
 | Host | Status | Details |
 |---------|--------|---------|
 | fw-skyler | Pass | — |
-| lyra-sylvertongue | Pass | — |
+| lyra-silvertongue | Pass | — |
 | hester-prynne | Pass | — |
 
 ### Dry-run Rebuild
 | Host | Status | Details |
 |---------|--------|---------|
 | fw-skyler | Pass | 3 packages would be updated |
-| lyra-sylvertongue | Pass | 1 package would be updated |
+| lyra-silvertongue | Pass | 1 package would be updated |
 | hester-prynne | Skipped | darwin-rebuild not available on this platform |
 
 ### Issues Found

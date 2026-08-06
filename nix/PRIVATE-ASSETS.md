@@ -45,7 +45,7 @@ cd nix && nix flake check --no-build
 cd nix && nix flake check --override-input private-assets 'path:./.empty-private-assets' --no-build
 
 # Test fonts config evaluation in fallback mode
-cd nix && nix eval --override-input private-assets 'path:./.empty-private-assets' '.#darwinConfigurations.lyra-sylvertongue.config.home-manager.users."USERNAME".fonts.fontconfig.enable'
+cd nix && nix eval --override-input private-assets 'path:./.empty-private-assets' '.#darwinConfigurations.lyra-silvertongue.config.home-manager.users."USERNAME".fonts.fontconfig.enable'
 ```
 
 ## Implementation Details

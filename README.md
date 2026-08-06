@@ -35,7 +35,7 @@ curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix 
 
 Install nix-darwin to manage system configuration:
 ```
-nix run nix-darwin -- switch --flake ~/dotfiles/nix#[fw-skyler|lyra-sylvertongue]
+nix run nix-darwin -- switch --flake ~/dotfiles/nix#[fw-skyler|lyra-silvertongue]
 ```
 
 ### Linux

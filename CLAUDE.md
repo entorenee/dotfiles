@@ -62,7 +62,7 @@ When settings need to diverge by persona, **do not gate on a profile string** �
 │   │   │   ├── fw-skyler/         # work dissolves fully here — only work machine, no users/work/
 │   │   │   │   ├── default.nix   # the host triple ({user = ./.;})
 │   │   │   │   ├── home.nix, darwin.nix, claude.nix, gh-dash.yml, id_rsa_yubikey_work.pub
-│   │   │   └── lyra-sylvertongue.nix
+│   │   │   └── lyra-silvertongue.nix
 │   │   └── home/                  # {username, user, system, extraHomeImports?, overlays?} for standalone home-manager hosts
 │   │       └── hester-prynne.nix
 │   ├── roles/                    # POLICY — which modules a class of machine wants
@@ -103,7 +103,7 @@ Do **not** reach for `pkgs.stdenv.isLinux` to mean "has a GUI" — that only rea
 
 Package-level overrides (pin a version, patch a `.desktop` file, override a build flag) go in `nix/overlays/<name>.nix`, one overlay function per file — not inside a home-manager module's `nixpkgs.overlays`. Setting `nixpkgs.overlays`/`nixpkgs.config` from inside a home-manager module is a no-op (or an error, on newer home-manager) once a host sets `home-manager.useGlobalPkgs = true`, since there's no separate pkgs left for the module to configure.
 
-**Overlays are opt-in per host, like `extraHomeImports`, not applied globally.** Each `nix/hosts/{darwin,home}/<hostname>.nix` file can set `overlays = [(import ../../overlays/<name>.nix) ...];` alongside its `{username, user, system}` triple; a host that doesn't need an overlay simply omits the field (`host.overlays or []` in `flake.nix`). `hosts/home/hester-prynne.nix` takes `protonmail-desktop.nix` (the package only ever appears in that host's Linux-only list); `hosts/darwin/fw-skyler/default.nix` takes `pnpm-pin.nix` (the pin is for a work-only monorepo). `lyra-sylvertongue.nix` takes neither. `flake.nix`'s `mkDarwinHost`/`mkHomeHost` read the host's `overlays` list and pass it through `mkDarwinConfig`/`mkHomeManagerConfig` to wherever that config's pkgs is actually built (`system/darwin.nix`'s nix-darwin-level `nixpkgs.overlays` for Darwin — both hosts run `home-manager.useGlobalPkgs = true`, so home-manager shares that pkgs automatically; `flake.nix`'s `mkHomeManagerConfig` builds `pkgs` directly for the standalone Linux host).
+**Overlays are opt-in per host, like `extraHomeImports`, not applied globally.** Each `nix/hosts/{darwin,home}/<hostname>.nix` file can set `overlays = [(import ../../overlays/<name>.nix) ...];` alongside its `{username, user, system}` triple; a host that doesn't need an overlay simply omits the field (`host.overlays or []` in `flake.nix`). `hosts/home/hester-prynne.nix` takes `protonmail-desktop.nix` (the package only ever appears in that host's Linux-only list); `hosts/darwin/fw-skyler/default.nix` takes `pnpm-pin.nix` (the pin is for a work-only monorepo). `lyra-silvertongue.nix` takes neither. `flake.nix`'s `mkDarwinHost`/`mkHomeHost` read the host's `overlays` list and pass it through `mkDarwinConfig`/`mkHomeManagerConfig` to wherever that config's pkgs is actually built (`system/darwin.nix`'s nix-darwin-level `nixpkgs.overlays` for Darwin — both hosts run `home-manager.useGlobalPkgs = true`, so home-manager shares that pkgs automatically; `flake.nix`'s `mkHomeManagerConfig` builds `pkgs` directly for the standalone Linux host).
 
 ### Personas live in `nix/users/`
 
@@ -121,7 +121,7 @@ Two files because persona spans both module systems — a home-manager module ca
 
 **A module that only one persona wants is imported from that persona's `home.nix` (or its GUI-only `desktop.nix`, see below), not from a role.** `keepassxc` and `orca-slicer` work this way; putting them in `roles/home/gui.nix` would mean gating them back off. Roles carry what a *class of machine* wants; `users/` carries what a *person* wants.
 
-**Split a persona's `home.nix` into a portable base plus opt-in add-ons once it needs to reach a headless host.** `users/personal/home.nix` is the portable subset (claude.nix, gh-dash, syncthing) — safe for a future headless personal Pi. The GUI-desktop-only pieces (keepassxc, orca-slicer, `go`/`hugo`) live in `users/personal/desktop.nix` instead, and a host opts into it via `extraHomeImports` on its `nix/hosts/{darwin,home}/<hostname>.nix` file (a list of extra home-manager module paths, spliced in alongside `user + "/home.nix"`). Both current personal hosts (`lyra-sylvertongue`, `hester-prynne`) set it; a future headless personal Pi would import `users/personal` without it. Don't fold `desktop.nix` back into `home.nix` — that's exactly the coupling this split removes.
+**Split a persona's `home.nix` into a portable base plus opt-in add-ons once it needs to reach a headless host.** `users/personal/home.nix` is the portable subset (claude.nix, gh-dash, syncthing) — safe for a future headless personal Pi. The GUI-desktop-only pieces (keepassxc, orca-slicer, `go`/`hugo`) live in `users/personal/desktop.nix` instead, and a host opts into it via `extraHomeImports` on its `nix/hosts/{darwin,home}/<hostname>.nix` file (a list of extra home-manager module paths, spliced in alongside `user + "/home.nix"`). Both current personal hosts (`lyra-silvertongue`, `hester-prynne`) set it; a future headless personal Pi would import `users/personal` without it. Don't fold `desktop.nix` back into `home.nix` — that's exactly the coupling this split removes.
 
 Most options merge across the two, so a persona file **adds** to a module rather than replacing it — `home.packages` and `homebrew.casks` are `listOf` (concatenate), `launchd.user.agents` is an attrset of submodules (merges).
 
@@ -145,7 +145,7 @@ Persona/host ordering in merged lists is not stable — `users/` and `hosts/` de
 ## Management Commands
 
 - **Rebuild and switch:** `make rebuild` — auto-detects OS (Darwin vs Linux) and picks the flake attribute from the machine's hostname (`hostname -s`).
-- **Host selection:** flake outputs are keyed by hostname (`fw-skyler`, `lyra-sylvertongue`, `hester-prynne`). Each `nix/hosts/{darwin,home}/<hostname>.nix` file states `{username, user, system, extraHomeImports ? [], overlays ? []}`; `user` is a `./users/<persona>` path (`fw-skyler` points at itself, since work has no separate persona directory — see "Personas live in `nix/users/`" below).
+- **Host selection:** flake outputs are keyed by hostname (`fw-skyler`, `lyra-silvertongue`, `hester-prynne`). Each `nix/hosts/{darwin,home}/<hostname>.nix` file states `{username, user, system, extraHomeImports ? [], overlays ? []}`; `user` is a `./users/<persona>` path (`fw-skyler` points at itself, since work has no separate persona directory — see "Personas live in `nix/users/`" below).
 
 ## NixOS Pi Hosts
 

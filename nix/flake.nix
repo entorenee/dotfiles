@@ -106,7 +106,7 @@
   in {
     darwinConfigurations = {
       fw-skyler = mkDarwinHost ./hosts/darwin/fw-skyler;
-      lyra-sylvertongue = mkDarwinHost ./hosts/darwin/lyra-sylvertongue.nix;
+      lyra-silvertongue = mkDarwinHost ./hosts/darwin/lyra-silvertongue.nix;
     };
 
     homeConfigurations = {
