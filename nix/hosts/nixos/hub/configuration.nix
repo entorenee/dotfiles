@@ -9,8 +9,8 @@
     # populateFirmwareCommands nixos-hardware would mkForce over. Do not copy
     # this import into an image-built host. See CLAUDE.md.
     nixos-hardware.nixosModules.raspberry-pi-4
-    ./common.nix
-    ./modules/gpg-yubikey.nix
+    ../../../roles/nixos/base.nix
+    ../../../modules/nixos/gpg-yubikey.nix
   ];
 
   networking.hostName = "hub";
@@ -27,7 +27,7 @@
     isNormalUser = true;
     extraGroups = ["wheel"];
     openssh.authorizedKeys.keyFiles = [
-      ../../modules/ssh/public-ssh-keys/id_rsa_yubikey_personal.pub
+      ../../../modules/home/ssh/public-ssh-keys/id_rsa_yubikey_personal.pub
     ];
   };
 
@@ -35,7 +35,7 @@
   # a PAM keyboard-interactive path to password auth that PasswordAuthentication
   # = false does not cover. PermitRootLogin defaults to "prohibit-password",
   # which still permits key-based root login. Both are closed explicitly, and
-  # match uptime.nix.
+  # match uptime.
   services.openssh = {
     enable = true;
     settings = {
@@ -80,7 +80,7 @@
       insteadOf = https://github.com/
   '';
 
-  # Kernel comes from the mainline pin in common.nix. The profile above stays
+  # Kernel comes from the mainline pin in roles/nixos/base.nix. The profile above stays
   # imported for the bcm2711 deviceTree filter and the pcie-brcmstb /
   # reset-raspberrypi initrd modules this board's PCIe bus and ethernet need.
   boot.loader.grub.enable = false;

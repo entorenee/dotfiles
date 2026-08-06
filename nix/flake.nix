@@ -96,9 +96,13 @@
       mkHomeHost
       ;
 
-    mkNixosConfig = import ./lib/nixos.nix {
-      inherit nixpkgs home-manager lib nixos-hardware yubikey-guide baseOverlays mkHomeManagerArgs worktrunk;
-    };
+    inherit
+      (import ./lib/nixos.nix {
+        inherit nixpkgs home-manager lib nixos-hardware yubikey-guide baseOverlays mkHomeManagerArgs worktrunk;
+      })
+      mkNixosConfig
+      mkNixosHost
+      ;
   in {
     darwinConfigurations = {
       fw-skyler = mkDarwinHost ./hosts/darwin/fw-skyler;
@@ -110,9 +114,9 @@
     };
 
     nixosConfigurations = {
-      hub = mkNixosConfig "aarch64-linux" ./hosts/nixos/hub.nix "skyler";
-      airgap = mkNixosConfig "aarch64-linux" ./hosts/nixos/airgap.nix null;
-      uptime = mkNixosConfig "aarch64-linux" ./hosts/nixos/uptime.nix null;
+      hub = mkNixosHost ./hosts/nixos/hub;
+      airgap = mkNixosHost ./hosts/nixos/airgap;
+      uptime = mkNixosHost ./hosts/nixos/uptime;
     };
   };
 }

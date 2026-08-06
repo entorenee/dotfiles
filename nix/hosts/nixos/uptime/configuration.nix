@@ -5,14 +5,14 @@
 }: {
   imports = [
     "${modulesPath}/installer/sd-card/sd-image-aarch64.nix"
-    ./common.nix
+    ../../../roles/nixos/base.nix
   ];
 
   networking.hostName = "uptime";
   # The Zero 2W has no on-board ethernet; this is a USB OTG adapter.
   networking.useDHCP = true;
 
-  # As on hub.nix: the account set is fully declared, so an imperative `passwd`
+  # As on hub: the account set is fully declared, so an imperative `passwd`
   # cannot persist and re-open what the openssh settings below close. uptime
   # stays passwordless -- key-only SSH in, wheelNeedsPassword = false for the
   # `--sudo` in `make uptime-switch`.
@@ -22,7 +22,7 @@
     isNormalUser = true;
     extraGroups = ["wheel"];
     openssh.authorizedKeys.keyFiles = [
-      ../../modules/ssh/public-ssh-keys/id_rsa_yubikey_personal.pub
+      ../../../modules/home/ssh/public-ssh-keys/id_rsa_yubikey_personal.pub
     ];
   };
 

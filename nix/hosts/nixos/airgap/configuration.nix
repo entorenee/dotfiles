@@ -10,8 +10,8 @@
     # installs no kernel unless hardware.raspberry-pi.firmware.uboot.enable is
     # also set, which boots to 7 LED flashes. See CLAUDE.md.
     "${modulesPath}/installer/sd-card/sd-image-aarch64.nix"
-    ./common.nix
-    ./modules/gpg-yubikey.nix
+    ../../../roles/nixos/base.nix
+    ../../../modules/nixos/gpg-yubikey.nix
   ];
 
   environment.etc."yubikey-guide".source = yubikey-guide;
@@ -25,7 +25,7 @@
   users.users.skyler = {
     isNormalUser = true;
     extraGroups = ["wheel"];
-    # Console login is the only way in, so unlike hub.nix this host needs a
+    # Console login is the only way in, so unlike hub this host needs a
     # password. Device-specific initial password, not reused anywhere else.
     hashedPassword = "$y$j9T$XiFnrrsKYy0ea0nf/iafR1$a4koktWLZR18TfOVCvkUGmQkoSRrqBM17XR8DyI97jA";
   };

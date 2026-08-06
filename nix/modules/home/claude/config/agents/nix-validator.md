@@ -1,6 +1,6 @@
 ---
 name: nix-validator
-description: Validates Nix/home-manager configuration changes by running nix eval and dry-run rebuild across all hosts (fw-skyler, lyra-silvertongue, hester-prynne). Use after editing any Nix files in the dotfiles repo.
+description: Validates Nix/home-manager configuration changes by running nix eval and dry-run rebuild across all hosts (fw-skyler, lyra-silvertongue, hester-prynne) plus nix eval of the aarch64 NixOS Pi hosts (hub, airgap, uptime). Use after editing any Nix files in the dotfiles repo.
 tools: Read, Grep, Glob, Bash
 model: sonnet
 ---
@@ -23,6 +23,8 @@ The dotfiles repo is at `~/dotfiles`. The flake is at `~/dotfiles/nix/`.
 
 **Important:** The macOS darwin-rebuild commands normally use `sudo`. For dry-run validation, attempt without `sudo` first. If it fails due to permissions, note it in the report — do not run `sudo` commands.
 
+**NixOS Pi hosts** (`hub`, `airgap`, `uptime` — all `aarch64-linux`, under `nix/hosts/nixos/<name>/`) are **evaluation-only** here. `nix eval` resolves them on any platform, but building or rebuilding them needs an aarch64 machine and happens on the hub via `make hub-switch` / `make uptime-switch` / `make {airgap,uptime}-image` — do not attempt a dry-run rebuild for them.
+
 ## Workflow
 
 ### Step 1 — Identify Changes
@@ -44,8 +46,12 @@ Report which files changed and which hosts they affect:
 - `hosts/darwin/lyra-silvertongue.nix` → affects lyra-silvertongue only
 - `hosts/home/hester-prynne/*.nix` → affects hester-prynne only
 - `roles/home/personal*.nix`, `roles/darwin/personal.nix` → affects lyra-silvertongue and hester-prynne (both name `personal.nix` and `personal-desktop.nix` in their own `homeImports`; only the Mac takes the `roles/darwin/` one)
-- `roles/home/{minimal,base,cli,gui}.nix` → affects all three hosts (each opens its `homeImports` with `gui.nix`, and the tiers stack down from there)
+- `roles/home/{minimal,base,cli,gui}.nix` → affects all three Macs/desktop (each opens its `homeImports` with `gui.nix`, and the tiers stack down from there) **and `hub`**, whose `homeImports` names `cli.nix` — so a `cli.nix`/`base.nix`/`minimal.nix` edit reaches the Pi too
 - `system/darwin.nix`, `lib/darwin.nix` → affects fw-skyler and lyra-silvertongue
+- `hosts/nixos/<name>/*.nix` → affects that Pi only (`hub`, `airgap`, or `uptime`)
+- `roles/nixos/base.nix` → affects all three Pis (every `configuration.nix` imports it)
+- `modules/nixos/gpg-yubikey.nix` → affects hub and airgap only — uptime does not import it
+- `lib/nixos.nix` → affects all three Pis
 - `default.nix`, `flake.nix`, `lib/home-manager-args.nix`, shared modules → affects all hosts
 
 ### Step 2 — Nix Evaluation
@@ -57,6 +63,11 @@ Run `nix eval` to catch syntax errors, infinite recursion, and type mismatches. 
 nix eval ~/dotfiles/nix/#darwinConfigurations.fw-skyler.system --no-write-lock-file 2>&1
 nix eval ~/dotfiles/nix/#darwinConfigurations.lyra-silvertongue.system --no-write-lock-file 2>&1
 nix eval ~/dotfiles/nix/#homeConfigurations.hester-prynne.activationPackage --no-write-lock-file 2>&1
+
+# The Pi hosts — evaluation only, no dry-run rebuild (see Context)
+nix eval ~/dotfiles/nix/#nixosConfigurations.hub.config.system.build.toplevel.drvPath --no-write-lock-file 2>&1
+nix eval ~/dotfiles/nix/#nixosConfigurations.airgap.config.system.build.toplevel.drvPath --no-write-lock-file 2>&1
+nix eval ~/dotfiles/nix/#nixosConfigurations.uptime.config.system.build.toplevel.drvPath --no-write-lock-file 2>&1
 ```
 
 If the exact flake output attributes differ, adapt by checking:
@@ -71,7 +82,7 @@ Run all evaluations and collect results. Do not stop at the first failure — va
 
 Run the dry-run rebuild command for each host. This catches dependency resolution issues, missing packages, and configuration conflicts that `nix eval` misses.
 
-Run all three hosts regardless of which files changed — a shared module edit can break any host.
+Run all three Darwin/home hosts regardless of which files changed — a shared module edit can break any host. The Pi hosts have no dry-run step; their `nix eval` in Step 2 is the whole check.
 
 If a dry-run command is not available on the current platform (e.g., `darwin-rebuild` not found on Linux), note it as "skipped — not available on this platform" rather than failing.
 
@@ -91,6 +102,9 @@ Present results in this format:
 | fw-skyler | Pass | — |
 | lyra-silvertongue | Pass | — |
 | hester-prynne | Pass | — |
+| hub | Pass | — |
+| airgap | Pass | — |
+| uptime | Pass | — |
 
 ### Dry-run Rebuild
 | Host | Status | Details |
@@ -98,6 +112,7 @@ Present results in this format:
 | fw-skyler | Pass | 3 packages would be updated |
 | lyra-silvertongue | Pass | 1 package would be updated |
 | hester-prynne | Skipped | darwin-rebuild not available on this platform |
+| hub / airgap / uptime | N/A | evaluation-only — aarch64, deployed from the hub |
 
 ### Issues Found
 None — all validations passed.
@@ -110,7 +125,7 @@ If there are failures, include:
 
 ## Rules
 
-- **Validate all hosts** — always run all three, even if only one host's file changed
+- **Validate all hosts** — always evaluate all six configurations (fw-skyler, lyra-silvertongue, hester-prynne, hub, airgap, uptime) and dry-run the three Darwin/home ones, even if only one host's file changed
 - **Never run `sudo`** — if a command requires elevation, note it and skip
 - **Never modify Nix files** — this agent only validates, never fixes
 - **Report all results** — don't stop at the first failure, collect everything

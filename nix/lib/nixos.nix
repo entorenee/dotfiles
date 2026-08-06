@@ -1,10 +1,13 @@
-# `homeManagerUser` is `null` for a NixOS host with no home-manager (the
-# airgap/uptime Pis, for now — see the redesign doc §8 step 5 / open question
-# 3), or a username to wire up `roles/home/cli.nix` the same way the
-# Darwin/home hosts wire `roles/home/gui.nix`: same `_module.args`, same
-# `worktrunk.homeModules.default` import. `my.dotfiles.mutable = false`
-# here (not per-host) so any future Pi added this way is immutable by
-# default too, not just `hub` — see §6.1.
+# A NixOS host file states the same kind of attrset the Darwin and standalone
+# home hosts do: `{system, nixosImports, username ? null, homeImports ? []}`.
+# `nixosImports` carries the machine's own configuration plus whichever
+# roles/nixos/ and modules/nixos/ files it wants; `homeImports` is the home
+# side, named by the host rather than hardcoded here — the same reason
+# flake.nix no longer hardcodes a role for the Macs.
+#
+# A host omits `username` when it wants no home-manager at all (airgap, and
+# uptime until its own commit lands). `my.dotfiles.mutable = false` is set here
+# rather than per-host so any future Pi is immutable by default — see §6.1.
 {
   nixpkgs,
   home-manager,
@@ -14,30 +17,44 @@
   baseOverlays,
   mkHomeManagerArgs,
   worktrunk,
-}: system: module: homeManagerUser:
-  nixpkgs.lib.nixosSystem {
-    inherit system;
-    specialArgs = {inherit nixos-hardware yubikey-guide;};
-    modules =
-      [module]
-      ++ lib.optionals (homeManagerUser != null) [
-        home-manager.nixosModules.home-manager
-        {
-          # `useGlobalPkgs = true` means these must be set here at the
-          # NixOS system level, same as system/darwin.nix's "System
-          # settings" block — a home-manager module can't set either once
-          # there's no separate pkgs left for it to configure (§6.3).
-          nixpkgs.overlays = baseOverlays;
-          nixpkgs.config.allowUnfree = true;
+}: let
+  mkNixosConfig = system: nixosImports: username: homeImports:
+    nixpkgs.lib.nixosSystem {
+      inherit system;
+      specialArgs = {inherit nixos-hardware yubikey-guide;};
+      modules =
+        nixosImports
+        ++ lib.optionals (username != null) [
+          home-manager.nixosModules.home-manager
+          {
+            # Deliberately inside this branch: a host with no home-manager gets
+            # no overlays and no allowUnfree, which is what airgap and uptime
+            # have always evaluated to. Hoisting these out would silently
+            # change their closures.
+            #
+            # `useGlobalPkgs = true` means they must be set at the NixOS system
+            # level, same as system/darwin.nix's "System settings" block — a
+            # home-manager module can't set either once there's no separate
+            # pkgs left for it to configure (§6.3).
+            nixpkgs.overlays = baseOverlays;
+            nixpkgs.config.allowUnfree = true;
 
-          home-manager.useGlobalPkgs = true;
-          home-manager.useUserPackages = true;
-          home-manager.backupFileExtension = "hm-backup";
-          home-manager.users.${homeManagerUser} = {
-            imports = [../roles/home/cli.nix worktrunk.homeModules.default];
-            my.dotfiles.mutable = false;
-            _module.args = mkHomeManagerArgs system homeManagerUser;
-          };
-        }
-      ];
-  }
+            home-manager.useGlobalPkgs = true;
+            home-manager.useUserPackages = true;
+            home-manager.backupFileExtension = "hm-backup";
+            home-manager.users.${username} = {
+              imports = homeImports ++ [worktrunk.homeModules.default];
+              my.dotfiles.mutable = false;
+              _module.args = mkHomeManagerArgs system username;
+            };
+          }
+        ];
+    };
+
+  mkNixosHost = path: let
+    host = import path;
+  in
+    mkNixosConfig host.system host.nixosImports (host.username or null) (host.homeImports or []);
+in {
+  inherit mkNixosConfig mkNixosHost;
+}

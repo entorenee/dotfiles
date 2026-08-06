@@ -68,8 +68,8 @@ unconditionally.
 | Layer | Says | Example |
 |---|---|---|
 | `nix/modules/` | *how* a tool is configured — mechanism | `modules/home/nvim/` sets up Neovim; says nothing about who wants it |
-| `nix/roles/` | *which class of machine, or which job,* wants a set of modules — policy | `roles/home/gui.nix` imports every GUI-desktop module and stacks onto `cli.nix` → `base.nix`; `roles/home/personal.nix` and `roles/darwin/personal.nix` carry the personal job |
-| `nix/hosts/` | *which machine this is* — instantiation | `hosts/darwin/fw-skyler/` — `{username, system, homeImports, darwinImports ? [], overlays ? []}`, plus that machine's own host-specific files |
+| `nix/roles/` | *which class of machine, or which job,* wants a set of modules — policy | `roles/home/gui.nix` imports every GUI-desktop module and stacks onto `cli.nix` → `base.nix`; `roles/home/personal.nix` and `roles/darwin/personal.nix` carry the personal job; `roles/nixos/base.nix` carries what every Pi is |
+| `nix/hosts/` | *which machine this is* — instantiation | `hosts/darwin/fw-skyler/` — `{username, system, homeImports, darwinImports ? [], overlays ? []}`, plus that machine's own host-specific files; `hosts/nixos/hub/` — the same shape with `nixosImports`, plus that machine's `configuration.nix` |
 
 > **`nix/users/` has been dissolved into `nix/roles/`.** Work-vs-personal is
 > not two people, it's two jobs a machine does — which is a question of what
@@ -95,6 +95,19 @@ pass both lists through verbatim. Because the tier role is named by the host
 rather than hardcoded in `flake.nix`, a new host that wants `cli` instead of
 `gui` just says so.
 
+**The NixOS hosts are not an exception to any of that.** A Pi states
+`{system, nixosImports, username ? null, homeImports ? []}` in
+`hosts/nixos/<name>/default.nix` and `flake.nix` instantiates it with
+`mkNixosHost ./hosts/nixos/<name>`, positionally identical in spirit to
+`mkDarwinHost`/`mkHomeHost`. `nixosImports` is the third import list — the
+NixOS-module counterpart of `darwinImports` — and `nix/lib/nixos.nix` passes it
+and `homeImports` through verbatim, hardcoding no role of its own: `hub` names
+`roles/home/cli.nix` itself, the same way the Macs name `roles/home/gui.nix`.
+A host omits `username` when it wants no home-manager at all, which also means
+it gets no overlays and no `allowUnfree` — those are set inside the
+`username != null` branch deliberately, so a home-manager-less host evaluates to
+exactly what it always has.
+
 **Identity role files sit flat in `roles/home/`, beside the tier roles**, with
 a `personal-` filename prefix doing the grouping. Giving them a subdirectory
 of their own would reintroduce exactly the layer this dissolution removed.
@@ -111,6 +124,13 @@ that's the signal a role is missing, not a host quirk to carry indefinitely.
 | `base` | git, ssh, gnupg, `bins`, the LazyVim config | a networked machine I log into |
 | `cli` | dev tooling, language runtimes, Claude, tmux | a machine that is actually developed on |
 | `gui` | terminal emulators, fonts, desktop apps | a machine with a display |
+
+`roles/` is split by module system the way `modules/` is — `roles/home/`,
+`roles/darwin/`, `roles/nixos/` — because a home-manager role cannot set
+`homebrew.casks` and a NixOS role cannot set `home.packages`. The stacking
+tiers above are a `roles/home/` idea specifically; `roles/nixos/base.nix` is a
+single flat policy file that every Pi imports, and it earns a tier of its own
+only if a second class of NixOS machine ever shows up.
 
 **Compose downward, don't subtract.** A host that needs less than a role
 provides takes the tier below it and adds the specific modules it wants — it

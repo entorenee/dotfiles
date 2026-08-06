@@ -52,13 +52,18 @@ When settings need to diverge by identity, **do not gate on a profile string** �
 │   ├── flake.nix                 # Main flake configuration
 │   ├── system/darwin.nix         # macOS system configuration
 │   ├── overlays/                 # one file per overlay; hosts opt into the ones they need
-│   ├── lib/                      # mkDarwinHost / mkHomeHost / mkNixosConfig, one file each
+│   ├── lib/                      # mkDarwinHost / mkHomeHost / mkNixosHost, one file each
 │   ├── hosts/                    # INSTANTIATION — one file (or directory) per machine, keyed by hostname
-│   │   ├── nixos/                # The three Raspberry Pi hosts
-│   │   │   ├── common.nix        # Shared base for every Pi host
-│   │   │   ├── uptime.nix        # uptime-kuma + cloudflared (Pi Zero 2W)
-│   │   │   ├── hub.nix           # Building hub (Pi 4, always-on)
-│   │   │   └── airgap.nix        # Yubikey airgap workflow (Pi Zero 2W)
+│   │   ├── nixos/                # The three Raspberry Pi hosts, one directory each
+│   │   │   ├── hub/               # Building hub (Pi 4, always-on) — the one Pi with home-manager
+│   │   │   │   ├── default.nix   # {system, nixosImports, username?, homeImports?}
+│   │   │   │   └── configuration.nix
+│   │   │   ├── uptime/            # uptime-kuma + cloudflared (Pi Zero 2W)
+│   │   │   │   ├── default.nix
+│   │   │   │   └── configuration.nix
+│   │   │   └── airgap/            # Yubikey airgap workflow (Pi Zero 2W)
+│   │   │       ├── default.nix
+│   │   │       └── configuration.nix
 │   │   ├── darwin/                # {username, system, homeImports, darwinImports?, overlays?} for each Mac
 │   │   │   ├── fw-skyler/         # work dissolves fully here — only work machine, no personal-style role files
 │   │   │   │   ├── default.nix   # the host statement; names ./home.nix and ./darwin.nix in its own import lists
@@ -78,11 +83,14 @@ When settings need to diverge by identity, **do not gate on a profile string** �
 │   │   │   ├── personal-desktop.nix  # personal GUI-desktop add-on; hosts opt in by name
 │   │   │   ├── personal-claude.nix   # personal `programs.claude-code` additions
 │   │   │   └── personal-gh-dash.yml  # personal gh-dash config, symlinked by personal.nix
-│   │   └── darwin/
-│   │       └── personal.nix      # IDENTITY, nix-darwin side — Homebrew taps/brews/casks, the Dock
+│   │   ├── darwin/
+│   │   │   └── personal.nix      # IDENTITY, nix-darwin side — Homebrew taps/brews/casks, the Dock
+│   │   └── nixos/
+│   │       └── base.nix          # Shared base for every Pi host (mainline kernel, ZFS off, stateVersion)
 │   └── modules/                  # MECHANISM — how each tool is configured
 │       ├── options.nix           # The `my.*` capability options (both systems)
 │       ├── darwin/               # nix-darwin modules (homebrew, launch-agents)
+│       ├── nixos/                # NixOS modules (gpg-yubikey — hub and airgap import it)
 │       └── home/                 # home-manager modules
 │           ├── nvim/             # Neovim configuration
 │           ├── tmux/             # Tmux configuration
@@ -161,7 +169,7 @@ Role/host ordering in merged lists is not stable — `roles/` and `hosts/` defin
 
 ## NixOS Pi Hosts
 
-Three `nixosConfigurations` live in `nix/hosts/`, all `aarch64-linux`: `hub` (the always-on Pi 4, general building hub), `airgap` (the airgapped Yubikey Pi Zero 2W), and `uptime` (the uptime-kuma Pi Zero 2W).
+Three `nixosConfigurations` live in `nix/hosts/nixos/`, all `aarch64-linux`: `hub` (the always-on Pi 4, general building hub), `airgap` (the airgapped Yubikey Pi Zero 2W), and `uptime` (the uptime-kuma Pi Zero 2W). Each is a **directory** — `default.nix` states the host, `configuration.nix` is that machine's own NixOS module. `nix/hosts/nixos/` contains nothing else; the two things every Pi shares moved to their taxonomy layers: `nix/roles/nixos/base.nix` (policy — imported by all three) and `nix/modules/nixos/gpg-yubikey.nix` (mechanism — imported by `hub` and `airgap` only).
 
 | Task | Command | Run from |
 | --- | --- | --- |
@@ -170,15 +178,29 @@ Three `nixosConfigurations` live in `nix/hosts/`, all `aarch64-linux`: `hub` (th
 | Deploy to the uptime Zero | `make uptime-switch` (override `UPTIME_HOST`) | hub |
 | Rebuild the hub itself | `make hub-switch` | hub |
 
+### A Pi host states the same kind of attrset the Macs do
+
+`nix/hosts/nixos/<name>/default.nix` states `{system, nixosImports, username ? null, homeImports ? []}`, and `flake.nix` instantiates it with a single `mkNixosHost ./hosts/nixos/<name>` — no positional arguments, matching `mkDarwinHost`/`mkHomeHost`. `nixosImports` carries that machine's `./configuration.nix` plus whichever `roles/nixos/` and `modules/nixos/` files it wants, and `homeImports` names the tier role directly: `nix/lib/nixos.nix` no longer hardcodes `roles/home/cli.nix`, exactly as `flake.nix` stopped hardcoding `roles/home/gui.nix` for the Macs. A host declares what it is.
+
+Home-manager status per Pi — a decided question, not a pending one:
+
+| Host | home-manager | Notes |
+| --- | --- | --- |
+| `hub` | yes, user `skyler` | `homeImports = [roles/home/cli.nix]` — `cli`, not `gui`: headless board with a real login |
+| `airgap` | no, deliberately and permanently | an air-gapped single-purpose Yubikey appliance; `environment.systemPackages` in `roles/nixos/base.nix` covers everything it needs |
+| `uptime` | not yet | a minimal one is planned in its own commit; until then it simply omits `username` |
+
+**A host that omits `username` gets no `nixpkgs.overlays` and no `nixpkgs.config.allowUnfree` either.** `nix/lib/nixos.nix` sets both *inside* the `username != null` branch. That is intentional, not an oversight — it is what `airgap` and `uptime` have always evaluated to, and hoisting them out would silently change those closures.
+
 ### Never import nixos-hardware into an sd-image host
 
 `nixos-hardware`'s `raspberry-pi-*` modules `mkForce`-replace `populateFirmwareCommands` from `sd-image-aarch64.nix`. Their replacement only installs `u-boot.bin` (and the matching `kernel=` / `arm_64bit=1` lines in `config.txt`) when `hardware.raspberry-pi.firmware.uboot.enable` is set. Left off, the firmware partition gets `bootcode.bin`/`start.elf`/dtbs but **no kernel**, so the GPU firmware has nothing to hand off to and the board dies with **7 LED flashes**.
 
 Enabling `uboot` papers over it; dropping `nixos-hardware` is the actual fix, and also removes the need to re-set `hardware.raspberry-pi.configtxt.settings.pi02.core_freq = 250` to keep serial output from garbling. So an image-built host imports **stock `sd-image-aarch64.nix` and nothing else**.
 
-`hub.nix` is the exception and is correct as written: it is installed in place and rebuilt with `nixos-rebuild switch`, so the sd-image module is never in play. Do not "fix" the asymmetry, and do not use `hub.nix` as the template for a new image-built host.
+`hosts/nixos/hub/configuration.nix` is the exception and is correct as written: it is installed in place and rebuilt with `nixos-rebuild switch`, so the sd-image module is never in play. Do not "fix" the asymmetry, and do not use it as the template for a new image-built host.
 
-`nix/hosts/common.nix` also sets `boot.supportedFilesystems.zfs = lib.mkForce false`. This is load-bearing, not cosmetic — the sd-image default pulls ZFS in and it will not build for the aarch64 image.
+`nix/roles/nixos/base.nix` also sets `boot.supportedFilesystems.zfs = lib.mkForce false`. This is load-bearing, not cosmetic — the sd-image default pulls ZFS in and it will not build for the aarch64 image.
 
 ### A Pi Zero cannot rebuild itself
 
@@ -186,7 +208,7 @@ A Zero 2W has 512MB of RAM. *Evaluating* a NixOS closure peaks well above that b
 
 ### Secrets on the uptime host
 
-Nothing about the Cloudflare tunnel is in this repo. `nix/hosts/uptime.nix` runs a hand-rolled `cloudflared-tunnel` unit rather than `services.cloudflared`, because that module takes the tunnel UUID as an attribute name and renders ingress rules into a store-built `config.yml` — both eval-time inputs, and both things that would end up published in this repo.
+Nothing about the Cloudflare tunnel is in this repo. `nix/hosts/nixos/uptime/configuration.nix` runs a hand-rolled `cloudflared-tunnel` unit rather than `services.cloudflared`, because that module takes the tunnel UUID as an attribute name and renders ingress rules into a store-built `config.yml` — both eval-time inputs, and both things that would end up published in this repo.
 
 Seed the host by placing two files in `/etc/cloudflared`, either on the mounted image before flashing or over SSH afterwards:
 
