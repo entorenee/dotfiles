@@ -29,11 +29,6 @@ return {
 					toml = { "taplo" },
 					sql = { "sqlfluff" },
 				},
-				formatters = {
-					yamlfmt = {
-						args = { "-conf", vim.fn.expand("~/.config/.yamlfmt"), "-" },
-					},
-				},
 				format_on_save = {
 					timeout_ms = 500,
 					lsp_fallback = true,

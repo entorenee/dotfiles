@@ -32,7 +32,7 @@
 
   # proton-mail.png is actually SVG content; placing it in hicolor/scalable lets
   # GNOME find it reliably (pixmaps/ is not consistently searched from Nix profiles).
-  home.file.".local/share/icons/hicolor/scalable/apps/proton-mail.svg" = lib.mkIf pkgs.stdenv.isLinux {
+  xdg.dataFile."icons/hicolor/scalable/apps/proton-mail.svg" = lib.mkIf pkgs.stdenv.isLinux {
     source = "${pkgs.protonmail-desktop}/share/pixmaps/proton-mail.png";
   };
 }
