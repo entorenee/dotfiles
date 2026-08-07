@@ -16,4 +16,6 @@
   ];
 
   my.gui = true;
+
+  xdg.autostart.enable = true;
 }

@@ -22,7 +22,9 @@
   programs.home-manager.enable = true;
   home.stateVersion = "26.05";
   xdg.enable = true;
-  xdg.autostart.enable = true;
+
+  # `xdg.autostart` is deliberately absent: a headless board has no session to
+  # autostart into.
 
   # `targets.genericLinux` is deliberately absent. Upstream describes it as
   # "settings that make Home Manager work better on GNU/Linux distributions
