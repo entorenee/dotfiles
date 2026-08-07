@@ -174,7 +174,7 @@ Role/host ordering in merged lists is not stable — `roles/` and `hosts/` defin
 
 ## Management Commands
 
-- **Rebuild and switch:** `make rebuild` — auto-detects OS (Darwin vs Linux) and picks the flake attribute from the machine's hostname (`hostname -s`).
+- **Rebuild and switch:** `make rebuild` — auto-detects Darwin vs Linux and picks the flake attribute from the machine's hostname (`hostname -s`). **Darwin and `hester-prynne` only:** its Linux branch takes the standalone home-manager path, so on a NixOS host it fails with `does not provide attribute homeConfigurations."<host>"`. Use `make hub-switch` on the hub — see "NixOS Pi Hosts" below.
 - **Host selection:** flake outputs are keyed by hostname (`fw-skyler`, `lyra-silvertongue`, `hester-prynne`). Each `nix/hosts/{darwin,home}/<hostname>` states `{username, system, homeImports, darwinImports ? [], overlays ? []}`; `homeImports` is one ordered list naming the tier role plus any identity or host-specific modules, and `darwinImports` is its nix-darwin counterpart (see "Identity roles live in `nix/roles/`" below).
 
 ## NixOS Pi Hosts
