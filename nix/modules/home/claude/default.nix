@@ -147,6 +147,7 @@ in {
         "Skill(pre-pr)"
         "Skill(pre-pr-autonomous)"
         "Skill(pr-review)"
+        "Skill(reflect)"
         "Skill(regression-analysis)"
         # gh cli read-only
         "Bash(gh issue list*)"
