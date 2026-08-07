@@ -13,7 +13,7 @@ Personal dotfiles managed with Nix Darwin, including comprehensive configuration
 
 Always prefer native home-manager modules and options over custom activation scripts or manual config file edits.
 
-When settings need to diverge by identity, **do not gate on a profile string** — there is no longer one. A module states the mechanism unconditionally, and an identity role file (`nix/roles/home/personal.nix`, `nix/roles/darwin/personal.nix`, or — for the sole work machine — `nix/hosts/darwin/fw-skyler/` directly) states who wants it. See "Identity roles live in `nix/roles/`" below.
+When settings need to diverge by identity, **do not gate on a profile string** — there is no longer one. A module states the mechanism unconditionally, and an identity role file (`roles/home/personal.nix`, `roles/darwin/personal.nix`, or — for the sole work machine — `hosts/darwin/fw-skyler/` directly) states who wants it. See "Identity roles live in `roles/`" below.
 
 ### `lib.mkDefault` usage
 
@@ -21,7 +21,7 @@ When settings need to diverge by identity, **do not gate on a profile string** �
 
 - **Structured types** (e.g., `homebrew.brews`, `homebrew.onActivation`): `mkDefault` works as expected. Lists concatenate; submodule fields merge individually.
 - **Freeform JSON types**: Wrapping the entire attrset with `lib.mkDefault` makes it a single opaque value. A higher-priority definition replaces it entirely instead of deep-merging. For these options, omit `mkDefault` on the attrset and only apply it to individual leaf values that need to be overridable.
-  - That leaf case genuinely works, including *nested* inside a freeform option — priority filtering runs per attribute path, before the type's merge. `programs.ssh.settings."github.com".IdentityFile` relies on this (see "Identity roles live in `nix/roles/`"). Wholesale-replacement is the desired behavior there, not a hazard.
+  - That leaf case genuinely works, including *nested* inside a freeform option — priority filtering runs per attribute path, before the type's merge. `programs.ssh.settings."github.com".IdentityFile` relies on this (see "Identity roles live in `roles/`"). Wholesale-replacement is the desired behavior there, not a hazard.
 
 ## Key Components
 
@@ -48,77 +48,76 @@ When settings need to diverge by identity, **do not gate on a profile string** �
 ## Directory Structure
 
 ```
-├── nix/
-│   ├── flake.nix                 # Main flake configuration
-│   ├── system/darwin.nix         # macOS system configuration
-│   ├── overlays/                 # one file per overlay; hosts opt into the ones they need
-│   ├── lib/                      # mkDarwinHost / mkHomeHost / mkNixosHost, one file each
-│   ├── hosts/                    # INSTANTIATION — one file (or directory) per machine, keyed by hostname
-│   │   ├── nixos/                # The three Raspberry Pi hosts, one directory each
-│   │   │   ├── hub/               # Building hub (Pi 4, always-on) — the one Pi with home-manager
-│   │   │   │   ├── default.nix   # {system, nixosImports, username?, homeImports?}
-│   │   │   │   └── configuration.nix
-│   │   │   ├── uptime/            # uptime-kuma + cloudflared (Pi Zero 2W)
-│   │   │   │   ├── default.nix
-│   │   │   │   └── configuration.nix
-│   │   │   └── airgap/            # Yubikey airgap workflow (Pi Zero 2W)
-│   │   │       ├── default.nix
-│   │   │       └── configuration.nix
-│   │   ├── darwin/                # {username, system, homeImports, darwinImports?, overlays?} for each Mac
-│   │   │   ├── fw-skyler/         # work dissolves fully here — only work machine, no personal-style role files
-│   │   │   │   ├── default.nix   # the host statement; names ./home.nix and ./darwin.nix in its own import lists
-│   │   │   │   ├── home.nix, darwin.nix, claude.nix, gh-dash.yml, id_rsa_yubikey_work.pub
-│   │   │   └── lyra-silvertongue.nix
-│   │   └── home/                  # same contract, for standalone home-manager hosts
-│   │       └── hester-prynne/
-│   │           ├── default.nix              # the host statement
-│   │           └── autostart-suppression.nix # host-specific, named in that host's homeImports
-│   ├── roles/                    # POLICY — which modules a class of machine, or a job, wants
-│   │   ├── home/
-│   │   │   ├── minimal.nix       # Shell, prompt, bare editor, small local CLI tools
-│   │   │   ├── base.nix          # minimal + git, ssh, gnupg, bins, nvim config
-│   │   │   ├── cli.nix           # base + dev tooling and language runtimes
-│   │   │   ├── gui.nix           # cli + terminal emulators, fonts, desktop apps
-│   │   │   ├── personal.nix      # IDENTITY — portable personal subset; imports personal-claude.nix
-│   │   │   ├── personal-desktop.nix  # personal GUI-desktop add-on; hosts opt in by name
-│   │   │   ├── personal-claude.nix   # personal `programs.claude-code` additions
-│   │   │   └── personal-gh-dash.yml  # personal gh-dash config, symlinked by personal.nix
-│   │   ├── darwin/
-│   │   │   └── personal.nix      # IDENTITY, nix-darwin side — Homebrew taps/brews/casks, the Dock
-│   │   └── nixos/
-│   │       └── base.nix          # Shared base for every Pi host (mainline kernel, ZFS off, stateVersion)
-│   └── modules/                  # MECHANISM — how each tool is configured
-│       ├── options.nix           # The `my.*` capability options (both systems)
-│       ├── darwin/               # nix-darwin modules (homebrew, launch-agents)
-│       ├── nixos/                # NixOS modules (gpg-yubikey — hub and airgap import it)
-│       └── home/                 # home-manager modules
-│           ├── nvim/             # Neovim configuration
-│           ├── tmux/             # Tmux configuration
-│           ├── git/              # Git configuration
-│           └── [tool]/           # Other tool configurations
+├── flake.nix                     # Main flake configuration
+├── system/darwin.nix             # macOS system configuration
+├── overlays/                     # one file per overlay; hosts opt into the ones they need
+├── lib/                          # mkDarwinHost / mkHomeHost / mkNixosHost, one file each
+├── hosts/                        # INSTANTIATION — one file (or directory) per machine, keyed by hostname
+│   ├── nixos/                    # The three Raspberry Pi hosts, one directory each
+│   │   ├── hub/                  # Building hub (Pi 4, always-on) — the one Pi with home-manager
+│   │   │   ├── default.nix       # {system, nixosImports, username?, homeImports?}
+│   │   │   └── configuration.nix
+│   │   ├── uptime/               # uptime-kuma + cloudflared (Pi Zero 2W)
+│   │   │   ├── default.nix
+│   │   │   └── configuration.nix
+│   │   └── airgap/               # Yubikey airgap workflow (Pi Zero 2W)
+│   │       ├── default.nix
+│   │       └── configuration.nix
+│   ├── darwin/                   # {username, system, homeImports, darwinImports?, overlays?} for each Mac
+│   │   ├── fw-skyler/            # work dissolves fully here — only work machine, no personal-style role files
+│   │   │   ├── default.nix       # the host statement; names ./home.nix and ./darwin.nix in its own import lists
+│   │   │   ├── home.nix, darwin.nix, claude.nix, gh-dash.yml, id_rsa_yubikey_work.pub
+│   │   └── lyra-silvertongue.nix
+│   └── home/                     # same contract, for standalone home-manager hosts
+│       └── hester-prynne/
+│           ├── default.nix                # the host statement
+│           └── autostart-suppression.nix  # host-specific, named in that host's homeImports
+├── roles/                        # POLICY — which modules a class of machine, or a job, wants
+│   ├── home/
+│   │   ├── minimal.nix           # Shell, prompt, bare editor, small local CLI tools
+│   │   ├── base.nix              # minimal + git, ssh, gnupg, bins, nvim config
+│   │   ├── cli.nix               # base + dev tooling and language runtimes
+│   │   ├── gui.nix               # cli + terminal emulators, fonts, desktop apps
+│   │   ├── personal.nix          # IDENTITY — portable personal subset; imports personal-claude.nix
+│   │   ├── personal-desktop.nix  # personal GUI-desktop add-on; hosts opt in by name
+│   │   ├── personal-claude.nix   # personal `programs.claude-code` additions
+│   │   └── personal-gh-dash.yml  # personal gh-dash config, symlinked by personal.nix
+│   ├── darwin/
+│   │   └── personal.nix          # IDENTITY, nix-darwin side — Homebrew taps/brews/casks, the Dock
+│   └── nixos/
+│       └── base.nix              # Shared base for every Pi host (mainline kernel, ZFS off, stateVersion)
+├── modules/                      # MECHANISM — how each tool is configured
+│   ├── options.nix               # The `my.*` capability options (both systems)
+│   ├── darwin/                   # nix-darwin modules (homebrew, launch-agents)
+│   ├── nixos/                    # NixOS modules (gpg-yubikey — hub and airgap import it)
+│   └── home/                     # home-manager modules
+│       ├── nvim/                 # Neovim configuration
+│       ├── tmux/                 # Tmux configuration
+│       ├── git/                  # Git configuration
+│       └── [tool]/               # Other tool configurations
 ├── templates/                    # Configuration templates
 └── .claude/                      # Claude AI memory files
 ```
 
 ### Adding a home-manager module
 
-`nix/modules/home/<tool>/` defines *how* a tool is configured and says nothing about who wants it. A module is not live until a role imports it — add it to exactly one of `nix/roles/home/{minimal,base,cli,gui}.nix`, which stack (`gui` → `cli` → `base` → `minimal`). Every current machine takes `gui`, so anything added there reaches all of them. Pick the *lowest* tier that is honest: `minimal` is the floor and must stay safe on an airgapped, memory-constrained host, so nothing there may assume a network, a remote, or a `~/dotfiles` checkout. See `CONVENTIONS.md` for the per-tier table and the "compose downward, don't subtract" rule. The `personal*` files in the same directory are *identity* roles, not tiers — they don't stack, and a module belongs there only if one job wants it rather than a class of machine (see "Identity roles live in `nix/roles/`" below).
+`modules/home/<tool>/` defines *how* a tool is configured and says nothing about who wants it. A module is not live until a role imports it — add it to exactly one of `roles/home/{minimal,base,cli,gui}.nix`, which stack (`gui` → `cli` → `base` → `minimal`). Every current machine takes `gui`, so anything added there reaches all of them. Pick the *lowest* tier that is honest: `minimal` is the floor and must stay safe on an airgapped, memory-constrained host, so nothing there may assume a network, a remote, or a `~/dotfiles` checkout. See `CONVENTIONS.md` for the per-tier table and the "compose downward, don't subtract" rule. The `personal*` files in the same directory are *identity* roles, not tiers — they don't stack, and a module belongs there only if one job wants it rather than a class of machine (see "Identity roles live in `roles/`" below).
 
 Divergence follows a three-way rule:
 
 | Kind | Mechanism |
 | --- | --- |
 | Platform truth | `pkgs.stdenv.isDarwin` / `isLinux` |
-| Capability | a `my.*` option in `nix/modules/options.nix` |
-| Identity (work vs personal) | an import — the `personal*` role files in `nix/roles/` (work: files directly under `nix/hosts/darwin/fw-skyler/`), named in a host's `homeImports`/`darwinImports` |
+| Capability | a `my.*` option in `modules/options.nix` |
+| Identity (work vs personal) | an import — the `personal*` role files in `roles/` (work: files directly under `hosts/darwin/fw-skyler/`), named in a host's `homeImports`/`darwinImports` |
 
 Do **not** reach for `pkgs.stdenv.isLinux` to mean "has a GUI" — that only reads correctly while the sole Linux host happens to be a desktop. Use `config.my.gui`.
 
-### Adding a package override or patch: `nix/overlays/`
+### Adding a package override or patch: `overlays/`
 
-Package-level overrides (pin a version, patch a `.desktop` file, override a build flag) go in `nix/overlays/<name>.nix`, one overlay function per file — not inside a home-manager module's `nixpkgs.overlays`. Setting `nixpkgs.overlays`/`nixpkgs.config` from inside a home-manager module is a no-op (or an error, on newer home-manager) once a host sets `home-manager.useGlobalPkgs = true`, since there's no separate pkgs left for the module to configure.
+Package-level overrides (pin a version, patch a `.desktop` file, override a build flag) go in `overlays/<name>.nix`, one overlay function per file — not inside a home-manager module's `nixpkgs.overlays`. Setting `nixpkgs.overlays`/`nixpkgs.config` from inside a home-manager module is a no-op (or an error, on newer home-manager) once a host sets `home-manager.useGlobalPkgs = true`, since there's no separate pkgs left for the module to configure.
 
-**Overlays are named on the host file, like its import lists — opt-in per host, not blanket.** Each `nix/hosts/{darwin,home}/<hostname>` can set `overlays = [(import ../../overlays/<name>.nix) ...];` alongside its `{username, system, homeImports}`; a host that doesn't need an overlay simply omits the field (`host.overlays or []` in `nix/lib/{darwin,home}.nix`). `hosts/home/hester-prynne/default.nix` takes `protonmail-desktop.nix` (the package only ever appears in that host's Linux-only list); `hosts/darwin/fw-skyler/default.nix` takes `pnpm-pin.nix` (the pin is for a work-only monorepo). `lyra-silvertongue.nix` takes neither. `mkDarwinHost`/`mkHomeHost` read the host's `overlays` list, append it to `flake.nix`'s `baseOverlays` (the small universal set — see `CONVENTIONS.md`'s Overlays section), and pass the result through `mkDarwinConfig`/`mkHomeManagerConfig` to wherever that config's pkgs is actually built (`system/darwin.nix`'s nix-darwin-level `nixpkgs.overlays` for Darwin — both hosts run `home-manager.useGlobalPkgs = true`, so home-manager shares that pkgs automatically; `nix/lib/home.nix`'s `mkHomeManagerConfig` builds `pkgs` directly for the standalone Linux host).
+**Overlays are named on the host file, like its import lists — opt-in per host, not blanket.** Each `hosts/{darwin,home}/<hostname>` can set `overlays = [(import ../../overlays/<name>.nix) ...];` alongside its `{username, system, homeImports}`; a host that doesn't need an overlay simply omits the field (`host.overlays or []` in `lib/{darwin,home}.nix`). `hosts/home/hester-prynne/default.nix` takes `protonmail-desktop.nix` (the package only ever appears in that host's Linux-only list); `hosts/darwin/fw-skyler/default.nix` takes `pnpm-pin.nix` (the pin is for a work-only monorepo). `lyra-silvertongue.nix` takes neither. `mkDarwinHost`/`mkHomeHost` read the host's `overlays` list, append it to `flake.nix`'s `baseOverlays` (the small universal set — see `CONVENTIONS.md`'s Overlays section), and pass the result through `mkDarwinConfig`/`mkHomeManagerConfig` to wherever that config's pkgs is actually built (`system/darwin.nix`'s nix-darwin-level `nixpkgs.overlays` for Darwin — both hosts run `home-manager.useGlobalPkgs = true`, so home-manager shares that pkgs automatically; `lib/home.nix`'s `mkHomeManagerConfig` builds `pkgs` directly for the standalone Linux host).
 
 ### Never make a private, auth-requiring repo a flake input
 
@@ -126,13 +125,13 @@ Package-level overrides (pin a version, patch a `.desktop` file, override a buil
 
 This is easy to miss on the desktops, which run Determinate Nix with lazy trees and therefore skip unused inputs. The Pi hosts run stock Nix and do not. It is what made `make hub-switch` fail on `private-assets` — a font repo `hub` never reads, since `modules/home/fonts` is only imported by `roles/home/gui.nix` and `hub` takes `cli.nix`.
 
-**Fetch it in the module that consumes it instead**, with `builtins.fetchGit` pinned to an explicit `rev` (`nix/modules/home/fonts/default.nix` is the worked example). That makes the fetch a thunk only the importing hosts force. Use `builtins.fetchGit`, not a fixed-output `pkgs.fetchgit`: the former runs in the evaluator as the invoking user and can reach the agent holding the Yubikey, while an FOD builds as `nixbld` and has no SSH access at all. A pinned rev resolves offline from `~/.cache/nix/gitv3`, so this costs an authentication only on a cold cache, not per rebuild.
+**Fetch it in the module that consumes it instead**, with `builtins.fetchGit` pinned to an explicit `rev` (`modules/home/fonts/default.nix` is the worked example). That makes the fetch a thunk only the importing hosts force. Use `builtins.fetchGit`, not a fixed-output `pkgs.fetchgit`: the former runs in the evaluator as the invoking user and can reach the agent holding the Yubikey, while an FOD builds as `nixbld` and has no SSH access at all. A pinned rev resolves offline from `~/.cache/nix/gitv3`, so this costs an authentication only on a cold cache, not per rebuild.
 
-The tradeoff is that `nix flake update` no longer manages the pin. Worth it while the private repo is near-static; see `nix/PRIVATE-ASSETS.md` for when to reverse the decision.
+The tradeoff is that `nix flake update` no longer manages the pin. Worth it while the private repo is near-static; see `PRIVATE-ASSETS.md` for when to reverse the decision.
 
-### Identity roles live in `nix/roles/`
+### Identity roles live in `roles/`
 
-There is no `profile` argument and no `nix/users/`. An identity is just **another role file**, sitting flat in `nix/roles/` next to the stacking tier roles, and a host names it directly:
+There is no `profile` argument and no `users/`. An identity is just **another role file**, sitting flat in `roles/` next to the stacking tier roles, and a host names it directly:
 
 | File | Sets |
 | --- | --- |
@@ -141,13 +140,13 @@ There is no `profile` argument and no `nix/users/`. An identity is just **anothe
 | `roles/home/personal-claude.nix` | `programs.claude-code` additions, imported by `personal.nix` |
 | `roles/darwin/personal.nix` | nix-darwin options: Homebrew taps/brews/casks, launch agents, the Dock |
 
-Two module systems, so two directories and two lists: a home-manager module cannot set `homebrew.casks`, which is why `nix/roles/darwin/` exists alongside `nix/roles/home/` and a host splits its imports into `homeImports` and `darwinImports`.
+Two module systems, so two directories and two lists: a home-manager module cannot set `homebrew.casks`, which is why `roles/darwin/` exists alongside `roles/home/` and a host splits its imports into `homeImports` and `darwinImports`.
 
 **Identity role files sit flat beside the tier roles, not in a subdirectory of their own.** `roles/home/` holds `minimal.nix`/`base.nix`/`cli.nix`/`gui.nix` *and* the `personal*` files side by side; the `personal-` filename prefix is the grouping. This is deliberate — nesting them would reintroduce the very layer that was removed.
 
-**A host states one ordered `homeImports` list, and nothing gets spliced onto it.** `nix/hosts/{darwin,home}/<name>` states `{username, system, homeImports, darwinImports ? [], overlays ? []}`. There is no `user` path field, no `user + "/home.nix"` filename contract, and no separate `extraHomeImports`: `nix/lib/darwin.nix` and `nix/lib/home.nix` read the lists and pass them through verbatim (`system/darwin.nix` puts `homeImports` on `home-manager.users.<username>.imports` and splices `darwinImports` into the nix-darwin module list). Because the tier role is no longer hardcoded in `flake.nix`, a host names its own: `lyra-silvertongue`, `fw-skyler`, and `hester-prynne` each open their `homeImports` with `roles/home/gui.nix` and then add what else they want.
+**A host states one ordered `homeImports` list, and nothing gets spliced onto it.** `hosts/{darwin,home}/<name>` states `{username, system, homeImports, darwinImports ? [], overlays ? []}`. There is no `user` path field, no `user + "/home.nix"` filename contract, and no separate `extraHomeImports`: `lib/darwin.nix` and `lib/home.nix` read the lists and pass them through verbatim (`system/darwin.nix` puts `homeImports` on `home-manager.users.<username>.imports` and splices `darwinImports` into the nix-darwin module list). Because the tier role is no longer hardcoded in `flake.nix`, a host names its own: `lyra-silvertongue`, `fw-skyler`, and `hester-prynne` each open their `homeImports` with `roles/home/gui.nix` and then add what else they want.
 
-**`work` has only one machine, so it has no `roles/` file at all — it lives directly on its host.** `nix/hosts/darwin/fw-skyler/` holds `home.nix`/`darwin.nix`/`claude.nix`/`gh-dash.yml`/the work Yubikey public key, and the host's own `default.nix` names `./home.nix` in `homeImports` and `./darwin.nix` in `darwinImports`. A `roles/` file only earns its keep once two or more hosts share it — `personal` does (the personal Mac and the Linux desktop), so it lives in `roles/`.
+**`work` has only one machine, so it has no `roles/` file at all — it lives directly on its host.** `hosts/darwin/fw-skyler/` holds `home.nix`/`darwin.nix`/`claude.nix`/`gh-dash.yml`/the work Yubikey public key, and the host's own `default.nix` names `./home.nix` in `homeImports` and `./darwin.nix` in `darwinImports`. A `roles/` file only earns its keep once two or more hosts share it — `personal` does (the personal Mac and the Linux desktop), so it lives in `roles/`.
 
 **A module that only one identity wants is imported from that identity's role file (or its GUI-only `personal-desktop.nix`, see below), not from a tier role.** `keepassxc` and `orca-slicer` work this way; putting them in `roles/home/gui.nix` would mean gating them back off. Tier roles carry what a *class of machine* wants; identity roles carry what a *job* wants.
 
@@ -175,11 +174,11 @@ Role/host ordering in merged lists is not stable — `roles/` and `hosts/` defin
 ## Management Commands
 
 - **Rebuild and switch:** `make rebuild` — auto-detects Darwin vs Linux and picks the flake attribute from the machine's hostname (`hostname -s`). **Darwin and `hester-prynne` only:** its Linux branch takes the standalone home-manager path, so on a NixOS host it fails with `does not provide attribute homeConfigurations."<host>"`. Use `make hub-switch` on the hub — see "NixOS Pi Hosts" below.
-- **Host selection:** flake outputs are keyed by hostname (`fw-skyler`, `lyra-silvertongue`, `hester-prynne`). Each `nix/hosts/{darwin,home}/<hostname>` states `{username, system, homeImports, darwinImports ? [], overlays ? []}`; `homeImports` is one ordered list naming the tier role plus any identity or host-specific modules, and `darwinImports` is its nix-darwin counterpart (see "Identity roles live in `nix/roles/`" below).
+- **Host selection:** flake outputs are keyed by hostname (`fw-skyler`, `lyra-silvertongue`, `hester-prynne`). Each `hosts/{darwin,home}/<hostname>` states `{username, system, homeImports, darwinImports ? [], overlays ? []}`; `homeImports` is one ordered list naming the tier role plus any identity or host-specific modules, and `darwinImports` is its nix-darwin counterpart (see "Identity roles live in `roles/`" below).
 
 ## NixOS Pi Hosts
 
-Three `nixosConfigurations` live in `nix/hosts/nixos/`, all `aarch64-linux`: `hub` (the always-on Pi 4, general building hub), `airgap` (the airgapped Yubikey Pi Zero 2W), and `uptime` (the uptime-kuma Pi Zero 2W). Each is a **directory** — `default.nix` states the host, `configuration.nix` is that machine's own NixOS module. `nix/hosts/nixos/` contains nothing else; the two things every Pi shares moved to their taxonomy layers: `nix/roles/nixos/base.nix` (policy — imported by all three) and `nix/modules/nixos/gpg-yubikey.nix` (mechanism — imported by `hub` and `airgap` only).
+Three `nixosConfigurations` live in `hosts/nixos/`, all `aarch64-linux`: `hub` (the always-on Pi 4, general building hub), `airgap` (the airgapped Yubikey Pi Zero 2W), and `uptime` (the uptime-kuma Pi Zero 2W). Each is a **directory** — `default.nix` states the host, `configuration.nix` is that machine's own NixOS module. `hosts/nixos/` contains nothing else; the two things every Pi shares moved to their taxonomy layers: `roles/nixos/base.nix` (policy — imported by all three) and `modules/nixos/gpg-yubikey.nix` (mechanism — imported by `hub` and `airgap` only).
 
 | Task | Command | Run from |
 | --- | --- | --- |
@@ -190,7 +189,7 @@ Three `nixosConfigurations` live in `nix/hosts/nixos/`, all `aarch64-linux`: `hu
 
 ### A Pi host states the same kind of attrset the Macs do
 
-`nix/hosts/nixos/<name>/default.nix` states `{system, nixosImports, username ? null, homeImports ? []}`, and `flake.nix` instantiates it with a single `mkNixosHost ./hosts/nixos/<name>` — no positional arguments, matching `mkDarwinHost`/`mkHomeHost`. `nixosImports` carries that machine's `./configuration.nix` plus whichever `roles/nixos/` and `modules/nixos/` files it wants, and `homeImports` names the tier role directly: `nix/lib/nixos.nix` no longer hardcodes `roles/home/cli.nix`, exactly as `flake.nix` stopped hardcoding `roles/home/gui.nix` for the Macs. A host declares what it is.
+`hosts/nixos/<name>/default.nix` states `{system, nixosImports, username ? null, homeImports ? []}`, and `flake.nix` instantiates it with a single `mkNixosHost ./hosts/nixos/<name>` — no positional arguments, matching `mkDarwinHost`/`mkHomeHost`. `nixosImports` carries that machine's `./configuration.nix` plus whichever `roles/nixos/` and `modules/nixos/` files it wants, and `homeImports` names the tier role directly: `lib/nixos.nix` no longer hardcodes `roles/home/cli.nix`, exactly as `flake.nix` stopped hardcoding `roles/home/gui.nix` for the Macs. A host declares what it is.
 
 Home-manager status per Pi — a decided question, not a pending one:
 
@@ -202,7 +201,7 @@ Home-manager status per Pi — a decided question, not a pending one:
 
 `uptime`'s home-manager user is the `users.users.uptime` SSH-administration account from its `configuration.nix`; uptime-kuma itself runs under the upstream module's `DynamicUser` and has no home. Note that `roles/home/minimal.nix` and `roles/nixos/base.nix` both bring in `neovim` — verified to be the same store path, so it is not paid for twice.
 
-**A host that omits `username` gets no `nixpkgs.overlays` and no `nixpkgs.config.allowUnfree` either.** `nix/lib/nixos.nix` sets both *inside* the `username != null` branch. That is intentional, not an oversight — it is what `airgap` has always evaluated to, and hoisting them out would silently change its closure.
+**A host that omits `username` gets no `nixpkgs.overlays` and no `nixpkgs.config.allowUnfree` either.** `lib/nixos.nix` sets both *inside* the `username != null` branch. That is intentional, not an oversight — it is what `airgap` has always evaluated to, and hoisting them out would silently change its closure.
 
 ### Never import nixos-hardware into an sd-image host
 
@@ -212,7 +211,7 @@ Enabling `uboot` papers over it; dropping `nixos-hardware` is the actual fix, an
 
 `hosts/nixos/hub/configuration.nix` is the exception and is correct as written: it is installed in place and rebuilt with `nixos-rebuild switch`, so the sd-image module is never in play. Do not "fix" the asymmetry, and do not use it as the template for a new image-built host.
 
-`nix/roles/nixos/base.nix` also sets `boot.supportedFilesystems.zfs = lib.mkForce false`. This is load-bearing, not cosmetic — the sd-image default pulls ZFS in and it will not build for the aarch64 image.
+`roles/nixos/base.nix` also sets `boot.supportedFilesystems.zfs = lib.mkForce false`. This is load-bearing, not cosmetic — the sd-image default pulls ZFS in and it will not build for the aarch64 image.
 
 ### A Pi Zero cannot rebuild itself
 
@@ -220,7 +219,7 @@ A Zero 2W has 512MB of RAM. *Evaluating* a NixOS closure peaks well above that b
 
 ### Secrets on the uptime host
 
-Nothing about the Cloudflare tunnel is in this repo. `nix/hosts/nixos/uptime/configuration.nix` runs a hand-rolled `cloudflared-tunnel` unit rather than `services.cloudflared`, because that module takes the tunnel UUID as an attribute name and renders ingress rules into a store-built `config.yml` — both eval-time inputs, and both things that would end up published in this repo.
+Nothing about the Cloudflare tunnel is in this repo. `hosts/nixos/uptime/configuration.nix` runs a hand-rolled `cloudflared-tunnel` unit rather than `services.cloudflared`, because that module takes the tunnel UUID as an attribute name and renders ingress rules into a store-built `config.yml` — both eval-time inputs, and both things that would end up published in this repo.
 
 Seed the host by placing two files in `/etc/cloudflared`, either on the mounted image before flashing or over SSH afterwards:
 
@@ -231,19 +230,19 @@ Seed the host by placing two files in `/etc/cloudflared`, either on the mounted 
 
 ## Claude Code Nix Module
 
-The Claude Code configuration is Nix-managed in `nix/modules/home/claude/`. The global `~/.claude/CLAUDE.md`, `~/.claude/settings.json`, hooks, skills, and agents are all symlinks managed by this repo.
+The Claude Code configuration is Nix-managed in `modules/home/claude/`. The global `~/.claude/CLAUDE.md`, `~/.claude/settings.json`, hooks, skills, and agents are all symlinks managed by this repo.
 
 ### How to make changes
 
 | Change             | Where to edit                                                                       | Then run                                   |
 | ------------------ | ----------------------------------------------------------------------------------- | ------------------------------------------ |
-| Add MCP server     | `nix/hosts/darwin/fw-skyler/claude.nix` or `nix/roles/home/personal-claude.nix`                 | `make darwin-switch` or `make home-switch` |
-| Add hook           | Create script in `nix/modules/home/claude/config/hooks/`, add to `default.nix` settings   | Rebuild                                    |
-| Add skill          | Add to `nix/modules/home/claude/config/skills/`                                           | Automatic (symlinked)                      |
-| Add agent          | Add to `nix/modules/home/claude/config/agents/`                                           | Automatic (symlinked)                      |
-| Change plugin      | Edit `enabledPlugins` in `nix/modules/home/claude/default.nix`                            | Rebuild                                    |
-| Change permissions | Edit `permissions` in `nix/modules/home/claude/default.nix` (base), `nix/hosts/darwin/fw-skyler/claude.nix` (work), or `nix/roles/home/personal-claude.nix` (personal) | Rebuild |
-| Change setting     | Edit `nix/modules/home/claude/default.nix` (base), `nix/hosts/darwin/fw-skyler/claude.nix` (work), or `nix/roles/home/personal-claude.nix` (personal) | Rebuild |
+| Add MCP server     | `hosts/darwin/fw-skyler/claude.nix` or `roles/home/personal-claude.nix`                 | `make darwin-switch` or `make home-switch` |
+| Add hook           | Create script in `modules/home/claude/config/hooks/`, add to `default.nix` settings   | Rebuild                                    |
+| Add skill          | Add to `modules/home/claude/config/skills/`                                           | Automatic (symlinked)                      |
+| Add agent          | Add to `modules/home/claude/config/agents/`                                           | Automatic (symlinked)                      |
+| Change plugin      | Edit `enabledPlugins` in `modules/home/claude/default.nix`                            | Rebuild                                    |
+| Change permissions | Edit `permissions` in `modules/home/claude/default.nix` (base), `hosts/darwin/fw-skyler/claude.nix` (work), or `roles/home/personal-claude.nix` (personal) | Rebuild |
+| Change setting     | Edit `modules/home/claude/default.nix` (base), `hosts/darwin/fw-skyler/claude.nix` (work), or `roles/home/personal-claude.nix` (personal) | Rebuild |
 
 ### Symlink Layout
 
@@ -270,13 +269,13 @@ Do not try to reconstruct the symlink from the home-manager profile paths. Under
 
 - `programs.claude-code.settings` uses a freeform JSON type (`pkgs.formats.json`) — do **not** wrap the entire attrset with `lib.mkDefault` (it prevents merging; see Architecture section above)
 - Base settings in `default.nix` are set without `mkDefault`; the JSON type merges attrsets across definitions automatically
-- Identity settings live in `nix/roles/home/personal-claude.nix` or (for work) `nix/hosts/darwin/fw-skyler/claude.nix`, and are **not** gated — the file is only imported by the machine that wants it, so no `lib.mkIf` is involved
+- Identity settings live in `roles/home/personal-claude.nix` or (for work) `hosts/darwin/fw-skyler/claude.nix`, and are **not** gated — the file is only imported by the machine that wants it, so no `lib.mkIf` is involved
 - For individual leaf values that an identity role needs to override, apply `lib.mkDefault` to that specific value in `default.nix`
 - List-valued settings (`permissions.allow`, `sandbox.filesystem.allowRead`) concatenate across the two files, but **the resulting order is not guaranteed** — identity entries may precede or follow the base ones. Fine for allow-matching; do not add anything order-sensitive. Hook arrays are order-sensitive and are defined only in `default.nix` for this reason.
 
 ### MCP Servers
 
-MCP servers are declared in `nix/roles/home/personal-claude.nix` or `nix/hosts/darwin/fw-skyler/claude.nix` under `programs.claude-code.mcpServers`. The home-manager module writes these to `~/.claude.json` and they appear as `plugin:claude-code-home-manager:<name>`.
+MCP servers are declared in `roles/home/personal-claude.nix` or `hosts/darwin/fw-skyler/claude.nix` under `programs.claude-code.mcpServers`. The home-manager module writes these to `~/.claude.json` and they appear as `plugin:claude-code-home-manager:<name>`.
 
 MCP servers with OAuth (e.g., Asana) require a two-part setup:
 
@@ -312,7 +311,7 @@ The server exposes `create_file`, which converts uploaded markdown into a native
 
 ### Permissions
 
-Claude Code permissions live in `nix/modules/home/claude/default.nix` (base) with additions in `nix/roles/home/personal-claude.nix` or `nix/hosts/darwin/fw-skyler/claude.nix`. Three coordinated layers:
+Claude Code permissions live in `modules/home/claude/default.nix` (base) with additions in `roles/home/personal-claude.nix` or `hosts/darwin/fw-skyler/claude.nix`. Three coordinated layers:
 
 | Layer | Field | Behavior |
 | --- | --- | --- |
@@ -341,7 +340,7 @@ When verb prefixes are mixed (e.g., Expo's `build_info` is read but `build_run` 
 
 #### Custom skills and commands — **important**
 
-Custom skills (in `nix/modules/home/claude/config/skills/`) and custom slash commands (in `nix/modules/home/claude/config/commands/`) both have no plugin namespace, so they can't be matched by a wildcard. They also share the same permission gate — `/<name>` invokes the Skill tool whether the underlying file is a `SKILL.md` or a command `.md`.
+Custom skills (in `modules/home/claude/config/skills/`) and custom slash commands (in `modules/home/claude/config/commands/`) both have no plugin namespace, so they can't be matched by a wildcard. They also share the same permission gate — `/<name>` invokes the Skill tool whether the underlying file is a `SKILL.md` or a command `.md`.
 
 **When adding a new custom skill OR command, also add a matching `Skill(<name>)` entry to `permissions.allow`** in `default.nix`. Otherwise it prompts for approval the first time it's used in every new worktree.
 

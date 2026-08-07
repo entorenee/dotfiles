@@ -35,7 +35,7 @@ curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix 
 
 Install nix-darwin to manage system configuration:
 ```
-nix run nix-darwin -- switch --flake ~/dotfiles/nix#[fw-skyler|lyra-silvertongue]
+nix run nix-darwin -- switch --flake ~/dotfiles#[fw-skyler|lyra-silvertongue]
 ```
 
 ### Linux
@@ -68,7 +68,7 @@ Overall, Nix is preferred for package installation whenever possible. However, b
 
 TLDR: Nix determines what Homebrew installs, and the end user manages the upgrade maintenances of the binaries on the host computer.
 
-If the repository is forked, or updated for a different use case the Homebrew cleanup can be altered within `nix/modules/darwin/homebrew/default.nix` in the `onActivation.cleanup` setting. Allowed settings are:
+If the repository is forked, or updated for a different use case the Homebrew cleanup can be altered within `modules/darwin/homebrew/default.nix` in the `onActivation.cleanup` setting. Allowed settings are:
 
 * `none`: Nix does nothing to manage Homebrew outside of brews and casks it has installed. Ie removing a brew from the Nix configuration will uninstall it. However, items installed via the brew CLI directly will not be uninstalled.
 * `uninstall`: This is the current setting which uninstalls anything not specified in the Nix Homebrew configuration. This is the moderate setting.
@@ -87,11 +87,11 @@ This repository also ships with [tmuxinator](https://github.com/tmuxinator/tmuxi
 
 ## Claude Code
 
-Claude Code configuration is declaratively managed via the `nix/modules/home/claude/` module. Settings, hooks, skills, and agents are version-controlled and symlinked into `~/.claude/`.
+Claude Code configuration is declaratively managed via the `modules/home/claude/` module. Settings, hooks, skills, and agents are version-controlled and symlinked into `~/.claude/`.
 
 - **Settings**: `settings.json` is generated from `settings-base.json` merged with profile-specific overrides (`settings-work.json` / `settings-personal.json`). It is read-only (Nix store symlink). To change settings, edit the JSON files and rebuild.
-- **Hooks**: Stored in `nix/modules/home/claude/config/hooks/` and symlinked to `~/.claude/hooks/`.
-- **Skills & Agents**: Stored in `nix/modules/home/claude/config/skills/` and `agents/`, symlinked to `~/.claude/`.
+- **Hooks**: Stored in `modules/home/claude/config/hooks/` and symlinked to `~/.claude/hooks/`.
+- **Skills & Agents**: Stored in `modules/home/claude/config/skills/` and `agents/`, symlinked to `~/.claude/`.
 
 ### Linux note
 

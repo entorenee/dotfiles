@@ -32,15 +32,15 @@ rebuild:
 	fi
 	@host="$$(hostname -s)"; \
 	if [ "$$(uname)" = "Darwin" ]; then \
-		sudo darwin-rebuild switch --flake "nix/#$$host"; \
+		sudo darwin-rebuild switch --flake ".#$$host"; \
 	else \
 		nix run home-manager -- --extra-experimental-features 'nix-command flakes' \
-			switch -b hm-backup --flake "nix/#$$host"; \
+			switch -b hm-backup --flake ".#$$host"; \
 	fi
 
 ## Update the flake.lock file
 update:
-	nix flake update --flake ./nix
+	nix flake update --flake .
 
 ## View previous generations of Nix configuration
 generations:
@@ -60,19 +60,19 @@ cleanup:
 
 ## Build a flashable SD image for the airgapped Pi Zero (run on the hub)
 airgap-image:
-	nix build "nix/#nixosConfigurations.airgap.config.system.build.sdImage" --out-link result-airgap-image
+	nix build ".#nixosConfigurations.airgap.config.system.build.sdImage" --out-link result-airgap-image
 
 ## Rebuild and switch the hub's own NixOS system (run on the hub)
 hub-switch:
-	sudo nixos-rebuild switch --flake "nix/#hub"
+	sudo nixos-rebuild switch --flake ".#hub"
 
 ## Build a flashable SD image for the uptime-kuma Pi Zero (run on the hub)
 uptime-image:
-	nix build "nix/#nixosConfigurations.uptime.config.system.build.sdImage" --out-link result-uptime-image
+	nix build ".#nixosConfigurations.uptime.config.system.build.sdImage" --out-link result-uptime-image
 
 ## Deploy the uptime host (run on the hub; the Zero cannot rebuild itself)
 uptime-switch:
-	nixos-rebuild switch --flake "nix/#uptime" --target-host "uptime@$(UPTIME_HOST)" --sudo
+	nixos-rebuild switch --flake ".#uptime" --target-host "uptime@$(UPTIME_HOST)" --sudo
 
 
 

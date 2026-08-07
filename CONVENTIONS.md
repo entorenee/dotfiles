@@ -1,6 +1,6 @@
 # Nix Configuration Conventions
 
-This is the durable architectural reference for how `nix/` is organized — the
+This is the durable architectural reference for how this repo is organized — the
 rules that should still hold after any given migration step is long done.
 It is distinct from two other documents:
 
@@ -14,9 +14,8 @@ It is distinct from two other documents:
   landed and why. Gitignored, not committed. Read it for *how a past decision
   was reached*; read this file for *what the current rule is*.
 
-(A later step is expected to eliminate `nix/` as a middle layer — flake.nix
-and everything under it moving up to the repo root. This file lives at the
-root, not under `nix/`, so it survives that move unchanged.)
+(The former `nix/` middle layer is gone: `flake.nix` and everything under it
+now sit at the repo root, alongside this file. Paths below are repo-relative.)
 
 ---
 
@@ -29,8 +28,8 @@ looking at — the mechanism follows directly:
 | Kind | Question | Mechanism |
 |---|---|---|
 | **Platform truth** | Is this a fact about the OS/architecture itself? | `pkgs.stdenv.isDarwin` / `isLinux`, inline |
-| **Capability** | Does a *class* of machine have or lack some property? | a `my.*` option in `nix/modules/options.nix` |
-| **Identity** | Does only *this job/host* want this at all? | an import — an identity role file (`nix/roles/home/personal*.nix`, `nix/roles/darwin/personal.nix`), `nix/hosts/<host>/`, or a tier role file |
+| **Capability** | Does a *class* of machine have or lack some property? | a `my.*` option in `modules/options.nix` |
+| **Identity** | Does only *this job/host* want this at all? | an import — an identity role file (`roles/home/personal*.nix`, `roles/darwin/personal.nix`), `hosts/<host>/`, or a tier role file |
 
 **Platform truth is legitimate to leave inline**, including inside a shared
 module — `gnupg`'s pinentry selection (`isDarwin` → `pinentry-mac`), `rtk`'s
@@ -67,11 +66,11 @@ unconditionally.
 
 | Layer | Says | Example |
 |---|---|---|
-| `nix/modules/` | *how* a tool is configured — mechanism | `modules/home/nvim/` sets up Neovim; says nothing about who wants it |
-| `nix/roles/` | *which class of machine, or which job,* wants a set of modules — policy | `roles/home/gui.nix` imports every GUI-desktop module and stacks onto `cli.nix` → `base.nix`; `roles/home/personal.nix` and `roles/darwin/personal.nix` carry the personal job; `roles/nixos/base.nix` carries what every Pi is |
-| `nix/hosts/` | *which machine this is* — instantiation | `hosts/darwin/fw-skyler/` — `{username, system, homeImports, darwinImports ? [], overlays ? []}`, plus that machine's own host-specific files; `hosts/nixos/hub/` — the same shape with `nixosImports`, plus that machine's `configuration.nix` |
+| `modules/` | *how* a tool is configured — mechanism | `modules/home/nvim/` sets up Neovim; says nothing about who wants it |
+| `roles/` | *which class of machine, or which job,* wants a set of modules — policy | `roles/home/gui.nix` imports every GUI-desktop module and stacks onto `cli.nix` → `base.nix`; `roles/home/personal.nix` and `roles/darwin/personal.nix` carry the personal job; `roles/nixos/base.nix` carries what every Pi is |
+| `hosts/` | *which machine this is* — instantiation | `hosts/darwin/fw-skyler/` — `{username, system, homeImports, darwinImports ? [], overlays ? []}`, plus that machine's own host-specific files; `hosts/nixos/hub/` — the same shape with `nixosImports`, plus that machine's `configuration.nix` |
 
-> **`nix/users/` has been dissolved into `nix/roles/`.** Work-vs-personal is
+> **`users/` has been dissolved into `roles/`.** Work-vs-personal is
 > not two people, it's two jobs a machine does — which is a question of what
 > gets installed, not of identity. The evidence: `hub` already ran
 > home-manager with no persona at all, and `modules/home/git/` has always
@@ -90,7 +89,7 @@ unconditionally.
 ordered list naming a tier role plus whatever identity or host-specific
 modules that machine wants, and `darwinImports` is its nix-darwin counterpart
 — there is no `user` path field, no filename contract for the flake to build
-paths from, and no separate `extraHomeImports`. `nix/lib/{darwin,home}.nix`
+paths from, and no separate `extraHomeImports`. `lib/{darwin,home}.nix`
 pass both lists through verbatim. Because the tier role is named by the host
 rather than hardcoded in `flake.nix`, a new host that wants `cli` instead of
 `gui` just says so.
@@ -100,7 +99,7 @@ rather than hardcoded in `flake.nix`, a new host that wants `cli` instead of
 `hosts/nixos/<name>/default.nix` and `flake.nix` instantiates it with
 `mkNixosHost ./hosts/nixos/<name>`, positionally identical in spirit to
 `mkDarwinHost`/`mkHomeHost`. `nixosImports` is the third import list — the
-NixOS-module counterpart of `darwinImports` — and `nix/lib/nixos.nix` passes it
+NixOS-module counterpart of `darwinImports` — and `lib/nixos.nix` passes it
 and `homeImports` through verbatim, hardcoding no role of its own: `hub` names
 `roles/home/cli.nix` itself, the same way the Macs name `roles/home/gui.nix`.
 A host omits `username` when it wants no home-manager at all, which also means
@@ -148,7 +147,7 @@ above is about hosts that are instances of a *class* — those want a role.
 
 ## `my.*` capability options
 
-Declared in `nix/modules/options.nix`. Deliberately kept small — an option
+Declared in `modules/options.nix`. Deliberately kept small — an option
 only earns a place here once a module a host *already imports* needs to
 behave differently depending on it. Don't add one speculatively "in case it's
 needed later"; add it when the second real consumer shows up.
@@ -162,7 +161,7 @@ extending its usage — it may say so explicitly.
 
 ## Overlays
 
-One overlay function per file in `nix/overlays/`, applied where each config's
+One overlay function per file in `overlays/`, applied where each config's
 `pkgs` is actually constructed (never inside a home-manager module once
 `useGlobalPkgs = true` is in play — there's no separate `pkgs` left for it to
 configure). Two shapes:

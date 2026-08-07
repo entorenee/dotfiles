@@ -1,0 +1,4 @@
+#!/usr/bin/env zsh
+
+# git add ~/dotfiles
+darwin-rebuild switch --flake "/users/$SUDO_USER/dotfiles#$(hostname -s)"
