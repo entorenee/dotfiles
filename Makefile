@@ -1,7 +1,5 @@
 .PHONY: help claude-sessions
 
-PROFILE ?= $(shell [ "$$(id -un)" = "fw-skylerlemay" ] && echo work || echo personal)
-
 # Hostname or IP of the uptime-kuma Pi Zero, used by uptime-switch.
 UPTIME_HOST ?= uptime
 
@@ -19,7 +17,7 @@ claude-sessions:
 		done; \
 	fi
 
-## Rebuild and switch the system configuration (auto-detects OS and profile)
+## Rebuild and switch the system configuration (auto-detects OS and host by hostname)
 rebuild:
 	@if pgrep -x claude >/dev/null 2>&1 && [ -z "$(FORCE)" ]; then \
 		echo "Refusing to rebuild while Claude Code is running."; \
@@ -32,16 +30,17 @@ rebuild:
 		echo "Quit them and retry, or override with: make rebuild FORCE=1"; \
 		exit 1; \
 	fi
-	@if [ "$$(uname)" = "Darwin" ]; then \
-		sudo darwin-rebuild switch --flake "nix/#$(PROFILE)"; \
+	@host="$$(hostname -s)"; \
+	if [ "$$(uname)" = "Darwin" ]; then \
+		sudo darwin-rebuild switch --flake ".#$$host"; \
 	else \
 		nix run home-manager -- --extra-experimental-features 'nix-command flakes' \
-			switch -b hm-backup --flake "nix/#$(PROFILE)@linux"; \
+			switch -b hm-backup --flake ".#$$host"; \
 	fi
 
 ## Update the flake.lock file
 update:
-	nix flake update --flake ./nix
+	nix flake update --flake .
 
 ## View previous generations of Nix configuration
 generations:
@@ -61,19 +60,19 @@ cleanup:
 
 ## Build a flashable SD image for the airgapped Pi Zero (run on the hub)
 airgap-image:
-	nix build "nix/#nixosConfigurations.airgap.config.system.build.sdImage" --out-link result-airgap-image
+	nix build ".#nixosConfigurations.airgap.config.system.build.sdImage" --out-link result-airgap-image
 
 ## Rebuild and switch the hub's own NixOS system (run on the hub)
 hub-switch:
-	sudo nixos-rebuild switch --flake "nix/#hub"
+	sudo nixos-rebuild switch --flake ".#hub"
 
 ## Build a flashable SD image for the uptime-kuma Pi Zero (run on the hub)
 uptime-image:
-	nix build "nix/#nixosConfigurations.uptime.config.system.build.sdImage" --out-link result-uptime-image
+	nix build ".#nixosConfigurations.uptime.config.system.build.sdImage" --out-link result-uptime-image
 
 ## Deploy the uptime host (run on the hub; the Zero cannot rebuild itself)
 uptime-switch:
-	nixos-rebuild switch --flake "nix/#uptime" --target-host "uptime@$(UPTIME_HOST)" --sudo
+	nixos-rebuild switch --flake ".#uptime" --target-host "uptime@$(UPTIME_HOST)" --sudo
 
 
 

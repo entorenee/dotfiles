@@ -35,24 +35,23 @@ curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix 
 
 Install nix-darwin to manage system configuration:
 ```
-nix run nix-darwin -- switch --flake ~/dotfiles/nix#[personal|work]
+nix run nix-darwin -- switch --flake ~/dotfiles#[fw-skyler|lyra-silvertongue]
 ```
 
 ### Linux
 
 On Linux, Home Manager is used standalone without Nix Darwin. Apply the configuration with:
 ```
-make linux
+make rebuild
 ```
 
-This targets the `personal@linux` flake configuration using Home Manager directly.
+This targets the `hester-prynne` flake configuration using Home Manager directly.
 
 ### Maintenance scripts
 
 Several Makefile commands have been created to help manage the Nix configuration after the initial install:
 
-* **linux**: Apply the Home Manager configuration for the Linux personal profile.
-* **[p|w]Rebuild**: This command with the corresponded `p` or `w` prefix will rebuild the configuration file for the personal or work flake targets.
+* **rebuild**: Rebuild and switch this machine's configuration. Auto-detects Darwin vs Linux and picks the flake attribute from `hostname -s`.
 * **update**: This updates the `flake.lock` file which corresponds to the Nix package inputs. The lock file can be committed, and a rebuild should be run after the lock file changes.
 * **generations**: Nix creates generations each time there is a change in configuration. This is great in the aspect that it allows Nix to rollback to a previous version of the configuration for debugging or temporarily unblocking a broken step. This comman lists the generations of builds available on the machine.
 * **cleanup**: This will perform Nix's garbage collection and delete all generations which are older than 7 days. Keeping old generations around when they are no longer necessary results in extra storage space being utilized.
@@ -68,7 +67,7 @@ Overall, Nix is preferred for package installation whenever possible. However, b
 
 TLDR: Nix determines what Homebrew installs, and the end user manages the upgrade maintenances of the binaries on the host computer.
 
-If the repository is forked, or updated for a different use case the Homebrew cleanup can be altered within `nix/modules/darwin/homebrew/default.nix` in the `onActivation.cleanup` setting. Allowed settings are:
+If the repository is forked, or updated for a different use case the Homebrew cleanup can be altered within `modules/darwin/homebrew/default.nix` in the `onActivation.cleanup` setting. Allowed settings are:
 
 * `none`: Nix does nothing to manage Homebrew outside of brews and casks it has installed. Ie removing a brew from the Nix configuration will uninstall it. However, items installed via the brew CLI directly will not be uninstalled.
 * `uninstall`: This is the current setting which uninstalls anything not specified in the Nix Homebrew configuration. This is the moderate setting.
@@ -87,11 +86,11 @@ This repository also ships with [tmuxinator](https://github.com/tmuxinator/tmuxi
 
 ## Claude Code
 
-Claude Code configuration is declaratively managed via the `nix/modules/claude/` module. Settings, hooks, skills, and agents are version-controlled and symlinked into `~/.claude/`.
+Claude Code configuration is declaratively managed via the `modules/home/claude/` module. Settings, hooks, skills, and agents are version-controlled and symlinked into `~/.claude/`.
 
 - **Settings**: `settings.json` is generated from `settings-base.json` merged with profile-specific overrides (`settings-work.json` / `settings-personal.json`). It is read-only (Nix store symlink). To change settings, edit the JSON files and rebuild.
-- **Hooks**: Stored in `nix/modules/claude/config/hooks/` and symlinked to `~/.claude/hooks/`.
-- **Skills & Agents**: Stored in `nix/modules/claude/config/skills/` and `agents/`, symlinked to `~/.claude/`.
+- **Hooks**: Stored in `modules/home/claude/config/hooks/` and symlinked to `~/.claude/hooks/`.
+- **Skills & Agents**: Stored in `modules/home/claude/config/skills/` and `agents/`, symlinked to `~/.claude/`.
 
 ### Linux note
 
