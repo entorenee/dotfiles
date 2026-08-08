@@ -1,4 +1,4 @@
-#\!/usr/bin/env bash
+#!/usr/bin/env bash
 # Worktrunk post-switch hook: create/switch tmux windows for worktrees
 # Called with: tmux-switch.sh <window-name> <worktree-path>
 
