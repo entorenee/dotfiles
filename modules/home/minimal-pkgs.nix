@@ -11,9 +11,9 @@
   #
   # Dev tooling and language runtimes live in cli-pkgs.nix (imported from
   # roles/home/cli.nix); Linux-desktop packages live in linux-gui-pkgs.nix
-  # (imported from roles/home/gui.nix). Persona/host package sets live in the
-  # relevant hosts/ file — `home.packages` is a `listOf package`, so all of
-  # these definitions concatenate.
+  # (imported from roles/home/gui.nix). Identity and host package sets live in
+  # the relevant roles/ or hosts/ file — `home.packages` is a `listOf package`,
+  # so all of these definitions concatenate.
   home.packages = with pkgs;
     [
       bat

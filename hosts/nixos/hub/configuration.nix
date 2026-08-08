@@ -58,10 +58,10 @@
     rsync
   ];
 
-  # System-wide git config. skyler now gets home-manager (roles/home/cli.nix,
-  # wired in flake.nix), so ~/.gitconfig takes precedence there — this stays
-  # as root's fallback, since root has no home-manager identity of its own.
-  # Signing-relevant subset of module/git/config/{config,config-personal} —
+  # System-wide git config, for root only: skyler has home-manager (see the
+  # homeImports in ./default.nix), so ~/.gitconfig takes precedence there, while
+  # root has no home-manager identity of its own.
+  # Signing-relevant subset of modules/home/git/config/{config,config-personal} —
   # commits are signed with the personal Yubikey plugged in for the occasion.
   environment.etc."gitconfig".text = ''
     [user]

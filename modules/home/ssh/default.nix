@@ -25,12 +25,11 @@ in {
       # The baseline every machine needs: the personal Yubikey is what
       # authenticates the dotfiles checkout everywhere.
       #
-      # `mkDefault` is load-bearing, not decorative. `settings` is a freeform
-      # `types.anything`, whose merge *throws* on two list definitions instead of
-      # concatenating them — so a persona cannot append here. Priority filtering
-      # runs before the type's merge, though, so marking this as a default means
-      # a host that needs more identities (see hosts/darwin/fw-skyler/home.nix) replaces
-      # the list outright and only one definition ever reaches the merge.
+      # `mkDefault` is load-bearing: `settings` is a freeform `types.anything`,
+      # whose merge *throws* on two list definitions rather than concatenating,
+      # so nothing can append here. A host needing more identities replaces the
+      # list outright instead — see hosts/darwin/fw-skyler/home.nix, and
+      # CLAUDE.md for why priority filtering makes that work.
       IdentityFile = lib.mkDefault [personalYubikeyIdentity];
       IdentitiesOnly = true;
     };

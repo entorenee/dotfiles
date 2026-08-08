@@ -5,9 +5,10 @@
 # side, named by the host rather than hardcoded here — the same reason
 # flake.nix no longer hardcodes a role for the Macs.
 #
-# A host omits `username` when it wants no home-manager at all (airgap, and
-# uptime until its own commit lands). `my.dotfiles.mutable = false` is set here
-# rather than per-host so any future Pi is immutable by default — see §6.1.
+# A host omits `username` when it wants no home-manager at all (airgap).
+# `my.dotfiles.mutable = false` is set here rather than per-host, so every Pi
+# with home-manager deploys config as a store copy instead of an out-of-store
+# symlink: a Pi's ~/dotfiles checkout may not exist when home-manager activates.
 {
   nixpkgs,
   home-manager,
@@ -35,7 +36,7 @@
             # `useGlobalPkgs = true` means they must be set at the NixOS system
             # level, same as system/darwin.nix's "System settings" block — a
             # home-manager module can't set either once there's no separate
-            # pkgs left for it to configure (§6.3).
+            # pkgs left for it to configure — see CONVENTIONS.md.
             nixpkgs.overlays = baseOverlays;
             nixpkgs.config.allowUnfree = true;
 

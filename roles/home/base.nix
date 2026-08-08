@@ -2,11 +2,12 @@
   # A machine on the network that I log into: the floor plus version control,
   # secrets, remote access, and the configured editor.
   #
-  # This is no longer the bottom of the stack — minimal.nix is. The distinction
-  # is network and state: everything added here assumes a remote to talk to
-  # (git, ssh), a key to hold (gnupg), or a `~/dotfiles` checkout to reach
-  # (bins, the nvim config). A host that cannot assume those takes minimal.nix
-  # and adds what it wants.
+  # minimal.nix is the bottom of the stack, not this. The distinction is what
+  # these modules assume when they *run*, not what they need to deploy: a remote
+  # to talk to (git, ssh), a key to hold (gnupg), a `~/dotfiles` checkout to
+  # drive (the bins scripts rebuild and flake-update it), or a network to fetch
+  # from (the nvim config bootstraps LazyVim from GitHub). A host that cannot
+  # assume those takes minimal.nix and adds what it wants.
   imports = [
     ./minimal.nix
 

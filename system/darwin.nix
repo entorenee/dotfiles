@@ -11,11 +11,12 @@
 }: system:
 # The two import lists split along module systems: `darwinImports` carries
 # nix-darwin options (Homebrew, launch agents, the Dock), `homeImports` carries
-# home-manager ones. Both come verbatim from the host file — see ../lib/darwin.nix.
-  darwin.lib.darwinSystem {
-    inherit system;
+# home-manager ones. See ../lib/darwin.nix for where they come from.
+darwin.lib.darwinSystem {
+  inherit system;
 
-    modules = [
+  modules =
+    [
       # home-manager
       home-manager.darwinModules.home-manager
       {
@@ -134,4 +135,4 @@
         time.timeZone = "America/Los_Angeles";
       }
     ];
-  }
+}

@@ -5,10 +5,8 @@
   # producing units at all; masking the generated units doesn't work because
   # their filenames use \x2d escaping that doesn't match plain-dash mask files.
   #
-  # Host-specific — moved out of roles/home/base.nix once this host got a
-  # hosts/ file of its own (see
-  # docs/local/plans/nix-architecture-redesign.md step 5 follow-up). No
-  # platform gate needed: this file is only ever imported by this one host.
+  # Host-specific: only ever imported by this one host, so no platform gate is
+  # needed.
   xdg.configFile = {
     "autostart/hidpi-daemon.desktop".text = "[Desktop Entry]\nHidden=true\n";
     "autostart/hidpi-frontend.desktop".text = "[Desktop Entry]\nHidden=true\n";

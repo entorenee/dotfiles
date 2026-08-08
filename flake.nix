@@ -6,11 +6,9 @@
   };
 
   inputs = {
-    # Specify the source of Home Manager and Nixpkgs.
-    # Stable 26.05 across the board.
-    # nixpkgs, home-manager, and darwin release branches move together.
-    # Package freshness where it matters (claude-code) comes from the
-    # nixpkgs-unstable escape hatch below, not from tracking unstable wholesale.
+    # Stable 26.05 across the board — nixpkgs, home-manager and darwin release
+    # branches move together. Freshness where it matters (claude-code) comes
+    # from the nixpkgs-unstable escape hatch, not from tracking unstable.
     nixpkgs.url = "github:nixos/nixpkgs/nixos-26.05";
     nixpkgs-unstable.url = "github:nixos/nixpkgs/nixos-unstable";
     home-manager = {
@@ -19,8 +17,8 @@
     };
 
     # nix modules for macOS such as homebrew, launchd, users, networking etc.
-    # Moved from lnl7/nix-darwin (unmaintained fork origin) to the nix-darwin
-    # org's own 26.05 release branch, matching the nixpkgs/home-manager pin.
+    # Track the nix-darwin org's own 26.05 release branch, matching the
+    # nixpkgs/home-manager pin — not the unmaintained lnl7 fork.
     darwin = {
       url = "github:nix-darwin/nix-darwin/nix-darwin-26.05";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -64,14 +62,14 @@
   }: let
     lib = nixpkgs.lib;
 
-    # Applied to every host regardless of persona — every current and planned
-    # host imports the `claude` module via `roles/home/cli.nix`, so the
-    # unstable escape hatch for it (see §6.2) is not a per-host opt-in like
+    # Applied to every host — every current and planned host imports the
+    # `claude` module via `roles/home/cli.nix`, so the unstable escape hatch for
+    # it is not a per-host opt-in like
     # `overlays/{protonmail-desktop,pnpm-pin}.nix`.
     baseOverlays = [(import ./overlays/claude-code-unstable.nix {inherit nixpkgs-unstable;})];
 
     # The mkDarwin/mkNixos/mkHome helpers live in ./lib/, each parameterized
-    # on exactly the flake inputs it needs — see §4's target layout.
+    # on exactly the flake inputs it needs.
     mkHomeManagerArgs = import ./lib/home-manager-args.nix {
       inherit lib navi-cheatsheets tmux-powerkit worktrunk;
     };

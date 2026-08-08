@@ -3,12 +3,11 @@
   pkgs,
   ...
 }: {
-  # Linux-desktop-only packages, split out of pkgs.nix's former `linuxPkgs` —
-  # see docs/local/plans/nix-architecture-redesign.md step 5 follow-up. Only
-  # ever imported from roles/home/gui.nix, so no `config.my.gui` check is
-  # needed here — self-gated on `pkgs.stdenv.isLinux` alone, the same pattern
-  # aerospace/karabiner already use for the reverse (darwin-only) case, since
-  # gui.nix also reaches the Macs.
+  # Linux-desktop-only packages. Only ever imported from roles/home/gui.nix, so
+  # that import is the GUI gate and no `config.my.gui` check is needed here —
+  # `pkgs.stdenv.isLinux` alone is enough, and is still required because gui.nix
+  # also reaches the Macs. Same self-gating pattern aerospace/karabiner use for
+  # the reverse (darwin-only) case.
   home.packages = lib.optionals pkgs.stdenv.isLinux (with pkgs; [
     arduino-ide
     caffeine-ng

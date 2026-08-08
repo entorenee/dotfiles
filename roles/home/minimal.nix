@@ -3,13 +3,13 @@
   # airgapped or memory-constrained host — nothing here assumes a network, a
   # remote, or a `~/dotfiles` checkout.
   #
-  # This is deliberately below base.nix rather than something base.nix subtracts
-  # from. Opting out is the wrong primitive: `disabledModules` is built for
-  # replacing a module with a fork (and fails silently-wrong if a role adds the
-  # module back by another path), and per-module `enable` flags would put an
-  # options block on every module to serve one appliance host. A host that needs
-  # less than base takes this role and adds the specific modules it wants —
-  # see docs/local/plans/nix-architecture-redesign.md §5.
+  # This is deliberately a tier below base.nix rather than something base.nix
+  # subtracts from. Opting out is the wrong primitive: `disabledModules` is for
+  # replacing a module with a fork, and fails silently-wrong if another role
+  # adds the module back by a different path; per-module `enable` flags would
+  # put an options block on every module to serve one appliance host. A host
+  # that needs less than base takes this role and adds the specific modules it
+  # wants — see CONVENTIONS.md.
   imports = [
     ../../modules/options.nix
 
@@ -26,10 +26,9 @@
   # `xdg.autostart` is deliberately absent: a headless board has no session to
   # autostart into.
 
-  # `targets.genericLinux` is deliberately absent. Upstream describes it as
-  # "settings that make Home Manager work better on GNU/Linux distributions
-  # other than NixOS", and a tier role cannot know which it is on — the
-  # obvious `pkgs.stdenv.isLinux` reads true on NixOS too, which is how hub
-  # ended up with /usr/share/ubuntu and Debian zsh fpaths on its PATH. It is
-  # set in lib/home.nix instead, where the distinction is structural.
+  # `targets.genericLinux` is deliberately absent: it applies only to non-NixOS
+  # Linux, and a tier role cannot know which it is on. `pkgs.stdenv.isLinux`
+  # reads true on NixOS too, which puts Debian/Ubuntu paths on a NixOS host's
+  # PATH. It is set in lib/home.nix instead, where the distinction is
+  # structural.
 }

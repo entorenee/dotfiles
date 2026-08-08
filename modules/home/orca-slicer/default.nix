@@ -32,9 +32,9 @@
     '';
   };
 in {
+  # Imported from roles/home/personal-desktop.nix, not from a tier role.
   home.packages = lib.mkIf pkgs.stdenv.isLinux [orca-slicer-wrapped];
 
-  # Imported from roles/home/personal-desktop.nix, not from a tier role.
   xdg.configFile."OrcaSlicer/user".source =
     config.lib.file.mkOutOfStoreSymlink orcaConfigPath;
 }

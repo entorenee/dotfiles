@@ -18,12 +18,10 @@
       "nikitabobko/tap"
     ];
 
-    # gnupg / pinentry / pinentry-mac were removed deliberately: nix owns the
-    # whole GnuPG stack now (see modules/home/gnupg). Keeping the Homebrew
-    # copies would recreate the "two GnuPG installations, one ~/.gnupg" race
-    # that broke Linux in Dec 2025 — macOS has no systemd unit shadowing to
-    # arbitrate it, so whichever agent spawns first would own the socket.
-    # `cleanup = "uninstall"` above removes them on the next switch.
+    # Do not add gnupg / pinentry / pinentry-mac here: nix owns the whole GnuPG
+    # stack (see modules/home/gnupg), and a second installation sharing one
+    # ~/.gnupg races for the agent socket. macOS has no systemd unit shadowing
+    # to arbitrate it, so whichever agent spawns first wins.
     brews = [
       "nvm"
       "Z"

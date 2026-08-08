@@ -67,17 +67,18 @@ in {
         "codeload.github.com"
         "asanausercontent.com"
       ];
+      # Block read access to gh's hosts.yml in case the OAuth token ever lands
+      # there (e.g., a future gh login without Keychain). The identity roles
+      # allow the gh config dir so `gh` can read config.yml; this denies the one
+      # file that could contain a token. denyRead wins over allowRead.
+      sandbox.filesystem.denyRead = ["~/.config/gh/hosts.yml"];
+
       # Read-only registry-metadata queries run outside the sandbox so they
       # reuse the user's real ~/.npm and ~/.local/share/pnpm caches. The
       # sandbox still gates everything else (installs, builds, arbitrary
       # commands), and permissions / PreToolUse hooks still apply. These
       # commands cannot mutate the project — they only query the registry
       # and read package.json / lockfiles.
-      # Block read access to gh's hosts.yml in case the OAuth token ever lands
-      # there (e.g., a future gh login without Keychain). Profiles allow the
-      # gh config dir so `gh` can read config.yml; this denies the one file
-      # that could contain a token. denyRead wins over allowRead.
-      sandbox.filesystem.denyRead = ["~/.config/gh/hosts.yml"];
       sandbox.excludedCommands = [
         "npm outdated*"
         "npm view *"

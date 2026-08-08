@@ -48,7 +48,7 @@ to:
 
 - If it's "any machine with a GUI wants this" → gate on `config.my.gui`
   (capability).
-- If it's "only this one host/persona wants this" → make it an import instead
+- If it's "only this one host or identity wants this" → make it an import instead
   of a conditional at all (identity). A module that's *only ever imported*
   from `roles/home/gui.nix` (`aerospace`, `karabiner`, `alacritty`,
   `linux-gui-pkgs.nix`) can then safely self-gate on pure platform truth
@@ -79,7 +79,7 @@ unconditionally.
 > `roles/home/personal{,-desktop,-claude}.nix`, `roles/home/personal-gh-dash.yml`,
 > and `roles/darwin/personal.nix`. Work never had a persona directory and
 > still doesn't — `fw-skyler` is the only work machine, so its files stay
-> under `hosts/darwin/fw-skyler/`. See the redesign doc §9.1–9.2.
+> under `hosts/darwin/fw-skyler/`.
 >
 > The one thing that would bring a persona layer back is a second *person*
 > (a shared machine, someone else's account). A host file merely getting
@@ -153,8 +153,7 @@ behave differently depending on it. Don't add one speculatively "in case it's
 needed later"; add it when the second real consumer shows up.
 
 Some are explicitly **transitional** — `my.dotfiles.mutable` exists only
-because out-of-store symlinks haven't been fully retired yet (see
-`CLAUDE.md`'s Claude Code section and the redesign doc §6.4). When a
+because out-of-store symlinks haven't been fully retired yet. When a
 transitional option's reason for existing goes away, delete the option, don't
 leave it as dead configuration surface. Check an option's doc comment before
 extending its usage — it may say so explicitly.

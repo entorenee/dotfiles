@@ -130,7 +130,7 @@
           "https://addons.mozilla.org/firefox/downloads/latest/ublock-origin/latest.xpi"
         ]
         # The browser extension is only useful alongside the native KeePassXC it
-        # talks to, so it follows that module rather than naming a persona.
+        # talks to, so it follows that module rather than an identity role.
         ++ lib.optional config.programs.keepassxc.enable "https://addons.mozilla.org/firefox/downloads/latest/keepassxc-browser/latest.xpi";
     };
   };

@@ -3,12 +3,11 @@
   pkgs,
   ...
 }: let
-  # Headless-safe Linux CLI/daemon tools only — no display dependency, so this
-  # stays platform truth (`pkgs.stdenv.isLinux`) rather than a capability
-  # check. GUI-only Linux packages live in modules/home/linux-gui-pkgs.nix,
-  # imported only from roles/home/gui.nix — see
-  # docs/local/plans/nix-architecture-redesign.md step 5 follow-up for why
-  # that split, not an inline `config.my.gui` check here.
+  # Headless-safe Linux CLI/daemon tools only — no display dependency, so the
+  # gate stays platform truth (`pkgs.stdenv.isLinux`) rather than a capability
+  # check. GUI-only Linux packages belong in modules/home/linux-gui-pkgs.nix,
+  # which only roles/home/gui.nix imports; that import is the GUI gate, so no
+  # inline `config.my.gui` check is needed on either side.
   linuxHeadlessPkgs = with pkgs; [
     bubblewrap
     cryptsetup # TODO: Confirm if this is a needed dependency
@@ -20,23 +19,18 @@
   ];
 in {
   # Dev tooling: language runtimes, package managers, databases, servers —
-  # everything a machine that is actually developed on wants, and nothing a
-  # constrained or airgapped host should be made to carry. Split out of the
-  # former pkgs.nix, whose single list reached every host through
-  # roles/home/base.nix and made that role's "safe on a headless,
-  # resource-constrained host" claim false.
+  # everything a machine that is actually developed on wants. Nothing that a
+  # constrained or airgapped host would be made to carry belongs here, since
+  # this list reaches every host taking roles/home/cli.nix or above.
   #
   # Small local shell tools live in minimal-pkgs.nix (imported from
   # roles/home/minimal.nix) instead.
   #
-  # nixpkgs.config/overlays used to live here, but setting them from inside a
-  # home-manager module is a no-op (or an error, on newer home-manager) once a
-  # host uses `useGlobalPkgs = true` — there's no separate pkgs left for a
-  # home-manager module to configure (see
-  # docs/local/plans/nix-architecture-redesign.md §6.3). Both now live in
-  # overlays/ and are applied where each config's pkgs is actually
-  # constructed (flake.nix, system/darwin.nix), which stays correct regardless
-  # of `useGlobalPkgs`.
+  # Do not set nixpkgs.config or nixpkgs.overlays here: from inside a
+  # home-manager module both are a no-op (an error on newer home-manager) once
+  # a host sets `useGlobalPkgs = true`. Overlays live in overlays/ and are
+  # applied where each config's pkgs is actually built (flake.nix,
+  # system/darwin.nix) — see CONVENTIONS.md.
   home.packages = with pkgs;
     [
       bash # tmux theme needs a more recent version of bash

@@ -9,9 +9,7 @@
   ghDashConfig = "${config.home.homeDirectory}/dotfiles/hosts/darwin/fw-skyler/gh-dash.yml";
 in {
   # fw-skyler is the only work machine, so work identity lives directly on the
-  # host rather than in a shared role under roles/home/ — this host names
-  # ./home.nix and ./darwin.nix in its own import lists. See
-  # docs/local/plans/nix-architecture-redesign.md §4c.
+  # host rather than in a shared role under roles/home/ — see CONVENTIONS.md.
   imports = [
     ./claude.nix
   ];

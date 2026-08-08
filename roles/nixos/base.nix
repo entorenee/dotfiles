@@ -4,8 +4,8 @@
   ...
 }: {
   # sd-image-aarch64.nix enables ZFS through the default supportedFilesystems,
-  # and it will not build for the aarch64 image. Every host under hosts/ is a
-  # Pi, so force it off here rather than repeating it per host.
+  # and it will not build for the aarch64 image. Every host under hosts/nixos/
+  # is a Pi, so force it off here rather than repeating it per host.
   boot.supportedFilesystems.zfs = lib.mkForce false;
 
   # nixos-hardware's Pi profiles default to Raspberry Pi's vendor kernel, which
