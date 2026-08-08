@@ -236,7 +236,7 @@ The Claude Code configuration is Nix-managed in `modules/home/claude/`. The glob
 
 | Change             | Where to edit                                                                       | Then run                                   |
 | ------------------ | ----------------------------------------------------------------------------------- | ------------------------------------------ |
-| Add MCP server     | `hosts/darwin/fw-skyler/claude.nix` or `roles/home/personal-claude.nix`                 | `make darwin-switch` or `make home-switch` |
+| Add MCP server     | `hosts/darwin/fw-skyler/claude.nix` or `roles/home/personal-claude.nix`                 | `make rebuild`                             |
 | Add hook           | Create script in `modules/home/claude/config/hooks/`, add to `default.nix` settings   | Rebuild                                    |
 | Add skill          | Add to `modules/home/claude/config/skills/`                                           | Automatic (symlinked)                      |
 | Add agent          | Add to `modules/home/claude/config/agents/`                                           | Automatic (symlinked)                      |
@@ -408,7 +408,7 @@ This repo is used across multiple machines. Use the right persistence layer:
 
 1. Clone repository
 2. Review profile settings in `flake.nix`
-3. Run `make darwin-switch` to apply configurations
+3. Run `make rebuild` to apply configurations
 4. Customize individual modules as needed
 
 ## Maintenance Notes

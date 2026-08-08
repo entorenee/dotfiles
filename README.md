@@ -42,7 +42,7 @@ nix run nix-darwin -- switch --flake ~/dotfiles#[fw-skyler|lyra-silvertongue]
 
 On Linux, Home Manager is used standalone without Nix Darwin. Apply the configuration with:
 ```
-make linux
+make rebuild
 ```
 
 This targets the `hester-prynne` flake configuration using Home Manager directly.
@@ -51,8 +51,7 @@ This targets the `hester-prynne` flake configuration using Home Manager directly
 
 Several Makefile commands have been created to help manage the Nix configuration after the initial install:
 
-* **linux**: Apply the Home Manager configuration for the Linux personal profile.
-* **[p|w]Rebuild**: This command with the corresponded `p` or `w` prefix will rebuild the configuration file for the personal or work flake targets.
+* **rebuild**: Rebuild and switch this machine's configuration. Auto-detects Darwin vs Linux and picks the flake attribute from `hostname -s`.
 * **update**: This updates the `flake.lock` file which corresponds to the Nix package inputs. The lock file can be committed, and a rebuild should be run after the lock file changes.
 * **generations**: Nix creates generations each time there is a change in configuration. This is great in the aspect that it allows Nix to rollback to a previous version of the configuration for debugging or temporarily unblocking a broken step. This comman lists the generations of builds available on the machine.
 * **cleanup**: This will perform Nix's garbage collection and delete all generations which are older than 7 days. Keeping old generations around when they are no longer necessary results in extra storage space being utilized.
