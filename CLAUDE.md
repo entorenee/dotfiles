@@ -255,7 +255,13 @@ Because `hooks/` is an out-of-store symlink into this repo, a new or edited hook
 
 **`make rebuild` while a Claude Code session is running deletes `~/.claude/settings.json`.** Quit all sessions first, rebuild, then restart them.
 
-`make rebuild` now refuses to run when it detects a live session, listing each one so you know what to quit. `make claude-sessions` shows the same list on its own. Override with `make rebuild FORCE=1` when you accept the loss. Note that `pgrep -x claude` undercounts when run *from inside* a Claude Code session (it misses the invoking process), so run these from a plain terminal.
+`make rebuild` refuses to run when it detects a live session, listing each one so you know what to quit. `make claude-sessions` shows the same list on its own. Override with `make rebuild FORCE=1` when you accept the loss.
+
+**Do not detect sessions with `pgrep -x claude` — it matches nothing, and the gate built on it passed silently for every rebuild until 2026-08-10.** The package is a Nix binary wrapper: `bin/claude` is a compiled stub that `execve`s `.claude-wrapped` in place, so the surviving process's `comm` reads `.claude-wrapped` and never `claude`. `-x` matches `comm`, so it always comes back empty. argv[0] *is* still `claude`, which is why `pgrep -af claude` lists the session and makes the failure look like something else. Verified on hester-prynne with `/bin/pgrep` (absolute path, so no shell rewriting involved): `pgrep -x claude` exited 1 while `ps -o comm=` on the live PID printed `.claude-wrapped`.
+
+An earlier version of this section blamed the empty result on `pgrep` "missing the invoking process" and advised running from a plain terminal. That was wrong — `pgrep` excludes only itself, never its ancestors, and a rebuild launched from a separate tmux window failed to fire just the same. The advice actively hid the bug.
+
+`make rebuild` uses the `CLAUDE_PIDS` variable in the `Makefile` instead, matching either name on the basename (macOS `ps` reports `comm` as a full path). It is deliberately `ps`/`awk` only: `procps` is not declared anywhere in this config, and a missing `pgrep` made the old gate fail *open* — `pgrep … 2>/dev/null` swallows "command not found" and the `&&` short-circuits to "no sessions running."
 
 The home-manager `claude-code` module deploys settings.json as a symlink to a store file installed `-Dm444` (`modules/programs/claude-code/default.nix`), so it is read-only. When a rebuild swaps that symlink to a new generation with different content, a *running* Claude Code process notices the change a few minutes later and tries to write the file back; it cannot write the read-only target in place, so it unlinks first and the write never lands. The symlink is simply gone, and with it every permission rule — so everything starts prompting, silently.
 

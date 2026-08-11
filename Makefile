@@ -3,9 +3,18 @@
 # Hostname or IP of the uptime-kuma Pi Zero, used by uptime-switch.
 UPTIME_HOST ?= uptime
 
+# PIDs of running Claude Code sessions. `pgrep -x claude` does NOT work: the
+# package is a Nix binary wrapper whose bin/claude execve's .claude-wrapped in
+# place, so the surviving process's name is never "claude" and the match
+# silently comes back empty. argv[0] is still "claude", which is why
+# `pgrep -f` looks fine and `pgrep -x` does not. Matched on the basename
+# because macOS ps reports comm as a full path. ps/awk only — procps is not
+# declared in this config, and a missing pgrep would fail open.
+CLAUDE_PIDS = ps -eo pid=,comm= | awk '{n=split($$2,a,"/"); if (a[n]=="claude" || a[n]==".claude-wrapped") print $$1}'
+
 ## List running Claude Code sessions (PID, start time, working directory)
 claude-sessions:
-	@pids=$$(pgrep -x claude 2>/dev/null); \
+	@pids=$$($(CLAUDE_PIDS)); \
 	if [ -z "$$pids" ]; then \
 		echo "No Claude Code sessions running."; \
 	else \
@@ -19,7 +28,7 @@ claude-sessions:
 
 ## Rebuild and switch the system configuration (auto-detects OS and host by hostname)
 rebuild:
-	@if pgrep -x claude >/dev/null 2>&1 && [ -z "$(FORCE)" ]; then \
+	@if [ -n "$$($(CLAUDE_PIDS))" ] && [ -z "$(FORCE)" ]; then \
 		echo "Refusing to rebuild while Claude Code is running."; \
 		echo "A rebuild that changes settings.json deletes ~/.claude/settings.json"; \
 		echo "out from under a live session, taking every permission rule with it"; \
