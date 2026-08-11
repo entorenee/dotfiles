@@ -265,6 +265,14 @@ Verified 2026-07-28 on claude-code 2.1.220, five trials: three rebuilds with a s
 
 Do not try to reconstruct the symlink from the home-manager profile paths. Under nix-darwin they diverge: verified 2026-07-28, `~/.local/state/nix/profiles/home-manager/home-files/` had no `.claude/settings.json` at all, `~/.local/state/home-manager/gcroots/current-home/` pointed at a stale generation, and the live symlink pointed at a third — because home-manager runs as a nix-darwin module, so the authoritative `home-manager-files` derivation is referenced from the system generation rather than the home-manager profile. If you must relink by hand, take the target from `readlink ~/.claude/settings.json` *before* it disappears.
 
+### A repo's `settings.local.json` silently overrides the Nix config
+
+`<repo>/.claude/settings.local.json` takes precedence over the Nix-managed `~/.claude/settings.json`, and the `/sandbox` panel **writes to it**. Selecting a sandbox mode there persists `sandbox.enabled` per-repo, where it outranks the module.
+
+This had the sandbox fully disabled in this repo — for long enough that its absence read as a Claude Code bug — while `sandbox.enabled = true` was correctly deployed in `settings.json`. The symptom is that sandbox settings look right and nothing enforces: no proxy env vars, `curl` reaching non-allowlisted hosts, `denyRead` paths readable.
+
+**Check `.claude/settings.local.json` before concluding a settings-level feature is broken.** The file is gitignored, so this is per-machine state — fixing it in one checkout fixes nothing elsewhere. Note also that a failed sandbox startup degrades to *no sandbox* with only a warning; `sandbox.failIfUnavailable = true` makes that a hard failure instead.
+
 ### Settings Merge Behavior
 
 - `programs.claude-code.settings` uses a freeform JSON type (`pkgs.formats.json`) — do **not** wrap the entire attrset with `lib.mkDefault` (it prevents merging; see Architecture section above)
@@ -327,6 +335,12 @@ All tools use the same glob style — `*` matches any string, anywhere in the pa
 - `Bash(gh api repos/*/issues*)` — wildcard mid-path
 - `mcp__plugin_claude-code-home-manager_expo__*_info` — wildcard mid-name (matches `build_info`, `workflow_info`)
 - `Skill(superpowers:*)` — wildcard after plugin namespace
+
+#### Pattern scope — `**/` is project-relative
+
+A `Read(**/x)` rule matches only under the current project root, **not** the whole filesystem. Verified 2026-08-11 against the live `Read(**/.npmrc)` rule: a dummy `.npmrc` inside the repo was denied; the same file under `/private/tmp` was read successfully. Per the Claude docs, Read/Edit rules use `//path` for absolute and `/path` for project-relative — a different convention from `sandbox.filesystem.*` paths, which use standard prefixes (`/`, `~/`, `./`).
+
+So `Read(**/.env)` guards the `.env` of whatever project Claude is working in and nothing wider. That is a bounded guarantee — do not write such a rule and then describe it as blanket coverage. Whether globs work in `sandbox.filesystem.denyRead` at all is undocumented and untested.
 
 #### Condensing MCP allowlists
 
