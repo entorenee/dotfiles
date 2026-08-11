@@ -117,6 +117,13 @@ in {
         # sandboxed — where denyRead on hosts.yml stops it from even starting
         # ("failed to create root command"). Both forms have to be listed.
         "rtk gh *"
+        # Nix needs the daemon socket, which the sandbox blocks. Read-only
+        # evaluation only: builds, rebuilds, and `nix run`/`develop`/`shell`/
+        # `repl` are omitted so they stay sandboxed. rtk rewrites none of these.
+        "nix eval *"
+        "nix flake show*"
+        "nix flake metadata*"
+        "nix search*"
       ];
       statusLine = {
         type = "command";
