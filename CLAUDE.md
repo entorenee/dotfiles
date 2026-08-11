@@ -176,6 +176,38 @@ Role/host ordering in merged lists is not stable — `roles/` and `hosts/` defin
 - **Rebuild and switch:** `make rebuild` — auto-detects Darwin vs Linux and picks the flake attribute from the machine's hostname (`hostname -s`). **Darwin and `hester-prynne` only:** its Linux branch takes the standalone home-manager path, so on a NixOS host it fails with `does not provide attribute homeConfigurations."<host>"`. Use `make hub-switch` on the hub — see "NixOS Pi Hosts" below.
 - **Host selection:** flake outputs are keyed by hostname (`fw-skyler`, `lyra-silvertongue`, `hester-prynne`). Each `hosts/{darwin,home}/<hostname>` states `{username, system, homeImports, darwinImports ? [], overlays ? []}`; `homeImports` is one ordered list naming the tier role plus any identity or host-specific modules, and `darwinImports` is its nix-darwin counterpart (see "Identity roles live in `roles/`" below).
 
+### Pin every Darwin host's hostname
+
+macOS keeps three separate names, and only one of them is what `hostname` returns:
+
+| Name | Read with | Role |
+| --- | --- | --- |
+| `ComputerName` | `scutil --get ComputerName` | The friendly name in System Settings and AirDrop |
+| `LocalHostName` | `scutil --get LocalHostName` | The Bonjour `.local` name |
+| `HostName` | `scutil --get HostName` | Sets `kern.hostname` — **this is what `hostname` reports** |
+
+**When `HostName` is unset, configd derives `kern.hostname` from the network** — DHCP option 12 or reverse DNS of the current lease — and only falls back to `LocalHostName` if the network offers nothing. So a router or VPN can silently rename the machine out from under `make rebuild`, whose `host="$(hostname -s)"` then names a flake attribute that does not exist:
+
+```
+error: flake '...' does not provide attribute 'darwinConfigurations.Mac.system'
+```
+
+Verified 2026-08-11 on `fw-skyler`: `ComputerName` and `LocalHostName` were both still `fw-skyler`, `HostName` was **not set**, and `kern.hostname` had become `Mac`. Because System Settings shows `ComputerName`, the machine looks correctly named while `hostname` disagrees — do not use System Settings to check this.
+
+**So every Darwin host sets `networking.hostName`, and its value must equal that host's `darwinConfigurations` attribute name.** nix-darwin runs `scutil --set HostName` on activation, which pins `kern.hostname` against DHCP. `networking.localHostName` defaults to `networking.hostName`, so the one line pins both; setting `localHostName` alone fixes nothing, because `HostName` is still unset and still network-derived.
+
+Set it on the **host**, never in a `roles/` file — the name identifies one machine, not a class or an identity. `fw-skyler` sets it in its own `darwin.nix`; `lyra-silvertongue` has no host-level darwin file, so it carries an inline `{networking.hostName = ...;}` module in its `darwinImports`.
+
+Leave `networking.computerName` alone unless you intend to rename the machine everywhere it is user-visible.
+
+The chicken-and-egg case — a machine whose `HostName` is unset cannot `make rebuild` to acquire the pin — is broken by hand, once:
+
+```bash
+sudo scutil --set HostName <attr-name>
+```
+
+The three Pi hosts already set `networking.hostName` in their `configuration.nix`. `hester-prynne` is standalone home-manager with no NixOS module, so it has nothing to set this from and depends on the OS being named correctly.
+
 ## NixOS Pi Hosts
 
 Three `nixosConfigurations` live in `hosts/nixos/`, all `aarch64-linux`: `hub` (the always-on Pi 4, general building hub), `airgap` (the airgapped Yubikey Pi Zero 2W), and `uptime` (the uptime-kuma Pi Zero 2W). Each is a **directory** — `default.nix` states the host, `configuration.nix` is that machine's own NixOS module. `hosts/nixos/` contains nothing else; the two things every Pi shares moved to their taxonomy layers: `roles/nixos/base.nix` (policy — imported by all three) and `modules/nixos/gpg-yubikey.nix` (mechanism — imported by `hub` and `airgap` only).
