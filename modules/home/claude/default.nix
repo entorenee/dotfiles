@@ -331,6 +331,12 @@ in {
         "Bash(grep *.npmrc*)"
         "Bash(head *.npmrc*)"
         "Bash(tail *.npmrc*)"
+        # Whole env family, .env.example included — usually a placeholder, not
+        # guaranteed to be. `**/` is project-relative, so this guards the project
+        # Claude is working in, not the filesystem. Read tool only: rtk rewrites
+        # `cat .env` into the allowed `rtk read`, so Bash patterns can't work.
+        "Read(**/.env)"
+        "Read(**/.env.*)"
         "Read(~/.pypirc)"
         "Read(~/.gem/credentials)"
         "Read(~/Library/Keychains/**)"
