@@ -5,6 +5,7 @@
     ../../../roles/home/gui.nix
     ../../../roles/home/personal.nix
     ../../../roles/home/personal-desktop.nix
+    ../../../modules/home/mise
     ./autostart-suppression.nix
   ];
   # protonmail-desktop (the nixpkgs package, not the Mac Homebrew cask) only

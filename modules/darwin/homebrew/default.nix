@@ -22,7 +22,6 @@
     # ~/.gnupg races for the agent socket. macOS has no systemd unit shadowing
     # to arbitrate it, so whichever agent spawns first wins.
     brews = [
-      "nvm"
       "Z"
     ];
 

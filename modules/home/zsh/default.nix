@@ -48,11 +48,6 @@
       if [[ $(uname) = "Darwin" ]]; then
         eval "$(/opt/homebrew/bin/brew shellenv)"
         source "/opt/homebrew/etc/profile.d/z.sh"
-        # TODO move to npm module
-        # Export NVM Paths
-        export NVM_DIR="$HOME/.nvm"
-        [ -s "/opt/homebrew/opt/nvm/nvm.sh" ] && \. "/opt/homebrew/opt/nvm/nvm.sh"
-        [ -s "/opt/homebrew/opt/nvm/etc/bash_completion.d/nvm" ] && \. "/opt/homebrew/opt/nvm/etc/bash_completion.d/nvm"
       fi
 
       # pnpm global binaries. pnpm 10.x uses $PNPM_HOME itself as the global
@@ -83,7 +78,6 @@
       enable = true;
       plugins = [
         "git"
-        "nvm"
       ];
     };
   };
