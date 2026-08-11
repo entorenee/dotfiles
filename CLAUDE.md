@@ -250,7 +250,38 @@ The Claude Code configuration is Nix-managed in `modules/home/claude/`. The glob
 
 Everything under `~/.claude` is therefore a symlink into the Nix store, and **every edit under `config/` needs a rebuild to take effect** — including hook scripts. The `*Dir` options have no `mkOutOfStoreSymlink` escape hatch, so they don't honor `my.dotfiles.mutable`; that's the accepted cost of the module being usable on a NixOS host with no `~/dotfiles` checkout.
 
-The `*Dir` options set `recursive = true`, which makes home-manager create `~/.claude/<subdir>` as a real directory and link each child individually. That is what lets `skills/` be deployed as one option: the module also installs its generated MCP plugin at `~/.claude/skills/claude-code-home-manager`, and a single directory-level symlink would collide with that nested entry ("Error installing file … outside $HOME"). Enumerating skills one-by-one used to be the workaround; `recursive = true` supersedes it.
+The `*Dir` options and the path form of `skills` deploy with `recursive = true` — set inside the module's own `mkRecursiveDirAttrs`, not by anything this repo passes. That makes home-manager create `~/.claude/<subdir>` as a real directory and link each child individually, instead of pointing the whole subdirectory at one store path. Enumerating skills one-by-one used to be the workaround and is no longer needed. That per-file layout is also what makes the migration hazard below possible, so it is worth knowing which shape is deployed.
+
+**The MCP plugin does not land in `~/.claude/skills/`.** The pinned home-manager (`flake.lock` rev `d4fd2466`) builds it as a store directory named `claude-code-hm-plugin` and hands it to a wrapper script as `--plugin-dir`, unconditionally — so `~/.claude/skills/` holds exactly the repo's own skills and nothing else. Newer home-manager revisions add a "personal plugins" mode that installs to `~/.claude/skills/<plugin>` when claude-code is ≥ 2.1.157, and gate `recursive = true` on avoiding a collision with it; none of that code is in the pinned revision, so do not reason from it. Several home-manager sources coexist in `/nix/store` — confirm the one you are reading matches `flake.lock` before drawing conclusions from it.
+
+### Migrating a directory off `mkOutOfStoreSymlink`
+
+**Delete the old live symlinks by hand before the first rebuild after such a change.** Switching a directory from `mkOutOfStoreSymlink` to a store-backed per-file layout — what commit `cd210a1` did for `agents/`, `commands/`, `hooks/`, and `skills/` — does not retire the symlink the previous generation already placed in `~`. That link resolves *through* the store and back into the working tree:
+
+```
+~/.claude/agents
+  -> /nix/store/<gen>-home-manager-files/.claude/agents
+  -> /nix/store/<hash>-hm_agents                     # mkOutOfStoreSymlink: a store symlink...
+  -> ~/dotfiles/modules/home/claude/config/agents    # ...whose target is the repo
+```
+
+home-manager then creates each new per-file entry *through* that chain, so `ln -s … ~/.claude/agents/foo.md` lands in `~/dotfiles/…` instead. The tracked source is moved aside to `foo.md.hm-backup` and replaced by a store symlink, and `git status` reports the whole tree as typechanged (` T`). Restoring from git alone does not hold — the next rebuild repeats it, because the chain is what is broken, not the files. The `.hm-backup` files are a symptom, never the cause.
+
+Home-manager will not clear the stale links itself. It retires orphans by diffing against the previous generation it holds a pointer to, and under nix-darwin those pointers diverge (verified 2026-08-11: the gcroot, the home-manager profile, and the live files each named a different generation), so the old `.claude/agents` entry is never seen as an orphan.
+
+Fix in this order; the order is load-bearing:
+
+1. `rm ~/.claude/agents ~/.claude/commands ~/.claude/hooks ~/.claude/skills/*` — every one is a symlink, so flagless `rm` suffices. Do **not** use `rm -rf`, and never add a trailing slash: `rm -rf ~/.claude/agents/` deletes the repo directory the link resolves to. Flagless `rm` also avoids `Bash(rm -rf *)` in `permissions.deny`, which refuses the `-rf` form when run through Claude Code.
+2. `git checkout -- modules/home/claude/config/`, then delete the `*.hm-backup` files — before rebuilding. A rebuild while the sources are still symlinks copies the *symlinks* into the new store path rather than the content, stacking another layer of indirection each time.
+3. Quit all sessions, then `make rebuild`.
+
+Verify with:
+
+```bash
+find ~/.claude -maxdepth 2 -type l -exec sh -c 'readlink -f "$1" | grep -q "^$HOME/dotfiles/" && echo "$1"' _ {} \;
+```
+
+It must print nothing, `~/.claude/{agents,commands,hooks,skills}` must be real directories, and every link under `~/.claude` must name a single generation.
 
 ### Quit Claude sessions before rebuilding
 
