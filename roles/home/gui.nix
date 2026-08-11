@@ -17,4 +17,8 @@
   my.gui = true;
 
   xdg.autostart.enable = true;
+
+  # Mac GUI apps come from Homebrew casks; the copy probe wipes App Management
+  # TCC grants.
+  targets.darwin.copyApps.enable = false;
 }
