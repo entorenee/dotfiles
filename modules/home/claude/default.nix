@@ -4,6 +4,27 @@
   ...
 }: let
   configPath = "${config.home.homeDirectory}/dotfiles/modules/home/claude/config";
+
+  # Repo-authored skills and slash commands; /<name> invokes the Skill tool for
+  # both. Read from the same directories home.file uses, so this cannot drift.
+  skillNames =
+    builtins.attrNames (builtins.readDir ./config/skills)
+    ++ map (lib.removeSuffix ".md")
+    (builtins.attrNames
+      (lib.filterAttrs (_: type: type == "regular") (builtins.readDir ./config/commands)));
+
+  # Explicit hosts, never "*.example.com" — a subdomain wildcard trusts every
+  # host anyone can stand up there (*.github.io = any GitHub user's page).
+  # A WebFetch rule also pre-allows its host for the Bash sandbox, not the
+  # reverse, so these are deliberately absent from allowedDomains below.
+  webFetchHosts = [
+    "github.com"
+    "raw.githubusercontent.com"
+    "www.npmjs.com"
+    "registry.npmjs.org"
+    "getstream.io" # Stream Chat docs, at /chat/docs
+    "nikitabobko.github.io" # AeroSpace docs, at /AeroSpace/guide
+  ];
 in {
   programs.claude-code = {
     enable = true;
@@ -50,35 +71,26 @@ in {
       env = {
         ENABLE_CLAUDEAI_MCP_SERVERS = "false";
         DISABLE_AUTOUPDATER = "1";
-        # Force Node's DNS resolution to prefer IPv4. The Claude Code sandbox
-        # proxy binds to 127.0.0.1; Node 18+ defaults to IPv6-first lookups,
-        # which fail before falling back. Tools like Vite/Vitest run lots of
-        # short-lived Node processes that hit this constantly.
+        # The sandbox proxy binds 127.0.0.1 only; Node 18+ tries IPv6 first and
+        # fails before falling back. Costly with short-lived Vite/Vitest procs.
         NODE_OPTIONS = "--dns-result-order=ipv4first";
       };
       sandbox.enabled = true;
+      # Only hosts Bash reaches that WebFetch never does. Everything in
+      # webFetchHosts is already pre-allowed here by its WebFetch rule.
       sandbox.network.allowedDomains = [
-        "registry.npmjs.org"
-        "www.npmjs.com"
         "api.github.com"
-        "github.com"
-        "raw.githubusercontent.com"
-        "objects.githubusercontent.com"
         "codeload.github.com"
+        "objects.githubusercontent.com"
         "asanausercontent.com"
       ];
-      # Block read access to gh's hosts.yml in case the OAuth token ever lands
-      # there (e.g., a future gh login without Keychain). The identity roles
-      # allow the gh config dir so `gh` can read config.yml; this denies the one
-      # file that could contain a token. denyRead wins over allowRead.
+      # Identity roles allow the whole gh config dir; this re-blocks the one
+      # file an OAuth token could land in. denyRead wins over allowRead.
       sandbox.filesystem.denyRead = ["~/.config/gh/hosts.yml"];
 
-      # Read-only registry-metadata queries run outside the sandbox so they
-      # reuse the user's real ~/.npm and ~/.local/share/pnpm caches. The
-      # sandbox still gates everything else (installs, builds, arbitrary
-      # commands), and permissions / PreToolUse hooks still apply. These
-      # commands cannot mutate the project — they only query the registry
-      # and read package.json / lockfiles.
+      # Registry-metadata reads run unsandboxed so they reuse the real ~/.npm
+      # and pnpm caches. They cannot mutate the project, and permissions plus
+      # PreToolUse hooks still apply.
       sandbox.excludedCommands = [
         "npm outdated*"
         "npm view *"
@@ -95,16 +107,16 @@ in {
         "pnpm dlx npm-check-updates*"
         "pnpm dlx ncu*"
         "pnpm exec ncu*"
-        # `gh` is a Go binary and can't reach the sandbox's HTTP proxy: it
-        # dials the proxy over IPv6 (`[::1]:PORT`) but the proxy only listens
-        # on 127.0.0.1, so every call fails with `proxyconnect ... connection
-        # refused` before the allowedDomains check even runs. This is the same
-        # IPv6-first issue the NODE_OPTIONS env var fixes for Node, but Go has
-        # no equivalent knob — Claude Code's docs prescribe excludedCommands for
-        # Go CLIs (gh/gcloud/terraform) under the macOS sandbox. Safe because
-        # permissions.deny still blocks all gh write verbs independently of the
-        # sandbox; excludedCommands only governs sandbox network/fs, not perms.
+        # Same IPv6-first problem as NODE_OPTIONS above, but Go has no knob: gh
+        # dials the proxy at [::1] and every call fails with `proxyconnect`.
+        # Docs prescribe excludedCommands for Go CLIs. Safe because this governs
+        # only sandbox network/fs — permissions.deny still blocks gh writes.
         "gh *"
+        # The rtk-rewrite hook turns `gh ...` into `rtk gh ...` before the
+        # sandbox decision, so `gh *` alone never matches and gh ends up
+        # sandboxed — where denyRead on hosts.yml stops it from even starting
+        # ("failed to create root command"). Both forms have to be listed.
+        "rtk gh *"
       ];
       statusLine = {
         type = "command";
@@ -125,31 +137,7 @@ in {
         "Skill(superpowers:*)"
         "Skill(pr-review-toolkit:*)"
         "Skill(frontend-design:*)"
-        # Custom skills and slash commands authored in this repo
-        # (modules/home/claude/config/{skills,commands}/) — both share the
-        # Skill() permission gate since /<name> invokes the Skill tool.
-        "Skill(analytics-friction-analysis)"
-        "Skill(asana-review)"
-        "Skill(build-doctor)"
-        "Skill(changelog-generation)"
-        "Skill(code-hygiene)"
-        "Skill(config-health)"
-        "Skill(dead-code-survey)"
-        "Skill(dependency-upgrades)"
-        "Skill(error-triage)"
-        "Skill(evidence-analysis-core)"
-        "Skill(evidence-consolidation)"
-        "Skill(feature-design-doc)"
-        "Skill(feature-plan)"
-        "Skill(feature-spec)"
-        "Skill(investigate)"
-        "Skill(npm-cve)"
-        "Skill(permission-audit)"
-        "Skill(pre-pr)"
-        "Skill(pre-pr-autonomous)"
-        "Skill(pr-review)"
-        "Skill(reflect)"
-        "Skill(regression-analysis)"
+        # Custom skills and slash commands are appended below from skillNames.
         # gh cli read-only
         "Bash(gh issue list*)"
         "Bash(gh issue view*)"
@@ -158,8 +146,7 @@ in {
         "Bash(gh pr status*)"
         "Bash(gh pr checks*)"
         "Bash(gh pr diff*)"
-        # Draft PRs only — non-draft `gh pr create` falls through to a prompt
-        # so nothing reaches review-ready state without explicit confirmation.
+        # Draft only; a non-draft `gh pr create` falls through to a prompt.
         "Bash(gh pr create *--draft*)"
         "Bash(gh run list*)"
         "Bash(gh run view*)"
@@ -169,9 +156,8 @@ in {
         "Bash(gh api*)"
         # rtk wrapper (transparent proxy for token savings)
         "Bash(rtk *)"
-        # worktrunk — the mandated worktree workflow (see CLAUDE.md). Allow the
-        # read/create/switch verbs; `wt remove` falls through to a prompt since
-        # it deletes the branch when merged.
+        # worktrunk (see CLAUDE.md). `wt remove` is omitted — it deletes the
+        # branch when merged, so it should prompt.
         "Bash(wt switch*)"
         "Bash(wt list*)"
         # git read-only
@@ -236,15 +222,13 @@ in {
         "Bash(pnpm run dev*)"
         "Bash(pnpm install*)"
         "Bash(pnpm add*)"
-        # pnpm exec — narrow to specific binaries; broader form previously allowed
-        # `pnpm exec node`/`sh`/etc which is an arbitrary-code escape hatch
+        # pnpm exec — named binaries only; the bare form is a code-exec hatch.
         "Bash(pnpm exec eslint*)"
         "Bash(pnpm exec jest*)"
         "Bash(pnpm exec tsc*)"
         "Bash(pnpm exec vitest*)"
-        # pnpm monorepo filter (typecheck/lint:ci/test:ci against specific packages).
-        # Both orderings occur in practice: `pnpm --filter <pkg> run <script>` and
-        # `pnpm run --filter <pkg> exec <bin>`.
+        # Monorepo filter; both orderings occur: `pnpm --filter <pkg> run <s>`
+        # and `pnpm run --filter <pkg> exec <bin>`.
         "Bash(pnpm --filter*)"
         "Bash(pnpm run --filter*)"
         # turbo
@@ -264,13 +248,14 @@ in {
         "Bash(nix flake show*)"
         "Bash(nix flake metadata*)"
         "Bash(darwin-rebuild switch*--dry-run*)"
-        # WebFetch — general-purpose research surface for dependency upgrades
-        # and migration guides. Mirrors the sandbox.network.allowedDomains list.
-        "WebFetch(domain:github.com)"
-        "WebFetch(domain:raw.githubusercontent.com)"
-        "WebFetch(domain:www.npmjs.com)"
-        "WebFetch(domain:registry.npmjs.org)"
-      ];
+        # aerospace read-only verbs. rtk has no equivalent (exit 1), so these
+        # are not already covered by Bash(rtk *). Excludes focus /
+        # move-node-to-workspace / reload-config, which mutate window state.
+        "Bash(aerospace list-*)"
+        "Bash(aerospace config --get*)"
+      ]
+      ++ map (name: "Skill(${name})") skillNames
+      ++ map (host: "WebFetch(domain:${host})") webFetchHosts;
       permissions.deny = [
         "Bash(rm -rf *)"
         "Bash(rm -fr *)"
