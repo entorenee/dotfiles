@@ -230,7 +230,7 @@ Seed the host by placing two files in `/etc/cloudflared`, either on the mounted 
 
 ## Claude Code Nix Module
 
-The Claude Code configuration is Nix-managed in `modules/home/claude/`. The global `~/.claude/CLAUDE.md`, `~/.claude/settings.json`, hooks, skills, and agents are all symlinks managed by this repo.
+The Claude Code configuration is Nix-managed in `modules/home/claude/`. The global `~/.claude/CLAUDE.md`, `~/.claude/settings.json`, hooks, skills, agents, and commands are all deployed from this repo into the Nix store.
 
 ### How to make changes
 
@@ -238,18 +238,19 @@ The Claude Code configuration is Nix-managed in `modules/home/claude/`. The glob
 | ------------------ | ----------------------------------------------------------------------------------- | ------------------------------------------ |
 | Add MCP server     | `hosts/darwin/fw-skyler/claude.nix` or `roles/home/personal-claude.nix`                 | `make rebuild`                             |
 | Add hook           | Create script in `modules/home/claude/config/hooks/`, add to `default.nix` settings   | Rebuild                                    |
-| Add skill          | Add to `modules/home/claude/config/skills/`                                           | Automatic (symlinked)                      |
-| Add agent          | Add to `modules/home/claude/config/agents/`                                           | Automatic (symlinked)                      |
+| Add skill          | Add to `modules/home/claude/config/skills/`                                           | Rebuild                                    |
+| Add agent          | Add to `modules/home/claude/config/agents/`                                           | Rebuild                                    |
 | Change plugin      | Edit `enabledPlugins` in `modules/home/claude/default.nix`                            | Rebuild                                    |
 | Change permissions | Edit `permissions` in `modules/home/claude/default.nix` (base), `hosts/darwin/fw-skyler/claude.nix` (work), or `roles/home/personal-claude.nix` (personal) | Rebuild |
 | Change setting     | Edit `modules/home/claude/default.nix` (base), `hosts/darwin/fw-skyler/claude.nix` (work), or `roles/home/personal-claude.nix` (personal) | Rebuild |
 
-### Symlink Layout
+### Deployment Layout
 
-- `~/.claude/settings.json` → Nix store (read-only)
-- `~/.claude/hooks/`, `skills/`, `agents/` → this dotfiles repo
+`agents/`, `commands/`, `hooks/`, `skills/`, and `CLAUDE.md` are deployed by the home-manager module's own options (`agentsDir`, `commandsDir`, `hooksDir`, `skills`, `context`) rather than hand-wired `home.file` entries. Only `RTK.md` and `statusline.sh`, which have no matching option, are still declared in `home.file`.
 
-Because `hooks/` is an out-of-store symlink into this repo, a new or edited hook script is live the moment it is written — no rebuild needed to *run* it. A rebuild is still required to *register* it in `settings.json`.
+Everything under `~/.claude` is therefore a symlink into the Nix store, and **every edit under `config/` needs a rebuild to take effect** — including hook scripts. The `*Dir` options have no `mkOutOfStoreSymlink` escape hatch, so they don't honor `my.dotfiles.mutable`; that's the accepted cost of the module being usable on a NixOS host with no `~/dotfiles` checkout.
+
+The `*Dir` options set `recursive = true`, which makes home-manager create `~/.claude/<subdir>` as a real directory and link each child individually. That is what lets `skills/` be deployed as one option: the module also installs its generated MCP plugin at `~/.claude/skills/claude-code-home-manager`, and a single directory-level symlink would collide with that nested entry ("Error installing file … outside $HOME"). Enumerating skills one-by-one used to be the workaround; `recursive = true` supersedes it.
 
 ### Quit Claude sessions before rebuilding
 
