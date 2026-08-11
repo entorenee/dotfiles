@@ -32,7 +32,6 @@
     '';
   };
 in {
-  # Imported from roles/home/personal-desktop.nix, not from a tier role.
   home.packages = lib.mkIf pkgs.stdenv.isLinux [orca-slicer-wrapped];
 
   xdg.configFile."OrcaSlicer/user".source =

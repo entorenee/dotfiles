@@ -12,10 +12,8 @@
   # The Zero 2W has no on-board ethernet; this is a USB OTG adapter.
   networking.useDHCP = true;
 
-  # As on hub: the account set is fully declared, so an imperative `passwd`
-  # cannot persist and re-open what the openssh settings below close. uptime
-  # stays passwordless -- key-only SSH in, wheelNeedsPassword = false for the
-  # `--sudo` in `make uptime-switch`.
+  # The account set is fully declared, so an imperative `passwd` cannot persist
+  # and re-open what the openssh settings below close.
   users.mutableUsers = false;
 
   users.users.uptime = {
@@ -26,8 +24,8 @@
     ];
   };
 
-  # uptime has no password, so password-authenticated sudo can't work. Login is
-  # Yubikey-backed SSH only, per the openssh settings below.
+  # uptime is passwordless, so password-authenticated sudo cannot work. Needed
+  # for the `--sudo` in `make uptime-switch`; login is Yubikey-backed SSH only.
   security.sudo.wheelNeedsPassword = false;
 
   services.openssh = {
@@ -59,9 +57,9 @@
   # (either onto the mounted image before flashing or over SSH afterwards) and
   # the tunnel comes up on the next boot.
   #
-  # This does not use services.cloudflared, whose tunnels.<uuid> submodule takes
-  # the UUID as an attribute name and renders ingress rules into a store-built
-  # config.yml, making both eval-time inputs by construction.
+  # Not services.cloudflared: its tunnels.<uuid> submodule takes the UUID as an
+  # attribute name and renders ingress into a store-built config.yml, making
+  # both eval-time inputs — i.e. published in this repo.
   #
   # ConditionPathExists keeps the unit quiet on a card that has not been seeded
   # yet, rather than crash-looping until it hits the restart limit.
@@ -100,9 +98,9 @@
     "z /etc/cloudflared/credentials.json 0640 root cloudflared -"
   ];
 
-  # For reading and editing config on the box. The Zero cannot realistically
-  # rebuild from it: evaluating a NixOS closure needs more RAM than it has, so
-  # deploys come from the Pi 4 via `make uptime-switch`. See CLAUDE.md.
+  # For reading and editing config on the box, not for rebuilding — evaluating
+  # a NixOS closure needs more RAM than the Zero has, so deploys come from the
+  # Pi 4 via `make uptime-switch`.
   systemd.services.clone-dotfiles = {
     description = "Clone dotfiles for on-device reference";
     after = ["network-online.target"];

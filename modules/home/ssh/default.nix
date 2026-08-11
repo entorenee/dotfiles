@@ -26,15 +26,12 @@ in {
       # authenticates the dotfiles checkout everywhere.
       #
       # `mkDefault` is load-bearing: `settings` is a freeform `types.anything`,
-      # whose merge *throws* on two list definitions rather than concatenating,
-      # so nothing can append here. A host needing more identities replaces the
-      # list outright instead — see hosts/darwin/fw-skyler/home.nix, and
-      # CLAUDE.md for why priority filtering makes that work.
+      # whose merge *throws* on two list definitions rather than concatenating.
+      # A host needing more identities replaces this list outright.
       IdentityFile = lib.mkDefault [personalYubikeyIdentity];
       IdentitiesOnly = true;
     };
   };
 
-  # Always include personal key file, for dotfiles access
   home.file.".ssh/id_rsa_yubikey_personal.pub".source = personalKeyPath;
 }

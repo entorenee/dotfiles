@@ -7,9 +7,8 @@
   ghDashConfig = "${config.home.homeDirectory}/dotfiles/roles/home/personal-gh-dash.yml";
 in {
   # The personal role, home-manager side — the portable subset, safe for any
-  # machine doing the "personal" job, headless or not. GUI-desktop-only pieces
-  # (keepassxc, orca-slicer, go, hugo) live in ./personal-desktop.nix instead,
-  # which a host adds to its own `homeImports` list.
+  # machine doing the "personal" job, headless or not. Anything needing a GUI
+  # desktop goes in ./personal-desktop.nix instead.
   imports = [
     ./personal-claude.nix
   ];

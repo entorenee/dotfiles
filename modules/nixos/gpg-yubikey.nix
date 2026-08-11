@@ -1,7 +1,6 @@
-# Shared GPG + Yubikey smartcard support for NixOS hosts. Provides pcscd (so
-# gpg-agent can talk to the Yubikey over CCID), a system-level gpg-agent with
-# a curses pinentry (works both on console and over SSH), and the packages
-# needed to manage a Yubikey and sign with it.
+# Shared GPG + Yubikey smartcard support for NixOS hosts: pcscd (so gpg-agent
+# can talk to the Yubikey over CCID) plus a curses pinentry, which works on
+# console and over SSH alike.
 {pkgs, ...}: {
   services.pcscd.enable = true;
 

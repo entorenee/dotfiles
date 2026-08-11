@@ -9,9 +9,6 @@
   overlays,
   ...
 }: system:
-# The two import lists split along module systems: `darwinImports` carries
-# nix-darwin options (Homebrew, launch agents, the Dock), `homeImports` carries
-# home-manager ones. See ../lib/darwin.nix for where they come from.
 darwin.lib.darwinSystem {
   inherit system;
 
@@ -20,9 +17,8 @@ darwin.lib.darwinSystem {
       # home-manager
       home-manager.darwinModules.home-manager
       {
-        # Shares the system's pkgs instance (single eval, and the
-        # nixpkgs.overlays/config set below reach home-manager automatically —
-        # no separate nixpkgs block needed here).
+        # Shares the system's pkgs instance, so the nixpkgs.overlays/config set
+        # below reach home-manager without a separate nixpkgs block here.
         home-manager.useGlobalPkgs = true;
         home-manager.useUserPackages = true;
         home-manager.users."${username}" = {

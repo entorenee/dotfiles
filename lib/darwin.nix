@@ -1,9 +1,6 @@
-# A host file states which machine this is: username, system triple, and the
-# ordered module lists it composes itself from. `homeImports` and
-# `darwinImports` each carry a role stack plus whatever else that machine
-# wants; the flake passes both through verbatim and splices nothing onto them.
-# `overlays` is the same idea applied to overlays/: a list of overlay functions
-# this specific host wants, not a set applied globally.
+# Host file shape: username, system triple, and the ordered module lists it
+# composes itself from. `homeImports`, `darwinImports` and `overlays` are all
+# passed through verbatim — nothing is spliced onto them here.
 {
   darwin,
   home-manager,

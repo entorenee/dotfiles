@@ -1,7 +1,6 @@
 {...}: {
-  # Identity taps/brews/casks are declared in the role a host names in its
-  # `darwinImports` (roles/darwin/personal.nix, or hosts/darwin/fw-skyler/darwin.nix);
-  # these options are `listOf str`, so their definitions concatenate with these.
+  # Identity taps/brews/casks live in the role a host names in its
+  # `darwinImports`; these are `listOf str`, so the definitions concatenate.
   homebrew = {
     enable = true;
     onActivation = {

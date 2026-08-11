@@ -350,8 +350,7 @@ in {
 
   # Every managed entry is the same mapping: ~/.claude/<path> maps to
   # config/<path> (out-of-store symlink when config.my.dotfiles.mutable, a
-  # store copy otherwise — see modules/options.nix). Listing the relative
-  # paths once keeps the ".claude/" prefix and that choice in a single place.
+  # store copy otherwise — see modules/options.nix).
   #
   # Skills are enumerated individually rather than symlinking the whole skills/
   # directory. home-manager ≥ 2026-07 installs the generated MCP plugin as a

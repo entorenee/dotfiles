@@ -1,14 +1,9 @@
-# A NixOS host file states the same kind of attrset the Darwin and standalone
-# home hosts do: `{system, nixosImports, username ? null, homeImports ? []}`.
-# `nixosImports` carries the machine's own configuration plus whichever
-# roles/nixos/ and modules/nixos/ files it wants; `homeImports` is the home
-# side, named by the host rather than hardcoded here — the same reason
-# flake.nix no longer hardcodes a role for the Macs.
-#
+# Host file shape: `{system, nixosImports, username ? null, homeImports ? []}`.
 # A host omits `username` when it wants no home-manager at all (airgap).
-# `my.dotfiles.mutable = false` is set here rather than per-host, so every Pi
-# with home-manager deploys config as a store copy instead of an out-of-store
-# symlink: a Pi's ~/dotfiles checkout may not exist when home-manager activates.
+#
+# `my.dotfiles.mutable = false` is set here rather than per-host so every Pi
+# deploys config as a store copy, not an out-of-store symlink: a Pi's
+# ~/dotfiles checkout may not exist when home-manager activates.
 {
   nixpkgs,
   home-manager,
@@ -29,14 +24,8 @@
           home-manager.nixosModules.home-manager
           ({pkgs, ...}: {
             # Deliberately inside this branch: a host with no home-manager gets
-            # no overlays and no allowUnfree, which is what airgap and uptime
-            # have always evaluated to. Hoisting these out would silently
-            # change their closures.
-            #
-            # `useGlobalPkgs = true` means they must be set at the NixOS system
-            # level, same as system/darwin.nix's "System settings" block — a
-            # home-manager module can't set either once there's no separate
-            # pkgs left for it to configure — see CONVENTIONS.md.
+            # no overlays and no allowUnfree, which is what airgap has always
+            # evaluated to. Hoisting these out would silently change its closure.
             nixpkgs.overlays = baseOverlays;
             nixpkgs.config.allowUnfree = true;
 

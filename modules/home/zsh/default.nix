@@ -35,12 +35,10 @@
     '';
 
     profileExtra = ''
-      # Deduplicate XDG_DATA_DIRS for login shells.
-      # start-cosmic spawns a login shell to capture the user environment and
-      # then imports all changed vars into systemd via import-environment.
-      # hm-session-vars.sh (.zprofile) + nix.sh (sourced from it) both add nix
-      # paths, creating 2× duplicates that get pushed into the entire COSMIC
-      # session. Dedup here before start-cosmic imports the result to systemd.
+      # Deduplicate XDG_DATA_DIRS for login shells. start-cosmic spawns one to
+      # capture the environment and imports it into systemd, so duplicates from
+      # hm-session-vars.sh + nix.sh would propagate to the whole COSMIC session.
+      # Must run before start-cosmic reads the result.
       if [[ -n "$XDG_DATA_DIRS" ]]; then
         typeset -aU _xdg=("''${(@s/:/)XDG_DATA_DIRS}")
         export XDG_DATA_DIRS="''${(j/:/)_xdg}"
@@ -53,8 +51,8 @@
         # TODO move to npm module
         # Export NVM Paths
         export NVM_DIR="$HOME/.nvm"
-        [ -s "/opt/homebrew/opt/nvm/nvm.sh" ] && \. "/opt/homebrew/opt/nvm/nvm.sh"  # This loads nvm
-        [ -s "/opt/homebrew/opt/nvm/etc/bash_completion.d/nvm" ] && \. "/opt/homebrew/opt/nvm/etc/bash_completion.d/nvm"  # This loads nvm bash_completion
+        [ -s "/opt/homebrew/opt/nvm/nvm.sh" ] && \. "/opt/homebrew/opt/nvm/nvm.sh"
+        [ -s "/opt/homebrew/opt/nvm/etc/bash_completion.d/nvm" ] && \. "/opt/homebrew/opt/nvm/etc/bash_completion.d/nvm"
       fi
 
       # pnpm global binaries. pnpm 10.x uses $PNPM_HOME itself as the global
@@ -73,7 +71,6 @@
     '';
 
     envExtra = ''
-      # Source local zshenv if it exists
       [ -f ~/.zshenv.local ] && source ~/.zshenv.local
     '';
 

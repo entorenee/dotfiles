@@ -1,6 +1,5 @@
 {...}: {
-  # The personal role, nix-darwin side. Only the personal Mac names this in its
-  # `darwinImports`.
+  # The personal role, nix-darwin side.
   homebrew = {
     casks = [
       "anylist"

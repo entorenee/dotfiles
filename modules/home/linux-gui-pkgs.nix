@@ -3,11 +3,9 @@
   pkgs,
   ...
 }: {
-  # Linux-desktop-only packages. Only ever imported from roles/home/gui.nix, so
-  # that import is the GUI gate and no `config.my.gui` check is needed here —
-  # `pkgs.stdenv.isLinux` alone is enough, and is still required because gui.nix
-  # also reaches the Macs. Same self-gating pattern aerospace/karabiner use for
-  # the reverse (darwin-only) case.
+  # Linux-desktop-only packages. The importing role is the GUI gate, so no
+  # `config.my.gui` check is needed — but `pkgs.stdenv.isLinux` is still
+  # required, because that role also reaches the Macs.
   home.packages = lib.optionals pkgs.stdenv.isLinux (with pkgs; [
     arduino-ide
     caffeine-ng

@@ -18,12 +18,9 @@
         git push origin -u $(git rev-parse --abbrev-ref HEAD)
       }
 
-      # Worktree-safe replacement for git-up. git-up fast-forwarded any branch
-      # it did not consider "current" by writing the ref through GitPython,
-      # which bypasses git's "checked out at <worktree>" guard. With worktrunk
-      # that silently desynchronized sibling worktrees: their HEAD jumped to
-      # origin while their index stayed on the old tree, so the just-pulled
-      # commits showed up as staged changes there. The refspec form of
+      # Worktree-safe replacement for git-up, which wrote refs through GitPython
+      # and so bypassed git's "checked out at <worktree>" guard — silently
+      # desynchronizing sibling worktrees under worktrunk. The refspec form of
       # git fetch refuses those branches instead of corrupting them.
       gu () {
         git fetch --all --prune --quiet || return

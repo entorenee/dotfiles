@@ -7,24 +7,21 @@
   programs.firefox = {
     enable = true;
 
-    # On macOS, Firefox is installed via the Homebrew cask (see
-    # modules/darwin/homebrew). Setting package = null tells home-manager to manage
-    # configuration only and skip installing its own Firefox. Policies are still
-    # applied on Darwin via `targets.darwin.defaults."org.mozilla.firefox.plist"`
-    # (EnterprisePoliciesEnabled), which Firefox honors regardless of how it was
-    # installed. On Linux we keep the default package so home-manager installs
-    # Firefox and bakes policies.json into the wrapper.
+    # Darwin gets Firefox from the Homebrew cask, so null means config-only.
+    # Policies still apply there through
+    # `targets.darwin.defaults."org.mozilla.firefox.plist"`
+    # (EnterprisePoliciesEnabled), which Firefox honors however it was
+    # installed. Linux keeps the package so policies.json is baked into the
+    # wrapper.
     package = lib.mkIf pkgs.stdenv.isDarwin null;
 
     policies = {
-      #  DNS‑over‑HTTPS (Cloudflare – change the URL if you prefer another resolver)
       DnsOverHttps = {
         Enabled = true;
         Provider = "cloudflare";
         Url = "https://mozilla.cloudflare-dns.com/dns-query";
       };
 
-      #  Delete cookies & site data on shutdown
       SanitizeOnShutdown = {
         Cookies = true;
         Cache = true;
@@ -32,11 +29,9 @@
         Sessions = true; # TODO: Explore allowlist of sites to not clear sessions on.
       };
 
-      #  Turn off telemetry / data collection
       DisableTelemetry = true;
       DisableDataReporting = true;
 
-      # Fingerprinting resistance
       EnableTrackingProtection = {
         Value = true;
         Locked = true;
@@ -46,16 +41,12 @@
         EmailTracking = true;
       };
 
-      #  HTTPS‑Only mode
       HttpsOnlyMode = {
         Enabled = true;
         EnableForAllSites = true;
       };
 
-      # Disable Generative AI
       GenerativeAI.Enabled = false;
-
-      # Disable browser password manager
       PasswordManagerEnabled = false;
 
       Homepage = {
@@ -87,7 +78,6 @@
         "browser.sessionstore.restore_on_demand" = true;
         "browser.startup.homepage_override.mstone" = "ignore";
 
-        # Optional: disable speculative DNS (extra safety)
         "network.dns.disableIPv6" = false;
       };
 
