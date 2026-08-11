@@ -1,6 +1,6 @@
 ---
 name: config-health
-description: Use for a periodic health check of the Claude Code harness itself — settings.json symlink integrity, skill/command allowlist drift, dead permission rules, hook registration, plus the permission-audit and fewer-permission-prompts analyses merged into one classified report. Orchestrates config-level checks only; NOT for product-code health (dead-code-survey, npm-cve, error-triage).
+description: Use for a periodic health check of the Claude Code harness itself — settings.json symlink integrity, dead permission rules, hook registration, plus the permission-audit and fewer-permission-prompts analyses merged into one classified report. Orchestrates config-level checks only; NOT for product-code health (dead-code-survey, npm-cve, error-triage).
 ---
 
 # Config Health
@@ -75,9 +75,12 @@ bash "$HOME/.claude/skills/config-health/config-checks.sh"
 
 Output is `STATUS<TAB>CHECK<TAB>DETAIL`, where `STATUS` is `OK`, `FAIL`
 (provably broken), or `REVIEW` (needs human eyes — the script deliberately
-refuses to decide). Four checks: settings.json symlink integrity, skill/command
-↔ `Skill()` allowlist drift, allow rules neutralised by deny, and hook
-registration + executability.
+refuses to decide). Three checks: settings.json symlink integrity, allow rules
+neutralised by deny, and hook registration + executability.
+
+`Skill()` allowlist drift is deliberately absent: `modules/home/claude/default.nix`
+generates those rules from the same `config/{skills,commands}` directories the
+check would have compared them against, so there is nothing left to diverge.
 
 **Run these inline. Do not dispatch a subagent for them.** They read a handful of
 small files; agent dispatch would cost more than it saves *and* insert a

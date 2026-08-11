@@ -13,7 +13,7 @@ set -uo pipefail
 
 SETTINGS="${SETTINGS:-$HOME/.claude/settings.json}"
 REPO="${REPO:-$HOME/dotfiles}"
-CFG="$REPO/nix/modules/home/claude/config"
+CFG="$REPO/modules/home/claude/config"
 
 emit() { printf '%s\t%s\t%s\n' "$1" "$2" "$3"; }
 
@@ -33,44 +33,7 @@ check_symlink() {
   emit OK symlink "settings.json resolves; $n allow / $(jq '.permissions.deny|length' "$SETTINGS") deny rules live"
 }
 
-# --- Check 2: custom skill/command <-> Skill() allowlist drift -----------------
-# Every custom skill and command needs a matching Skill(<name>) allow entry or it
-# prompts on first use in every new worktree. Plugin skills are namespaced and
-# covered by their own globs, so only bare (unnamespaced) entries are compared.
-check_skill_drift() {
-  local disk allowed
-  disk=$( { [[ -d "$CFG/skills" ]] && find "$CFG/skills" -mindepth 1 -maxdepth 1 -type d -exec basename {} \;
-            [[ -d "$CFG/commands" ]] && find "$CFG/commands" -maxdepth 1 -name '*.md' -exec basename {} .md \; ; } | sort -u)
-  allowed=$(jq -r '.permissions.allow[] | select(startswith("Skill(")) | ltrimstr("Skill(") | rtrimstr(")")' \
-            "$SETTINGS" 2>/dev/null | grep -v ':' | sort -u)
-
-  # Guard: an unreadable/empty allowlist would otherwise report EVERY skill as
-  # missing -- a wall of confident false positives. Bail loudly instead.
-  if [[ -z "$allowed" ]]; then
-    emit REVIEW skill-drift "could not read any Skill() entries from $SETTINGS — skipping drift check rather than reporting every skill as missing"
-    return
-  fi
-
-  local missing stale
-  missing=$(comm -23 <(printf '%s\n' "$disk") <(printf '%s\n' "$allowed"))
-  stale=$(comm -13 <(printf '%s\n' "$disk") <(printf '%s\n' "$allowed"))
-
-  if [[ -n "$missing" ]]; then
-    while read -r s; do
-      [[ -z "$s" ]] && continue
-      emit FAIL skill-drift "'$s' exists on disk with no Skill($s) allow entry — prompts on first use in every new worktree"
-    done <<<"$missing"
-  fi
-  if [[ -n "$stale" ]]; then
-    while read -r s; do
-      [[ -z "$s" ]] && continue
-      emit REVIEW skill-drift "Skill($s) is allowlisted but no such skill/command is on disk — stale entry or renamed skill"
-    done <<<"$stale"
-  fi
-  [[ -z "$missing$stale" ]] && emit OK skill-drift "every custom skill and command has a matching Skill() allow entry"
-}
-
-# --- Check 3: allow rules neutralised by deny ---------------------------------
+# --- Check 2: allow rules neutralised by deny ---------------------------------
 # Deny always wins, so an allow entry contradicted by a deny is dead weight.
 # Only EXACT duplicates are provable here. Same-head pairs are surfaced for human
 # review because deciding glob-language containment is not something this script
@@ -99,7 +62,7 @@ check_dead_allows() {
   [[ -z "$dead" ]] && emit OK dead-allow "no allow rule is exactly duplicated in deny"
 }
 
-# --- Check 4: hook registration and executability -----------------------------
+# --- Check 3: hook registration and executability -----------------------------
 # An out-of-store symlink means an edited hook is live immediately, but a NEW
 # hook does nothing until a rebuild registers it. A non-executable hook fails
 # silently, which is the worst case.
@@ -108,6 +71,16 @@ check_hooks() {
   registered=$(jq -r '.hooks | to_entries[] | .value[] | .hooks[]?.command // empty' "$SETTINGS" 2>/dev/null \
                | sed 's|.*/||' | sort -u)
   on_disk=$([[ -d "$CFG/hooks" ]] && find "$CFG/hooks" -maxdepth 1 -name '*.sh' -exec basename {} \; | sort -u)
+
+  # An empty $on_disk almost always means CFG is wrong, not that every hook was
+  # deleted. Without this guard a stale CFG reports each registered hook as
+  # "every trigger errors" — alarming, and entirely false. Not hypothetical:
+  # CFG kept a "$REPO/nix/..." prefix after the tree was lifted to the repo
+  # root, and one run reported all 4 hooks missing when every one was present.
+  if [[ -z "$on_disk" ]]; then
+    emit REVIEW hooks "no hook scripts found under $CFG/hooks — check that CFG points at the live config tree; skipping rather than reporting every registered hook as orphaned"
+    return
+  fi
 
   missing_reg=$(comm -23 <(printf '%s\n' "$on_disk") <(printf '%s\n' "$registered"))
   orphan=$(comm -13 <(printf '%s\n' "$on_disk") <(printf '%s\n' "$registered"))
@@ -136,7 +109,6 @@ check_hooks() {
 }
 
 check_symlink
-check_skill_drift
 check_dead_allows
 check_hooks
 exit 0
