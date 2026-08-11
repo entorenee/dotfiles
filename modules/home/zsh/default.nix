@@ -50,7 +50,6 @@
       if [[ $(uname) = "Darwin" ]]; then
         eval "$(/opt/homebrew/bin/brew shellenv)"
         source "/opt/homebrew/etc/profile.d/z.sh"
-        export PATH="/opt/homebrew/opt/openjdk@17/bin:$PATH"
         # TODO move to npm module
         # Export NVM Paths
         export NVM_DIR="$HOME/.nvm"

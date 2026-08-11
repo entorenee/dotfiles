@@ -15,7 +15,6 @@
     docker-compose
     nodejs_22 # TODO determine dynamic sourcing of Node
     socat
-    tor
   ];
 in {
   # Dev tooling: language runtimes, package managers, databases, servers —

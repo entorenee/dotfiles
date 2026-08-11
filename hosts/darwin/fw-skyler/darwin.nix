@@ -6,7 +6,6 @@
     brews = [
       "hookdeck/hookdeck/hookdeck"
       "mysql"
-      "openjdk@17"
       "vercel-cli"
     ];
 
@@ -14,12 +13,10 @@
       "android-studio"
       "asana"
       "bitwarden"
-      "firefox"
       "google-chrome"
       "google-drive"
       "granola"
       "loom"
-      "ngrok"
       "surfshark"
       "tableplus"
     ];

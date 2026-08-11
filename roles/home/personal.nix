@@ -1,6 +1,7 @@
 {
   config,
   lib,
+  pkgs,
   ...
 }: let
   ghDashConfig = "${config.home.homeDirectory}/dotfiles/roles/home/personal-gh-dash.yml";
@@ -14,6 +15,8 @@ in {
   ];
 
   # No ssh block: the personal Yubikey is the module's default identity.
+
+  home.packages = [pkgs.tor];
 
   xdg.configFile."gh-dash/config.yml".source =
     lib.mkForce (config.lib.file.mkOutOfStoreSymlink ghDashConfig);

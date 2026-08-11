@@ -2,10 +2,6 @@
   # The personal role, nix-darwin side. Only the personal Mac names this in its
   # `darwinImports`.
   homebrew = {
-    brews = [
-      "tor"
-    ];
-
     casks = [
       "anylist"
       "backblaze"

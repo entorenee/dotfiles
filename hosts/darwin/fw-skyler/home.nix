@@ -18,7 +18,9 @@ in {
     cocoapods
     doctl
     mkcert
+    ngrok
     ruby
+    temurin-bin-17
   ];
 
   # Replaces the module's `mkDefault` list rather than appending to it — see the
