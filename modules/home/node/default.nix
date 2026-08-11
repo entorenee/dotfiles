@@ -1,4 +1,9 @@
-{ ... }: {
+{pkgs, ...}: {
+  home.packages = with pkgs; [
+    nodejs
+    pnpm
+  ];
+
   programs.zsh.shellAliases = {
     ni = "npm install";
     nis = "npm install --save";

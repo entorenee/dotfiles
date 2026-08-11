@@ -11,7 +11,6 @@
     cryptsetup # TODO: Confirm if this is a needed dependency
     docker
     docker-compose
-    nodejs_22 # TODO determine dynamic sourcing of Node
     socat
   ];
 in {
@@ -26,7 +25,6 @@ in {
       cargo # Nix LSP dependency
       git-lfs
       npm-check-updates
-      pnpm
       postgresql
       python314
       shellcheck
