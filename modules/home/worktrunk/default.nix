@@ -12,6 +12,14 @@
     fi
   '';
 
+  programs.zsh.shellAliases = {
+    wtl = "wt list";
+    wts = "wt switch";
+    wtc = "wt switch -c";
+    wt-prune = "wt step prune";
+    wt-move = "wt step relocate";
+  };
+
   # Deploy worktrunk's declarative settings to the ONE path worktrunk reads:
   # the user config at ~/.config/worktrunk/config.toml. worktrunk (36ba57b)
   # has no system/XDG_CONFIG_DIRS layer, so the previous etc/xdg deployment was
