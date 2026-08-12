@@ -94,6 +94,10 @@ pnpm turbo test --filter='...[{MERGE_BASE}]'
 
 Record pass/fail status and error counts. If auto-added tests from Step 2 fail, clearly attribute those failures separately from pre-existing test failures.
 
+**Read the exit code from the command, never through a pipe.** `cmd | tail -15` reports `tail`'s status, which is always 0 — this has put a ✅ in a report for a check that was actually failing. Run the command bare and read its status, then pipe a separate invocation for readable output, or capture `${PIPESTATUS[0]}`. Record the raw exit code you observed next to each result.
+
+**An unobserved result is ⚠️ unverified, not a pass.** Never infer a check passed because nothing looked wrong; report it as unverified and say why.
+
 ### Step 4 — Dispatch Code Reviewer
 
 Dispatch the `superpowers:code-reviewer` agent using the existing `code-reviewer.md` template.
@@ -112,6 +116,8 @@ The code reviewer operates on the branch **after** hygiene auto-fixes, so it won
 - **Cross-component render ordering.** When an effect closes/dismisses an overlay, modal, or branch in response to a prop or hook return that changed elsewhere, trace what the render tree looks like *the frame after* the trigger flips but *before* the effect runs. Look for a gap where neither branch's guard holds (blank/placeholder render) or where a child fully remounts (expensive re-init, re-fetch, re-attach). Prefer `useLayoutEffect` or a combined guard over `useEffect` for synchronous close.
 - **Sync vs. async / timing primitives.** Flag `setTimeout`/`requestAnimationFrame` used to wait for a platform transition (orientation change, layout settle, navigation animation). These are guesses against device-dependent durations. The correct fix is an event/callback (`addOrientationChangeListener`, `onLayout`, transition-end). When the diff offers a fixed-delay timer, treat it as a known-fragile fallback that needs human sign-off — do not bless it as equivalent to the event-driven approach.
 - **Author hedge comments are unsolved problems, not design intent.** If a changed region carries a comment hedging about fragility/timing/races ("if QA reveals flicker…", "on slow devices…", "might need to bump this"), surface it verbatim as an Important issue. Do not adopt the comment's suggested workaround as the fix.
+- **Comments are not evidence.** Label each load-bearing claim as *verified from executable code* (you read the statement that makes it true) or *taken from a comment/docstring/JSDoc* (prose that may be stale). Docstrings in this repo have been demonstrated out of date. Never let prose be the sole support for a Critical or Important finding — when it is the only source, mark the finding **requirements-dependent** and name who could confirm it.
+- **A behavior that looks like a bug may be intended.** Before reporting two surfaces as inconsistent, ask whether they answer *different questions* rather than the same one inconsistently. Product and compliance rules are frequently absent from the repo entirely, so a confident "divergence" or "should fail open" finding is exactly the kind that domain knowledge overturns. State the assumption the finding rests on so it can be checked in one sentence.
 
 ### Step 5 — Assemble Combined Report
 
@@ -134,10 +140,11 @@ Combine all outputs into a single sequential report.
 - [Tests] Integration test suggestion: verify the full form submission flow
 
 ## Verification
-- Typecheck: Pass (0 errors)
-- Lint: Pass (2 warnings)
-- Tests: 47/47 passing
-  - Auto-added tests: 2/2 passing
+Each row names the command and the exit code actually observed. ⚠️ unverified is a valid row.
+- Typecheck: Pass (0 errors) — `pnpm turbo typecheck …`, exit 0
+- Lint: Pass (2 warnings) — `pnpm turbo lint …`, exit 0
+- Tests: 47/47 passing — `pnpm turbo test …`, exit 0
+  - Auto-added tests: 2/2 passing, both fail against pre-fix code ✅
 
 ## Code Review
 
@@ -171,3 +178,5 @@ Combine all outputs into a single sequential report.
 - **Code reviewer runs last** — reviews the cleaned branch with verification results as context
 - **Report clearly separates concerns** — engineer can scan each section independently
 - **Auto-added test failures are attributed** — if tests from Step 2 fail in Step 3, call this out explicitly so the engineer knows which failures are new
+- **Exit codes come from the command, not from a pipe** — `| tail`/`| head` always exit 0; an unobserved result is ⚠️ unverified, never a pass
+- **Counts are re-derived, never relayed** — read test totals and error counts from the command output, not from a subagent's summary

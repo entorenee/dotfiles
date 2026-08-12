@@ -132,6 +132,21 @@ For each new export, look for a corresponding test file:
 
 **Scope:** Unit tests only — utilities, hooks, pure functions. Never auto-add integration or E2E tests.
 
+**Step 4 — Falsify every test you add.**
+
+A new test is not done until it has failed. Before reporting any added test as coverage, run it against the pre-fix implementation — `git stash` the change, or import from `git show HEAD:<file>` — and confirm it **fails for the right reason**. Report that result alongside the pass:
+
+```
+Added 3 tests to `src/lib/__tests__/useAuth.test.ts` — all 3 fail against HEAD, pass after ✅
+```
+
+If a test passes both before and after, **it pins nothing.** Say so plainly rather than counting it as coverage; a test that passes for the wrong reason is worse than no test, because it reports the behavior as protected and stops anyone re-testing it.
+
+**Two traps that produce vacuously-passing tests, both seen in practice:**
+
+- **Default parameters in test helpers.** A signature like `mockThing(steps = [], ...)` silently turns `undefined` into `[]`, so a test meant to assert the *unknown* state asserts the *empty* state instead — and passes. When covering an absent/unknown case, assert the mock actually delivered `undefined`.
+- **Mocking above the layer under test.** Mocking a data-fetching hook wholesale means the library never runs, so options like `placeholderData` or `select` are never invoked and the behavior you meant to pin is unobservable. If the mock level makes the real consequence unreachable, note that limitation in the report rather than implying end-to-end coverage.
+
 ### Phase 3.5 — Convention Compliance Scan
 
 Mechanically check the branch diff against the **documented-bans list** captured in Phase 1. This catches convention violations that linters miss and that single-file review tends to overlook — the rules already exist in the project's docs; this step operationalizes them.
@@ -189,7 +204,7 @@ Present all findings that require engineer judgment. **Do not act on any of thes
 - Removed `console.log` at `src/lib/api/client.ts:47`
 - Removed `console.log` at `src/components/ProfileScreen.tsx:23`
 - Removed commented-out code block at `src/utils/format.ts:15-22`
-- Added 2 unit tests to `src/lib/hooks/__tests__/useAuth.test.ts`
+- Added 2 unit tests to `src/lib/hooks/__tests__/useAuth.test.ts` — both fail against HEAD, pass after ✅
 
 ### Needs Your Review
 
@@ -228,6 +243,7 @@ Present all findings that require engineer judgment. **Do not act on any of thes
 - **Never touch pre-existing code** — only lines introduced in the branch diff
 - **Never create new test files** — only extend existing test suites
 - **Never auto-add integration or E2E tests** — suggest only
+- **Never report an added test as coverage until it has failed against the pre-fix code** — a test that passes both before and after pins nothing, and must be reported as such
 - **Comment review is diff-scoped and comment-only** — never relocate a comment
   into a project doc without approval, and never fix code a comment reveals as
   wrong; report it
