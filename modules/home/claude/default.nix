@@ -16,6 +16,14 @@
     "registry.npmjs.org"
     "getstream.io" # Stream Chat docs, at /chat/docs
     "nikitabobko.github.io" # AeroSpace docs, at /AeroSpace/guide
+    "nix-community.github.io" # nix-community project docs
+    "home-manager-options.extranix.com" # home-manager option search
+    "formulae.brew.sh" # Homebrew formula/cask metadata
+    "docs.anthropic.com" # Claude Code and API docs
+    "www.rtk-ai.app" # RTK docs
+    "worktrunk.dev" # worktrunk docs
+    "gh-dash.dev"
+    "www.gh-dash.dev"
   ];
 in {
   programs.claude-code = {
@@ -73,6 +81,9 @@ in {
         NODE_OPTIONS = "--dns-result-order=ipv4first";
       };
       sandbox.enabled = true;
+      # Without this a sandbox that fails to start degrades to no sandbox at all
+      # with only a warning, so every boundary below silently stops applying.
+      sandbox.failIfUnavailable = true;
       # Only hosts Bash reaches that WebFetch never does; see webFetchHosts.
       sandbox.network.allowedDomains = [
         "api.github.com"
@@ -124,13 +135,15 @@ in {
         type = "command";
         command = "~/.claude/statusline.sh";
       };
-      hasSentTelemetryConsent = false;
       model = "opus";
       tui = "fullscreen";
-      preferences = {
-        alwaysThinkingEnabled = true;
-        cleanupPeriodDays = 365;
-      };
+      effortLevel = "high";
+      alwaysThinkingEnabled = true;
+      cleanupPeriodDays = 365;
+      # Stated rather than left implicit: /config can flip this per-machine into
+      # acceptEdits or auto, and the allow/deny lists are written assuming the
+      # per-call prompt is still the backstop.
+      permissions.defaultMode = "default";
       permissions.allow =
         [
           # Read access for dotfiles (skills, agents, nix modules)
@@ -160,10 +173,13 @@ in {
           # rtk wrapper — broad by design; deny blocks `rtk proxy`, its
           # arbitrary-command hatch.
           "Bash(rtk *)"
-          # worktrunk (see CLAUDE.md). `wt remove` is omitted — it deletes the
-          # branch when merged, so it should prompt.
+          # worktrunk (see CLAUDE.md). `wt remove`, `wt merge`, and `wt step` are
+          # omitted — remove deletes the branch when merged, so they should
+          # prompt. rtk has no equivalent for any of these (exit 1).
           "Bash(wt switch*)"
           "Bash(wt list*)"
+          "Bash(wt --help*)"
+          "Bash(wt --version*)"
           # git read-only
           "Bash(git log*)"
           "Bash(git diff*)"

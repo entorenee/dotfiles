@@ -57,6 +57,12 @@
         # the investigation skills export reports as native Google Docs.
         # copy_file (the other write verb) is left to prompt each time.
         "mcp__googledrive__create_file"
+        # Docs for the MCP servers declared below. Explicit hosts, never
+        # "*.example.com" — same rule as webFetchHosts in the base module.
+        "WebFetch(domain:betterstack.com)"
+        "WebFetch(domain:docs.sentry.io)"
+        "WebFetch(domain:posthog.com)"
+        "WebFetch(domain:mcp.posthog.com)"
       ];
       sandbox.filesystem = {
         allowRead = ["~/dotfiles" "~/code/work" "~/.config/gh" "/nix/store" "/tmp" "/private/tmp"];
