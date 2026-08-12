@@ -238,7 +238,7 @@ The Claude Code configuration is Nix-managed in `modules/home/claude/`. The glob
 | ------------------ | ----------------------------------------------------------------------------------- | ------------------------------------------ |
 | Add MCP server     | `hosts/darwin/fw-skyler/claude.nix` or `roles/home/personal-claude.nix`                 | `make rebuild`                             |
 | Add hook           | Create script in `modules/home/claude/config/hooks/`, add to `default.nix` settings   | Rebuild                                    |
-| Add skill          | Add to `modules/home/claude/config/skills/`                                           | Automatic (symlinked)                      |
+| Add skill          | Add to `modules/home/claude/config/skills/`                                           | `git add` it, then rebuild — see Permissions below |
 | Add agent          | Add to `modules/home/claude/config/agents/`                                           | Automatic (symlinked)                      |
 | Change plugin      | Edit `enabledPlugins` in `modules/home/claude/default.nix`                            | Rebuild                                    |
 | Change permissions | Edit `permissions` in `modules/home/claude/default.nix` (base), `hosts/darwin/fw-skyler/claude.nix` (work), or `roles/home/personal-claude.nix` (personal) | Rebuild |
@@ -348,7 +348,10 @@ When verb prefixes are mixed (e.g., Expo's `build_info` is read but `build_run` 
 
 Custom skills (in `modules/home/claude/config/skills/`) and custom slash commands (in `modules/home/claude/config/commands/`) both have no plugin namespace, so they can't be matched by a wildcard. They also share the same permission gate — `/<name>` invokes the Skill tool whether the underlying file is a `SKILL.md` or a command `.md`.
 
-**When adding a new custom skill OR command, also add a matching `Skill(<name>)` entry to `permissions.allow`** in `default.nix`. Otherwise it prompts for approval the first time it's used in every new worktree.
+**Do not add a `Skill(<name>)` entry by hand — it is derived.** `default.nix` builds `skillNames` from `readDir ./config/skills` plus the `.md` files in `./config/commands`, and maps each to `Skill(<name>)` onto `permissions.allow`. A hand-written entry is a duplicate on arrival. Two things are still required:
+
+- **`git add` the new file or directory.** `skillNames` reads the *flake source*, and flakes only see git-tracked files — an untracked skill directory is invisible to eval, so no permission entry is generated and it prompts on first use. Verified 2026-08-10: `Skill(comment-review)` was absent from the derived allowlist until the directory was staged, then appeared immediately.
+- **Rebuild.** The names are read at eval time, so a new skill needs a rebuild to register (and to be symlinked).
 
 Plugin-distributed skills *are* namespaced (e.g., `superpowers:executing-plans`, `pr-review-toolkit:review-pr`), so a single glob per plugin namespace (`Skill(superpowers:*)`) trusts the entire plugin's skill set in one entry.
 

@@ -51,7 +51,8 @@ digraph code_hygiene {
   "1. Setup" -> "2. Auto-fix artifacts";
   "2. Auto-fix artifacts" -> "3. Auto-add tests";
   "3. Auto-add tests" -> "3.5. Convention compliance scan";
-  "3.5. Convention compliance scan" -> "4. Findings report";
+  "3.5. Convention compliance scan" -> "3.6. Comment review";
+  "3.6. Comment review" -> "4. Findings report";
   "4. Findings report" -> "Engineer reviews findings";
   "Engineer reviews findings" -> "Apply approved changes" [label="approves some"];
   "Engineer reviews findings" -> "Done" [label="no action needed"];
@@ -149,6 +150,32 @@ Mechanically check the branch diff against the **documented-bans list** captured
 
 **Do not auto-fix convention violations.** The correct replacement (which token? which Button variant?) requires judgment, and some are codebase-wide patterns the engineer may legitimately defer. Surface them; let the engineer decide.
 
+### Phase 3.6 — Comment Review
+
+Invoke the `comment-review` skill in **diff-scoped mode** against the branch diff.
+It judges each comment by whether it describes the line it sits on (keep) or
+restates a convention documented elsewhere (cut), and surfaces comments that are
+factually wrong about the code below them.
+
+**Scope:** comments on diff-added/modified lines only — same "never touch
+pre-existing code" rule as Phase 2. This is narrower than a standalone
+comment-review pass, which sweeps whole files.
+
+**Boundary with Phase 2:** Phase 2 already removes *commented-out code* on added
+lines. Phase 3.6 handles *prose* comments, which Phase 2 explicitly preserves.
+They do not overlap — if a block is commented-out code, it is Phase 2's.
+
+**Auto-fix policy:** comment deletions that the skill classifies as **Cut** with
+a confirmed doc citation may be applied automatically and listed under
+"Auto-fixed". Everything else — **Relocate** (needs a doc edit), and every
+**⚠️ Finding** (a comment that contradicts its code) — goes to Phase 4 for
+engineer judgment. Never auto-apply a relocation; writing to a project doc is not
+a hygiene-level decision.
+
+If the project has no convention docs, the skill cannot confirm anything as a
+duplicate — run it for the wrong-comment findings only and note that in the
+report.
+
 ### Phase 4 — Findings Report
 
 Present all findings that require engineer judgment. **Do not act on any of these without explicit approval.**
@@ -178,6 +205,12 @@ Present all findings that require engineer judgment. **Do not act on any of thes
 - `src/components/FWButton.tsx:42` — `// TODO: add haptic feedback` — remove or keep?
 - `src/lib/api/client.ts:89` — `// FIXME: retry logic` — remove or keep?
 
+#### Comments
+- **Relocate:** `src/lib/cache.ts:8-14` restates the caching policy from
+  `docs/ARCHITECTURE.md` — move the one detail the doc lacks, then remove inline?
+- **⚠️ Wrong comment:** `src/lib/api/client.ts:31` says "retries 3×" but the
+  constant below it is `MAX_RETRIES = 5` — which is correct?
+
 #### Test Suggestions
 - **New test file needed:** `src/lib/utils/formatDate.ts` has no test file — consider creating `src/lib/utils/__tests__/formatDate.test.ts`
 - **Integration test:** The new form submission flow touches validation, API call, and navigation — consider an integration test
@@ -195,5 +228,8 @@ Present all findings that require engineer judgment. **Do not act on any of thes
 - **Never touch pre-existing code** — only lines introduced in the branch diff
 - **Never create new test files** — only extend existing test suites
 - **Never auto-add integration or E2E tests** — suggest only
+- **Comment review is diff-scoped and comment-only** — never relocate a comment
+  into a project doc without approval, and never fix code a comment reveals as
+  wrong; report it
 - **Skip logger files** for console.* removal (path contains `logger`, `logging`, or `debug`)
 - **Report what you did** — every auto-fix and auto-added test must appear in the report with file:line references
