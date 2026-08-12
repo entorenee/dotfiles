@@ -1,12 +1,4 @@
-{
-  config,
-  lib,
-  ...
-}: let
-  configPath = "${config.home.homeDirectory}/dotfiles/modules/home/claude/config";
-
-  # Repo-authored skills and slash commands; /<name> invokes the Skill tool for
-  # both. Read from the same directories home.file uses, so this cannot drift.
+{lib, ...}: let
   skillNames =
     builtins.attrNames (builtins.readDir ./config/skills)
     ++ map (lib.removeSuffix ".md")
@@ -28,6 +20,11 @@
 in {
   programs.claude-code = {
     enable = true;
+    context = ./config/CLAUDE.md;
+    agentsDir = ./config/agents;
+    commandsDir = ./config/commands;
+    hooksDir = ./config/hooks;
+    skills = ./config/skills;
     settings = {
       hooks.PreToolUse = [
         {
@@ -72,12 +69,11 @@ in {
         ENABLE_CLAUDEAI_MCP_SERVERS = "false";
         DISABLE_AUTOUPDATER = "1";
         # The sandbox proxy binds 127.0.0.1 only; Node 18+ tries IPv6 first and
-        # fails before falling back. Costly with short-lived Vite/Vitest procs.
+        # fails before falling back.
         NODE_OPTIONS = "--dns-result-order=ipv4first";
       };
       sandbox.enabled = true;
-      # Only hosts Bash reaches that WebFetch never does. Everything in
-      # webFetchHosts is already pre-allowed here by its WebFetch rule.
+      # Only hosts Bash reaches that WebFetch never does; see webFetchHosts.
       sandbox.network.allowedDomains = [
         "api.github.com"
         "codeload.github.com"
@@ -89,8 +85,7 @@ in {
       sandbox.filesystem.denyRead = ["~/.config/gh/hosts.yml"];
 
       # Registry-metadata reads run unsandboxed so they reuse the real ~/.npm
-      # and pnpm caches. They cannot mutate the project, and permissions plus
-      # PreToolUse hooks still apply.
+      # and pnpm caches.
       sandbox.excludedCommands = [
         "npm outdated*"
         "npm view *"
@@ -109,14 +104,21 @@ in {
         "pnpm exec ncu*"
         # Same IPv6-first problem as NODE_OPTIONS above, but Go has no knob: gh
         # dials the proxy at [::1] and every call fails with `proxyconnect`.
-        # Docs prescribe excludedCommands for Go CLIs. Safe because this governs
-        # only sandbox network/fs — permissions.deny still blocks gh writes.
+        # Safe because this governs only sandbox network/fs — permissions.deny
+        # still blocks gh writes.
         "gh *"
         # The rtk-rewrite hook turns `gh ...` into `rtk gh ...` before the
         # sandbox decision, so `gh *` alone never matches and gh ends up
         # sandboxed — where denyRead on hosts.yml stops it from even starting
         # ("failed to create root command"). Both forms have to be listed.
         "rtk gh *"
+        # Nix needs the daemon socket, which the sandbox blocks. Read-only
+        # evaluation only: builds, rebuilds, and `nix run`/`develop`/`shell`/
+        # `repl` are omitted so they stay sandboxed. rtk rewrites none of these.
+        "nix eval *"
+        "nix flake show*"
+        "nix flake metadata*"
+        "nix search*"
       ];
       statusLine = {
         type = "command";
@@ -129,133 +131,135 @@ in {
         alwaysThinkingEnabled = true;
         cleanupPeriodDays = 365;
       };
-      permissions.allow = [
-        # Read access for dotfiles (skills, agents, nix modules)
-        "Read(~/dotfiles/**)"
-        "Read(/nix/store/**)"
-        # Trusted skill namespaces (plugins explicitly enabled above)
-        "Skill(superpowers:*)"
-        "Skill(pr-review-toolkit:*)"
-        "Skill(frontend-design:*)"
-        # Custom skills and slash commands are appended below from skillNames.
-        # gh cli read-only
-        "Bash(gh issue list*)"
-        "Bash(gh issue view*)"
-        "Bash(gh pr list*)"
-        "Bash(gh pr view*)"
-        "Bash(gh pr status*)"
-        "Bash(gh pr checks*)"
-        "Bash(gh pr diff*)"
-        # Draft only; a non-draft `gh pr create` falls through to a prompt.
-        "Bash(gh pr create *--draft*)"
-        "Bash(gh run list*)"
-        "Bash(gh run view*)"
-        "Bash(gh repo view*)"
-        "Bash(gh release list*)"
-        # gh api — broad allow; permissions.deny blocks all write verbs and -f/--field
-        "Bash(gh api*)"
-        # rtk wrapper (transparent proxy for token savings)
-        "Bash(rtk *)"
-        # worktrunk (see CLAUDE.md). `wt remove` is omitted — it deletes the
-        # branch when merged, so it should prompt.
-        "Bash(wt switch*)"
-        "Bash(wt list*)"
-        # git read-only
-        "Bash(git log*)"
-        "Bash(git diff*)"
-        "Bash(git show*)"
-        "Bash(git branch*)"
-        "Bash(git blame*)"
-        "Bash(git stash list*)"
-        "Bash(git worktree list*)"
-        "Bash(git remote*)"
-        "Bash(git rev-parse*)"
-        "Bash(git merge-base*)"
-        "Bash(git tag*)"
-        "Bash(git describe*)"
-        "Bash(git ls-files*)"
-        "Bash(git --no-pager *)"
-        # npm read-only
-        "Bash(npm ls*)"
-        "Bash(npm outdated*)"
-        "Bash(npm explain*)"
-        "Bash(npm view*)"
-        "Bash(npm pkg get*)"
-        "Bash(npm audit*)"
-        "Bash(npm run --list*)"
-        # npm-check-updates (read-only when --jsonUpgraded; mutates only with -u/--upgrade)
-        "Bash(npx --yes npm-check-updates*)"
-        "Bash(npx npm-check-updates*)"
-        "Bash(npx --yes ncu*)"
-        "Bash(npx ncu*)"
-        "Bash(pnpm dlx npm-check-updates*)"
-        "Bash(pnpm dlx ncu*)"
-        "Bash(pnpm exec ncu*)"
-        # npm build/test
-        "Bash(npm test*)"
-        "Bash(npm run test*)"
-        "Bash(npm run lint*)"
-        "Bash(npm run tsc*)"
-        "Bash(npm run build*)"
-        "Bash(npm run dev*)"
-        "Bash(npm ci*)"
-        "Bash(npm install*)"
-        "Bash(pnpm --version*)"
-        # pnpm read-only
-        "Bash(pnpm ls*)"
-        "Bash(pnpm list*)"
-        "Bash(pnpm outdated*)"
-        "Bash(pnpm view*)"
-        "Bash(pnpm why *)"
-        "Bash(pnpm audit*)"
-        # pnpm build/test (both `pnpm <script>` and `pnpm run <script>` forms)
-        "Bash(pnpm test*)"
-        "Bash(pnpm jest*)"
-        "Bash(pnpm typecheck*)"
-        "Bash(pnpm lint*)"
-        "Bash(pnpm build*)"
-        "Bash(pnpm run test*)"
-        "Bash(pnpm run lint*)"
-        "Bash(pnpm run tsc*)"
-        "Bash(pnpm run typecheck*)"
-        "Bash(pnpm run build*)"
-        "Bash(pnpm run dev*)"
-        "Bash(pnpm install*)"
-        "Bash(pnpm add*)"
-        # pnpm exec — named binaries only; the bare form is a code-exec hatch.
-        "Bash(pnpm exec eslint*)"
-        "Bash(pnpm exec jest*)"
-        "Bash(pnpm exec tsc*)"
-        "Bash(pnpm exec vitest*)"
-        # Monorepo filter; both orderings occur: `pnpm --filter <pkg> run <s>`
-        # and `pnpm run --filter <pkg> exec <bin>`.
-        "Bash(pnpm --filter*)"
-        "Bash(pnpm run --filter*)"
-        # turbo
-        "Bash(pnpm turbo *)"
-        "Bash(npx turbo *)"
-        # typescript direct
-        "Bash(npx tsc*)"
-        "Bash(tsc *)"
-        # test runner
-        "Bash(npx vitest *)"
-        # linter (read-only by default; --fix mutates)
-        "Bash(npx eslint *)"
-        # expo
-        "Bash(npx expo *)"
-        # nix read-only
-        "Bash(nix eval *)"
-        "Bash(nix flake show*)"
-        "Bash(nix flake metadata*)"
-        "Bash(darwin-rebuild switch*--dry-run*)"
-        # aerospace read-only verbs. rtk has no equivalent (exit 1), so these
-        # are not already covered by Bash(rtk *). Excludes focus /
-        # move-node-to-workspace / reload-config, which mutate window state.
-        "Bash(aerospace list-*)"
-        "Bash(aerospace config --get*)"
-      ]
-      ++ map (name: "Skill(${name})") skillNames
-      ++ map (host: "WebFetch(domain:${host})") webFetchHosts;
+      permissions.allow =
+        [
+          # Read access for dotfiles (skills, agents, nix modules)
+          "Read(~/dotfiles/**)"
+          "Read(/nix/store/**)"
+          # Trusted skill namespaces (plugins explicitly enabled above)
+          "Skill(superpowers:*)"
+          "Skill(pr-review-toolkit:*)"
+          "Skill(frontend-design:*)"
+          # Custom skills and slash commands are appended below from skillNames.
+          # gh cli read-only
+          "Bash(gh issue list*)"
+          "Bash(gh issue view*)"
+          "Bash(gh pr list*)"
+          "Bash(gh pr view*)"
+          "Bash(gh pr status*)"
+          "Bash(gh pr checks*)"
+          "Bash(gh pr diff*)"
+          # Draft only; a non-draft `gh pr create` falls through to a prompt.
+          "Bash(gh pr create *--draft*)"
+          "Bash(gh run list*)"
+          "Bash(gh run view*)"
+          "Bash(gh repo view*)"
+          "Bash(gh release list*)"
+          # gh api — broad allow; permissions.deny blocks all write verbs and -f/--field
+          "Bash(gh api*)"
+          # rtk wrapper — broad by design; deny blocks `rtk proxy`, its
+          # arbitrary-command hatch.
+          "Bash(rtk *)"
+          # worktrunk (see CLAUDE.md). `wt remove` is omitted — it deletes the
+          # branch when merged, so it should prompt.
+          "Bash(wt switch*)"
+          "Bash(wt list*)"
+          # git read-only
+          "Bash(git log*)"
+          "Bash(git diff*)"
+          "Bash(git show*)"
+          "Bash(git branch*)"
+          "Bash(git blame*)"
+          "Bash(git stash list*)"
+          "Bash(git worktree list*)"
+          "Bash(git remote*)"
+          "Bash(git rev-parse*)"
+          "Bash(git merge-base*)"
+          "Bash(git tag*)"
+          "Bash(git describe*)"
+          "Bash(git ls-files*)"
+          "Bash(git --no-pager *)"
+          # npm read-only
+          "Bash(npm ls*)"
+          "Bash(npm outdated*)"
+          "Bash(npm explain*)"
+          "Bash(npm view*)"
+          "Bash(npm pkg get*)"
+          "Bash(npm audit*)"
+          "Bash(npm run --list*)"
+          # npm-check-updates (read-only when --jsonUpgraded; mutates only with -u/--upgrade)
+          "Bash(npx --yes npm-check-updates*)"
+          "Bash(npx npm-check-updates*)"
+          "Bash(npx --yes ncu*)"
+          "Bash(npx ncu*)"
+          "Bash(pnpm dlx npm-check-updates*)"
+          "Bash(pnpm dlx ncu*)"
+          "Bash(pnpm exec ncu*)"
+          # npm build/test
+          "Bash(npm test*)"
+          "Bash(npm run test*)"
+          "Bash(npm run lint*)"
+          "Bash(npm run tsc*)"
+          "Bash(npm run build*)"
+          "Bash(npm run dev*)"
+          "Bash(npm ci*)"
+          "Bash(npm install*)"
+          "Bash(pnpm --version*)"
+          # pnpm read-only
+          "Bash(pnpm ls*)"
+          "Bash(pnpm list*)"
+          "Bash(pnpm outdated*)"
+          "Bash(pnpm view*)"
+          "Bash(pnpm why *)"
+          "Bash(pnpm audit*)"
+          # pnpm build/test (both `pnpm <script>` and `pnpm run <script>` forms)
+          "Bash(pnpm test*)"
+          "Bash(pnpm jest*)"
+          "Bash(pnpm typecheck*)"
+          "Bash(pnpm lint*)"
+          "Bash(pnpm build*)"
+          "Bash(pnpm run test*)"
+          "Bash(pnpm run lint*)"
+          "Bash(pnpm run tsc*)"
+          "Bash(pnpm run typecheck*)"
+          "Bash(pnpm run build*)"
+          "Bash(pnpm run dev*)"
+          "Bash(pnpm install*)"
+          "Bash(pnpm add*)"
+          # pnpm exec — named binaries only; the bare form is a code-exec hatch.
+          "Bash(pnpm exec eslint*)"
+          "Bash(pnpm exec jest*)"
+          "Bash(pnpm exec tsc*)"
+          "Bash(pnpm exec vitest*)"
+          # Monorepo filter; both orderings occur: `pnpm --filter <pkg> run <s>`
+          # and `pnpm run --filter <pkg> exec <bin>`.
+          "Bash(pnpm --filter*)"
+          "Bash(pnpm run --filter*)"
+          # turbo
+          "Bash(pnpm turbo *)"
+          "Bash(npx turbo *)"
+          # typescript direct
+          "Bash(npx tsc*)"
+          "Bash(tsc *)"
+          # test runner
+          "Bash(npx vitest *)"
+          # linter (read-only by default; --fix mutates)
+          "Bash(npx eslint *)"
+          # expo
+          "Bash(npx expo *)"
+          # nix read-only
+          "Bash(nix eval *)"
+          "Bash(nix flake show*)"
+          "Bash(nix flake metadata*)"
+          "Bash(darwin-rebuild switch*--dry-run*)"
+          # aerospace read-only verbs. rtk has no equivalent (exit 1), so these
+          # are not already covered by Bash(rtk *). Excludes focus /
+          # move-node-to-workspace / reload-config, which mutate window state.
+          "Bash(aerospace list-*)"
+          "Bash(aerospace config --get*)"
+        ]
+        ++ map (name: "Skill(${name})") skillNames
+        ++ map (host: "WebFetch(domain:${host})") webFetchHosts;
       permissions.deny = [
         "Bash(rm -rf *)"
         "Bash(rm -fr *)"
@@ -287,11 +291,8 @@ in {
         # accidental package publish guards
         "Bash(npm publish*)"
         "Bash(pnpm publish*)"
-        # Block posting comments/reviews on GitHub on my behalf.
-        # `gh pr edit` is NOT here — it edits my own PR's title/body, which is
-        # part of the normal create-draft → write-body flow. It lives in
-        # permissions.ask so it confirms per-use ("editing requires explicit
-        # instruction") instead of being hard-blocked.
+        # Block posting comments/reviews on GitHub on my behalf. `gh pr edit` is
+        # deliberately absent — see permissions.ask below.
         "Bash(gh pr comment*)"
         "Bash(gh pr review*)"
         "Bash(gh pr close*)"
@@ -323,14 +324,21 @@ in {
         "Read(~/.kube/**)"
         "Read(~/.npmrc)"
         "Read(~/.npm/**)"
-        # Project-level .npmrc may contain private registry tokens (_authToken).
-        # Block all reads to prevent secret exfiltration via the Read tool or
-        # common shell utilities.
+        # Project-level .npmrc may hold a registry _authToken. Same
+        # project-relative scope as the .env rules below. The Bash patterns work
+        # here and not for .env because rtk refuses to rewrite `.npmrc` reads,
+        # so they run as written.
         "Read(**/.npmrc)"
         "Bash(cat *.npmrc*)"
         "Bash(grep *.npmrc*)"
         "Bash(head *.npmrc*)"
         "Bash(tail *.npmrc*)"
+        # Whole env family, .env.example included — usually a placeholder, not
+        # guaranteed to be. `**/` is project-relative, so this guards the project
+        # Claude is working in, not the filesystem. Read tool only: rtk rewrites
+        # `cat .env` into the allowed `rtk read`, so Bash patterns can't work.
+        "Read(**/.env)"
+        "Read(**/.env.*)"
         "Read(~/.pypirc)"
         "Read(~/.gem/credentials)"
         "Read(~/Library/Keychains/**)"
@@ -348,38 +356,9 @@ in {
     claude-yolo = "claude --dangerously-skip-permissions";
   };
 
-  # Every managed entry is the same mapping: ~/.claude/<path> maps to
-  # config/<path> (out-of-store symlink when config.my.dotfiles.mutable, a
-  # store copy otherwise — see modules/options.nix).
-  #
-  # Skills are enumerated individually rather than symlinking the whole skills/
-  # directory. home-manager ≥ 2026-07 installs the generated MCP plugin as a
-  # personal plugin at ~/.claude/skills/claude-code-home-manager (for Claude Code
-  # ≥ 2.1.157). A single out-of-store symlink for the entire skills/ dir collides
-  # with that nested entry ("Error installing file ... outside $HOME"). Per-skill
-  # symlinks let ~/.claude/skills be a real directory the module can also write
-  # into. Skill names are read from the flake source at eval time, so adding a
-  # new skill directory requires a rebuild.
-  home.file = builtins.listToAttrs (
-    map
-    (path: {
-      name = ".claude/${path}";
-      value.source =
-        if config.my.dotfiles.mutable
-        then config.lib.file.mkOutOfStoreSymlink "${configPath}/${path}"
-        else ./config/${path};
-    })
-    (
-      [
-        "CLAUDE.md"
-        "RTK.md"
-        "hooks"
-        "agents"
-        "commands"
-        "statusline.sh"
-      ]
-      ++ map (name: "skills/${name}")
-      (builtins.attrNames (builtins.readDir ./config/skills))
-    )
-  );
+  # No matching programs.claude-code option, so these stay hand-wired.
+  home.file = {
+    ".claude/RTK.md".source = ./config/RTK.md;
+    ".claude/statusline.sh".source = ./config/statusline.sh;
+  };
 }

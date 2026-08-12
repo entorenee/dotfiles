@@ -12,8 +12,16 @@
     fi
   '';
 
-  # ~/.config/worktrunk/config.toml is the only path worktrunk reads — it has
-  # no system/XDG_CONFIG_DIRS layer.
+  programs.zsh.shellAliases = {
+    wtl = "wt list";
+    wts = "wt switch";
+    wtc = "wt switch -c";
+    wt-prune = "wt step prune";
+    wt-move = "wt step relocate";
+  };
+
+  # ~/.config/worktrunk/config.toml is the only path worktrunk reads (36ba57b) —
+  # it has no system/XDG_CONFIG_DIRS layer.
   #
   # A read-only store symlink is safe because worktrunk keeps machine-local
   # state in <repo>/.git/wt/, not in config.toml, so nothing writes this file.

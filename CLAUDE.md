@@ -176,6 +176,38 @@ Role/host ordering in merged lists is not stable — `roles/` and `hosts/` defin
 - **Rebuild and switch:** `make rebuild` — auto-detects Darwin vs Linux and picks the flake attribute from the machine's hostname (`hostname -s`). **Darwin and `hester-prynne` only:** its Linux branch takes the standalone home-manager path, so on a NixOS host it fails with `does not provide attribute homeConfigurations."<host>"`. Use `make hub-switch` on the hub — see "NixOS Pi Hosts" below.
 - **Host selection:** flake outputs are keyed by hostname (`fw-skyler`, `lyra-silvertongue`, `hester-prynne`). Each `hosts/{darwin,home}/<hostname>` states `{username, system, homeImports, darwinImports ? [], overlays ? []}`; `homeImports` is one ordered list naming the tier role plus any identity or host-specific modules, and `darwinImports` is its nix-darwin counterpart (see "Identity roles live in `roles/`" below).
 
+### Pin every Darwin host's hostname
+
+macOS keeps three separate names, and only one of them is what `hostname` returns:
+
+| Name | Read with | Role |
+| --- | --- | --- |
+| `ComputerName` | `scutil --get ComputerName` | The friendly name in System Settings and AirDrop |
+| `LocalHostName` | `scutil --get LocalHostName` | The Bonjour `.local` name |
+| `HostName` | `scutil --get HostName` | Sets `kern.hostname` — **this is what `hostname` reports** |
+
+**When `HostName` is unset, configd derives `kern.hostname` from the network** — DHCP option 12 or reverse DNS of the current lease — and only falls back to `LocalHostName` if the network offers nothing. So a router or VPN can silently rename the machine out from under `make rebuild`, whose `host="$(hostname -s)"` then names a flake attribute that does not exist:
+
+```
+error: flake '...' does not provide attribute 'darwinConfigurations.Mac.system'
+```
+
+Verified 2026-08-11 on `fw-skyler`: `ComputerName` and `LocalHostName` were both still `fw-skyler`, `HostName` was **not set**, and `kern.hostname` had become `Mac`. Because System Settings shows `ComputerName`, the machine looks correctly named while `hostname` disagrees — do not use System Settings to check this.
+
+**So every Darwin host sets `networking.hostName`, and its value must equal that host's `darwinConfigurations` attribute name.** nix-darwin runs `scutil --set HostName` on activation, which pins `kern.hostname` against DHCP. `networking.localHostName` defaults to `networking.hostName`, so the one line pins both; setting `localHostName` alone fixes nothing, because `HostName` is still unset and still network-derived.
+
+Set it on the **host**, never in a `roles/` file — the name identifies one machine, not a class or an identity. `fw-skyler` sets it in its own `darwin.nix`; `lyra-silvertongue` has no host-level darwin file, so it carries an inline `{networking.hostName = ...;}` module in its `darwinImports`.
+
+Leave `networking.computerName` alone unless you intend to rename the machine everywhere it is user-visible.
+
+The chicken-and-egg case — a machine whose `HostName` is unset cannot `make rebuild` to acquire the pin — is broken by hand, once:
+
+```bash
+sudo scutil --set HostName <attr-name>
+```
+
+The three Pi hosts already set `networking.hostName` in their `configuration.nix`. `hester-prynne` is standalone home-manager with no NixOS module, so it has nothing to set this from and depends on the OS being named correctly.
+
 ## NixOS Pi Hosts
 
 Three `nixosConfigurations` live in `hosts/nixos/`, all `aarch64-linux`: `hub` (the always-on Pi 4, general building hub), `airgap` (the airgapped Yubikey Pi Zero 2W), and `uptime` (the uptime-kuma Pi Zero 2W). Each is a **directory** — `default.nix` states the host, `configuration.nix` is that machine's own NixOS module. `hosts/nixos/` contains nothing else; the two things every Pi shares moved to their taxonomy layers: `roles/nixos/base.nix` (policy — imported by all three) and `modules/nixos/gpg-yubikey.nix` (mechanism — imported by `hub` and `airgap` only).
@@ -230,7 +262,7 @@ Seed the host by placing two files in `/etc/cloudflared`, either on the mounted 
 
 ## Claude Code Nix Module
 
-The Claude Code configuration is Nix-managed in `modules/home/claude/`. The global `~/.claude/CLAUDE.md`, `~/.claude/settings.json`, hooks, skills, and agents are all symlinks managed by this repo.
+The Claude Code configuration is Nix-managed in `modules/home/claude/`. The global `~/.claude/CLAUDE.md`, `~/.claude/settings.json`, hooks, skills, agents, and commands are all deployed from this repo into the Nix store.
 
 ### How to make changes
 
@@ -239,17 +271,49 @@ The Claude Code configuration is Nix-managed in `modules/home/claude/`. The glob
 | Add MCP server     | `hosts/darwin/fw-skyler/claude.nix` or `roles/home/personal-claude.nix`                 | `make rebuild`                             |
 | Add hook           | Create script in `modules/home/claude/config/hooks/`, add to `default.nix` settings   | Rebuild                                    |
 | Add skill          | Add to `modules/home/claude/config/skills/`                                           | `git add` it, then rebuild — see Permissions below |
-| Add agent          | Add to `modules/home/claude/config/agents/`                                           | Automatic (symlinked)                      |
+| Add agent          | Add to `modules/home/claude/config/agents/`                                           | Rebuild                                    |
 | Change plugin      | Edit `enabledPlugins` in `modules/home/claude/default.nix`                            | Rebuild                                    |
 | Change permissions | Edit `permissions` in `modules/home/claude/default.nix` (base), `hosts/darwin/fw-skyler/claude.nix` (work), or `roles/home/personal-claude.nix` (personal) | Rebuild |
 | Change setting     | Edit `modules/home/claude/default.nix` (base), `hosts/darwin/fw-skyler/claude.nix` (work), or `roles/home/personal-claude.nix` (personal) | Rebuild |
 
-### Symlink Layout
+### Deployment Layout
 
-- `~/.claude/settings.json` → Nix store (read-only)
-- `~/.claude/hooks/`, `skills/`, `agents/` → this dotfiles repo
+`agents/`, `commands/`, `hooks/`, `skills/`, and `CLAUDE.md` are deployed by the home-manager module's own options (`agentsDir`, `commandsDir`, `hooksDir`, `skills`, `context`) rather than hand-wired `home.file` entries. Only `RTK.md` and `statusline.sh`, which have no matching option, are still declared in `home.file`.
 
-Because `hooks/` is an out-of-store symlink into this repo, a new or edited hook script is live the moment it is written — no rebuild needed to *run* it. A rebuild is still required to *register* it in `settings.json`.
+Everything under `~/.claude` is therefore a symlink into the Nix store, and **every edit under `config/` needs a rebuild to take effect** — including hook scripts. The `*Dir` options have no `mkOutOfStoreSymlink` escape hatch, so they don't honor `my.dotfiles.mutable`; that's the accepted cost of the module being usable on a NixOS host with no `~/dotfiles` checkout.
+
+The `*Dir` options and the path form of `skills` deploy with `recursive = true` — set inside the module's own `mkRecursiveDirAttrs`, not by anything this repo passes. That makes home-manager create `~/.claude/<subdir>` as a real directory and link each child individually, instead of pointing the whole subdirectory at one store path. Enumerating skills one-by-one used to be the workaround and is no longer needed. That per-file layout is also what makes the migration hazard below possible, so it is worth knowing which shape is deployed.
+
+**The MCP plugin does not land in `~/.claude/skills/`.** The pinned home-manager (`flake.lock` rev `d4fd2466`) builds it as a store directory named `claude-code-hm-plugin` and hands it to a wrapper script as `--plugin-dir`, unconditionally — so `~/.claude/skills/` holds exactly the repo's own skills and nothing else. Newer home-manager revisions add a "personal plugins" mode that installs to `~/.claude/skills/<plugin>` when claude-code is ≥ 2.1.157, and gate `recursive = true` on avoiding a collision with it; none of that code is in the pinned revision, so do not reason from it. Several home-manager sources coexist in `/nix/store` — confirm the one you are reading matches `flake.lock` before drawing conclusions from it.
+
+### Migrating a directory off `mkOutOfStoreSymlink`
+
+**Delete the old live symlinks by hand before the first rebuild after such a change.** Switching a directory from `mkOutOfStoreSymlink` to a store-backed per-file layout — what commit `cd210a1` did for `agents/`, `commands/`, `hooks/`, and `skills/` — does not retire the symlink the previous generation already placed in `~`. That link resolves *through* the store and back into the working tree:
+
+```
+~/.claude/agents
+  -> /nix/store/<gen>-home-manager-files/.claude/agents
+  -> /nix/store/<hash>-hm_agents                     # mkOutOfStoreSymlink: a store symlink...
+  -> ~/dotfiles/modules/home/claude/config/agents    # ...whose target is the repo
+```
+
+home-manager then creates each new per-file entry *through* that chain, so `ln -s … ~/.claude/agents/foo.md` lands in `~/dotfiles/…` instead. The tracked source is moved aside to `foo.md.hm-backup` and replaced by a store symlink, and `git status` reports the whole tree as typechanged (` T`). Restoring from git alone does not hold — the next rebuild repeats it, because the chain is what is broken, not the files. The `.hm-backup` files are a symptom, never the cause.
+
+Home-manager will not clear the stale links itself. It retires orphans by diffing against the previous generation it holds a pointer to, and under nix-darwin those pointers diverge (verified 2026-08-11: the gcroot, the home-manager profile, and the live files each named a different generation), so the old `.claude/agents` entry is never seen as an orphan.
+
+Fix in this order; the order is load-bearing:
+
+1. `rm ~/.claude/agents ~/.claude/commands ~/.claude/hooks ~/.claude/skills/*` — every one is a symlink, so flagless `rm` suffices. Do **not** use `rm -rf`, and never add a trailing slash: `rm -rf ~/.claude/agents/` deletes the repo directory the link resolves to. Flagless `rm` also avoids `Bash(rm -rf *)` in `permissions.deny`, which refuses the `-rf` form when run through Claude Code.
+2. `git checkout -- modules/home/claude/config/`, then delete the `*.hm-backup` files — before rebuilding. A rebuild while the sources are still symlinks copies the *symlinks* into the new store path rather than the content, stacking another layer of indirection each time.
+3. Quit all sessions, then `make rebuild`.
+
+Verify with:
+
+```bash
+find ~/.claude -maxdepth 2 -type l -exec sh -c 'readlink -f "$1" | grep -q "^$HOME/dotfiles/" && echo "$1"' _ {} \;
+```
+
+It must print nothing, `~/.claude/{agents,commands,hooks,skills}` must be real directories, and every link under `~/.claude` must name a single generation.
 
 ### Quit Claude sessions before rebuilding
 
@@ -270,6 +334,14 @@ Verified 2026-07-28 on claude-code 2.1.220, five trials: three rebuilds with a s
 **To recover: quit all sessions and re-run `make rebuild`.** Then confirm with `jq '.permissions.allow | length' ~/.claude/settings.json` — the failure mode is a missing file, not a malformed one, so any successful `jq` read means it is back.
 
 Do not try to reconstruct the symlink from the home-manager profile paths. Under nix-darwin they diverge: verified 2026-07-28, `~/.local/state/nix/profiles/home-manager/home-files/` had no `.claude/settings.json` at all, `~/.local/state/home-manager/gcroots/current-home/` pointed at a stale generation, and the live symlink pointed at a third — because home-manager runs as a nix-darwin module, so the authoritative `home-manager-files` derivation is referenced from the system generation rather than the home-manager profile. If you must relink by hand, take the target from `readlink ~/.claude/settings.json` *before* it disappears.
+
+### A repo's `settings.local.json` silently overrides the Nix config
+
+`<repo>/.claude/settings.local.json` takes precedence over the Nix-managed `~/.claude/settings.json`, and the `/sandbox` panel **writes to it**. Selecting a sandbox mode there persists `sandbox.enabled` per-repo, where it outranks the module.
+
+This had the sandbox fully disabled in this repo — for long enough that its absence read as a Claude Code bug — while `sandbox.enabled = true` was correctly deployed in `settings.json`. The symptom is that sandbox settings look right and nothing enforces: no proxy env vars, `curl` reaching non-allowlisted hosts, `denyRead` paths readable.
+
+**Check `.claude/settings.local.json` before concluding a settings-level feature is broken.** The file is gitignored, so this is per-machine state — fixing it in one checkout fixes nothing elsewhere. Note also that a failed sandbox startup degrades to *no sandbox* with only a warning; `sandbox.failIfUnavailable = true` makes that a hard failure instead.
 
 ### Settings Merge Behavior
 
@@ -333,6 +405,12 @@ All tools use the same glob style — `*` matches any string, anywhere in the pa
 - `Bash(gh api repos/*/issues*)` — wildcard mid-path
 - `mcp__plugin_claude-code-home-manager_expo__*_info` — wildcard mid-name (matches `build_info`, `workflow_info`)
 - `Skill(superpowers:*)` — wildcard after plugin namespace
+
+#### Pattern scope — `**/` is project-relative
+
+A `Read(**/x)` rule matches only under the current project root, **not** the whole filesystem. Verified 2026-08-11 against the live `Read(**/.npmrc)` rule: a dummy `.npmrc` inside the repo was denied; the same file under `/private/tmp` was read successfully. Per the Claude docs, Read/Edit rules use `//path` for absolute and `/path` for project-relative — a different convention from `sandbox.filesystem.*` paths, which use standard prefixes (`/`, `~/`, `./`).
+
+So `Read(**/.env)` guards the `.env` of whatever project Claude is working in and nothing wider. That is a bounded guarantee — do not write such a rule and then describe it as blanket coverage. Whether globs work in `sandbox.filesystem.denyRead` at all is undocumented and untested.
 
 #### Condensing MCP allowlists
 

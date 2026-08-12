@@ -1,4 +1,9 @@
 {...}: {
+  # Must equal this host's darwinConfigurations attribute name — see the
+  # "Pin every Darwin host's hostname" section of CLAUDE.md.
+  networking.hostName = "fw-skyler";
+
+
   homebrew = {
     brews = [
       "hookdeck/hookdeck/hookdeck"
