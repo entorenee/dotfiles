@@ -58,7 +58,15 @@ Several Makefile commands have been created to help manage the Nix configuration
 
 ## Managing Packages with Nix and Homebrew
 
-Overall, Nix is preferred for package installation whenever possible. However, by default Nix installs applications in `~/Applications` rather than `/Applications` which is annoying and complicates the Finder search. Nix also does not support as many of the MacOS specific GUI applications. This has resulted in a hybrid approach. The general principles of this are:
+Overall, Nix is preferred for package installation whenever possible. For MacOS GUI applications, however, Homebrew casks remain the better fit, so this repo takes a hybrid approach. Three reasons, none of them about where the app file lands:
+
+* **App Management permissions.** A process running out of `/nix/store` has no code-signing identifier, so MacOS treats it as `InvalidCode` and will not prompt for the App Management permission. Home-Manager's app-copy activation probes for that permission by running `tccutil reset SystemPolicyAppBundles`, which **wipes every existing App Management grant** on the machine and can abort activation outright. Granting the terminal emulator the permission does not help — only Terminal.app holds the private entitlement that makes prompting work. This is why `targets.darwin.copyApps.enable` is turned off explicitly in `roles/home/gui.nix` rather than left at its default.
+* **No self-update.** Cask apps update themselves, or via `brew upgrade`. A Nix-installed GUI app can only move when the flake input moves, which for desktop software is usually the wrong cadence.
+* **Hardcoded `/Applications` paths.** `system.defaults.dock.persistent-apps` and the launchd agents both name `/Applications/*.app` directly. Nix puts its copies elsewhere, so moving an app to Nix means fixing up every one of those references.
+
+Note that the old objection — Nix symlinking apps into `~/Applications` where Spotlight would not index them — no longer applies. Both nix-darwin and Home-Manager switched from symlinks to real copies in late 2025, and those copies **are** indexed. Plain symlinks still are not; the mechanism changed, not MacOS.
+
+The general principles of the hybrid approach are:
 
 * If a package can be installed with Nix and Home-Manager without negative side effects that is preferred.
 * Homebrew is installed via Nix and can be used to install additional apps for Mac targets. Nix is cross-platform including Linux, but Homebrew will only work on MacOS targets.

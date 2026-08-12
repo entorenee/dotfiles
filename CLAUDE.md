@@ -208,6 +208,16 @@ sudo scutil --set HostName <attr-name>
 
 The three Pi hosts already set `networking.hostName` in their `configuration.nix`. `hester-prynne` is standalone home-manager with no NixOS module, so it has nothing to set this from and depends on the OS being named correctly.
 
+### macOS GUI apps: `copyApps` is off on purpose
+
+**Do not re-enable `targets.darwin.copyApps.enable`, and do not add a GUI `.app` to `home.packages` on a Mac.** Its activation step probes for the App Management permission by running `tccutil reset SystemPolicyAppBundles`, which wipes every App Management grant on the machine and can abort the rebuild. A `/nix/store` process has no code-signing identifier, so TCC reads it as `InvalidCode` and will not prompt; only Terminal.app carries the private entitlement that makes prompting work, and granting Ghostty the permission explicitly has been confirmed not to help. `roles/home/gui.nix` sets it to `false` for this reason — see `README.md` for the full rationale, including why GUI apps stay on Homebrew casks.
+
+Note that `home.stateVersion = "26.05"` in `roles/home/minimal.nix` is inherited by every host, and 26.05 ≥ 25.11 is exactly where `copyApps` defaults on — so this is armed by default, not opt-in. It stayed inert only because no Darwin `home.packages` entry currently ships an `.app` for the rsync glob to match.
+
+The old `~/Applications` Spotlight complaint is obsolete and should not be repeated in new docs. Since late 2025 nix-darwin copies to `/Applications/Nix Apps` (PR #1396) and home-manager to `~/Applications/Home Manager Apps` (PR #8031) as real files rather than symlinks, and real copies **are** indexed. Symlinks still are not — macOS did not change, the deployment mechanism did.
+
+On macOS 26, Launchpad no longer exists as a separate app; it is an Apps pane inside Spotlight. Instructions that say "check Launchpad" are stale.
+
 ## NixOS Pi Hosts
 
 Three `nixosConfigurations` live in `hosts/nixos/`, all `aarch64-linux`: `hub` (the always-on Pi 4, general building hub), `airgap` (the airgapped Yubikey Pi Zero 2W), and `uptime` (the uptime-kuma Pi Zero 2W). Each is a **directory** — `default.nix` states the host, `configuration.nix` is that machine's own NixOS module. `hosts/nixos/` contains nothing else; the two things every Pi shares moved to their taxonomy layers: `roles/nixos/base.nix` (policy — imported by all three) and `modules/nixos/gpg-yubikey.nix` (mechanism — imported by `hub` and `airgap` only).

@@ -19,6 +19,6 @@
   xdg.autostart.enable = true;
 
   # Mac GUI apps come from Homebrew casks; the copy probe wipes App Management
-  # TCC grants.
+  # TCC grants — see README.md, "Managing Packages with Nix and Homebrew".
   targets.darwin.copyApps.enable = false;
 }
