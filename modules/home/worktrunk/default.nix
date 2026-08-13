@@ -20,15 +20,12 @@
     wt-move = "wt step relocate";
   };
 
-  # Deploy worktrunk's declarative settings to the ONE path worktrunk reads:
-  # the user config at ~/.config/worktrunk/config.toml. worktrunk (36ba57b)
-  # has no system/XDG_CONFIG_DIRS layer, so the previous etc/xdg deployment was
-  # never picked up (and home.packages doesn't link an etc/ tree anyway).
+  # ~/.config/worktrunk/config.toml is the only path worktrunk reads (36ba57b) —
+  # it has no system/XDG_CONFIG_DIRS layer.
   #
-  # A read-only store symlink is safe here because worktrunk keeps its
-  # machine-local state in <repo>/.git/wt/ (branch markers, caches, logs, prev
-  # branch), NOT in config.toml — so nothing tries to write this file and the
-  # old repo-dirtying problem doesn't apply. User-invoked `wt config` writes
-  # (approvals, aliases) must instead be declared in ./config/config.toml.
+  # A read-only store symlink is safe because worktrunk keeps machine-local
+  # state in <repo>/.git/wt/, not in config.toml, so nothing writes this file.
+  # The tradeoff: user-invoked `wt config` writes (approvals, aliases) do not
+  # persist and must be declared in ./config/config.toml instead.
   xdg.configFile."worktrunk/config.toml".source = ./config/config.toml;
 }

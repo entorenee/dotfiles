@@ -4,10 +4,9 @@
   ...
 }: {
   imports = [
-    # Safe here, unlike on the sd-image hosts: this Pi is installed in place and
-    # rebuilt with `make hub-switch`, so it never runs the sd-image module whose
-    # populateFirmwareCommands nixos-hardware would mkForce over. Do not copy
-    # this import into an image-built host. See CLAUDE.md.
+    # Safe here only because this Pi is installed in place and never runs the
+    # sd-image module whose populateFirmwareCommands nixos-hardware mkForces
+    # over. Do not copy this import into an image-built host — see CLAUDE.md.
     nixos-hardware.nixosModules.raspberry-pi-4
     ../../../roles/nixos/base.nix
     ../../../modules/nixos/gpg-yubikey.nix
@@ -16,11 +15,9 @@
   networking.hostName = "hub";
   networking.useDHCP = true;
 
-  # The account set is fully declared here, so /etc/shadow should not be able to
-  # drift out from under it -- an imperative `passwd` would otherwise persist
+  # The account set is fully declared, so an imperative `passwd` cannot persist
   # across rebuilds and quietly re-open the password paths closed below.
-  # skyler stays passwordless: SSH keys get in, wheelNeedsPassword = false
-  # covers sudo, and console recovery is by pulling the SD card.
+  # Console recovery is by pulling the SD card.
   users.mutableUsers = false;
 
   users.users.skyler = {
@@ -58,11 +55,9 @@
     rsync
   ];
 
-  # System-wide git config, for root only: skyler has home-manager (see the
-  # homeImports in ./default.nix), so ~/.gitconfig takes precedence there, while
-  # root has no home-manager identity of its own.
-  # Signing-relevant subset of modules/home/git/config/{config,config-personal} —
-  # commits are signed with the personal Yubikey plugged in for the occasion.
+  # For root only: skyler has home-manager, so ~/.gitconfig takes precedence
+  # there. Signing-relevant subset of modules/home/git/config/* — commits are
+  # signed with the personal Yubikey plugged in for the occasion.
   environment.etc."gitconfig".text = ''
     [user]
       email = 26767995+entorenee@users.noreply.github.com

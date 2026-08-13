@@ -3,17 +3,11 @@
   pkgs,
   ...
 }: {
-  # Shell ergonomics only — file viewing, searching, JSON, process monitoring.
-  # Everything here is a small, local, single-shot CLI tool: no language
-  # runtimes, no daemons, no network clients, nothing that assumes a remote or
-  # a dotfiles checkout. This is what makes the list safe on an airgapped or
-  # resource-constrained host, so keep that bar when adding to it.
-  #
-  # Dev tooling and language runtimes live in cli-pkgs.nix (imported from
-  # roles/home/cli.nix); Linux-desktop packages live in linux-gui-pkgs.nix
-  # (imported from roles/home/gui.nix). Identity and host package sets live in
-  # the relevant roles/ or hosts/ file — `home.packages` is a `listOf package`,
-  # so all of these definitions concatenate.
+  # Shell ergonomics only — small, local, single-shot CLI tools. No language
+  # runtimes, no daemons, no network clients, nothing assuming a remote or a
+  # dotfiles checkout. That bar is what keeps the list safe on an airgapped or
+  # resource-constrained host; hold it when adding. Dev tooling goes in
+  # cli-pkgs.nix, Linux-desktop packages in linux-gui-pkgs.nix.
   home.packages = with pkgs;
     [
       bat

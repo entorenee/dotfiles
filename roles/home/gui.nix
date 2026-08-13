@@ -1,7 +1,7 @@
 {
   # A machine with a graphical session: terminal emulators, fonts, desktop apps.
-  # Modules here self-gate on `pkgs.stdenv.is*` where they are also
-  # platform-specific, so importing this role is safe on either platform.
+  # Safe to import on either platform — the modules below self-gate on
+  # `pkgs.stdenv.is*` where they are also platform-specific.
   imports = [
     ./cli.nix
 
@@ -17,4 +17,8 @@
   my.gui = true;
 
   xdg.autostart.enable = true;
+
+  # Mac GUI apps come from Homebrew casks; the copy probe wipes App Management
+  # TCC grants — see README.md, "Managing Packages with Nix and Homebrew".
+  targets.darwin.copyApps.enable = false;
 }

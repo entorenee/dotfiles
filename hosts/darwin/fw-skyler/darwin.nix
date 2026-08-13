@@ -1,17 +1,13 @@
 {...}: {
-  # fw-skyler nix-darwin config, named by this host's `darwinImports`. See the
-  # note in home.nix on why this lives directly on the host instead of in a
-  # shared role under roles/darwin/.
-
   # Must equal this host's darwinConfigurations attribute name — see the
   # "Pin every Darwin host's hostname" section of CLAUDE.md.
   networking.hostName = "fw-skyler";
+
 
   homebrew = {
     brews = [
       "hookdeck/hookdeck/hookdeck"
       "mysql"
-      "openjdk@17"
       "vercel-cli"
     ];
 
@@ -19,12 +15,10 @@
       "android-studio"
       "asana"
       "bitwarden"
-      "firefox"
       "google-chrome"
       "google-drive"
       "granola"
       "loom"
-      "ngrok"
       "surfshark"
       "tableplus"
     ];

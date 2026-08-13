@@ -1,10 +1,15 @@
-{...}: {
-  # Imported from roles/home/personal-desktop.nix, not from a tier role: this is
-  # a personal GUI desktop's password manager, not something a class of machine
-  # wants.
+{
+  lib,
+  pkgs,
+  ...
+}: {
   programs.keepassxc = {
     enable = true;
-    autostart = true;
+
+    # Darwin provides package via Homebrew
+    package = lib.mkIf pkgs.stdenv.isDarwin null;
+
+    autostart = !pkgs.stdenv.isDarwin;
     settings = {
       General = {
         AutoSaveAfterEveryChange = false;

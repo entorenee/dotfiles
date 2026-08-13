@@ -1,8 +1,5 @@
 # claude-code ships far faster than the 6-month NixOS release cycle, so take it
 # from nixpkgs-unstable rather than the repo's 26.05 pin.
-#
-# Universal, not per-host (see flake.nix's `baseOverlays`) — every host imports
-# `programs.claude-code` via roles/home/cli.nix.
 {nixpkgs-unstable}: final: _prev: {
   claude-code =
     (import nixpkgs-unstable {

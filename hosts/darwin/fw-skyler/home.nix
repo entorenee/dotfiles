@@ -8,8 +8,6 @@
   workYubikeyIdentity = "${config.home.homeDirectory}/.ssh/id_rsa_yubikey_work.pub";
   ghDashConfig = "${config.home.homeDirectory}/dotfiles/hosts/darwin/fw-skyler/gh-dash.yml";
 in {
-  # fw-skyler is the only work machine, so work identity lives directly on the
-  # host rather than in a shared role under roles/home/ — see CONVENTIONS.md.
   imports = [
     ./claude.nix
   ];
@@ -18,12 +16,14 @@ in {
     cocoapods
     doctl
     mkcert
+    ngrok
     ruby
+    temurin-bin-17
   ];
 
-  # Replaces the module's `mkDefault` list rather than appending to it — see the
-  # note in modules/home/ssh/. The personal Yubikey has to be restated because of
-  # that: it is what authenticates the dotfiles checkout on every machine.
+  # Replaces the module's `mkDefault` list rather than appending to it, so the
+  # personal Yubikey has to be restated — it authenticates the dotfiles checkout
+  # on every machine.
   programs.ssh.settings."github.com".IdentityFile = [
     personalYubikeyIdentity
     workYubikeyIdentity

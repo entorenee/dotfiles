@@ -1,14 +1,14 @@
-# The private fonts are fetched here, in their only consumer, rather than as a
-# flake input: stock Nix fetches every locked input eagerly, so a `git+ssh://`
-# input makes every host authenticate to GitHub just to evaluate — including
-# the Pis, which never import this module and hold no Yubikey. A
-# `builtins.fetchGit` here is a thunk only importing hosts force.
+# Fetched here, in its only consumer, rather than as a flake input: stock Nix
+# fetches every locked input eagerly, so a `git+ssh://` input would make every
+# host authenticate to GitHub just to evaluate — including the Pis, which never
+# import this module and hold no Yubikey. This is a thunk only importing hosts
+# force.
 #
-# It must be `builtins.fetchGit`, not a fixed-output `pkgs.fetchgit`: this runs
-# in the evaluator as the invoking user and can reach the agent holding the
+# Must be `builtins.fetchGit`, not a fixed-output `pkgs.fetchgit`: this runs in
+# the evaluator as the invoking user and can reach the agent holding the
 # Yubikey, where an FOD builds as `nixbld` and has no SSH access.
 #
-# Bump `rev` by hand — `nix flake update` does not cover it. See CLAUDE.md and
+# Bump `rev` by hand — `nix flake update` does not cover it. See
 # PRIVATE-ASSETS.md for when to reverse this shape.
 {pkgs, ...}: let
   privateAssets = builtins.fetchGit {

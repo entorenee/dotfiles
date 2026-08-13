@@ -6,9 +6,8 @@
   };
 
   inputs = {
-    # Stable 26.05 across the board — nixpkgs, home-manager and darwin release
-    # branches move together. Freshness where it matters (claude-code) comes
-    # from the nixpkgs-unstable escape hatch, not from tracking unstable.
+    # Stable 26.05 across the board; freshness where it matters (claude-code)
+    # comes from the nixpkgs-unstable escape hatch, not from tracking unstable.
     nixpkgs.url = "github:nixos/nixpkgs/nixos-26.05";
     nixpkgs-unstable.url = "github:nixos/nixpkgs/nixos-unstable";
     home-manager = {
@@ -62,14 +61,10 @@
   }: let
     lib = nixpkgs.lib;
 
-    # Applied to every host — every current and planned host imports the
-    # `claude` module via `roles/home/cli.nix`, so the unstable escape hatch for
-    # it is not a per-host opt-in like
-    # `overlays/{protonmail-desktop,pnpm-pin}.nix`.
+    # Universal rather than a per-host opt-in like overlays/pnpm-pin.nix:
+    # every host imports the `claude` module via roles/home/cli.nix.
     baseOverlays = [(import ./overlays/claude-code-unstable.nix {inherit nixpkgs-unstable;})];
 
-    # The mkDarwin/mkNixos/mkHome helpers live in ./lib/, each parameterized
-    # on exactly the flake inputs it needs.
     mkHomeManagerArgs = import ./lib/home-manager-args.nix {
       inherit lib navi-cheatsheets tmux-powerkit worktrunk;
     };

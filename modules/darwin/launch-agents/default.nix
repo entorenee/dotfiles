@@ -1,5 +1,5 @@
 {...}: {
-  # Identity-specific agents are declared in whatever a host names in its
+  # Identity-specific agents live in the role a host names in its
   # `darwinImports`; `launchd.user.agents` is an attrset of submodules, so they
   # merge with this.
   launchd.user.agents.elgatoControlCenter = {
