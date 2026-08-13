@@ -11,8 +11,7 @@
     ../../modules/home/gh-dash
     ../../modules/home/lazygit
     ../../modules/home/navi
-    ../../modules/home/npm
-    ../../modules/home/nvm
+    ../../modules/home/node
     ../../modules/home/rtk
     ../../modules/home/smug
     ../../modules/home/tmux

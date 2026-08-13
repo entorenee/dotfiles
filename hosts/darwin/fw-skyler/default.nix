@@ -5,6 +5,7 @@
   # rather than in roles/ — there is no second consumer to share them with.
   homeImports = [
     ../../../roles/home/gui.nix
+    ../../../modules/home/mise
     ./home.nix
   ];
   darwinImports = [./darwin.nix];

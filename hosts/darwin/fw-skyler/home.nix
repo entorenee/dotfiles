@@ -21,6 +21,8 @@ in {
     temurin-bin-17
   ];
 
+  programs.mise.globalConfig.tools."npm:@posthog/cli" = "latest";
+
   # Replaces the module's `mkDefault` list rather than appending to it, so the
   # personal Yubikey has to be restated — it authenticates the dotfiles checkout
   # on every machine.
