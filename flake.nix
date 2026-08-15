@@ -71,7 +71,7 @@
     yubikey-guide,
     ...
   }: let
-    lib = nixpkgs.lib;
+    inherit (nixpkgs) lib;
 
     # Universal rather than a per-host opt-in like overlays/pnpm-pin.nix,
     # because both serve a tier rather than named machines: claude-code-unstable
@@ -85,6 +85,27 @@
       agenix.overlays.default
     ];
 
+    # Platforms the repo's own tooling has to run on — exactly the three the
+    # hosts use. Unrelated to which systems the configurations below build for.
+    devSystems = ["aarch64-darwin" "aarch64-linux" "x86_64-linux"];
+    forAllSystems = f: lib.genAttrs devSystems (system: f nixpkgs.legacyPackages.${system});
+
+    # Every binary `make fmt-check` and `make lint` invoke. The formatters are
+    # restated here rather than inherited: nothing outside a rebuilt host has
+    # home-manager to inherit them from.
+    repoTooling = pkgs:
+      with pkgs; [
+        actionlint
+        alejandra
+        deadnix
+        prettier
+        shfmt
+        statix
+        stylua
+        taplo
+        yamlfmt
+      ];
+
     mkHomeManagerArgs = import ./lib/home-manager-args.nix {
       inherit lib navi-cheatsheets tmux-powerkit worktrunk;
     };
@@ -93,7 +114,6 @@
       (import ./lib/darwin.nix {
         inherit agenix darwin home-manager worktrunk baseOverlays mkHomeManagerArgs;
       })
-      mkDarwinConfig
       mkDarwinHost
       ;
 
@@ -101,7 +121,6 @@
       (import ./lib/home.nix {
         inherit agenix nixpkgs home-manager baseOverlays mkHomeManagerArgs worktrunk;
       })
-      mkHomeManagerConfig
       mkHomeHost
       ;
 
@@ -109,7 +128,6 @@
       (import ./lib/nixos.nix {
         inherit agenix nixpkgs home-manager lib nixos-hardware yubikey-guide baseOverlays mkHomeManagerArgs worktrunk;
       })
-      mkNixosConfig
       mkNixosHost
       ;
   in {
@@ -127,5 +145,15 @@
       airgap = mkNixosHost ./hosts/nixos/airgap;
       uptime = mkNixosHost ./hosts/nixos/uptime;
     };
+
+    # `nix fmt` formats the tree. alejandra rather than nixfmt-rfc-style because
+    # it is what conform.nvim already runs on save — one formatter, not two.
+    formatter = forAllSystems (pkgs: pkgs.alejandra);
+
+    devShells = forAllSystems (pkgs: {
+      default = pkgs.mkShell {
+        packages = repoTooling pkgs;
+      };
+    });
   };
 }

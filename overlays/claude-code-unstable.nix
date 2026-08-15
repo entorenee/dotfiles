@@ -1,7 +1,7 @@
 # claude-code ships far faster than the 6-month NixOS release cycle, so take it
 # from nixpkgs-unstable rather than the repo's 26.05 pin.
 {nixpkgs-unstable}: final: _prev: {
-  claude-code =
+  inherit
     (import nixpkgs-unstable {
       # Not `inherit (final) system`: nixpkgs demoted `pkgs.system` to a
       # warnAlias in pkgs/top-level/aliases.nix, so reading it prints an
@@ -9,5 +9,6 @@
       inherit (final.stdenv.hostPlatform) system;
       config.allowUnfree = true;
     })
-    .claude-code;
+    claude-code
+    ;
 }

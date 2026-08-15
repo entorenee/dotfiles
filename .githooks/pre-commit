@@ -1,0 +1,85 @@
+#!/bin/sh
+# Format check over the files in this commit. Install with `make hooks`;
+# bypass with `git commit --no-verify`.
+#
+# Checks the worktree copy of each staged file rather than the staged blob.
+# The two differ only when a file is partially staged, which is not worth
+# materializing the index into a temp tree to catch.
+#
+# Formatting only. statix/deadnix/actionlint are whole-tree and devShell-only,
+# so they belong in `make lint` rather than in a hook that would then need
+# `nix develop` to pass.
+#
+# POSIX sh, no arrays: git hooks inherit whatever PATH the invoking shell had,
+# and on macOS that can still be bash 3.2.
+
+set -u
+
+status=0
+
+# Staged files that still exist on disk, one per line, for the pathspecs given.
+staged() {
+  git diff --cached --name-only --diff-filter=ACMR -- "$@" |
+    while IFS= read -r f; do
+      [ -f "$f" ] && printf '%s\n' "$f"
+    done
+}
+
+# check <label> <tool> <flag>... -- <pathspec>...
+check() {
+  label=$1
+  tool=$2
+  shift 2
+
+  flags=""
+  while [ "$1" != "--" ]; do
+    flags="$flags $1"
+    shift
+  done
+  shift
+
+  files=$(staged "$@")
+  [ -z "$files" ] && return 0
+
+  if ! command -v "$tool" >/dev/null 2>&1; then
+    printf 'pre-commit: %s is not installed, so the %s files in this commit went unchecked.\n' \
+      "$tool" "$label" >&2
+    status=1
+    return 0
+  fi
+
+  # Output is captured and replayed only on failure. Otherwise every clean
+  # commit prints alejandra's sponsor banner and taplo's INFO line.
+  #
+  # Unquoted on purpose: both lists are word-split into arguments. That holds
+  # only while no pathspec below matches a path containing whitespace. Some do
+  # exist — the OrcaSlicer profiles and the Obsidian sample vault — and they are
+  # excluded at the call sites rather than quoted, because carrying spaces
+  # safely needs an array and this is POSIX sh.
+  # shellcheck disable=SC2086
+  if ! out=$($tool $flags $files 2>&1); then
+    status=1
+    [ -n "$out" ] && printf '%s\n' "$out" >&2
+  fi
+}
+
+check nix alejandra --check -- '*.nix'
+check yaml yamlfmt -lint -quiet -- '*.yml' '*.yaml'
+# The zsh scripts in modules/home/bins/bin are excluded: shfmt parses
+# sh/bash/mksh/bats and hard-errors on zsh. Keep in step with SH_FILES.
+check shell shfmt -l -- '*.sh' 'modules/home/bins/bin/*' '.githooks/*' \
+  ':!modules/home/bins/bin/dot-apply' ':!modules/home/bins/bin/dot-clean' \
+  ':!modules/home/bins/bin/dot-update' ':!modules/home/bins/bin/update-all'
+check lua stylua --check -- '*.lua'
+check toml taplo fmt --check -- '*.toml'
+# Markdown only, minus the Obsidian sample vault (application-owned, and the
+# only tracked markdown with spaces in its filenames). Keep in step with
+# MD_FILES in the Makefile.
+check markdown prettier --check --log-level warn -- '*.md' ':!templates/obsidian/*'
+
+if [ "$status" -ne 0 ]; then
+  printf '\npre-commit failed. Run `make fmt` and re-stage, or `make rebuild` /\n' >&2
+  printf '`nix develop` if a formatter was reported missing.\n' >&2
+fi
+
+exit "$status"

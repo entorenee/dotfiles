@@ -220,6 +220,52 @@ The old `~/Applications` Spotlight complaint is obsolete and should not be repea
 
 On macOS 26, Launchpad no longer exists as a separate app; it is an Apps pane inside Spotlight. Instructions that say "check Launchpad" are stale.
 
+## Formatting and Linting
+
+| Task | Command |
+| --- | --- |
+| Format the tree in place | `make fmt` (or `nix fmt`, which is alejandra alone) |
+| Check formatting, write nothing | `make fmt-check` |
+| Lint Nix sources and workflows | `make lint` |
+| Both, as CI runs them | `make check` |
+| Install the pre-commit hook | `make hooks` — once per clone |
+
+`make lint` needs `nix develop`; `make fmt`/`fmt-check` work from a plain shell on any host that has rebuilt.
+
+### The tooling reaches PATH two ways, on purpose
+
+The six formatters (`alejandra`, `yamlfmt`, `shfmt`, `stylua`, `taplo`, `prettier`) are in `modules/home/formatters` and `modules/home/yamlfmt`, imported by `roles/home/base.nix` — so conform.nvim can format on save in *any* checkout, not just this one. They are also in the flake `devShell`, because CI has no home-manager to inherit them from. The three linters (`statix`, `deadnix`, `actionlint`) are devShell-only: they are useful in this repo and nowhere else.
+
+**These used to come from `mason-tool-installer`** (`modules/home/nvim/config/lua/plugins/lsp.lua`), which fetches them per-machine outside Nix, so versions drifted between hosts and neither a hook nor CI could rely on them. Mason still lists them; that list is now redundant for these six and should be trimmed when the nvim config is next touched.
+
+### A project's own `prettier` wins without anything doing the work
+
+The `prettier` in `modules/home/formatters` is the plain package, not a wrapper — **the tools that matter already resolve a project copy first**. conform.nvim sets `command = util.from_node_modules("prettier")`, which walks up the parent directories for the project's own binary and falls back to `PATH` only when there is none; nvim-lint resolves `eslint_d` the same way. So on save, a repo that pins prettier gets its pin, with no help from this config.
+
+That leaves the global copy doing one job: formatting files no project pins a prettier for — markdown, mostly, including this repo's. **In a shell, reach for `pnpm exec prettier`** rather than bare `prettier` inside a JS project; that is the standing rule for project binaries anyway, and it is what keeps a version-pinned project off the global copy.
+
+A project-first wrapper was built for this and then removed: it only ever covered bare `prettier` in a shell, which the rule above already covers, and cost 35 lines of embedded shell plus a `jq` dependency to do it.
+
+**There is no global `eslint`, deliberately.** Since v9 it errors out without a project config, so a global copy can only ever be redundant (the project has one, which already resolves) or wrong. `eslint_d` stays on Mason for nvim-lint.
+
+### Config files, and why each exists
+
+| File | Consumer | Why it is needed |
+| --- | --- | --- |
+| `.editorconfig` | shfmt | shfmt defaults to **tabs**; the repo's scripts are 2-space. It reads editorconfig natively only when invoked without `-i`/`-bn`/`-ci`/`-sr`/`-kp`, which is how both `make fmt` and conform.nvim call it. The indent sits at `[*]` because the nine scripts in `modules/home/bins/bin/` and `.githooks/pre-commit` have no extension — any narrower glob misses all ten and shfmt silently tabs them. |
+| `.stylua.toml` | stylua | The nvim config is tab-indented and stylua defaults to spaces. stylua does **not** read `.editorconfig`, so the setting has to be restated. |
+| `statix.toml` | statix | Disables two rules — see below. |
+
+`prettier` covers markdown only. Every tracked `.json` here is written by the application that owns it — Karabiner, OrcaSlicer, Obsidian — so reformatting them would churn the next time any of those saves. `shellcheck` is not wired in yet: four of the scripts in `modules/home/bins/bin/` are zsh, which shellcheck refuses outright (`SC1071`), so it needs an exclusion mechanism and a severity floor of its own.
+
+**Two statix rules are off, and should stay off.** `empty_pattern` (W10) wants `_:` wherever a module takes `{...}:` and binds nothing — but that is the standard home-manager/nix-darwin module head, marking the file as a module rather than a bare attrset, and every module here uses it. `repeated_keys` (W20) wants sibling dotted paths collapsed into a nested set; `permissions.allow` and `permissions.deny` sit 130 lines apart in `modules/home/claude/default.nix` with the allowlist between them, and nesting would bury both. Nix rejects a genuinely duplicated key at eval time, so nothing is lost by not checking for a shared prefix. Every other statix rule is on.
+
+### The hook checks formatting only
+
+`.githooks/pre-commit` runs the six formatters over the files in the commit and nothing else. `statix`/`deadnix`/`actionlint` are whole-tree and devShell-only, so they live in `make lint` instead — a hook that needed `nix develop` to pass would just get bypassed. No CI workflow runs them yet; `make lint` is the only thing that does.
+
+It checks the **worktree** copy of each staged file, not the staged blob. The two differ only when a file is partially staged. It is POSIX `sh` with no arrays: hooks inherit whatever PATH the invoking shell had, and on macOS that can still be bash 3.2. Bypass with `git commit --no-verify`.
+
 ## NixOS Pi Hosts
 
 Three `nixosConfigurations` live in `hosts/nixos/`, all `aarch64-linux`: `hub` (the always-on Pi 4, general building hub), `airgap` (the airgapped Yubikey Pi Zero 2W), and `uptime` (the uptime-kuma Pi Zero 2W). Each is a **directory** — `default.nix` states the host, `configuration.nix` is that machine's own NixOS module. `hosts/nixos/` contains nothing else; the two things every Pi shares moved to their taxonomy layers: `roles/nixos/base.nix` (policy — imported by all three) and `modules/nixos/gpg-yubikey.nix` (mechanism — imported by `hub` and `airgap` only).
