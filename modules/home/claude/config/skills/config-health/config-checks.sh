@@ -14,9 +14,10 @@ set -uo pipefail
 SETTINGS="${SETTINGS:-$HOME/.claude/settings.json}"
 REPO="${REPO:-$HOME/dotfiles}"
 CFG="$REPO/modules/home/claude/config"
-# Dev-artifact root for this repo. Outside the checkout by convention — see
-# CLAUDE.md, "Dev Artifact Storage".
-ARTIFACTS="${ARTIFACTS:-$HOME/.local/state/claude/artifacts/dotfiles}"
+# Left empty rather than defaulted when unset: this script never hard-fails, so
+# check_skill_inventory reports the gap as REVIEW rather than guessing a path
+# and announcing a missing ledger that may well exist elsewhere.
+ARTIFACTS="${ARTIFACTS:-${MY_CLAUDE_ARTIFACTS_ROOT:+$MY_CLAUDE_ARTIFACTS_ROOT/dotfiles}}"
 
 emit() { printf '%s\t%s\t%s\n' "$1" "$2" "$3"; }
 
@@ -112,11 +113,8 @@ check_hooks() {
 }
 
 # --- Check 4: skill inventory drift -------------------------------------------
-# Structural only, and deliberately so. Whether a skill is *working* is a
-# behavioural question that belongs to /system-review, which owns the transcript
-# arms and the run thresholds. Folding that in here is what this skill's own
-# "When NOT to Use" warns produces a report nobody acts on. Everything below is
-# provable off disk in milliseconds.
+# Structural only. Whether a skill is *working* is behavioural and belongs to
+# /system-review; folding it in here is what "When NOT to Use" warns against.
 check_skill_inventory() {
   local units ledger rows untracked orphans unreviewed n
 
@@ -125,22 +123,15 @@ check_skill_inventory() {
     return
   fi
 
-  # A unit is a skills/ directory holding a SKILL.md, or a commands/*.md. Do not
-  # substitute a bare directory listing: stray empty directories (a tool that
-  # chdir'd there, say) are not units, and reporting one as a broken skill is
-  # exactly the false alarm the hooks check above already learned to avoid.
+  # A unit is a skills/ dir holding a SKILL.md, or a commands/*.md — not a bare
+  # directory listing, which picks up stray empty dirs and reports them broken.
   units=$( { find "$CFG/skills" -mindepth 2 -maxdepth 2 -name SKILL.md 2>/dev/null \
                | sed "s#^$CFG/skills/##; s#/SKILL.md\$##"
              ls -1 "$CFG/commands" 2>/dev/null | sed 's/\.md$//'; } | sort -u )
 
-  # A unit that git does not track is invisible to flake eval, so default.nix
-  # never generates its Skill(<name>) rule and it prompts on first use while
-  # looking correctly installed. Verified failure, 2026-08-10:
-  # Skill(comment-review) was absent from the derived allowlist until the
-  # directory was staged, then appeared immediately.
-  # Same guard as check_hooks: if REPO is not a git checkout, every single unit
-  # comes back untracked and the report screams that the whole skills tree is
-  # broken. Say what could not be checked instead.
+  # A unit git does not track is invisible to flake eval, so default.nix never
+  # generates its Skill(<name>) rule and it prompts on first use while looking
+  # correctly installed.
   untracked=""
   if ! git -C "$REPO" rev-parse --git-dir >/dev/null 2>&1; then
     # Same guard as check_hooks: without this, a REPO that is not a checkout
@@ -157,6 +148,12 @@ check_skill_inventory() {
       untracked="$untracked $u"
       emit FAIL skill-inventory "$u is untracked ($f) — flake eval cannot see it, so no Skill($u) permission is generated and it prompts on first use. 'git add' it, then rebuild."
     done <<<"$units"
+  fi
+
+  if [[ -z "$ARTIFACTS" ]]; then
+    emit REVIEW skill-inventory "MY_CLAUDE_ARTIFACTS_ROOT is unset, so the review ledger cannot be located — run 'make rebuild', then start a new session. Ledger checks skipped."
+    [[ -z "$untracked" ]] && emit OK skill-inventory "tracking verified for $(printf '%s\n' "$units" | grep -c .) unit(s)"
+    return
   fi
 
   ledger="$ARTIFACTS/skill-reviewer/LEDGER.md"
@@ -176,9 +173,8 @@ check_skill_inventory() {
     emit FAIL skill-inventory "ledger has a row for '$r', which is neither a skill nor a command — renamed or deleted. Retire the row or restore the unit."
   done <<<"$orphans"
 
-  # Never-reviewed units are reported as one counted line, not one line each.
-  # Most units are legitimately below the review threshold, so a wall of REVIEW
-  # rows here would bury the two findings above.
+  # One counted line, not one per unit: most are legitimately below the review
+  # threshold, and a wall of REVIEW rows would bury the two findings above.
   unreviewed=$(comm -23 <(printf '%s\n' "$units") <(printf '%s\n' "$rows"))
   n=$(printf '%s\n' "$unreviewed" | grep -c .)
   if [[ $n -gt 0 ]]; then

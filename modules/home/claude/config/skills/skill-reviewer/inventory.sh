@@ -25,12 +25,11 @@ set -uo pipefail
 
 CONFIG_DIR="${SKILL_CONFIG_DIR:-$HOME/dotfiles/modules/home/claude/config}"
 TRANSCRIPTS="${SKILL_TRANSCRIPT_DIR:-$HOME/.claude/projects}"
-ART_ROOT="${SKILL_ARTIFACT_ROOT:-$HOME/.local/state/claude/artifacts}"
-# Read testimony from the checkout when there is one. At runtime $0 is a
-# /nix/store symlink, so the store copy is whatever the last `make rebuild`
-# captured — a correction appended today would stay inert until the next one,
-# and rebuilding requires quitting every session. The whole point of this file
-# is to catch a correction the moment it is made, so the repo wins when present.
+# Guarded, not defaulted: a wrong root finds nothing and reports every
+# report-writing skill as unused.
+ART_ROOT="${SKILL_ARTIFACT_ROOT:-${MY_CLAUDE_ARTIFACTS_ROOT:?unset — run 'make rebuild', then start a new session}}"
+# Checkout first: at runtime $0 is a /nix/store symlink, so a correction
+# appended to testimony.txt stays inert there until the next rebuild.
 TESTIMONY="$CONFIG_DIR/skills/skill-reviewer/testimony.txt"
 [ -f "$TESTIMONY" ] || TESTIMONY="$(dirname "$0")/testimony.txt"
 [ -f "$TESTIMONY" ] || TESTIMONY=/dev/null
@@ -41,10 +40,8 @@ mkdir -p "$WORK"
 # --------------------------------------------------------------------------
 # Composition graph: "child parent" per line.
 #
-# Verified 2026-08-17 by reading the invocation language in each SKILL.md, not
-# by grepping for names. A name in a "NOT for this, use X" line is a disclaimer
-# and must not become an edge — mis-reading those is what put four phantom
-# children under config-health in an earlier draft of this graph.
+# Derive edges from invocation language, never by grepping for names: a name in
+# a "NOT for this, use X" line is a disclaimer, not an edge.
 # --------------------------------------------------------------------------
 cat > "$WORK/composition.txt" <<'EOF'
 evidence-analysis-core analytics-friction-analysis
@@ -65,16 +62,11 @@ EOF
 # --------------------------------------------------------------------------
 # Direct arm.
 #
-# Both patterns are guarded against self-pollution. A session that *analyses*
-# skill usage writes the search strings and their output into its own
-# transcript, so an unguarded grep counts the analysis as a run. Measured
-# 2026-08-17: unguarded matching inflated `investigate` by 4 sessions and
-# `pre-pr-autonomous` by 1.
-#
-#   Skill tool     — the record must be an assistant turn carrying a tool_use
-#                    named Skill. An echo of one lands in a tool_result.
-#   Slash command  — message.content must be the string form, which only a
-#                    real slash invocation produces. Echoes arrive as arrays.
+# Both patterns are pinned to the record shape a real invocation produces,
+# because a session analysing skill usage writes the search strings into its own
+# transcript and an unguarded grep counts the analysis as a run. A Skill call is
+# a tool_use on an assistant turn; a slash command is string-valued content.
+# Echoes of either arrive inside tool_result arrays.
 # --------------------------------------------------------------------------
 grep -rH '"type":"assistant"' "$TRANSCRIPTS" 2>/dev/null \
   | grep '"name":"Skill"' \
@@ -103,11 +95,7 @@ sort "$WORK/direct.tsv" | uniq -c \
 # Artifact arm.
 #
 # One root, laid out as <repo>/<area>/<file>, keyed on the git remote name so
-# every worktree of a repo lands in the same place. This used to scan
-# <repo-root>/docs/local across each checkout and deduplicate on
-# (area, filename), because worktrunk copies that directory into every worktree
-# and one report showed up four times across siblings. Moving the store out of
-# the repo removed the copies, and the dedup pass with them.
+# every worktree of a repo lands in the same place.
 # --------------------------------------------------------------------------
 find "$ART_ROOT" -mindepth 3 -maxdepth 3 -type f 2>/dev/null > "$WORK/artifact-files.txt"
 ART_N=$(wc -l < "$WORK/artifact-files.txt" | tr -d ' ')
@@ -132,9 +120,9 @@ awk -F/ '
     else if (area == "dead-code")     owner = "dead-code-survey";
     else if (area == "changelogs")    owner = "changelog-generation";
     else if (area == "config-health") owner = "config-health";
-    # State belonging to this reviewer, not a run artifact. Counting the ledger
-    # as evidence would have the loop measuring itself. (No apostrophes in here
-    # — the whole awk program is inside a single-quoted shell string.)
+    # The ledger is this reviewer own state, not a run artifact; counting it
+    # would have the loop measuring itself. (No apostrophes: this awk program
+    # sits inside a single-quoted shell string.)
     else if (area == "skill-reviewer") next;
     else if (area == "plans") {
       if      (low ~ /design/)            owner = "feature-design-doc";
@@ -175,8 +163,8 @@ awk -F'\t' '
                                 said[t[1]] = t[2]; note[t[1]] = t[3]; next }
   {
     unit = $1;
-    # Transitive reachability: a caller counts if it has direct runs, or if
-    # something that calls *it* does. Fixpoint over a graph this small is free.
+    # Transitive: a caller counts if it has direct runs, or if something that
+    # calls *it* does.
     via = ""; seen = ""; frontier = parent[unit];
     for (depth = 0; depth < 8 && frontier != ""; depth++) {
       next_frontier = "";
@@ -190,9 +178,9 @@ awk -F'\t' '
       }
       frontier = next_frontier;
     }
-    # An `unadopted` note is testimony that the unit has NOT run, so it must not
-    # promote the verdict — but it must stop the unit reading as unmeasured,
-    # which is what would put it back on the ask-about list every sweep.
+    # `unadopted` is testimony that the unit has NOT run: it must not promote
+    # the verdict, but it must stop the unit reading as unmeasured and coming
+    # back as a question every sweep.
     declined = (note[unit] ~ /^unadopted/);
     verdict = (sess[unit] > 0)               ? "used" \
             : (art[unit] > 0)                ? "artifact-only" \

@@ -149,7 +149,7 @@ where `<area>` is the leaf's domain (e.g. `analytics`, `error-triage`, `regressi
 outside the repo under analysis; resolve it and create the directory if it does not exist:
 
 ```bash
-ARTIFACTS="$HOME/.local/state/claude/artifacts/$(basename -s .git \
+ARTIFACTS="${MY_CLAUDE_ARTIFACTS_ROOT:?run 'make rebuild', then start a new session}/$(basename -s .git \
   "$(git remote get-url origin 2>/dev/null || git rev-parse --show-toplevel)")"
 mkdir -p "$ARTIFACTS/<area>"
 ```

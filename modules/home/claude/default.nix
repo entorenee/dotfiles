@@ -1,4 +1,11 @@
-{lib, ...}: let
+{
+  config,
+  lib,
+  ...
+}: let
+  # Absolute, not `~/…`: a JSON settings value is literal and would not expand.
+  artifactsRoot = "${config.xdg.dataHome}/claude/artifacts";
+
   skillNames =
     builtins.attrNames (builtins.readDir ./config/skills)
     ++ map (lib.removeSuffix ".md")
@@ -79,6 +86,7 @@ in {
         # The sandbox proxy binds 127.0.0.1 only; Node 18+ tries IPv6 first and
         # fails before falling back.
         NODE_OPTIONS = "--dns-result-order=ipv4first";
+        MY_CLAUDE_ARTIFACTS_ROOT = artifactsRoot;
       };
       sandbox.enabled = true;
       # Without this a sandbox that fails to start degrades to no sandbox at all
@@ -94,8 +102,8 @@ in {
       # Identity roles allow the whole gh config dir; this re-blocks the one
       # file an OAuth token could land in. denyRead wins over allowRead.
       sandbox.filesystem.denyRead = ["~/.config/gh/hosts.yml"];
-      sandbox.filesystem.allowRead = ["~/.local/state/claude/artifacts"];
-      sandbox.filesystem.allowWrite = ["~/.local/state/claude/artifacts"];
+      sandbox.filesystem.allowRead = [artifactsRoot];
+      sandbox.filesystem.allowWrite = [artifactsRoot];
 
       # Registry-metadata reads run unsandboxed so they reuse the real ~/.npm
       # and pnpm caches.
@@ -369,6 +377,10 @@ in {
       ];
     };
   };
+
+  # Duplicated from settings.env deliberately: this copy is what lets the skill
+  # scripts resolve the root when run outside a Claude session.
+  home.sessionVariables.MY_CLAUDE_ARTIFACTS_ROOT = artifactsRoot;
 
   programs.zsh.shellAliases = {
     claude-yolo = "claude --dangerously-skip-permissions";

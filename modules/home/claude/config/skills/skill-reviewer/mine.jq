@@ -71,23 +71,15 @@ def iscorrection:
       . as $m | $l | contains($m)
     );
 
-# Both branches are pinned to the record shape a real invocation produces,
-# because a session that *analyses* skill usage writes the invocation strings
-# and their grep output into its own transcript. Matched on text alone, the
-# review counts itself as a run — measured 2026-08-17, plain text matching over
-# the archive inflated `investigate` by 4 sessions and `pre-pr-autonomous` by 1.
-#
-# The looser form this replaces happened to score the same, because `textof`
-# skips tool_result blocks and no assistant turn had quoted the tag verbatim.
-# That was luck, not design: one assistant message reproducing a transcript
-# line would have counted. Pinning the record shape removes the coincidence.
+# Pinned to the record shape a real invocation produces: a session that analyses
+# skill usage writes the invocation strings into its own transcript, so matching
+# on text alone makes the review count itself as a run.
 def invoked($skill):
-  # A slash command is a user record whose content is the plain string form.
-  # An echo of one arrives inside a tool_result array, or in assistant prose.
+  # Slash command: a user record whose content is the plain string form.
   ( .type == "user"
     and ((.message.content | type) == "string")
     and (.message.content | contains("<command-name>/" + $skill + "</command-name>")) )
-  # A Skill call is a tool_use, which only ever sits on an assistant record.
+  # Skill call: a tool_use, which only ever sits on an assistant record.
   or ( .type == "assistant"
        and any(toolsof[]; .name == "Skill" and (.input.skill? == $skill)) );
 

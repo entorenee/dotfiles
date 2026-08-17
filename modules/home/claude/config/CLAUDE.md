@@ -74,10 +74,12 @@ These are **hard requirements**, not suggestions:
 - **Dev artifacts live outside the repo, in `$ARTIFACTS/<area>/`.** Plans, design docs, QA checklists, PR/code reviews, error-triage reports, analytics/regression/consolidated write-ups, dead-code surveys — anything I generate as a working artifact rather than product documentation — is a dev artifact. Resolve the root once per session:
 
   ```bash
-  ARTIFACTS="$HOME/.local/state/claude/artifacts/$(basename -s .git \
+  ARTIFACTS="${MY_CLAUDE_ARTIFACTS_ROOT:?run 'make rebuild', then start a new session}/$(basename -s .git \
     "$(git remote get-url origin 2>/dev/null || git rev-parse --show-toplevel)")"
   mkdir -p "$ARTIFACTS/<area>"
   ```
+
+  `MY_CLAUDE_ARTIFACTS_ROOT` is injected by `modules/home/claude/default.nix` into both this session and the shell, so it is the one place the root is written down — never hardcode the path here or in a skill. The `:?` is deliberate: an unset root should stop you, not quietly write to `/<repo>/<area>/`.
 
   Keying on the **remote name** is what makes this worktree-proof: every worktree of `fw_monorepo` resolves to the same `fw_monorepo` directory, so an artifact written from a feature branch is readable from every sibling and survives `wt remove`. The `rev-parse` fallback covers a repo with no remote.
 
