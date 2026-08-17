@@ -60,6 +60,11 @@ def isinterrupt: startswith("[Request interrupted");
 # The signal this whole loop runs on: a human turn that pushes back. Cheap
 # keyword matching, deliberately over-inclusive — a reviewer reads the hits and
 # discards the false positives, which is far less costly than missing a catch.
+#
+# The second group catches rejection by imperative. A skill that reports a
+# numbered list gets corrected as "drop items 3 and 4", which carries none of
+# the words above: measured 2026-08-17, pr-review scored 0 corrections across
+# 8 runs while at least 2 of its 7 gate turns rejected findings outright.
 def iscorrection:
   ascii_downcase as $l
   | any(
@@ -67,7 +72,9 @@ def iscorrection:
         "you missed", "revert", "undo", "don't", "do not", "no,", "nope",
         "wrong", "isn't", "instead", "why did you", "shouldn't", "should not",
         "didn't", "not what", "re-check", "recheck", "double check",
-        "are you sure", "that isn", "stop" ][];
+        "are you sure", "that isn", "stop",
+        "drop item", "drop those", "drop the ", "remove item", "ignore item",
+        "skip item", "fix item", "fix items", "disregard", "take out" ][];
       . as $m | $l | contains($m)
     );
 
