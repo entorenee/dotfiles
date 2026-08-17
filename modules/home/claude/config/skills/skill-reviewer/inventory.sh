@@ -174,7 +174,8 @@ awk -F'\t' '
   FILENAME==atally            { art[$1]=$2; next }
   FILENAME==comp              { split($0, e, " "); parent[e[1]] = parent[e[1]] " " e[2]; next }
   FILENAME==testim            { if ($0 ~ /^#/ || $0 == "") next;
-                                split($0, t, " "); said[t[1]] = t[2]; next }
+                                split($0, t, " ");
+                                said[t[1]] = t[2]; note[t[1]] = t[3]; next }
   {
     unit = $1;
     # Transitive reachability: a caller counts if it has direct runs, or if
@@ -192,11 +193,17 @@ awk -F'\t' '
       }
       frontier = next_frontier;
     }
-    verdict = (sess[unit] > 0)  ? "used" \
-            : (art[unit] > 0)   ? "artifact-only" \
-            : (said[unit] != "") ? "testimony" \
-            : (via != "")       ? "reachable" : "no-evidence";
-    if (said[unit] != "") via = via (via == "" ? "" : ",") "said:" said[unit];
+    # An `unadopted` note is testimony that the unit has NOT run, so it must not
+    # promote the verdict — but it must stop the unit reading as unmeasured,
+    # which is what would put it back on the ask-about list every sweep.
+    declined = (note[unit] ~ /^unadopted/);
+    verdict = (sess[unit] > 0)               ? "used" \
+            : (art[unit] > 0)                ? "artifact-only" \
+            : declined                       ? "unadopted" \
+            : (said[unit] != "")             ? "testimony" \
+            : (via != "")                    ? "reachable" : "no-evidence";
+    if (said[unit] != "")
+      via = via (via == "" ? "" : ",") "said:" (declined ? note[unit] : said[unit]);
     printf "%s\t%d\t%d\t%s\t%s\t%s\n", unit, inv[unit], sess[unit],
            (art[unit] > 0 ? art[unit] : "-"), (via == "" ? "-" : via), verdict;
   }
@@ -227,6 +234,9 @@ cat <<'EOF'
 #                 the artifact proves output shape, not which unit produced it.
 #   testimony     the user reported it ran. Enough to stop calling it unused;
 #                 not enough to review, because there is no gate evidence.
+#   unadopted     the user reported it has NOT run. Asked and answered — do not
+#                 raise it again as a question, and do not count it as unused
+#                 data either.
 #   reachable     a caller with runs exists. Says nothing about this unit firing.
 #   no-evidence   no arm saw it. Means "not measured", never "not used". Ask
 #                 before writing any of these down as unadopted.

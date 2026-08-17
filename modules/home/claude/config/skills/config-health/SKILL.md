@@ -75,12 +75,24 @@ bash "$HOME/.claude/skills/config-health/config-checks.sh"
 
 Output is `STATUS<TAB>CHECK<TAB>DETAIL`, where `STATUS` is `OK`, `FAIL`
 (provably broken), or `REVIEW` (needs human eyes — the script deliberately
-refuses to decide). Three checks: settings.json symlink integrity, allow rules
-neutralised by deny, and hook registration + executability.
+refuses to decide). Four checks: settings.json symlink integrity, allow rules
+neutralised by deny, hook registration + executability, and skill inventory
+drift.
 
-`Skill()` allowlist drift is deliberately absent: `modules/home/claude/default.nix`
-generates those rules from the same `config/{skills,commands}` directories the
-check would have compared them against, so there is nothing left to diverge.
+**Comparing the `Skill()` allowlist against the skills directory is still
+deliberately absent**, because `modules/home/claude/default.nix` generates those
+rules from the same `config/{skills,commands}` directories the check would have
+compared them against — there is nothing left to diverge. What the inventory
+check tests instead is the layer *underneath* that guarantee: a unit git does
+not track is not in the flake source at all, so the generator never sees it and
+silently emits no rule. The directory and the allowlist stay in perfect
+agreement about a skill that is effectively invisible.
+
+The inventory check is **structural only** — untracked units, and ledger rows
+naming a unit that no longer exists. Whether a skill is *working* is behavioural
+and belongs to `/system-review`, which owns the transcript arms and the run
+thresholds. Keeping that boundary is the same judgment as "When NOT to Use"
+below, applied to this skill's own growth.
 
 **Run these inline. Do not dispatch a subagent for them.** They read a handful of
 small files; agent dispatch would cost more than it saves *and* insert a

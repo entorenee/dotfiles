@@ -21,6 +21,11 @@
 #
 # Format: <unit> <YYYY-MM-DD> <what was reported>
 # Add a line only for a claim the user made directly. Never for an inference.
+#
+# A note beginning `unadopted` is the inverse claim: the user confirmed the unit
+# has NOT been used. That is still testimony and still worth recording, because
+# it is the difference between "we asked, the answer was no" and "no data" —
+# and only the second one deserves to be asked about again.
 
 regression-analysis 2026-08-17 run-at-least-once-leaving-no-record-in-any-machine-arm
 dead-code-survey 2026-08-12 run-composed-inside-regression-or-analytics-review
@@ -28,7 +33,8 @@ error-triage 2026-08-12 run-composed-inside-regression-or-analytics-review
 evidence-consolidation 2026-08-12 run-composed-inside-regression-or-analytics-review
 skill-reviewer 2026-08-12 run-inline-against-pre-pr-autonomous-and-investigate
 
-# Named by the user as deliberately not yet adopted. Not evidence of use —
-# recorded so a future sweep reports "unadopted, known" rather than "no data".
-# asana-review  unadopted
-# npm-cve       unadopted
+# Named by the user on 2026-08-12 as not yet adopted, in the same breath as the
+# correction above: "I need to be better about the asana review and the npm-cve
+# skills." Recorded so a sweep reports "unadopted, known" instead of asking again.
+asana-review 2026-08-12 unadopted-user-intends-to-adopt
+npm-cve 2026-08-12 unadopted-user-intends-to-adopt
