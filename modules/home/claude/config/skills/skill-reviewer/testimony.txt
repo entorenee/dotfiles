@@ -1,0 +1,34 @@
+# The fourth arm: the user said so.
+#
+# The other three arms in inventory.sh read machine records. This one records
+# what the user reported when a machine arm was wrong, so the same wrong
+# conclusion cannot be reached twice.
+#
+# On 2026-08-12 an inventory built from the direct arm alone reported six skills
+# as never used. The user corrected it: dead-code-survey, error-triage, and
+# evidence-consolidation had all run, composed inside regression-analysis and
+# analytics-friction-analysis runs, which the direct arm cannot see. Two of
+# those three still leave no artifact of their own, so without this file they
+# would read as no-evidence on every future run.
+#
+# On 2026-08-17, with all four arms running, the user corrected it a second
+# time: regression-analysis has run at least once. That one matters more than
+# the first three, because regression-analysis is an *entry point* — nothing
+# composes it — and it still left no trace in any machine arm. So the gap is not
+# only "composed skills are invisible". A directly-invoked skill can be invisible
+# too, if the session predates the archive or the workflow was followed without
+# the Skill tool. Treat every machine count as a floor, and ask.
+#
+# Format: <unit> <YYYY-MM-DD> <what was reported>
+# Add a line only for a claim the user made directly. Never for an inference.
+
+regression-analysis 2026-08-17 run-at-least-once-leaving-no-record-in-any-machine-arm
+dead-code-survey 2026-08-12 run-composed-inside-regression-or-analytics-review
+error-triage 2026-08-12 run-composed-inside-regression-or-analytics-review
+evidence-consolidation 2026-08-12 run-composed-inside-regression-or-analytics-review
+skill-reviewer 2026-08-12 run-inline-against-pre-pr-autonomous-and-investigate
+
+# Named by the user as deliberately not yet adopted. Not evidence of use —
+# recorded so a future sweep reports "unadopted, known" rather than "no data".
+# asana-review  unadopted
+# npm-cve       unadopted
