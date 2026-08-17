@@ -367,7 +367,7 @@ MCP servers are declared in `roles/home/personal-claude.nix` or `hosts/darwin/fw
 
 MCP servers with OAuth (e.g., Asana) require a two-part setup:
 
-1. **Config (Nix-managed):** Add the server to the `mcpServers` attrset in the relevant `claude.nix`. This gets deployed via `make darwin-switch`.
+1. **Config (Nix-managed):** Add the server to the `mcpServers` attrset in the relevant `claude.nix`. This gets deployed via `make rebuild`.
 
 2. **Auth (manual, one-time):** Run the following command to store OAuth credentials in the macOS Keychain. This only needs to be done once per machine (survives Nix rebuilds).
 

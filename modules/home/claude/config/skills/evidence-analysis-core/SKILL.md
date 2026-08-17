@@ -142,14 +142,24 @@ Segment findings by **app version / release** — it is a primary axis, not an a
 Always write the report as **local markdown** to:
 
 ```
-docs/local/<area>/YYYY-MM-DD-slug.md
+$ARTIFACTS/<area>/YYYY-MM-DD-slug.md
 ```
 
-where `<area>` is the leaf's domain (e.g. `analytics`, `error-triage`, `regressions`). The path is
-relative to the root of the repo under analysis; create the directory if it does not exist.
+where `<area>` is the leaf's domain (e.g. `analytics`, `error-triage`, `regressions`). The root sits
+outside the repo under analysis; resolve it and create the directory if it does not exist:
 
-> **The artifact is a local dev artifact and is git-ignored (`**/docs/local/`).** It is not
-> meant to be committed — writing the file is the side effect; version control is the user's call.
+```bash
+ARTIFACTS="$HOME/.local/state/claude/artifacts/$(basename -s .git \
+  "$(git remote get-url origin 2>/dev/null || git rev-parse --show-toplevel)")"
+mkdir -p "$ARTIFACTS/<area>"
+```
+
+Keying on the remote name means every worktree of a repo resolves to the same directory, so the
+report is readable from every sibling worktree and survives `wt remove`.
+
+> **The artifact is a local dev artifact written outside the repo** — the artifact root is defined
+> in the global CLAUDE.md under "Dev Artifact Storage". Writing the file is the side effect; what
+> the user does with it afterwards is their call. Print its absolute path when you are done.
 
 Standard report skeleton (leaves may add domain sections, not remove these; §5-numbered
 "For engineering discussion" is the one **optional** section — include it when qualifying

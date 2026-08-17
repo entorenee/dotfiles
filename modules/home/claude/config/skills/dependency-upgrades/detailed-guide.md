@@ -161,7 +161,7 @@ For upgrades spanning multiple sessions, create a progress tracking file.
 
 ### Naming Convention
 
-`{project-name}-{upgrade-type}-memory.md` in `docs/local/plans/` directory
+`{project-name}-{upgrade-type}-memory.md` in `$ARTIFACTS/plans/` directory
 
 ### Template
 

@@ -204,8 +204,9 @@ allowlisted or built-in read-only. Chaining alone does not force a prompt.
 
 ## Step 5 — Report
 
-Write to `docs/local/config-health/YYYY-MM-DD-config-health.md` in the
-dotfiles repo, and summarize inline. Order sections by actionability:
+Write to `$ARTIFACTS/config-health/YYYY-MM-DD-config-health.md` (the artifact
+root is defined in the global CLAUDE.md under "Dev Artifact Storage"), print its
+absolute path, and summarize inline. Order sections by actionability:
 
 1. **Config defects (facts)** — Step 1 `FAIL` lines, each with its one-line fix.
    Lead here: provable, cheap to fix, silent until checked.
@@ -221,7 +222,7 @@ dotfiles repo, and summarize inline. Order sections by actionability:
 Report **every** finding. If you pare the apply-list down in Step 6, the full
 list still lives here so nothing is silently dropped.
 
-The artifact is git-ignored and uncommitted — never stage or commit it.
+The artifact lives outside the repo, so there is nothing to stage or commit.
 
 ## Step 6 — Offer the fixes (confirmation-gated)
 

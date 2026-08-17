@@ -94,6 +94,8 @@ in {
       # Identity roles allow the whole gh config dir; this re-blocks the one
       # file an OAuth token could land in. denyRead wins over allowRead.
       sandbox.filesystem.denyRead = ["~/.config/gh/hosts.yml"];
+      sandbox.filesystem.allowRead = ["~/.local/state/claude/artifacts"];
+      sandbox.filesystem.allowWrite = ["~/.local/state/claude/artifacts"];
 
       # Registry-metadata reads run unsandboxed so they reuse the real ~/.npm
       # and pnpm caches.

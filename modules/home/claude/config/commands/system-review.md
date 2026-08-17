@@ -15,7 +15,7 @@ That restraint is the whole design. A sweep that quietly turns into a review tak
 bash "$HOME/.claude/skills/skill-reviewer/inventory.sh"
 ```
 
-That is the whole data-gathering step. The ledger is at `<dotfiles>/docs/local/skill-reviewer/LEDGER.md`; it is git-ignored and machine-local, so on a fresh checkout there simply is not one — say so rather than treating every unit as never-reviewed.
+That is the whole data-gathering step. The ledger is at `$ARTIFACTS/skill-reviewer/LEDGER.md`; it is machine-local and lives outside the repo, so on a new machine there simply is not one — say so rather than treating every unit as never-reviewed.
 
 Thresholds live in `skill-reviewer/SKILL.md` under **Cadence and thresholds**. Read them there; do not restate them here, or the two will drift and the sweep will start enforcing a rule nobody agreed to.
 

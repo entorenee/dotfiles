@@ -10,9 +10,9 @@
 #
 #   direct    — a Skill tool call or a slash command in the transcripts.
 #               Blind to a skill executed inline by another skill.
-#   artifact  — a dated report under docs/local/<area>/. Sees composed runs the
-#               direct arm misses, but only for units that write reports, and it
-#               attributes by convention rather than by record.
+#   artifact  — a dated report under $ARTIFACTS/<repo>/<area>/. Sees composed
+#               runs the direct arm misses, but only for units that write
+#               reports, and it attributes by convention rather than by record.
 #   composed  — a caller with direct runs, via the verified composition graph.
 #               Establishes reachability, never that a specific run happened.
 #   testimony — testimony.txt: what the user reported when a machine arm was
@@ -25,7 +25,7 @@ set -uo pipefail
 
 CONFIG_DIR="${SKILL_CONFIG_DIR:-$HOME/dotfiles/modules/home/claude/config}"
 TRANSCRIPTS="${SKILL_TRANSCRIPT_DIR:-$HOME/.claude/projects}"
-ARTIFACT_ROOTS="${SKILL_ARTIFACT_ROOTS:-$HOME/dotfiles $HOME/code}"
+ART_ROOT="${SKILL_ARTIFACT_ROOT:-$HOME/.local/state/claude/artifacts}"
 # Read testimony from the checkout when there is one. At runtime $0 is a
 # /nix/store symlink, so the store copy is whatever the last `make rebuild`
 # captured — a correction appended today would stay inert until the next one,
@@ -102,25 +102,22 @@ sort "$WORK/direct.tsv" | uniq -c \
 # --------------------------------------------------------------------------
 # Artifact arm.
 #
-# Deduplicated on (area, filename), never on path: worktrunk copies docs/local
-# into every worktree, so one report can appear four times across siblings.
+# One root, laid out as <repo>/<area>/<file>, keyed on the git remote name so
+# every worktree of a repo lands in the same place. This used to scan
+# <repo-root>/docs/local across each checkout and deduplicate on
+# (area, filename), because worktrunk copies that directory into every worktree
+# and one report showed up four times across siblings. Moving the store out of
+# the repo removed the copies, and the dedup pass with them.
 # --------------------------------------------------------------------------
-: > "$WORK/artifact-paths.txt"
-for r in $ARTIFACT_ROOTS; do
-  [ -d "$r" ] || continue
-  find "$r" -maxdepth 5 -type d -path '*/docs/local' 2>/dev/null >> "$WORK/artifact-paths.txt"
-done
-sort -u "$WORK/artifact-paths.txt" -o "$WORK/artifact-paths.txt"
+find "$ART_ROOT" -mindepth 3 -maxdepth 3 -type f 2>/dev/null > "$WORK/artifact-files.txt"
+ART_N=$(wc -l < "$WORK/artifact-files.txt" | tr -d ' ')
+REPO_N=$(find "$ART_ROOT" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | wc -l | tr -d ' ')
 
-: > "$WORK/artifact-files.txt"
-while read -r d; do
-  [ -n "$d" ] || continue
-  find "$d" -mindepth 2 -maxdepth 2 -type f 2>/dev/null >> "$WORK/artifact-files.txt"
-done < "$WORK/artifact-paths.txt"
-
-ART_RAW=$(wc -l < "$WORK/artifact-files.txt" | tr -d ' ')
-awk -F/ '{ print $(NF-1) "/" $NF }' "$WORK/artifact-files.txt" | sort -u > "$WORK/artifact-keys.txt"
-ART_UNIQ=$(wc -l < "$WORK/artifact-keys.txt" | tr -d ' ')
+# <repo>/<area>/<file>, so the area for the owner map is the second-to-last
+# component. No deduplication: with one root per remote there are no copies to
+# collapse, and two repos that happen to name a report the same way really are
+# two artifacts.
+awk -F/ '{ print $(NF-1) "/" $NF }' "$WORK/artifact-files.txt" > "$WORK/artifact-keys.txt"
 
 # area/filename -> skill, or a pipe-joined candidate set when the filename does
 # not settle it. An ambiguous artifact is reported as a set and counted for
@@ -165,7 +162,7 @@ grep -v '|' "$WORK/artifact-owned.tsv" | grep -v '^?' \
 
 echo "# skill-inventory"
 echo "# transcripts : $TRANSCRIPTS"
-echo "# artifacts   : $(wc -l < "$WORK/artifact-paths.txt" | tr -d ' ') docs/local roots, $ART_RAW files, $ART_UNIQ after dedup"
+echo "# artifacts   : $ART_ROOT — $ART_N files across $REPO_N repo(s)"
 echo
 printf 'UNIT\tDIRECT\tSESS\tARTIFACTS\tVIA\tVERDICT\n'
 

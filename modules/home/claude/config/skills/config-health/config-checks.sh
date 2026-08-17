@@ -14,6 +14,9 @@ set -uo pipefail
 SETTINGS="${SETTINGS:-$HOME/.claude/settings.json}"
 REPO="${REPO:-$HOME/dotfiles}"
 CFG="$REPO/modules/home/claude/config"
+# Dev-artifact root for this repo. Outside the checkout by convention — see
+# CLAUDE.md, "Dev Artifact Storage".
+ARTIFACTS="${ARTIFACTS:-$HOME/.local/state/claude/artifacts/dotfiles}"
 
 emit() { printf '%s\t%s\t%s\n' "$1" "$2" "$3"; }
 
@@ -156,9 +159,9 @@ check_skill_inventory() {
     done <<<"$units"
   fi
 
-  ledger="$REPO/docs/local/skill-reviewer/LEDGER.md"
+  ledger="$ARTIFACTS/skill-reviewer/LEDGER.md"
   if [[ ! -f "$ledger" ]]; then
-    emit REVIEW skill-inventory "no review ledger at $ledger — it is git-ignored and machine-local, so a fresh checkout legitimately has none. Baselines must be re-derived before any delta is claimed."
+    emit REVIEW skill-inventory "no review ledger at $ledger — it is machine-local and lives outside the repo, so a fresh machine legitimately has none. Baselines must be re-derived before any delta is claimed."
     [[ -z "$untracked" ]] && emit OK skill-inventory "tracking verified for $(printf '%s\n' "$units" | grep -c .) unit(s)"
     return
   fi
