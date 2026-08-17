@@ -1,30 +1,71 @@
 ---
 name: pre-pr
-description: Use before opening a pull request — orchestrates code-hygiene cleanup, verification (typecheck/lint/tests), and code review into a single combined report. Runs all steps without gating.
+description: Use before opening a pull request — runs code-hygiene cleanup, verification, and code review, auto-fixes every finding a subagent can safely resolve, verifies until green, then reports only what still needs the engineer.
+argument-hint: [optional scope reference — Asana task, GH issue, or freeform]
+disable-model-invocation: true
 ---
 
-# Pre-PR Review
+# Pre-PR
 
-## Overview
+An autonomous pre-PR pass. Fix everything that can be fixed without the user's
+judgment, then surface only the residue. Speed matters — parallelize aggressively.
 
-Orchestrator skill that runs three review steps back-to-back before opening a PR: code hygiene cleanup, verification (typecheck/lint/tests), and code quality review. Produces a single combined report. No gates between steps — all run automatically.
-
-## When to Use
-
-- Before opening a pull request
-- When you want a comprehensive branch review in one pass
-- User says "review this branch", "is this ready for PR", "pre-pr check"
+This skill is user-invoked only. Do not offer to run it because a branch looks
+finished; it edits files and dispatches subagents, and the decision to start it
+is the engineer's.
 
 ## When NOT to Use
 
-- Mid-development cleanup only (use `code-hygiene` standalone)
-- Quick verification only (just run typecheck/lint/test directly)
+- Mid-development cleanup only — use `code-hygiene` standalone
+- Quick verification only — run typecheck/lint/test directly
 
-## Input Resolution
+## Phase 0 — Project command discovery (FIRST, before anything else)
 
-Resolve inputs **once** at the start — all three steps use the same context.
+Every later phase runs real commands against this repo, and so do the fix
+subagents. They must use the project's actual scripts, not generic guesses.
 
-### Base Branch
+1. **Read `package.json`** at the repo root. Capture the exact `scripts` keys for:
+   - typecheck (commonly `typecheck`, `tsc`, `type-check`, sometimes only via `turbo`)
+   - lint (prefer `lint:ci` if present — it is non-mutating)
+   - test (prefer `test:ci` if present)
+   - build (commonly `build`, `build:ci`)
+   - format (commonly `format`, `prettier`)
+2. **Detect the package manager** from the lockfile: `pnpm-lock.yaml` → pnpm,
+   `yarn.lock` → yarn, `bun.lockb` → bun, `package-lock.json` → npm. Never assume.
+3. **Detect the monorepo orchestrator**: `turbo.json` → turbo, `nx.json` → nx,
+   `lerna.json` → lerna, `workspaces` field → workspaces. With turbo, prefer
+   `<pm> turbo <task> --filter='...[<merge-base>]'` for affected-only runs.
+4. **Read the nearest `CLAUDE.md`** (repo root first, then any closer to the
+   changed files). Capture documented conventions: logging helpers (e.g.
+   `logError` vs `logger.error`), error wrappers, import paths, test patterns,
+   banned APIs.
+5. **Record the values in a `PROJECT_COMMANDS` block.** Every later phase reads
+   from it, and it is passed verbatim into every subagent prompt.
+
+   ```
+   PROJECT_COMMANDS:
+   - package manager: pnpm
+   - typecheck: pnpm typecheck
+   - lint (non-mutating): pnpm lint:ci
+   - lint (autofix): pnpm lint:fix
+   - test: pnpm test:ci
+   - monorepo: turbo (prefer `pnpm turbo <task> --filter='...[$MERGE_BASE]'` when scoping)
+   - logging: use logError(err, ctx) from src/lib/log — never console.error or logger.error
+   - banned: console.*, any 'as any' in src/**
+   ```
+
+If `package.json` does not exist (non-JS repo), record that and adapt: read the
+equivalent manifest (`Cargo.toml`, `pyproject.toml`, `go.mod`) and the project's
+Makefile/justfile for canonical commands.
+
+**Do not skip Phase 0.** Everything downstream depends on it. Proceeding without
+it means running wrong commands and wasting a fix attempt.
+
+## Phase 1 — Resolve inputs
+
+Resolve **once**; every later phase shares these values.
+
+### Base branch
 
 ```bash
 BASE_BRANCH=$(git rev-parse --verify develop 2>/dev/null && echo develop || \
@@ -32,151 +73,295 @@ BASE_BRANCH=$(git rev-parse --verify develop 2>/dev/null && echo develop || \
 MERGE_BASE=$(git merge-base $BASE_BRANCH HEAD)
 ```
 
-### Scope Reference
+### Scope reference
 
 Accept in priority order:
-1. **Asana task ID/URL** — Pull description via Asana MCP (`get_task`)
-2. **GitHub issue number** — Pull via `gh issue view <number>`
-3. **Freeform text** — Engineer provides scope description inline
-4. **None** — Ask. If still none, pass to code-hygiene without scope (it will skip scope compliance and note it)
 
-### Empty Diff Guard
+1. **Asana task ID/URL** — pull the description via Asana MCP (`get_task`)
+2. **GitHub issue number** — pull via `gh issue view <number>`
+3. **Freeform text** — the engineer provides scope inline
+4. **None** — ask. If still none, continue without scope and note that scope
+   compliance was skipped.
 
-If `git diff --name-only $MERGE_BASE...HEAD` returns nothing, report "No changes found between HEAD and $BASE_BRANCH — nothing to review." and stop. Do not run any steps.
+### Empty diff guard
 
-## Workflow
+If `git diff --name-only $MERGE_BASE...HEAD` returns nothing, report "No changes
+found between HEAD and $BASE_BRANCH — nothing to review." and stop. Run nothing.
 
-```dot
-digraph pre_pr {
-  rankdir=TB;
-  "1. Resolve inputs" -> "2. Run code-hygiene";
-  "2. Run code-hygiene" -> "3. Run verification";
-  "3. Run verification" -> "4. Dispatch code-reviewer";
-  "4. Dispatch code-reviewer" -> "5. Assemble combined report";
-}
-```
+## Phase 2 — Review pass
 
-### Step 1 — Resolve Inputs
-
-Detect base branch, compute merge base, resolve scope reference. These values are passed to all subsequent steps.
-
-### Step 2 — Run Code Hygiene
+### Step 2a — Code hygiene
 
 Execute the full `code-hygiene` skill workflow:
-- Phase 2: Auto-fix artifacts (console.*, debugger, commented-out code)
-- Phase 3: Auto-add unit tests to existing suites
-- Phase 4: Collect findings (scope compliance, TODOs, test suggestions, observations)
 
-Capture the full report output (auto-fixed items + findings) for the combined report.
+- Auto-fix artifacts (console.*, debugger, commented-out code)
+- Auto-add unit tests to existing suites
+- Collect findings (scope compliance, TODOs, test suggestions, observations)
 
-### Step 3 — Run Verification
+Capture the full output — auto-fixed items and findings both feed Phase 3.
 
-Run after code-hygiene since it may have edited files.
+### Step 2b — Verification
 
-```bash
-# Typecheck
-pnpm run typecheck
+Run after hygiene, since hygiene edits files. **Use the commands from
+`PROJECT_COMMANDS`** — do not substitute defaults. If Phase 0 found `test:ci`,
+run `test:ci`; running `test` instead is the Phase 0 failure this skill warns
+about, one phase later.
 
-# Lint
-pnpm run lint
+Record pass/fail and error counts. If auto-added tests from Step 2a fail,
+attribute those separately from pre-existing failures.
 
-# Tests
-pnpm run test
-```
+#### Exit-code discipline
 
-If the project uses Turbo with change detection, scope to affected packages:
+This governs every verification run in this skill, here and in Phase 5.
 
-```bash
-pnpm turbo typecheck --filter='...[{MERGE_BASE}]'
-pnpm turbo lint --filter='...[{MERGE_BASE}]'
-pnpm turbo test --filter='...[{MERGE_BASE}]'
-```
+**A pipeline reports the status of its *last* command.** `cmd | tail -15` gives
+you `tail`'s status, and `tail` succeeds whatever `cmd` did — so a failing check
+reads as exit 0. Same trap with `| head`, `| grep`, `| jq`, `| wc`. This has
+already put a ✅ in a report for a check that was failing, twice in one run.
 
-Record pass/fail status and error counts. If auto-added tests from Step 2 fail, clearly attribute those failures separately from pre-existing test failures.
+Run the command bare and read its status, then pipe a *separate* invocation for
+readable output, or capture `${PIPESTATUS[0]}`. State the raw exit code you
+observed before writing any ✅.
 
-**Read the exit code from the command, never through a pipe.** `cmd | tail -15` reports `tail`'s status, which is always 0 — this has put a ✅ in a report for a check that was actually failing. Run the command bare and read its status, then pipe a separate invocation for readable output, or capture `${PIPESTATUS[0]}`. Record the raw exit code you observed next to each result.
+**An unobserved result is ⚠️ unverified, not a pass.** Never infer that a check
+passed because nothing looked wrong. An unverified check is a report line item.
 
-**An unobserved result is ⚠️ unverified, not a pass.** Never infer a check passed because nothing looked wrong; report it as unverified and say why.
+### Step 2c — Dispatch the code reviewer
 
-### Step 4 — Dispatch Code Reviewer
-
-Dispatch the `superpowers:code-reviewer` agent using the existing `code-reviewer.md` template.
+Dispatch the `superpowers:code-reviewer` agent using the existing
+`code-reviewer.md` template.
 
 **Template values:**
-- `{WHAT_WAS_IMPLEMENTED}` — derived from the scope reference (Asana task description, GH issue body, or freeform text)
-- `{PLAN_OR_REQUIREMENTS}` — same scope reference, plus note any verification failures from Step 3
+
+- `{WHAT_WAS_IMPLEMENTED}` — from the scope reference
+- `{PLAN_OR_REQUIREMENTS}` — same, plus any Step 2b verification failures
 - `{BASE_SHA}` — the computed `MERGE_BASE`
 - `{HEAD_SHA}` — current `HEAD`
 - `{DESCRIPTION}` — one-line summary of the branch changes
 
-The code reviewer operates on the branch **after** hygiene auto-fixes, so it won't flag artifacts that were already cleaned up.
+The reviewer operates on the branch **after** hygiene auto-fixes, so it will not
+flag artifacts that were already cleaned up.
 
-**Append these focus areas to the reviewer prompt.** The default checklist reads files in isolation; these checks require reasoning across files and across time, and are exactly what single-file review misses:
+**Append these focus areas to the reviewer prompt.** The default checklist reads
+files in isolation; these require reasoning across files and across time, and are
+exactly what single-file review misses:
 
-- **Cross-component render ordering.** When an effect closes/dismisses an overlay, modal, or branch in response to a prop or hook return that changed elsewhere, trace what the render tree looks like *the frame after* the trigger flips but *before* the effect runs. Look for a gap where neither branch's guard holds (blank/placeholder render) or where a child fully remounts (expensive re-init, re-fetch, re-attach). Prefer `useLayoutEffect` or a combined guard over `useEffect` for synchronous close.
-- **Sync vs. async / timing primitives.** Flag `setTimeout`/`requestAnimationFrame` used to wait for a platform transition (orientation change, layout settle, navigation animation). These are guesses against device-dependent durations. The correct fix is an event/callback (`addOrientationChangeListener`, `onLayout`, transition-end). When the diff offers a fixed-delay timer, treat it as a known-fragile fallback that needs human sign-off — do not bless it as equivalent to the event-driven approach.
-- **Author hedge comments are unsolved problems, not design intent.** If a changed region carries a comment hedging about fragility/timing/races ("if QA reveals flicker…", "on slow devices…", "might need to bump this"), surface it verbatim as an Important issue. Do not adopt the comment's suggested workaround as the fix.
-- **Comments are not evidence.** Label each load-bearing claim as *verified from executable code* (you read the statement that makes it true) or *taken from a comment/docstring/JSDoc* (prose that may be stale). Docstrings in this repo have been demonstrated out of date. Never let prose be the sole support for a Critical or Important finding — when it is the only source, mark the finding **requirements-dependent** and name who could confirm it.
-- **A behavior that looks like a bug may be intended.** Before reporting two surfaces as inconsistent, ask whether they answer *different questions* rather than the same one inconsistently. Product and compliance rules are frequently absent from the repo entirely, so a confident "divergence" or "should fail open" finding is exactly the kind that domain knowledge overturns. State the assumption the finding rests on so it can be checked in one sentence.
+- **Cross-component render ordering.** When an effect closes/dismisses an overlay,
+  modal, or branch in response to a prop or hook return that changed elsewhere,
+  trace what the render tree looks like *the frame after* the trigger flips but
+  *before* the effect runs. Look for a gap where neither branch's guard holds
+  (blank/placeholder render) or where a child fully remounts (expensive re-init,
+  re-fetch, re-attach). Prefer `useLayoutEffect` or a combined guard over
+  `useEffect` for synchronous close.
+- **Sync vs. async / timing primitives.** Flag `setTimeout`/`requestAnimationFrame`
+  used to wait for a platform transition (orientation change, layout settle,
+  navigation animation). These are guesses against device-dependent durations. The
+  correct fix is an event/callback (`addOrientationChangeListener`, `onLayout`,
+  transition-end). When the diff offers a fixed-delay timer, treat it as a
+  known-fragile fallback needing human sign-off — do not bless it as equivalent.
+- **Author hedge comments are unsolved problems, not design intent.** If a changed
+  region carries a comment hedging about fragility/timing/races ("if QA reveals
+  flicker…", "on slow devices…", "might need to bump this"), surface it verbatim
+  as an Important issue. Do not adopt the comment's workaround as the fix.
+- **Comments are not evidence.** Label each load-bearing claim as *verified from
+  executable code* or *taken from a comment/docstring/JSDoc*. Docstrings in this
+  repo have been demonstrated out of date. Never let prose be the sole support for
+  a Critical or Important finding — when it is the only source, mark the finding
+  **requirements-dependent** and name who could confirm it.
+- **A behavior that looks like a bug may be intended.** Before reporting two
+  surfaces as inconsistent, ask whether they answer *different questions*. Product
+  and compliance rules are frequently absent from the repo entirely, so a confident
+  "divergence" or "should fail open" finding is exactly the kind domain knowledge
+  overturns. State the assumption the finding rests on so it can be checked in one
+  sentence.
 
-### Step 5 — Assemble Combined Report
+## Phase 3 — Categorize findings
 
-Combine all outputs into a single sequential report.
+Split every "needs review" and "issues" item from Phase 2 into two buckets.
 
-## Combined Report Format
+### auto-fixable (a subagent can resolve without user input)
+
+Mechanical or unambiguous fixes where the correct answer is determined by the
+code, by `PROJECT_COMMANDS`, or by the diff itself: stray artifacts and dead code,
+lint-autofixable rules, formatting drift, type errors with a single obvious fix, a
+banned API swapped for its documented replacement, and unit tests added to an
+*existing* suite for a *pure* function the diff fully specifies. `code-hygiene`
+owns the artifact classes — do not re-enumerate them here.
+
+### needs-human-judgment (surface; do NOT dispatch)
+
+Anything requiring product, design, or architectural judgment, or where the "fix"
+could plausibly be more than one thing:
+
+- Scope deviations ("file X modified but not in ticket")
+- Ambiguous TODOs ("// TODO: revisit — keep or remove?")
+- New test files for behavior not fully specified by the diff
+- Behavior changes flagged by the reviewer (correctness debates)
+- Anything Critical or Important unless it is a pure mechanical fix
+- Dependency upgrades or new dependencies
+- Schema / migration changes
+- Anything where you would need to ask "which of these did you mean"
+
+**Rule of thumb:** if a competent engineer would resolve it in under two minutes
+without asking anyone, it is auto-fixable. Otherwise it is human-judgment. When in
+doubt, classify as human-judgment — the cost of surfacing too much is small; the
+cost of an autonomous wrong fix is large.
+
+## Phase 4 — Dispatch parallel fix subagents
+
+One Task subagent per auto-fixable finding. **All subagents in a single message**
+so they run concurrently. Use `subagent_type: general-purpose` unless the finding
+clearly matches a specialized agent, and pass a short `description` label.
+
+Each prompt MUST include, verbatim:
+
+1. The `PROJECT_COMMANDS` block from Phase 0
+2. The specific finding (file path, line number, exact issue text)
+3. **Scope clamp**: "Modify only the file(s) named in this finding. Do not touch
+   unrelated code. Do not run typecheck/lint/test — the orchestrator does that
+   after all subagents return."
+4. **Verification clamp**: "After editing, re-read the file to confirm the change
+   is correct. Report back: file(s) modified, what changed, any obstacles."
+5. **Convention enforcement**: "Use exactly the commands and conventions in
+   PROJECT_COMMANDS. If you would have run `npm` or `console.error` or
+   `logger.error`, stop and use the documented replacement."
+6. **Falsification clamp** (any finding whose fix adds or edits a test): "A new
+   test is not done until it has failed. Run it against the pre-fix
+   implementation — `git stash` your change, or point the import at
+   `git show HEAD:<file>` — and confirm it **fails** for the right reason. Report
+   the falsification result next to the pass. If it passes both before and after,
+   it pins nothing; say so instead of reporting it as coverage."
+7. **Evidence clamp**: "Quote the exact line that justifies your fix. If you cite
+   a schema default, a field being unused, or a lifecycle guarantee, you must have
+   read it in the file — not inferred it from a name or a nearby model."
+
+### Subagent output is unverified input, not results
+
+Before any of it reaches the report:
+
+- **Re-derive every count yourself.** Test totals, error counts, files-changed —
+  read them from the command output you ran in Phase 5, never from a subagent's
+  summary. A relayed count has been wrong in practice.
+- **Re-ground every factual claim** a subagent used to justify its fix, by opening
+  the file and quoting the line. Claims of the form "field X has default Y",
+  "variable Z is unused", or "callback W always fires" have all been fabricated. If
+  the claim fails but the fix is still right, keep the fix and **correct the stated
+  reason** — a right fix with a wrong rationale gets deleted by the next reader who
+  checks it.
+
+## Phase 5 — Verify, iterate up to 3 times
+
+Run the verification commands **in parallel** (separate Bash calls in one
+message), using the exact scripts from `PROJECT_COMMANDS`: typecheck, lint
+(non-mutating variant), test. The Step 2b exit-code discipline applies unchanged.
+
+If all three pass, go to Phase 6. If any fail, this is **attempt 1 of 3**.
+
+### Iteration loop (attempts 2 and 3)
+
+Parse each failure into discrete, file-scoped fix tasks. Dispatch a fresh round of
+parallel subagents — one per failure cluster — with the same prompt shape as Phase
+4 plus the exact compiler/linter/test output for that failure. Then re-run all
+three checks in parallel again.
+
+**Hard limit: 3 attempts total.** After the 3rd failed attempt, stop. Carry the
+remaining failures into Phase 6 as items that still need the user.
+
+If a failure looks like a *test asserting wrong behavior* (the expectation is
+wrong, not the code), do not auto-fix it — classify it as needs-human-judgment.
+Never "fix" tests by changing the assertion to match broken code.
+
+## Phase 6 — Final report
 
 ```markdown
-## Code Hygiene
+# /pre-pr — Report
 
+## Project commands used
+<paste the PROJECT_COMMANDS block>
+
+## Code hygiene
 ### Auto-fixed
 - Removed `console.log` at `src/lib/api/client.ts:47`
-- Removed commented-out code block at `src/utils/format.ts:15-22`
 - Added 2 unit tests to `src/lib/hooks/__tests__/useAuth.test.ts`
 
-### Needs Your Review
-- [Scope] `prisma/schema.prisma` was modified but not referenced in ticket scope
-- [TODO] `src/components/FWButton.tsx:42` — `// TODO: add haptic feedback` — remove or keep?
-- [Tests] No test file exists for `src/lib/utils/formatDate.ts` — consider creating one
-- [Tests] Integration test suggestion: verify the full form submission flow
+## Auto-fixed by subagents (no action needed)
+- `<file>:<line>` — <what changed> (subagent <id>)
 
 ## Verification
-Each row names the command and the exit code actually observed. ⚠️ unverified is a valid row.
-- Typecheck: Pass (0 errors) — `pnpm turbo typecheck …`, exit 0
-- Lint: Pass (2 warnings) — `pnpm turbo lint …`, exit 0
-- Tests: 47/47 passing — `pnpm turbo test …`, exit 0
-  - Auto-added tests: 2/2 passing, both fail against pre-fix code ✅
+Every row names the command and the exit code you actually read. ⚠️ unverified is
+a valid row; a ✅ you did not observe is not.
+- typecheck: ✅ pass (`<cmd>`, exit 0) | ❌ <n> errors after <k> attempts | ⚠️ unverified — <why>
+- lint: ✅ pass (`<cmd>`, exit 0) | ❌ <n> errors after <k> attempts | ⚠️ unverified — <why>
+- test: ✅ <p>/<t> passing (`<cmd>`, exit 0) | ❌ <f> failing after <k> attempts | ⚠️ unverified — <why>
 
-## Code Review
+New tests added this pass — each must state its falsification result:
+- `<test file>` — <n> tests, all <n> fail against pre-fix code ✅ | <n> pass pre-fix ⚠️ pins nothing
 
-### Strengths
-- ...
+## Claims I could not verify
+Required section. If genuinely empty, write "None" — but check first: anything the
+sandbox blocks, any prod-only data, anything needing a device, and any conclusion
+resting on a comment rather than executable code belongs here.
+- <claim> — <why unverifiable here>
 
-### Issues
+## Still needs you
 
-#### Critical (Must Fix)
-- ...
+### Fast path (skim — mechanical, no judgment)
+- Hygiene fixes, formatting, lint-driven edits. These have a clean track record.
 
-#### Important (Should Fix)
-- ...
+### Floor path (read against the diff every time)
+Anything Critical, any verification row, any claim about what a new test proves,
+and any product, compliance, or safety behavior. **Do not let this shrink as the
+flow earns trust elsewhere** — the thinnest reviews are where errors have survived.
 
-#### Minor (Nice to Have)
-- ...
+#### Decisions / scope
+#### Unresolved verification failures (after 3 attempts)
+- <file>:<line> — <error message> — <why it is stuck>
+#### Code review items (human judgment)
+- Critical / Important / Minor
 
-### Recommendations
-- ...
-
-### Assessment
-**Ready to merge?** Yes / No / With fixes
-**Reasoning:** ...
+## Suggested next moves
+- 2–3 concrete next actions, ordered by impact.
 ```
 
-## Rules
+## Hard rules
 
-- **No gates** — all steps run automatically without waiting for engineer approval between them
-- **Single input resolution** — base branch, merge base, and scope reference are resolved once and shared across all steps
-- **Verification runs after hygiene** — since hygiene may edit files, verification must reflect the post-cleanup state
-- **Code reviewer runs last** — reviews the cleaned branch with verification results as context
-- **Report clearly separates concerns** — engineer can scan each section independently
-- **Auto-added test failures are attributed** — if tests from Step 2 fail in Step 3, call this out explicitly so the engineer knows which failures are new
-- **Exit codes come from the command, not from a pipe** — `| tail`/`| head` always exit 0; an unobserved result is ⚠️ unverified, never a pass
-- **Counts are re-derived, never relayed** — read test totals and error counts from the command output, not from a subagent's summary
+- **Comments are not evidence.** Label each load-bearing claim as *verified from
+  executable code* (you read the statement that makes it true) or *taken from a
+  comment/docstring/JSDoc* (prose that may be stale). Docstrings in these repos
+  have been demonstrated out of date, and this flow has been caught reasoning from
+  one. Never let prose be the sole support for a Critical or Important finding —
+  when it is the only source, mark the finding **requirements-dependent** and name
+  who could confirm it.
+- **Counts are re-derived, never relayed** — from command output, not a summary.
+- **Exit codes come from the command, not from a pipe.** An unobserved result is
+  ⚠️ unverified, never a pass.
+- **No git commits.** The user signs with a Yubikey. Report changed files; let
+  them stage.
+- **No PR creation** unless they explicitly ask after seeing the report.
+- **A destructive suggestion requires a signal you can actually read.** Before
+  proposing any `git reset`, `git checkout --`, branch deletion, or force-push,
+  confirm the evidence is legible *in this environment*. Apply the **baseline
+  test**: check the same signal against a known-good reference. If a commit you
+  *know* is the user's shows the same status as the one you are flagging, your
+  signal is measuring the sandbox, not the commit.
+  - Specifically: **GPG `E` means "cannot check", not "unsigned"** — and the
+    sandbox denies `~/.gnupg`, so `E` is the expected result for *every* commit
+    here. Signature status is never grounds for a provenance claim in this
+    environment.
+  - This rule exists because the flow once reported a nonexistent rogue commit and
+    offered to `git reset --soft` what was actually the user's own signed work.
+    Report the limitation instead of the conclusion.
+- **Phase 0 is non-negotiable.** Wrong commands waste fix attempts and pollute the
+  diff.
+- **Parallelize everywhere it is safe** — Phase 4 subagents, Phase 5 verification.
+  Sequential calls there are a bug.
+- **Bias toward surfacing.** If categorization is uncertain, it is
+  human-judgment. Do not be heroic.
+- **Your claims about your own work are the weakest part of the report.** Finding
+  real defects is what this flow does well. What it gets wrong is the epistemics of
+  reporting: what was actually verified, what a new test actually proves, what a
+  subagent actually confirmed, what a git signature actually means. Spend
+  proportionate care there — a false ✅ is worse than a missed finding, because it
+  buys unearned trust for everything else in the document.
+
+$ARGUMENTS

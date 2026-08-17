@@ -53,7 +53,6 @@ error-triage evidence-consolidation
 regression-analysis evidence-consolidation
 code-hygiene pre-pr
 comment-review code-hygiene
-pre-pr pre-pr-autonomous
 feature-design-doc feature-spec
 feature-plan feature-spec
 permission-audit config-health
@@ -120,9 +119,9 @@ awk -F/ '
     else if (area == "dead-code")     owner = "dead-code-survey";
     else if (area == "changelogs")    owner = "changelog-generation";
     else if (area == "config-health") owner = "config-health";
-    # The ledger is this reviewer own state, not a run artifact; counting it
-    # would have the loop measuring itself. (No apostrophes: this awk program
-    # sits inside a single-quoted shell string.)
+    # The ledger belongs to this reviewer, not to a run; counting it would have
+    # the loop measuring itself. (No apostrophes: this awk program sits inside a
+    # single-quoted shell string.)
     else if (area == "skill-reviewer") next;
     else if (area == "plans") {
       if      (low ~ /design/)            owner = "feature-design-doc";
