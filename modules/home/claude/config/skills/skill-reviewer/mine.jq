@@ -81,14 +81,25 @@ def iscorrection:
 # Pinned to the record shape a real invocation produces: a session that analyses
 # skill usage writes the invocation strings into its own transcript, so matching
 # on text alone makes the review count itself as a run.
+#
+# Sidechains are excluded because a subagent carries no human: it contributes
+# gates=0 and drags every rate toward zero. Measured 2026-08-17, 3 of
+# evidence-analysis-core's 4 "sessions" were subagent transcripts, turning one
+# real run into an apparent four. Such records sit only in agent-*.jsonl files
+# (114 of 114), so those files now emit nothing at all and there is no per-file
+# sidechain count worth returning — inventory.sh's SUB column is where composed
+# use stays visible.
 def invoked($skill):
-  # Slash command: a user record whose content is the plain string form.
-  ( .type == "user"
-    and ((.message.content | type) == "string")
-    and (.message.content | contains("<command-name>/" + $skill + "</command-name>")) )
-  # Skill call: a tool_use, which only ever sits on an assistant record.
-  or ( .type == "assistant"
-       and any(toolsof[]; .name == "Skill" and (.input.skill? == $skill)) );
+  ((.isSidechain // false) | not)
+  and (
+    # Slash command: a user record whose content is the plain string form.
+    ( .type == "user"
+      and ((.message.content | type) == "string")
+      and (.message.content | contains("<command-name>/" + $skill + "</command-name>")) )
+    # Skill call: a tool_use, which only ever sits on an assistant record.
+    or ( .type == "assistant"
+         and any(toolsof[]; .name == "Skill" and (.input.skill? == $skill)) )
+  );
 
 # ---------------------------------------------------------------------------
 

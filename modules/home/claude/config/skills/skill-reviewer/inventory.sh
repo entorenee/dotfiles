@@ -2,7 +2,8 @@
 #
 # Cross-arm usage inventory for every local skill and slash command.
 #
-#   bash inventory.sh
+#   bash inventory.sh            human table
+#   bash inventory.sh --json     one JSON record per unit
 #
 # Answers one question per unit: is there evidence it ran, and from which arm.
 #
@@ -10,9 +11,9 @@
 #
 #   direct    — a Skill tool call or a slash command in the transcripts.
 #               Blind to a skill executed inline by another skill.
-#   artifact  — a dated report under $ARTIFACTS/<repo>/<area>/. Sees composed
-#               runs the direct arm misses, but only for units that write
-#               reports, and it attributes by convention rather than by record.
+#   artifact  — a report under $ARTIFACTS/<repo>/<area>/. Sees composed runs the
+#               direct arm misses, but only for units that write reports, and it
+#               attributes by convention rather than by record.
 #   composed  — a caller with direct runs, via the verified composition graph.
 #               Establishes reachability, never that a specific run happened.
 #   testimony — testimony.txt: what the user reported when a machine arm was
@@ -20,8 +21,15 @@
 #
 # A unit with no evidence in any arm is `no-evidence`, which is NOT the same as
 # unused. Reporting it as unused is the exact mistake this script exists to stop.
+#
+# --json exists so /system-review can decide what is due without re-deriving
+# dates and git history by hand. It did, once, and that is a weekly job nobody
+# would keep doing.
 
 set -uo pipefail
+
+MODE=table
+[ "${1:-}" = "--json" ] && MODE=json
 
 CONFIG_DIR="${SKILL_CONFIG_DIR:-$HOME/dotfiles/modules/home/claude/config}"
 TRANSCRIPTS="${SKILL_TRANSCRIPT_DIR:-$HOME/.claude/projects}"
@@ -59,20 +67,34 @@ permission-audit config-health
 EOF
 
 # --------------------------------------------------------------------------
-# Direct arm.
+# Units.
+# --------------------------------------------------------------------------
+{ ls -1 "$CONFIG_DIR/skills"; ls -1 "$CONFIG_DIR/commands" | sed 's/\.md$//'; } \
+  | sed 's#/$##' | sort -u > "$WORK/units.txt"
+
+# --------------------------------------------------------------------------
+# Direct arm. Emits: unit, file, top|sub, YYYY-MM-DD
 #
 # Both patterns are pinned to the record shape a real invocation produces,
 # because a session analysing skill usage writes the search strings into its own
 # transcript and an unguarded grep counts the analysis as a run. A Skill call is
 # a tool_use on an assistant turn; a slash command is string-valued content.
 # Echoes of either arrive inside tool_result arrays.
+#
+# The top|sub column splits a real session from a subagent one. A sidechain
+# record is a genuine use but not a run: no human is present, so folding it into
+# the session count invents runs that were never gated. Classified per record on
+# "isSidechain":true rather than by filename — an agent-*.jsonl name is a
+# convention, the field is the fact.
 # --------------------------------------------------------------------------
 grep -rH '"type":"assistant"' "$TRANSCRIPTS" 2>/dev/null \
   | grep '"name":"Skill"' \
   | awk -F'.jsonl:' 'NF>1 {
       f=$1; m=$2;
+      side = (m ~ /"isSidechain":[ ]*true/) ? "sub" : "top";
+      d = "-"; if (match(m, /"timestamp":"[^"]+"/)) d = substr(m, RSTART+13, 10);
       while (match(m, /"skill":"[a-z0-9-]+"/)) {
-        print substr(m, RSTART+9, RLENGTH-10) "\t" f;
+        print substr(m, RSTART+9, RLENGTH-10) "\t" f "\t" side "\t" d;
         m = substr(m, RSTART+RLENGTH);
       }
     }' > "$WORK/direct.tsv"
@@ -80,15 +102,55 @@ grep -rH '"type":"assistant"' "$TRANSCRIPTS" 2>/dev/null \
 grep -rH '"content":"<command-message>' "$TRANSCRIPTS" 2>/dev/null \
   | awk -F'.jsonl:' 'NF>1 {
       f=$1; m=$2;
+      side = (m ~ /"isSidechain":[ ]*true/) ? "sub" : "top";
+      d = "-"; if (match(m, /"timestamp":"[^"]+"/)) d = substr(m, RSTART+13, 10);
       while (match(m, /<command-name>\/[a-z0-9-]+<\/command-name>/)) {
-        print substr(m, RSTART+15, RLENGTH-30) "\t" f;
+        print substr(m, RSTART+15, RLENGTH-30) "\t" f "\t" side "\t" d;
         m = substr(m, RSTART+RLENGTH);
       }
     }' >> "$WORK/direct.tsv"
 
-sort "$WORK/direct.tsv" | uniq -c \
-  | awk '{ inv[$2] += $1; sess[$2]++ } END { for (k in inv) print k "\t" inv[k] "\t" sess[k] }' \
-  > "$WORK/direct-tally.tsv"
+# One date per session, not per invocation: two invocations in one transcript are
+# one run, and runs_since counts runs.
+awk -F'\t' '
+  { u=$1; seen[u]=1;
+    if ($3 == "sub") { subinv[u]++; next }
+    inv[u]++;
+    if (!((u SUBSEP $2) in fseen)) {
+      fseen[u,$2]=1; sess[u]++;
+      dates[u] = dates[u] (dates[u]=="" ? "" : ",") $4;
+      if ($4 > last[u]) last[u] = $4;
+    }
+  }
+  END { for (u in seen)
+          printf "%s\t%d\t%d\t%d\t%s\t%s\n", u, inv[u], sess[u], subinv[u],
+                 (last[u]=="" ? "-" : last[u]), (dates[u]=="" ? "-" : dates[u]) }
+' "$WORK/direct.tsv" > "$WORK/direct-tally.tsv"
+
+# --------------------------------------------------------------------------
+# Git arm: when each unit last actually changed.
+#
+# Eligibility counts runs since the commit that last changed the unit, so a
+# skill edited yesterday is not due however often it ran before. Commits with a
+# zero numstat (pure renames) are skipped — the tree has been moved wholesale
+# several times. A path-only rewrite still shows as a content change and cannot
+# be told from a tightening here; the sweep prints the commit subject so that
+# call stays with the reader, where the skill's rules put it.
+# --------------------------------------------------------------------------
+: > "$WORK/changed.tsv"
+if git -C "$CONFIG_DIR" rev-parse --git-dir >/dev/null 2>&1; then
+  while read -r u; do
+    [ -n "$u" ] || continue
+    if   [ -f "$CONFIG_DIR/skills/$u/SKILL.md" ]; then p="skills/$u/SKILL.md"
+    elif [ -f "$CONFIG_DIR/commands/$u.md" ];     then p="commands/$u.md"
+    else continue; fi
+    git -C "$CONFIG_DIR" log --follow --numstat --date=short \
+        --format='C%ad %s' -- "$p" 2>/dev/null \
+      | awk -v u="$u" '
+          /^C/ { d = substr($1, 2); s = substr($0, index($0, " ") + 1); next }
+          NF == 3 && ($1 + $2) > 0 { printf "%s\t%s\t%s\n", u, d, s; exit }'
+  done < "$WORK/units.txt" >> "$WORK/changed.tsv"
+fi
 
 # --------------------------------------------------------------------------
 # Artifact arm.
@@ -109,6 +171,10 @@ awk -F/ '{ print $(NF-1) "/" $NF }' "$WORK/artifact-files.txt" > "$WORK/artifact
 # area/filename -> skill, or a pipe-joined candidate set when the filename does
 # not settle it. An ambiguous artifact is reported as a set and counted for
 # nobody: guessing an owner is worse than an unattributed row.
+#
+# The third column separates a dated report from a working byproduct. One run
+# emits a report and often several CSV/SQL files beside it, so counting files
+# counts one run many times — analytics showed 3 artifacts for a single run.
 awk -F/ '
   {
     area = $1; file = $2; low = tolower(file); owner = "";
@@ -134,32 +200,27 @@ awk -F/ '
       else owner = "pr-review|pre-pr";
     }
     else owner = "?unmapped-area";
-    print owner "\t" area "/" file;
+    dated = (file ~ /^[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]-/) ? "dated" : "raw";
+    print owner "\t" area "/" file "\t" dated;
   }' "$WORK/artifact-keys.txt" > "$WORK/artifact-owned.tsv"
 
 grep -v '|' "$WORK/artifact-owned.tsv" | grep -v '^?' \
-  | awk -F'\t' '{ n[$1]++ } END { for (k in n) print k "\t" n[k] }' \
+  | awk -F'\t' '{ n[$1]++; if ($3 == "dated") r[$1]++ }
+                END { for (k in n) print k "\t" n[k] "\t" (r[k]+0) }' \
   > "$WORK/artifact-tally.tsv"
 
 # --------------------------------------------------------------------------
-# Units, then the table.
+# Canonical rows. Both output modes format this and nothing else.
+# unit inv sess sub art_runs art_files last_run changed changed_subject
+#      runs_since via verdict
 # --------------------------------------------------------------------------
-{ ls -1 "$CONFIG_DIR/skills"; ls -1 "$CONFIG_DIR/commands" | sed 's/\.md$//'; } \
-  | sed 's#/$##' | sort -u > "$WORK/units.txt"
-
-echo "# skill-inventory"
-echo "# transcripts : $TRANSCRIPTS"
-echo "# artifacts   : $ART_ROOT — $ART_N files across $REPO_N repo(s)"
-echo
-printf 'UNIT\tDIRECT\tSESS\tARTIFACTS\tVIA\tVERDICT\n'
-
 awk -F'\t' '
-  FNR==NR && FILENAME==dtally { inv[$1]=$2; sess[$1]=$3; next }
-  FILENAME==atally            { art[$1]=$2; next }
-  FILENAME==comp              { split($0, e, " "); parent[e[1]] = parent[e[1]] " " e[2]; next }
-  FILENAME==testim            { if ($0 ~ /^#/ || $0 == "") next;
-                                split($0, t, " ");
-                                said[t[1]] = t[2]; note[t[1]] = t[3]; next }
+  FILENAME==dtally { inv[$1]=$2; sess[$1]=$3; sub_[$1]=$4; last[$1]=$5; dts[$1]=$6; next }
+  FILENAME==atally { artf[$1]=$2; artr[$1]=$3; next }
+  FILENAME==chg    { chgd[$1]=$2; chgs[$1]=$3; next }
+  FILENAME==comp   { split($0, e, " "); parent[e[1]] = parent[e[1]] " " e[2]; next }
+  FILENAME==testim { if ($0 ~ /^#/ || $0 == "") next;
+                     split($0, t, " "); said[t[1]]=t[2]; note[t[1]]=t[3]; next }
   {
     unit = $1;
     # Transitive: a caller counts if it has direct runs, or if something that
@@ -177,25 +238,67 @@ awk -F'\t' '
       }
       frontier = next_frontier;
     }
+    # Runs against the current text. With no known change date every run counts,
+    # which is the right default for a unit git cannot see.
+    rs = 0;
+    if (chgd[unit] != "" && dts[unit] != "-" && dts[unit] != "") {
+      n = split(dts[unit], dd, ",");
+      for (i = 1; i <= n; i++) if (dd[i] > chgd[unit]) rs++;
+    } else rs = sess[unit];
     # `unadopted` is testimony that the unit has NOT run: it must not promote
     # the verdict, but it must stop the unit reading as unmeasured and coming
     # back as a question every sweep.
     declined = (note[unit] ~ /^unadopted/);
-    verdict = (sess[unit] > 0)               ? "used" \
-            : (art[unit] > 0)                ? "artifact-only" \
-            : declined                       ? "unadopted" \
-            : (said[unit] != "")             ? "testimony" \
-            : (via != "")                    ? "reachable" : "no-evidence";
+    verdict = (sess[unit] > 0)   ? "used" \
+            : (sub_[unit] > 0)   ? "subagent-only" \
+            : (artf[unit] > 0)   ? "artifact-only" \
+            : declined           ? "unadopted" \
+            : (said[unit] != "") ? "testimony" \
+            : (via != "")        ? "reachable" : "no-evidence";
     if (said[unit] != "")
       via = via (via == "" ? "" : ",") "said:" (declined ? note[unit] : said[unit]);
-    printf "%s\t%d\t%d\t%s\t%s\t%s\n", unit, inv[unit], sess[unit],
-           (art[unit] > 0 ? art[unit] : "-"), (via == "" ? "-" : via), verdict;
+    printf "%s\t%d\t%d\t%d\t%d\t%d\t%s\t%s\t%s\t%d\t%s\t%s\n",
+           unit, inv[unit], sess[unit], sub_[unit], artr[unit], artf[unit],
+           (last[unit]=="" ? "-" : last[unit]),
+           (chgd[unit]=="" ? "-" : chgd[unit]),
+           (chgs[unit]=="" ? "-" : chgs[unit]),
+           rs, (via == "" ? "-" : via), verdict;
   }
 ' dtally="$WORK/direct-tally.tsv" atally="$WORK/artifact-tally.tsv" \
-  comp="$WORK/composition.txt" testim="$TESTIMONY" \
-  "$WORK/direct-tally.tsv" "$WORK/artifact-tally.tsv" "$WORK/composition.txt" \
-  "$TESTIMONY" "$WORK/units.txt" \
-  | sort -k3,3nr -k4,4r -k1,1
+  chg="$WORK/changed.tsv" comp="$WORK/composition.txt" testim="$TESTIMONY" \
+  "$WORK/direct-tally.tsv" "$WORK/artifact-tally.tsv" "$WORK/changed.tsv" \
+  "$WORK/composition.txt" "$TESTIMONY" "$WORK/units.txt" \
+  | sort -k3,3nr -k5,5nr -k1,1 > "$WORK/rows.tsv"
+
+if [ "$MODE" = json ]; then
+  jq -R -s --arg root "$ART_ROOT" --arg tx "$TRANSCRIPTS" '
+    { artifact_root: $root, transcripts: $tx,
+      units: (split("\n") | map(select(length > 0) | split("\t") | {
+        unit:            .[0],
+        invocations:     (.[1] | tonumber),
+        sessions:        (.[2] | tonumber),
+        subagent:        (.[3] | tonumber),
+        artifact_runs:   (.[4] | tonumber),
+        artifact_files:  (.[5] | tonumber),
+        last_run:        (if .[6] == "-" then null else .[6] end),
+        changed:         (if .[7] == "-" then null else .[7] end),
+        changed_subject: (if .[8] == "-" then null else .[8] end),
+        runs_since:      (.[9] | tonumber),
+        via:             (if .[10] == "-" then null else .[10] end),
+        verdict:         .[11] })) }' < "$WORK/rows.tsv"
+  exit 0
+fi
+
+echo "# skill-inventory"
+echo "# transcripts : $TRANSCRIPTS"
+echo "# artifacts   : $ART_ROOT — $ART_N files across $REPO_N repo(s)"
+echo
+{
+  printf 'UNIT\tSESS\tSUB\tRUNS\tFILES\tLAST RUN\tSINCE\tVIA\tVERDICT\n'
+  awk -F'\t' '{ printf "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n",
+                $1, $3, ($4>0?$4:"-"), ($5>0?$5:"-"), ($6>0?$6:"-"),
+                $7, $10, $11, $12 }' "$WORK/rows.tsv"
+} | column -t -s "$(printf '\t')"
 
 AMBIG=$(grep -c '|' "$WORK/artifact-owned.tsv")
 if [ "$AMBIG" -gt 0 ]; then
@@ -212,8 +315,17 @@ fi
 
 cat <<'EOF'
 
+# COLUMNS
+#   SESS   real sessions — the only thing that counts as a reviewable run
+#   SUB    subagent invocations. Real uses, but no human, so never runs
+#   RUNS   dated artifact reports. One run, so one report
+#   FILES  every artifact file, byproducts included. FILES > RUNS is normal
+#   SINCE  runs against the current text, i.e. since the last content change
+#
 # COVERAGE — what each verdict does and does not license
-#   used          direct record exists. Safe to review.
+#   used          direct record exists in a real session. Safe to review.
+#   subagent-only every invocation came from a sidechain. The unit works and is
+#                 reachable, but no human has ever gated it — nothing to mine.
 #   artifact-only ran, but only composed or unrecorded. Runs are NOT countable;
 #                 the artifact proves output shape, not which unit produced it.
 #   testimony     the user reported it ran. Enough to stop calling it unused;
