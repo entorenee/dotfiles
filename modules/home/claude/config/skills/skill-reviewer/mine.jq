@@ -83,7 +83,7 @@ def iscorrection:
 # on text alone makes the review count itself as a run.
 #
 # Sidechains are excluded because a subagent carries no human: it contributes
-# gates=0 and drags every rate toward zero. Measured 2026-08-17, 3 of
+# gates=0 and drags every rate toward zero. Measured 2026-08-18, 3 of
 # evidence-analysis-core's 4 "sessions" were subagent transcripts, turning one
 # real run into an apparent four. Such records sit only in agent-*.jsonl files
 # (114 of 114), so those files now emit nothing at all and there is no per-file

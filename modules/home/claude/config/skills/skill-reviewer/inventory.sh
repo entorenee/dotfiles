@@ -112,19 +112,26 @@ grep -rH '"content":"<command-message>' "$TRANSCRIPTS" 2>/dev/null \
 
 # One date per session, not per invocation: two invocations in one transcript are
 # one run, and runs_since counts runs.
+#
+# The last column is the unit's session set as transcript ids, ",3,7,", so the
+# row builder can ask whether one unit's runs all happened inside another's.
 awk -F'\t' '
   { u=$1; seen[u]=1;
     if ($3 == "sub") { subinv[u]++; next }
     inv[u]++;
     if (!((u SUBSEP $2) in fseen)) {
       fseen[u,$2]=1; sess[u]++;
+      if (!($2 in fid)) fid[$2] = ++nf;
+      if (fl[u] == "") fl[u] = ",";
+      fl[u] = fl[u] fid[$2] ",";
       dates[u] = dates[u] (dates[u]=="" ? "" : ",") $4;
       if ($4 > last[u]) last[u] = $4;
     }
   }
   END { for (u in seen)
-          printf "%s\t%d\t%d\t%d\t%s\t%s\n", u, inv[u], sess[u], subinv[u],
-                 (last[u]=="" ? "-" : last[u]), (dates[u]=="" ? "-" : dates[u]) }
+          printf "%s\t%d\t%d\t%d\t%s\t%s\t%s\n", u, inv[u], sess[u], subinv[u],
+                 (last[u]=="" ? "-" : last[u]), (dates[u]=="" ? "-" : dates[u]),
+                 (fl[u]=="" ? "-" : fl[u]) }
 ' "$WORK/direct.tsv" > "$WORK/direct-tally.tsv"
 
 # --------------------------------------------------------------------------
@@ -215,7 +222,8 @@ grep -v '|' "$WORK/artifact-owned.tsv" | grep -v '^?' \
 #      runs_since via verdict
 # --------------------------------------------------------------------------
 awk -F'\t' '
-  FILENAME==dtally { inv[$1]=$2; sess[$1]=$3; sub_[$1]=$4; last[$1]=$5; dts[$1]=$6; next }
+  FILENAME==dtally { inv[$1]=$2; sess[$1]=$3; sub_[$1]=$4; last[$1]=$5; dts[$1]=$6;
+                     fl[$1]=$7; next }
   FILENAME==atally { artf[$1]=$2; artr[$1]=$3; next }
   FILENAME==chg    { chgd[$1]=$2; chgs[$1]=$3; next }
   FILENAME==comp   { split($0, e, " "); parent[e[1]] = parent[e[1]] " " e[2]; next }
@@ -238,6 +246,24 @@ awk -F'\t' '
       }
       frontier = next_frontier;
     }
+    # composed-only: every session of this unit also ran one of its callers. The
+    # unit works, but has never been entered on its own, so its runs are really
+    # the runs of that caller and a correction inside them may belong to either
+    # file. evidence-analysis-core is the standing case — 1 session, and it
+    # belongs to analytics-friction-analysis.
+    cby = "";
+    if (sess[unit] > 0 && via != "" && fl[unit] != "-" && fl[unit] != "") {
+      vn = split(via, vs, ",");
+      for (vi = 1; vi <= vn; vi++) {
+        p = vs[vi];
+        if (p == "" || p == unit || fl[p] == "" || fl[p] == "-") continue;
+        mn = split(substr(fl[unit], 2, length(fl[unit]) - 2), mine, ",");
+        ok = (mn > 0);
+        for (mi = 1; mi <= mn; mi++)
+          if (mine[mi] != "" && index(fl[p], "," mine[mi] ",") == 0) { ok = 0; break }
+        if (ok) { cby = p; break }
+      }
+    }
     # Runs against the current text. With no known change date every run counts,
     # which is the right default for a unit git cannot see.
     rs = 0;
@@ -249,7 +275,8 @@ awk -F'\t' '
     # the verdict, but it must stop the unit reading as unmeasured and coming
     # back as a question every sweep.
     declined = (note[unit] ~ /^unadopted/);
-    verdict = (sess[unit] > 0)   ? "used" \
+    verdict = (cby != "")        ? "composed-only" \
+            : (sess[unit] > 0)   ? "used" \
             : (sub_[unit] > 0)   ? "subagent-only" \
             : (artf[unit] > 0)   ? "artifact-only" \
             : declined           ? "unadopted" \
@@ -257,12 +284,12 @@ awk -F'\t' '
             : (via != "")        ? "reachable" : "no-evidence";
     if (said[unit] != "")
       via = via (via == "" ? "" : ",") "said:" (declined ? note[unit] : said[unit]);
-    printf "%s\t%d\t%d\t%d\t%d\t%d\t%s\t%s\t%s\t%d\t%s\t%s\n",
+    printf "%s\t%d\t%d\t%d\t%d\t%d\t%s\t%s\t%s\t%d\t%s\t%s\t%s\n",
            unit, inv[unit], sess[unit], sub_[unit], artr[unit], artf[unit],
            (last[unit]=="" ? "-" : last[unit]),
            (chgd[unit]=="" ? "-" : chgd[unit]),
            (chgs[unit]=="" ? "-" : chgs[unit]),
-           rs, (via == "" ? "-" : via), verdict;
+           rs, (via == "" ? "-" : via), verdict, (cby == "" ? "-" : cby);
   }
 ' dtally="$WORK/direct-tally.tsv" atally="$WORK/artifact-tally.tsv" \
   chg="$WORK/changed.tsv" comp="$WORK/composition.txt" testim="$TESTIMONY" \
@@ -285,7 +312,8 @@ if [ "$MODE" = json ]; then
         changed_subject: (if .[8] == "-" then null else .[8] end),
         runs_since:      (.[9] | tonumber),
         via:             (if .[10] == "-" then null else .[10] end),
-        verdict:         .[11] })) }' < "$WORK/rows.tsv"
+        verdict:         .[11],
+        composed_by:     (if .[12] == "-" then null else .[12] end) })) }' < "$WORK/rows.tsv"
   exit 0
 fi
 
