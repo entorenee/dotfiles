@@ -8,7 +8,9 @@ Guide the user to edit the Nix config files in their dotfiles repo rather than w
 
 ## Git
 
-- **Never run `git commit` (or anything that finalizes a commit).** I use a Yubikey for GPG commit signing which requires physical touch and does not work with automated commits. Staging is fine — `git add`, `git mv`, `git rm`, etc. are all okay to use, including as part of a file reorganization. Just don't commit; report what changed and let me review and commit myself.
+- **Never run `git commit` (or anything that finalizes a commit).** I use a Yubikey for GPG commit signing which requires physical touch and does not work with automated commits. Report what changed and let me review and commit myself.
+- **Never run `git add` either — leave every edit unstaged.** I use the staging area as my own review marker: a staged file means *I* have read it. Staging on my behalf destroys that signal and marks work reviewed when it is not. Finish the edits, say which files changed, and stop. If something is already staged, `git restore --staged <paths>` unstages it without touching the working tree.
+- **`git mv` is the one exception, and it is deliberate.** Use it for renames instead of plain `mv`, so the rename is recorded rather than left to git's similarity detection and the new path never sits untracked. It does stage the change — that is the trade I want here. For deletions use plain `rm`: the file goes away and git reports an unstaged deletion, so nothing is marked reviewed on my behalf.
 
 ## Bash
 

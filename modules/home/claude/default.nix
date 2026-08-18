@@ -307,6 +307,14 @@ in {
         "Bash(git push *--force-with-lease*)"
         "Bash(git reset --hard*)"
         "Bash(git commit*)"
+        # Staging is the user's own review marker, so it is theirs to set.
+        # Both forms are required: the rtk-rewrite hook turns `git add` into
+        # `rtk git add` (verified — `rtk rewrite "git add ."` exits 3), which
+        # the broad `Bash(rtk *)` allow would otherwise wave through. `git
+        # commit` above needs no twin because rtk refuses to rewrite it
+        # (exit 2), and `git mv` stays permitted (exit 1, no rtk equivalent).
+        "Bash(git add*)"
+        "Bash(rtk git add*)"
         # rtk proxy is an arbitrary-command escape hatch (per RTK.md)
         "Bash(rtk proxy*)"
         # pnpm exec sandbox escapes — block interpreters / shells / rm via pnpm exec
