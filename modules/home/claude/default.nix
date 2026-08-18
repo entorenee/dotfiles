@@ -150,10 +150,7 @@ in {
       effortLevel = "high";
       alwaysThinkingEnabled = true;
       cleanupPeriodDays = 365;
-      # Stated rather than left implicit: /config can flip this per-machine into
-      # acceptEdits or auto, and the allow/deny lists are written assuming the
-      # per-call prompt is still the backstop.
-      permissions.defaultMode = "default";
+      permissions.defaultMode = "auto";
       permissions.allow =
         [
           # Read access for dotfiles (skills, agents, nix modules)
