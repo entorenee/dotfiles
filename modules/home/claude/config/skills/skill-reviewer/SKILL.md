@@ -42,13 +42,16 @@ Two tiers, because run volume forbids one. A weekly review of most units would e
 
 | Recorded runs | Review due after |
 |---|---|
-| ≥ 10 (high-volume) | 8 new runs, or 45 days since the last row |
-| 3–9 (low-volume) | 5 new runs |
+| ≥ 3 | 5 new runs, **or** 45 days since the last row — whichever comes first |
 | < 3 | **Not eligible.** There is no pattern yet, only anecdote. If asked anyway, the finding *is* "insufficient evidence" — record that rather than manufacturing one. |
+
+**One threshold for every eligible unit, deliberately — do not reintroduce volume tiers.** An earlier version raised the bar to 8 runs above 10 recorded runs. Two things were wrong with it. The rule read the tier off a *moving* quantity, so a unit crossing 10 between reviews silently raised its own bar: measured 2026-08-19, `pr-review` went from two runs short of due to three runs short *by being used more*, which falsified this skill's own ledger note predicting it would "reach it on its own." And the direction was backwards — the ledger's headline finding is that `investigate`, the most-used unit, carries 3× the correction rate of `pre-pr`. Volume is a reason to review sooner, not later.
+
+The 5 is an evidence floor: enough runs to see a pattern rather than an anecdote. The 45 days is a staleness ceiling for a unit that is used but used slowly. Neither depends on ledger state, so both are computable from `inventory.sh` alone.
 
 **Runs are counted since the commit that last changed the unit, not since the last ledger row.** A skill edited last week has almost no runs against its current text, so reviewing it measures the text it no longer has. This replaces any hand-kept exclusion list: eligibility re-arms itself as runs accumulate. Step 1's `git log --follow` is where that date comes from.
 
-**A unit with no ledger row is due at its low-volume threshold** — 5 runs — regardless of how many it has accumulated. Never-reviewed is not the same as recently-reviewed.
+**A unit with no ledger row is due at 5 runs** regardless of how many it has accumulated. Never-reviewed is not the same as recently-reviewed.
 
 ## When to Use
 
@@ -136,9 +139,12 @@ while read -r f; do
     | jq -c --arg p "$(basename "$(dirname "$f")")" '. + {project:$p}'
 done < "$OUT/files.txt" > "$OUT/$SKILL.jsonl"
 
-jq -s '{sessions:length, invocations:(map(.invocations)|add),
-        gate_turns:(map(.gate_turns)|add), interruptions:(map(.interruptions)|add),
-        corrections:(map(.corrections)|add), review_min:(map(.review_minutes)|add|round)}' \
+# `// 0` on every `add` (the idiom mine.jq already uses internally): with no
+# matching sessions `add` is null, and `null|round` aborts the whole aggregate.
+# A zero-session result is a finding this skill wants reported, not a jq error.
+jq -s '{sessions:length, invocations:(map(.invocations)|add // 0),
+        gate_turns:(map(.gate_turns)|add // 0), interruptions:(map(.interruptions)|add // 0),
+        corrections:(map(.corrections)|add // 0), review_min:(map(.review_minutes)|add // 0|round)}' \
   "$OUT/$SKILL.jsonl"
 ```
 

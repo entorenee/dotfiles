@@ -202,7 +202,14 @@ awk -F/ '
       else owner = "feature-plan|feature-design-doc|feature-spec";
     }
     else if (area == "reviews") {
-      if      (low ~ /^pre-pr-/)  owner = "pre-pr";
+      # Boundary-anchored on both sides. `^pre-pr-` alone missed every dated
+      # report, since the dated-filename convention this awk enforces two lines
+      # down puts the date first. A trailing `-` alone then still missed the
+      # suffix form: `2026-08-18-ranked-employer-ui-pre-pr.md` ends the name
+      # with the skill, so the match has to accept `.` as the right boundary
+      # too. Both forms are live on disk, along with one undated `pre-pr-…`
+      # that the leading `^` does catch.
+      if      (low ~ /(^|-)pre-pr(-|\.)/)  owner = "pre-pr";
       else if (low ~ /review/)    owner = "pr-review";
       else owner = "pr-review|pre-pr";
     }

@@ -94,6 +94,7 @@ These are **hard requirements**, not suggestions:
   | Regression analysis | `$ARTIFACTS/regressions/` |
   | Consolidated analysis | `$ARTIFACTS/consolidated/` |
   | Dead-code surveys | `$ARTIFACTS/dead-code/` |
+| Release notes / changelogs | `$ARTIFACTS/changelogs/` |
 
 - **Print the absolute path when you write one.** They are no longer in the editor tree, so an unannounced artifact is an invisible one.
 - **Real product documentation still belongs in `docs/`** and is committed as normal. The distinction is intent: a throwaway working artifact → `$ARTIFACTS/`; documentation meant to ship with the repo → `docs/`.

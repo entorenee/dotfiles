@@ -1,6 +1,6 @@
 ---
 name: feature-design-doc
-description: Use when starting a new feature from a ticket or spec and need a technical design document before implementation. Outputs an authoritative design doc that locks in scope, alternatives considered, file layout, edge cases, and out-of-scope before any plan or code is written.
+description: Use when about to start building a feature from a ticket, before the first file is written — surfaces the domain rules and edge cases a mature codebase does not make obvious, and locks scope, alternatives, file layout, and out-of-scope into a design doc. Use it especially when the implementation looks obvious, since that is when wrong assumptions get built on. Not for bug fixes — use investigate.
 ---
 
 # Feature Design Doc

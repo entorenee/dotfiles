@@ -1,6 +1,6 @@
 ---
 name: feature-plan
-description: Use after a feature design doc is approved and an implementation plan is needed. Outputs a phased plan with explicit MANUAL REVIEW CHECKPOINT gates between phases (one commit per phase, not per task) and a paired risk-ordered QA checklist.
+description: Use when a feature is about to be built and the work will span more than one sitting or more than one commit — turns it into phased commits with explicit MANUAL REVIEW CHECKPOINT gates between them (one commit per phase, not per task) and a paired risk-ordered QA checklist. A design doc is the ideal input but not a precondition.
 ---
 
 # Feature Implementation Plan

@@ -2,17 +2,24 @@
 
 This is the durable architectural reference for how this repo is organized — the
 rules that should still hold after any given migration step is long done.
-It is distinct from two other documents:
+It is distinct from `CLAUDE.md`, which carries directives for how Claude Code
+should behave in this repo (commands, permissions, communication rules).
+`CLAUDE.md` also documents some of the same architecture inline; this file is
+the place to consult (or extend) when a structural question comes up, rather
+than duplicating the answer in both places.
 
-- **`CLAUDE.md`** — directives for how Claude Code should behave in this repo
-  (commands, permissions, communication rules). It also documents some of the
-  same architecture inline; this file is the place to consult (or extend)
-  when a structural question comes up, rather than duplicating the answer in
-  both places.
-- **`docs/local/plans/nix-architecture-redesign.md`** — the migration log for
-  the ongoing restructure: step-by-step history, verification records, what
-  landed and why. Gitignored, not committed. Read it for *how a past decision
-  was reached*; read this file for *what the current rule is*.
+**A committed document must not cite an uncommitted one as an authority.** This
+file used to name `docs/local/plans/nix-architecture-redesign.md` as where to
+read how a past architecture decision was reached. That file was gitignored, so
+the reference was broken for every checkout but the one that wrote it — and it
+did not survive the 2026-08-17 move of dev artifacts out of the repo. The
+migration log is gone; this file is now the only record of the current rules,
+and the reasoning that is worth keeping belongs *here*, in the rule it explains.
+
+A committed doc may still name a machine-local artifact, but only as an optional
+cache and never as the authority for something — state that it may be absent and
+what to do when it is. `skills/skill-reviewer/SKILL.md` does this correctly for
+its ledger.
 
 (The former `nix/` middle layer is gone: `flake.nix` and everything under it
 now sit at the repo root, alongside this file. Paths below are repo-relative.)

@@ -21,6 +21,14 @@ ARTIFACTS="${ARTIFACTS:-${MY_CLAUDE_ARTIFACTS_ROOT:+$MY_CLAUDE_ARTIFACTS_ROOT/do
 
 emit() { printf '%s\t%s\t%s\n' "$1" "$2" "$3"; }
 
+# Checks 2 and 3 read their expected state out of settings.json, so an
+# unreadable one makes their queries return empty — which reads as "nothing
+# wrong" for check 2 and as "every hook is unregistered" for check 3. Both are
+# false, and both fire in exactly the scenario check 1 exists to catch. Same
+# guard idiom as check_hooks' empty-$on_disk case: say what could not be
+# checked rather than asserting on a file that was never read.
+settings_readable() { jq -e . "$SETTINGS" >/dev/null 2>&1; }
+
 # --- Check 1: settings.json symlink integrity ---------------------------------
 # The documented failure mode: a rebuild during a live session unlinks this file
 # and every permission rule vanishes silently. Missing file, not malformed one.
@@ -44,6 +52,10 @@ check_symlink() {
 # can do soundly -- and a false "dead rule" claim is worse than no claim.
 check_dead_allows() {
   local dead heads
+  if ! settings_readable; then
+    emit REVIEW dead-allow "settings.json is unreadable (see the symlink finding above), so the allow/deny lists could not be compared — this check is skipped, not passed"
+    return
+  fi
   dead=$(jq -r '[.permissions.allow[]] - ([.permissions.allow[]] - [.permissions.deny[]]) | .[]' "$SETTINGS" 2>/dev/null)
   if [[ -n "$dead" ]]; then
     while read -r r; do
@@ -72,6 +84,10 @@ check_dead_allows() {
 # silently, which is the worst case.
 check_hooks() {
   local registered on_disk missing_reg orphan
+  if ! settings_readable; then
+    emit REVIEW hooks "settings.json is unreadable (see the symlink finding above), so hook registration could not be read — reporting every hook as unregistered would name the wrong fix. Restore settings.json first, then re-run."
+    return
+  fi
   registered=$(jq -r '.hooks | to_entries[] | .value[] | .hooks[]?.command // empty' "$SETTINGS" 2>/dev/null \
                | sed 's|.*/||' | sort -u)
   on_disk=$([[ -d "$CFG/hooks" ]] && find "$CFG/hooks" -maxdepth 1 -name '*.sh' -exec basename {} \; | sort -u)

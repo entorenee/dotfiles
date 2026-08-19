@@ -1,6 +1,6 @@
 ---
 name: code-hygiene
-description: Use when cleaning up a feature branch at any stage of development — removes dev artifacts, checks scope compliance against a ticket or description, identifies test gaps, and auto-adds unit tests to existing suites. Usable standalone or as part of the pre-pr orchestrator.
+description: Use mid-development on a feature branch, when a PR is not close yet but the work has accumulated debris worth clearing while it is still fresh — removes dev artifacts, checks scope drift against the ticket, identifies test gaps, and auto-adds unit tests to existing suites. Also runs inside the pre-pr orchestrator; invoke it directly when you want the cleanup without the full pre-PR pass.
 ---
 
 # Code Hygiene
