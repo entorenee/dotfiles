@@ -96,8 +96,12 @@ found between HEAD and $BASE_BRANCH — nothing to review." and stop. Run nothin
 Execute the full `code-hygiene` skill workflow:
 
 - Auto-fix artifacts (console.*, debugger, commented-out code)
+- Auto-fix convention violations whose documented rule names its one replacement
 - Auto-add unit tests to existing suites
-- Collect findings (scope compliance, TODOs, test suggestions, observations)
+- Collect findings (scope compliance, ambiguous convention violations, TODOs, test suggestions, observations)
+
+Pass the Phase 0 `PROJECT_COMMANDS` block into it — the convention swaps are
+verified with the project's own typecheck, and hygiene has no discovery of its own.
 
 Capture the full output — auto-fixed items and findings both feed Phase 3.
 

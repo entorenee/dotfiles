@@ -45,6 +45,45 @@ Only after intake is settled do you proceed to Reproduce.
 | **Repro status / steps** | No | Ask in this round (step 2 needs it anyway) |
 | **Hypothesis / suspected area** | No | Fine to omit — you'll generate your own in step 4 |
 
+## Step 0b — Project command discovery
+
+Steps 5b, 6, 7, and 8 all run this project's own checks, and the step 7
+verification subagent inherits whatever you resolve here rather than discovering
+it itself. Resolve it once, now, before reproducing.
+
+1. **Read the manifest** at the repo root — `package.json`, or `Cargo.toml` /
+   `pyproject.toml` / `go.mod` / `Gemfile` / `mix.exs` for a non-JS project — plus
+   any `Makefile` or `justfile`. Take the exact script names it defines. Do not
+   guess at conventional ones.
+2. **Detect the package manager** from the lockfile: `pnpm-lock.yaml` → pnpm,
+   `yarn.lock` → yarn, `bun.lockb` → bun, `package-lock.json` → npm.
+3. **Detect a monorepo orchestrator** — `turbo.json`, `nx.json`, `lerna.json`,
+   `pnpm-workspace.yaml` — and prefer its affected-only form when scoping a run to
+   the files the fix touched.
+4. **Read the nearest `CLAUDE.md`** (repo root first, then any closer to the
+   suspected area) for conventions the fix itself must obey: logging helpers,
+   error wrappers, banned APIs, test file patterns.
+5. **Record a `PROJECT_COMMANDS` block.** Pass it verbatim into the step 7
+   subagent, which does not inherit this discovery and will guess without it.
+
+   ```
+   PROJECT_COMMANDS:
+   - package manager: <pnpm|yarn|bun|npm|other>
+   - typecheck: <exact command>
+   - lint (non-mutating): <exact command>
+   - test: <exact command> | single-file form: <exact command>
+   - monorepo: <orchestrator, and the affected-only form> | none
+   - conventions: <banned APIs, required helpers, test patterns>
+   ```
+
+Prefer a non-mutating lint variant (`lint:ci`, `lint:check`) over one that
+autofixes: a gate that edits files mid-investigation muddies the very diff you are
+reasoning about. Prefer `test:ci` over `test` where both exist.
+
+If a check genuinely has no command in this project, **record it as absent.** Step
+7 then reports that check unverified, which is a true result. Substituting a
+plausible guess is not.
+
 ## Workflow
 
 ```dot
@@ -218,18 +257,22 @@ If TDD is not practical for this fix (e.g., the bug is in infrastructure, config
 
 ### 7. Verify
 
-Run the full verification gate on affected files:
+Run the full verification gate on the affected files using the exact commands
+from the `PROJECT_COMMANDS` block resolved in step 0b: typecheck, the
+non-mutating lint variant, and the test command scoped to the affected test
+files. Run the three in parallel — they do not depend on each other.
 
-```bash
-# Typecheck
-npx tsc --noEmit
+Do not fall back to `npx tsc --noEmit`, `npx eslint`, or `npm test` for a project
+whose manifest names something else. A wrong command burns one of the three fix
+attempts below and reports a failure that is about the command rather than the
+code — the most expensive kind of false signal in this workflow, because it sends
+you back to step 4 to re-examine a root cause that was never wrong.
 
-# Lint
-npx eslint <affected-files>
-
-# Tests
-npm test -- <affected-test-files>
-```
+**Read the exit code you actually observed for each.** A pipeline reports its
+*last* command's status, so `<test cmd> | tail -20` hands you `tail`'s zero
+whatever the tests did. Run the command bare, read its status, and pipe a
+separate invocation if you want trimmed output. A check you did not observe is
+**unverified** — a real thing to report, and never a pass.
 
 Also manually confirm the original reproduction case no longer triggers the bug.
 
@@ -242,7 +285,9 @@ Use this when **any** of the following are true:
 - The main thread is already heavily loaded with investigation context
 - You expect to iterate on the fix more than once
 
-The subagent's charter: run the three commands above on the affected files, return a structured report (pass/fail per check + failure excerpts + the specific assertions or types that broke). Do not modify code.
+The subagent's charter: run the three `PROJECT_COMMANDS` checks on the affected files and return a structured report (pass/fail per check, the exit code observed, failure excerpts, and the specific assertions or types that broke). Do not modify code.
+
+**Paste the `PROJECT_COMMANDS` block into the prompt verbatim.** A subagent does not inherit step 0b's discovery, so one told merely to "run the tests" will guess — which is the same wrong-command failure as above, now one delegation layer further from where you would notice it.
 
 **Dispatch it with `model: sonnet`.** This is command execution plus failure-excerpt extraction — no diagnostic judgment (that stays in the main thread, which decides the next fix). The cheaper tier is sufficient and keeps a verification run that may repeat up to 3 times off the top tier.
 
@@ -257,11 +302,12 @@ Repeated failures usually mean the root cause from step 4 is wrong, not that the
 
 ### 8. Blast Radius Check
 
-If the fix touches shared code (utilities, types, base classes), run the broader test suite to verify nothing outside the intended scope broke:
-
-```bash
-npm test
-```
+If the fix touches shared code (utilities, types, base classes), run the
+**unscoped** test command from `PROJECT_COMMANDS` — the whole point is the code
+you did *not* touch, so the affected-files scoping from step 7 is exactly what
+must come off here. In a monorepo, prefer the orchestrator's affected-only form
+against the merge base over a single package's suite; a shared utility's blast
+radius crosses package boundaries, which is the case this step exists for.
 
 **Shared infrastructure needs a named human, not just a blast radius.** Schema
 files, migrations, event contracts, and router wiring are owned by someone, and
@@ -343,6 +389,7 @@ These tools are especially valuable when the developer has not been able to repr
 
 | Step | Gate |
 |---|---|
+| Commands | `PROJECT_COMMANDS` resolved from the manifest; absent checks recorded as absent |
 | Reproduce | Asked dev; can trigger the bug on demand |
 | Environment | Worktree, generated artifacts, and toolchain ruled out; or "local only" stated |
 | Localize layer | Decided persisted vs cache/serialization; inspected request/response payloads |
@@ -354,9 +401,9 @@ These tools are especially valuable when the developer has not been able to repr
 | Existing tests | Checked; passing tests on buggy code investigated; bug-encoding tests flipped |
 | **Hand-back** | **Root cause, fix, assumptions, and in/out of scope posted — and stopped** |
 | Fix | Red-Green-Blue TDD; minimal, no scope creep |
-| Typecheck | `tsc --noEmit` passes |
-| Lint | `eslint` clean on affected files |
-| Tests | All affected tests pass |
+| Typecheck | The project's typecheck command passes; exit code observed, not inferred |
+| Lint | The project's non-mutating lint command is clean on affected files |
+| Tests | The project's test command passes on affected tests |
 | Fix iteration | Capped at 3 attempts; revisit root cause if still failing |
-| Blast radius | Broader suite passes if shared code touched |
+| Blast radius | Unscoped suite passes if shared code touched |
 | Infra sign-off | Shared schema/migration/contract change names the human who must agree |
