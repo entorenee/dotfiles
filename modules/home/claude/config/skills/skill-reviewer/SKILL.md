@@ -42,12 +42,23 @@ Two tiers, because run volume varies by an order of magnitude across units. A we
 
 | Recorded runs | Review due after |
 |---|---|
-| ≥ 3 | 5 new runs, **or** 45 days since the last row — whichever comes first |
+| ≥ 3 | 5 new runs, **or** 45 days since that unit's newest ledger row — whichever comes first |
 | < 3 | **Not eligible.** There is no pattern yet, only anecdote. If asked anyway, the finding *is* "insufficient evidence" — record that rather than manufacturing one. |
 
 **One threshold for every eligible unit, deliberately — do not reintroduce volume tiers.** An earlier version raised the bar to 8 runs above 10 recorded runs. Two things were wrong with it. The rule read the tier off a *moving* quantity, so a unit crossing 10 between reviews silently raised its own bar: measured 2026-08-19, `pr-review` went from two runs short of due to three runs short *by being used more*, falsifying the closing note in `plans/2026-08-12-skill-system-cadence-plan.md` that predicted it would reach its threshold on its own. And the direction was backwards — the ledger's headline finding is that `investigate`, the most-used unit, carries 3× the correction rate of `pre-pr`. Volume is a reason to review sooner, not later.
 
-The 5 is an evidence floor: enough runs to see a pattern rather than an anecdote. The 45 days is a staleness ceiling for a unit that is used but used slowly. Neither depends on ledger state, so both are computable from `inventory.sh` alone.
+The 5 is an evidence floor: enough runs to see a pattern rather than an anecdote. The 45 days is a staleness ceiling for a unit that is used but used slowly — five runs may be a year away, and the text should not go unexamined that long.
+
+Both arms are computable from `inventory.sh` alone, which is the property that keeps the sweep to two minutes. They do not draw on the same source, though, and the difference decides when the second one can fire:
+
+| Arm | Reads | Fires when the ledger is missing? |
+|---|---|---|
+| 5 new runs | `runs_since` — transcripts against the git history | Yes. Needs no ledger at all. |
+| 45 days | `last_reviewed` — the newest ledger row for that unit | **No.** |
+
+`inventory.sh` emits `last_reviewed` by parsing `LEDGER.md`; before it did, this arm named a date nothing produced and could not be executed at all. The ledger is machine-local, so on a machine that has none — or for a unit that has never been reviewed on this one — `last_reviewed` is null and the staleness arm simply cannot fire. Say that rather than treating null as "reviewed long ago"; the run-count arm carries the cadence alone in that case, exactly as the never-reviewed rule below already specifies.
+
+**Known gap, deliberately left open:** a unit that is eligible (≥ 3 runs), never reviewed, and too slow to reach 5 runs is governed by neither arm and can wait indefinitely. Closing it means deciding what a never-reviewed unit's staleness clock starts from — most likely `changed` — and that is a cadence decision, not a defect fix. Do not close it silently as part of unrelated work.
 
 **Runs are counted since the commit that last changed the unit, not since the last ledger row.** A skill edited last week has almost no runs against its current text, so reviewing it measures the text it no longer has. This replaces any hand-kept exclusion list: eligibility re-arms itself as runs accumulate. Step 1's `git log --follow` is where that date comes from.
 
@@ -110,14 +121,19 @@ The loose fallback — grep the skill name anywhere — is not the answer either
 
 **The corpus contains this review.** A session that analyses skill usage writes the invocation strings, and their grep output, into its own transcript. Plain text matching counts the review as a run — measured 2026-08-17 at 4 phantom `investigate` sessions and 1 phantom `pre-pr-autonomous`. Both `inventory.sh` and `mine.jq` pin their matches to the record shape a real invocation produces. Do not hand-roll a looser grep and trust the number.
 
-Where the target's row lands decides whether Step 2b is worth running:
+Where the target's row lands decides whether Step 2b is worth running. **All eight verdicts are listed; a routing table missing one sends that unit down whichever branch looks closest, which is how `composed-only` got reviewed as if it were `used`.**
 
 | Verdict | Do |
 |---|---|
 | `used` | Continue. Gate evidence exists. |
+| `composed-only` | Continue, but attribute before editing. Every session also ran a caller, so the gate evidence is real and belongs to *some* file — just not necessarily this one. Resolve the caller question in Step 4 before proposing an edit here. |
+| `subagent-only` | Stop. Every invocation came from a sidechain, so no human was ever present to gate it — there is nothing to mine, and a review would report the absence of corrections as though it meant correctness. |
 | `artifact-only` / `testimony` | Read the artifacts. There is no gate evidence to mine, so a review here reports what the runs *produced*, not what the human corrected — say so rather than implying a gate analysis happened. |
+| `unadopted` | Stop, and do **not** ask. The user has already said it has not run; that question is closed in `testimony.txt`. Report it as declined, not as unmeasured. |
 | `reachable` | Review the caller instead, and read this skill's sections as they were exercised inside it. |
 | `no-evidence` | Stop and ask. |
+
+The verdicts are ranked, not independent: a real session outranks testimony, so a unit whose `testimony.txt` line says `unadopted` but which now shows a session reads as `used`. That is the precedence working — evidence beats memory — but it means the testimony line has gone stale. Correct it when you see it, rather than letting the `VIA` column keep reporting a claim the run count already refutes.
 
 ### Step 2b — Collect the gate evidence
 

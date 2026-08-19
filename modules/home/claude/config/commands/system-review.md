@@ -24,6 +24,7 @@ That is the whole data-gathering step. Every field the buckets need is in it, al
 | `runs_since` | Runs against the *current* text — runs after `changed`. **This is the number the thresholds apply to.** |
 | `changed` / `changed_subject` | When the unit last changed, and the commit subject. |
 | `last_run` | For the Quiet bucket. |
+| `last_reviewed` | Newest ledger row for the unit. **This is what the 45-day staleness arm measures from.** `null` means the arm cannot fire — never that the unit is overdue. |
 | `artifact_runs` | Dated reports. `artifact_files` includes CSV/SQL byproducts; do not read it as a run count. |
 | `verdict` | Pre-computed coverage class. |
 
@@ -43,7 +44,12 @@ Thresholds live in `skill-reviewer/SKILL.md` under **Cadence and thresholds**. R
 | **Accumulating** | Has runs, not yet at threshold. Report the count, not a recommendation. |
 | **Below the floor** | Under 3 recorded runs. Not reviewable. |
 | **Quiet** | Had runs in an earlier window and none recently. Worth a mention — a skill that stopped being used is a finding, and the only one this sweep can make on its own. |
-| **No evidence** | Nothing in any arm. See below, because this bucket has burned us twice. |
+| **Declined** | Verdict `unadopted`. Asked and answered — see below. |
+| **No evidence** | Verdict `no-evidence`: nothing in any arm. See below, because this bucket has burned us twice. |
+
+Sort on the `verdict` field, not on whether a count looks empty. `unadopted` and `no-evidence` both show zero sessions and are the same shape at a glance, but they are opposite states: one is a question already closed, the other is a question never asked.
+
+**`unadopted` is closed. Do not re-ask it.** The verdict exists precisely because the user has already said the unit has not run, and that answer is recorded in `skill-reviewer/testimony.txt` so it survives. Report it under Declined and move on. Putting it back in the "Ask about" line re-opens a question `testimony.txt` was created to close, which is the exact loop that file exists to break.
 
 **`no-evidence` means not measured.** It has never once meant "unused" when checked. Twice now an inventory reported units as never used and the user corrected it — three composed skills on 2026-08-12, then `regression-analysis`, an entry point nothing composes, on 2026-08-17. Report the bucket, ask, and write the answer into `skill-reviewer/testimony.txt` so the next sweep inherits it. Do not carry a unit into a "consider deleting" list off this bucket alone.
 
@@ -52,13 +58,17 @@ Thresholds live in `skill-reviewer/SKILL.md` under **Cadence and thresholds**. R
 Lead with the answer to the only question being asked:
 
 ```
-Due now:      <unit> (<runs_since> runs since <changed>)   — or "nothing"
+Due now:      <unit> (<runs_since> runs since <changed>, or <n> days since <last_reviewed>)
+              — or "nothing"
 Accumulating: <unit> <runs_since>/<threshold>, ...
 Quiet:        <unit>, last run <last_run>
+Declined:     <unit> — unadopted per testimony. Not a question.
 Ask about:    <unit> — no evidence in any arm
 Clock reset:  <unit> — <changed_subject> looks mechanical, not a revision
 Config:       <any FAIL from config-checks.sh skill-inventory, if it was run>
 ```
+
+Say which arm made something due — the run count or the staleness clock. They imply different reviews: five fresh runs means there is new gate evidence to mine, whereas 45 quiet days usually means there is not, and the review is re-reading text against thin evidence. If this machine has no ledger, say so once instead of printing `last_reviewed: null` on every line.
 
 **"Nothing is due" is a complete and successful run.** Do not pad it with observations to look productive; the sweep is worth having precisely because it is usually empty.
 

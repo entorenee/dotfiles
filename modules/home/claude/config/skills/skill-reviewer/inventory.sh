@@ -143,6 +143,16 @@ awk -F'\t' '
 # several times. A path-only rewrite still shows as a content change and cannot
 # be told from a tightening here; the sweep prints the commit subject so that
 # call stays with the reader, where the skill's rules put it.
+#
+# `--numstat` is TAB-separated and the awk below must say so. Under the default
+# whitespace FS a rename renders its path as `{old => new}/rest`, whose spaces
+# split the line into 5 fields, so an `NF == 3` guard silently dropped every
+# commit that renamed *and* edited a unit — and left `($1 + $2) > 0`, the guard
+# that is actually supposed to skip pure renames, unreachable. Measured
+# 2026-08-19 on this repo: six such commits across `config-health` and
+# `permission-audit`, moving `permission-audit`'s last-changed date from
+# 2026-07-28 to 2026-08-07. A too-old date inflates `runs_since`, so the effect
+# was units reading as due earlier than they are.
 # --------------------------------------------------------------------------
 : > "$WORK/changed.tsv"
 if git -C "$CONFIG_DIR" rev-parse --git-dir >/dev/null 2>&1; then
@@ -153,10 +163,48 @@ if git -C "$CONFIG_DIR" rev-parse --git-dir >/dev/null 2>&1; then
     else continue; fi
     git -C "$CONFIG_DIR" log --follow --numstat --date=short \
         --format='C%ad %s' -- "$p" 2>/dev/null \
-      | awk -v u="$u" '
-          /^C/ { d = substr($1, 2); s = substr($0, index($0, " ") + 1); next }
+      | awk -F'\t' -v u="$u" '
+          /^C/ { d = substr($0, 2, 10); s = substr($0, index($0, " ") + 1); next }
           NF == 3 && ($1 + $2) > 0 { printf "%s\t%s\t%s\n", u, d, s; exit }'
   done < "$WORK/units.txt" >> "$WORK/changed.tsv"
+fi
+
+# --------------------------------------------------------------------------
+# Ledger arm: when each unit was last *reviewed*.
+#
+# The staleness half of the threshold — "45 days since the last row" — asks
+# about review history, which no other arm can answer: the direct arm knows
+# when a unit last ran, never when it was last examined. Without this field the
+# arm is unexecutable, and /system-review is explicitly forbidden from deriving
+# it by hand. Adding it here is what that prohibition points at.
+#
+# Row headers are `## <unit> — <YYYY-MM-DD>`, but not uniformly: some carry a
+# parenthetical holding a second date (`## pre-pr — 2026-08-12 (row renamed
+# 2026-08-17)`), and some sections are not units at all (`## Provenance …`).
+# So take the FIRST date on the line, not the last, and key on a lowercase-kebab
+# token — which is what makes the prose sections drop out without a filter,
+# since they can never match a unit name.
+#
+# The ledger is machine-local and outside the repo, so a fresh machine
+# legitimately has none. Every unit then reports last_reviewed null, the
+# staleness arm cannot fire at all, and the run-count arm carries the cadence
+# alone. That is a limitation to state, not one to paper over with a guess.
+# --------------------------------------------------------------------------
+: > "$WORK/reviewed.tsv"
+LEDGER=$(find "$ART_ROOT" -mindepth 3 -maxdepth 3 -path '*/skill-reviewer/LEDGER.md' \
+         2>/dev/null | head -1)
+if [ -n "$LEDGER" ]; then
+  awk '
+    /^## [a-z0-9-]+ / {
+      u = $2; d = "";
+      for (i = 3; i <= NF; i++)
+        if ($i ~ /^[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/) {
+          d = substr($i, 1, 10); break
+        }
+      if (d != "" && d > seen[u]) seen[u] = d;
+    }
+    END { for (u in seen) printf "%s\t%s\n", u, seen[u] }
+  ' "$LEDGER" > "$WORK/reviewed.tsv"
 fi
 
 # --------------------------------------------------------------------------
@@ -226,13 +274,18 @@ grep -v '|' "$WORK/artifact-owned.tsv" | grep -v '^?' \
 # --------------------------------------------------------------------------
 # Canonical rows. Both output modes format this and nothing else.
 # unit inv sess sub art_runs art_files last_run changed changed_subject
-#      runs_since via verdict
+#      runs_since via verdict composed_by last_reviewed
+#
+# last_reviewed is appended rather than slotted in beside last_run so the
+# positional readers below — the table's field list and the JSON index map —
+# keep their existing offsets.
 # --------------------------------------------------------------------------
 awk -F'\t' '
   FILENAME==dtally { inv[$1]=$2; sess[$1]=$3; sub_[$1]=$4; last[$1]=$5; dts[$1]=$6;
                      fl[$1]=$7; next }
   FILENAME==atally { artf[$1]=$2; artr[$1]=$3; next }
   FILENAME==chg    { chgd[$1]=$2; chgs[$1]=$3; next }
+  FILENAME==rev    { rvd[$1]=$2; next }
   FILENAME==comp   { split($0, e, " "); parent[e[1]] = parent[e[1]] " " e[2]; next }
   FILENAME==testim { if ($0 ~ /^#/ || $0 == "") next;
                      split($0, t, " "); said[t[1]]=t[2]; note[t[1]]=t[3]; next }
@@ -291,17 +344,19 @@ awk -F'\t' '
             : (via != "")        ? "reachable" : "no-evidence";
     if (said[unit] != "")
       via = via (via == "" ? "" : ",") "said:" (declined ? note[unit] : said[unit]);
-    printf "%s\t%d\t%d\t%d\t%d\t%d\t%s\t%s\t%s\t%d\t%s\t%s\t%s\n",
+    printf "%s\t%d\t%d\t%d\t%d\t%d\t%s\t%s\t%s\t%d\t%s\t%s\t%s\t%s\n",
            unit, inv[unit], sess[unit], sub_[unit], artr[unit], artf[unit],
            (last[unit]=="" ? "-" : last[unit]),
            (chgd[unit]=="" ? "-" : chgd[unit]),
            (chgs[unit]=="" ? "-" : chgs[unit]),
-           rs, (via == "" ? "-" : via), verdict, (cby == "" ? "-" : cby);
+           rs, (via == "" ? "-" : via), verdict, (cby == "" ? "-" : cby),
+           (rvd[unit]=="" ? "-" : rvd[unit]);
   }
 ' dtally="$WORK/direct-tally.tsv" atally="$WORK/artifact-tally.tsv" \
   chg="$WORK/changed.tsv" comp="$WORK/composition.txt" testim="$TESTIMONY" \
+  rev="$WORK/reviewed.tsv" \
   "$WORK/direct-tally.tsv" "$WORK/artifact-tally.tsv" "$WORK/changed.tsv" \
-  "$WORK/composition.txt" "$TESTIMONY" "$WORK/units.txt" \
+  "$WORK/composition.txt" "$TESTIMONY" "$WORK/reviewed.tsv" "$WORK/units.txt" \
   | sort -k3,3nr -k5,5nr -k1,1 > "$WORK/rows.tsv"
 
 if [ "$MODE" = json ]; then
@@ -320,7 +375,8 @@ if [ "$MODE" = json ]; then
         runs_since:      (.[9] | tonumber),
         via:             (if .[10] == "-" then null else .[10] end),
         verdict:         .[11],
-        composed_by:     (if .[12] == "-" then null else .[12] end) })) }' < "$WORK/rows.tsv"
+        composed_by:     (if .[12] == "-" then null else .[12] end),
+        last_reviewed:   (if .[13] == "-" then null else .[13] end) })) }' < "$WORK/rows.tsv"
   exit 0
 fi
 
@@ -329,10 +385,10 @@ echo "# transcripts : $TRANSCRIPTS"
 echo "# artifacts   : $ART_ROOT — $ART_N files across $REPO_N repo(s)"
 echo
 {
-  printf 'UNIT\tSESS\tSUB\tRUNS\tFILES\tLAST RUN\tSINCE\tVIA\tVERDICT\n'
-  awk -F'\t' '{ printf "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n",
+  printf 'UNIT\tSESS\tSUB\tRUNS\tFILES\tLAST RUN\tREVIEWED\tSINCE\tVIA\tVERDICT\n'
+  awk -F'\t' '{ printf "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n",
                 $1, $3, ($4>0?$4:"-"), ($5>0?$5:"-"), ($6>0?$6:"-"),
-                $7, $10, $11, $12 }' "$WORK/rows.tsv"
+                $7, $14, $10, $11, $12 }' "$WORK/rows.tsv"
 } | column -t -s "$(printf '\t')"
 
 AMBIG=$(grep -c '|' "$WORK/artifact-owned.tsv")
@@ -351,14 +407,22 @@ fi
 cat <<'EOF'
 
 # COLUMNS
-#   SESS   real sessions — the only thing that counts as a reviewable run
-#   SUB    subagent invocations. Real uses, but no human, so never runs
-#   RUNS   dated artifact reports. One run, so one report
-#   FILES  every artifact file, byproducts included. FILES > RUNS is normal
-#   SINCE  runs against the current text, i.e. since the last content change
+#   SESS     real sessions — the only thing that counts as a reviewable run
+#   SUB      subagent invocations. Real uses, but no human, so never runs
+#   RUNS     dated artifact reports. One run, so one report
+#   FILES    every artifact file, byproducts included. FILES > RUNS is normal
+#   REVIEWED newest ledger row for the unit. `-` means never reviewed on this
+#            machine, OR that this machine has no ledger at all — the two are
+#            indistinguishable here, so check whether the ledger exists before
+#            reading a column of dashes as "nothing has ever been reviewed"
+#   SINCE    runs against the current text, i.e. since the last content change
 #
-# COVERAGE — what each verdict does and does not license
+# COVERAGE — all eight verdicts, and what each does and does not license
 #   used          direct record exists in a real session. Safe to review.
+#   composed-only every session of this unit also ran one of its callers, so it
+#                 has never been entered on its own. Its runs are really the
+#                 caller's, and a correction inside one may belong to either
+#                 file — decide which before proposing an edit.
 #   subagent-only every invocation came from a sidechain. The unit works and is
 #                 reachable, but no human has ever gated it — nothing to mine.
 #   artifact-only ran, but only composed or unrecorded. Runs are NOT countable;
