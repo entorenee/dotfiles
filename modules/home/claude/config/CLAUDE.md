@@ -44,7 +44,7 @@ Guide the user to edit the Nix config files in their dotfiles repo rather than w
 - **Exception:** macOS GUI apps (casks) should use Homebrew, since Nix does not manage macOS UI apps well.
 - `/nix/store` is read-only — never attempt writes there.
 - Use native home-manager modules (e.g., `programs.claude-code`) rather than custom activation scripts or manual JSON edits. If a home-manager module exists for a tool (e.g., `programs.git`, `programs.zsh`), prefer it over adding raw packages to `home.packages`.
-- For MCP server configuration, prefer updating the corresponding Nix profile (`work.nix` or `personal.nix`) for deterministic, reproducible config. Fall back to `claude mcp add` only for quick testing.
+- For MCP server configuration, prefer updating the identity file the machine imports — `hosts/darwin/fw-skyler/claude.nix` for work, `roles/home/personal-claude.nix` for personal — for deterministic, reproducible config. Fall back to `claude mcp add` only for quick testing.
 - **Do not auto-run `@nix-validator` after every Nix edit.** For simple, low-risk changes, ask before running it. For large refactors, use your judgment to validate at critical checkpoints.
 
 ## Project Command Discovery

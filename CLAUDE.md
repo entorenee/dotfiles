@@ -9,7 +9,7 @@ Personal dotfiles managed with Nix Darwin, including comprehensive configuration
 - **Nix-based configuration management** using Darwin modules
 - **Home Manager integration** for user-space configurations
 - **Modular structure** with separate modules for each tool/service
-- **Profile-based separation** (personal vs work configurations)
+- **Identity roles** — personal vs work divergence is an import a host names, not a profile string
 
 Always prefer native home-manager modules and options over custom activation scripts or manual config file edits.
 
@@ -29,13 +29,13 @@ When settings need to diverge by identity, **do not gate on a profile string** �
 
 - **Nix Darwin** - System-level macOS configuration
 - **Home Manager** - User environment and dotfile management
-- **Profiles** - Separate configurations for personal/work environments
+- **Roles** - Tier roles (`minimal`/`base`/`cli`/`gui`) stack; identity roles (`personal*`, or `hosts/darwin/fw-skyler/` for work) are named per host
 
 ### Development Tools
 
 - **Neovim** - Primary editor with LSP, formatting, linting via Mason
 - **Tmux** - Terminal multiplexer with custom theme and keybindings (`pane-base-index 1` — panes are 1-indexed)
-- **Git** - Version control with profile-specific configurations
+- **Git** - Version control; identity-specific settings come from the role file a host imports
 - **Shell** - Zsh with Starship prompt
 
 ### Applications & Services
@@ -488,7 +488,7 @@ This repo is used across multiple machines. Use the right persistence layer:
 ## Configuration Principles
 
 - **Modularity** - Each tool has its own module
-- **Profile awareness** - Configurations adapt to personal/work contexts
+- **Identity by import** - Personal/work divergence is a role file a host names, never a conditional on a profile string
 - **Declarative** - All configurations are explicitly defined
 - **Version controlled** - Everything is tracked in git
 - **Reproducible** - Configurations can be applied to new machines
@@ -496,7 +496,7 @@ This repo is used across multiple machines. Use the right persistence layer:
 ## Key Features
 
 - **Automatic tool installation** via Nix packages and Homebrew
-- **Cross-profile consistency** with profile-specific overrides
+- **Shared mechanism, per-host policy** — modules state how a tool works; roles and hosts state who wants it
 - **Integrated development environment** with LSP, formatting, linting
 - **Custom keybindings** and shortcuts across all tools
 - **Backup and sync** via git repository
@@ -504,14 +504,14 @@ This repo is used across multiple machines. Use the right persistence layer:
 ## Getting Started
 
 1. Clone repository
-2. Review profile settings in `flake.nix`
+2. Review the host entry for this machine under `hosts/` — it names the tier role, any identity roles, and overlays
 3. Run `make rebuild` to apply configurations
 4. Customize individual modules as needed
 
 ## Maintenance Notes
 
 - **Regular updates:** Keep flake.lock updated
-- **Profile testing:** Test changes in both personal/work profiles
+- **Cross-host testing:** A change to a shared module reaches every host that imports it — check the affected hosts, not just this machine
 - **Documentation:** Update memory files when patterns change
 - **Backup:** Configurations are version controlled but consider additional backups for sensitive data
 
