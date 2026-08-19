@@ -68,9 +68,10 @@ Resolve **once**; every later phase shares these values.
 ### Base branch
 
 ```bash
-BASE_BRANCH=$(git rev-parse --verify develop 2>/dev/null && echo develop || \
-  git rev-parse --verify main 2>/dev/null && echo main || echo master)
-MERGE_BASE=$(git merge-base $BASE_BRANCH HEAD)
+for b in develop main master; do
+  if git rev-parse --verify --quiet "refs/heads/$b" >/dev/null; then BASE_BRANCH=$b; break; fi
+done
+MERGE_BASE=$(git merge-base "$BASE_BRANCH" HEAD)
 ```
 
 ### Scope reference
@@ -272,6 +273,25 @@ wrong, not the code), do not auto-fix it — classify it as needs-human-judgment
 Never "fix" tests by changing the assertion to match broken code.
 
 ## Phase 6 — Final report
+
+**Write the report to a file, always — this is not optional and not conditional
+on length.** A report that exists only in the conversation forces the engineer to
+scroll back through a long autonomous run to review anything, which is exactly the
+cost this skill is supposed to remove. Chat gets a short summary; the file is the
+artifact.
+
+```bash
+ARTIFACTS="${MY_CLAUDE_ARTIFACTS_ROOT:?run 'make rebuild', then start a new session}/$(basename -s .git \
+  "$(git remote get-url origin 2>/dev/null || git rev-parse --show-toplevel)")"
+mkdir -p "$ARTIFACTS/reviews"
+# → $ARTIFACTS/reviews/YYYY-MM-DD-<branch-or-pr>-pre-pr.md
+```
+
+Print the absolute path in the chat summary. Then keep the summary to what the
+engineer must act on now — the decisions needing judgment and the next moves —
+and leave the full finding list, evidence, and verification table in the file.
+
+The file's contents are the template below.
 
 ```markdown
 # /pre-pr — Report

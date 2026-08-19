@@ -162,7 +162,7 @@ check_skill_inventory() {
       else continue; fi
       git -C "$REPO" ls-files --error-unmatch -- "$f" >/dev/null 2>&1 && continue
       untracked="$untracked $u"
-      emit FAIL skill-inventory "$u is untracked ($f) — flake eval cannot see it, so no Skill($u) permission is generated and it prompts on first use. 'git add' it, then rebuild."
+      emit FAIL skill-inventory "$u is untracked ($f) — flake eval cannot see it, so no Skill($u) permission is generated and it prompts on first use. Ask the user to stage it — staging is theirs — then rebuild."
     done <<<"$units"
   fi
 

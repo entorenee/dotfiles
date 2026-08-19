@@ -33,7 +33,7 @@ The ledger step is what makes this a loop rather than a one-off audit. A review 
 
 The single source for when a unit is due. `/system-review` reads this section; the ledger holds only measurements.
 
-Two tiers, because run volume forbids one. A weekly review of most units would examine 0–1 new runs — below the anecdote floor below — and would fill the ledger with rows that bury real trends. `investigate` runs about 1.4×/week, `pre-pr` about 0.6×, everything else far less.
+Two tiers, because run volume varies by an order of magnitude across units. A weekly review of *most* units would examine 0–1 new runs — below the anecdote floor below — and would fill the ledger with rows that bury real trends. Measured 2026-08-19 over the 30 days those units were active: `investigate` about 4.4×/week and `pre-pr` about 3.7×, with everything else far below both. The two busiest units would sustain a weekly cadence; the rest would not, and the sweep exists so the cheap tier can tell you which is which.
 
 | Tier | Trigger | Cost | Does |
 |---|---|---|---|
@@ -45,7 +45,7 @@ Two tiers, because run volume forbids one. A weekly review of most units would e
 | ≥ 3 | 5 new runs, **or** 45 days since the last row — whichever comes first |
 | < 3 | **Not eligible.** There is no pattern yet, only anecdote. If asked anyway, the finding *is* "insufficient evidence" — record that rather than manufacturing one. |
 
-**One threshold for every eligible unit, deliberately — do not reintroduce volume tiers.** An earlier version raised the bar to 8 runs above 10 recorded runs. Two things were wrong with it. The rule read the tier off a *moving* quantity, so a unit crossing 10 between reviews silently raised its own bar: measured 2026-08-19, `pr-review` went from two runs short of due to three runs short *by being used more*, which falsified this skill's own ledger note predicting it would "reach it on its own." And the direction was backwards — the ledger's headline finding is that `investigate`, the most-used unit, carries 3× the correction rate of `pre-pr`. Volume is a reason to review sooner, not later.
+**One threshold for every eligible unit, deliberately — do not reintroduce volume tiers.** An earlier version raised the bar to 8 runs above 10 recorded runs. Two things were wrong with it. The rule read the tier off a *moving* quantity, so a unit crossing 10 between reviews silently raised its own bar: measured 2026-08-19, `pr-review` went from two runs short of due to three runs short *by being used more*, falsifying the closing note in `plans/2026-08-12-skill-system-cadence-plan.md` that predicted it would reach its threshold on its own. And the direction was backwards — the ledger's headline finding is that `investigate`, the most-used unit, carries 3× the correction rate of `pre-pr`. Volume is a reason to review sooner, not later.
 
 The 5 is an evidence floor: enough runs to see a pattern rather than an anecdote. The 45 days is a staleness ceiling for a unit that is used but used slowly. Neither depends on ledger state, so both are computable from `inventory.sh` alone.
 
@@ -194,6 +194,7 @@ Weight the edits by where the evidence actually is:
 - **A gate the human keeps supplying by hand belongs in the skill.** Repeated interruptions at the same point in the workflow mean a missing hand-back, not an impatient user. This is the highest-value edit class and the easiest to overlook, because it looks like friction rather than error.
 - **Prefer deleting to adding.** A section with no hits across every run is a candidate for removal. Checklists fail by dilution far more often than by omission — if the review only ever adds, it is making the next review harder.
 - **Do not add a rule the evidence does not support**, however sensible it sounds. That is the failure mode this whole skill exists to prevent.
+- **A skill states the method; the project states the facts.** Never name a specific repository, package, path, or example file in a `SKILL.md` — those go stale silently, they narrow the skill to one codebase, and this repository is public. Measured 2026-08-19: four such citations across `feature-plan` and `feature-design-doc` pointed at plan documents, three of which no longer existed, and they were the *only* concrete anchor for the commit-cadence rule. Where a skill needs a project fact, tell it to read that fact from the project's own `CLAUDE.md` or manifest — which is both more resilient and the only version that stays correct when the project changes.
 - **Say which edit you expect to fail.** Usually the one asking the human to hold a standard against their own convenience. Naming it now is what makes the next review able to check it.
 
 Present the edits and get approval before touching the file. Then apply them.

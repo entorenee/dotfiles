@@ -162,9 +162,9 @@ counts. See Step 4 for why.
 
 ## Step 4 — Classify and rank (main context, `opus`)
 
-Sort every finding — from all three sources — into exactly one bucket. This is
-`permission-audit`'s Step 3 rule, applied report-wide because findings now arrive
-from four places instead of one:
+Sort every finding — from every source above, however many ran — into exactly one
+bucket. This is `permission-audit`'s Step 3 rule, applied report-wide because
+findings now arrive from several places rather than one:
 
 - **Missing allowlist entry** — a legitimate operation with no matching rule.
   Fix: propose a narrow `permissions.allow` pattern.
@@ -231,15 +231,19 @@ defects first, then missing-allowlist entries with real counts behind them. Appl
 only what is approved.
 
 - Permissions and hook registrations live in `modules/home/claude/default.nix`
-  (base) or `work.nix` / `personal.nix` (profile-specific). **Never** write
+  (base) or in the identity file the machine imports — `hosts/darwin/fw-skyler/claude.nix`
+  for work, `roles/home/personal-claude.nix` for personal. **Never** write
   `~/.claude/settings.json`.
 - Any allow pattern surfaced by `fewer-permission-prompts` gets redirected into
   Nix — never into a project `.claude/settings.json`.
 - Never propose `permissions.deny` changes. Check every proposal against the
   existing deny list first: deny wins, so a contradictory allow entry is dead
   weight on arrival (and Step 1's `dead-allow` check will flag it next run).
-- Adding a skill or command means adding its `Skill(<name>)` entry in the same
-  change, or Step 1 flags it next run.
+- Adding a skill or command means getting it **git-tracked** in the same change.
+  Its `Skill(<name>)` entry is derived by `readDir` in `default.nix` and must
+  never be written by hand, but flake evaluation cannot see untracked files, so
+  an unstaged skill generates no entry. Ask the user to stage it — staging is
+  theirs to do.
 
 **Stop at the commit boundary.** Report which files changed and stop. Leave
 `make rebuild` to the user — a rebuild while any session is live deletes

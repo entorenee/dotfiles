@@ -180,9 +180,9 @@ After confirming root cause and before writing any fix, check if tests already c
 ### 5c. Hand Back Before Fixing
 
 **Stop here and wait.** Root cause in hand and the fix looking obvious is exactly
-where this workflow loses the human: across 23 recorded runs it was interrupted
-16 times, and those interruptions cluster on the message announcing a confirmed
-root cause or opening a long autonomous stretch. That is a gate the human keeps
+where this workflow loses the human: across 19 recorded runs it was interrupted
+16 times — 0.84 per run — and those interruptions cluster on the message
+announcing a confirmed root cause or opening a long autonomous stretch. That is a gate the human keeps
 inserting by hand. It belongs here.
 
 Post four things, then stop:

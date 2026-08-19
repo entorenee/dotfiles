@@ -179,6 +179,8 @@ After writing the design doc:
 - **Open questions with no fallback.** A design doc punts cleanly; a research request blocks.
 - **Letting the doc become a narrative.** It's a reference, not a story. Future-you should be able to read any one section without reading the rest.
 
-## Reference Example
+## What a finished one looks like
 
-See `fwapp2proto/docs/plans/2026-05-20-stream-screenshare-landscape.md` in the fw_monorepo for a production-quality example of this template applied to a real feature.
+Every section of the template filled or explicitly marked not-applicable; a file layout table that is exhaustive rather than representative; alternatives recorded with the reason each was rejected; and open questions each carrying a fallback so the doc never blocks on research.
+
+Do not cite a specific design doc here. Paths into a work repository go stale and this repository is public.

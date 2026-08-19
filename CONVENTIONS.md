@@ -18,7 +18,7 @@ and the reasoning that is worth keeping belongs *here*, in the rule it explains.
 
 A committed doc may still name a machine-local artifact, but only as an optional
 cache and never as the authority for something — state that it may be absent and
-what to do when it is. `skills/skill-reviewer/SKILL.md` does this correctly for
+what to do when it is. `modules/home/claude/config/skills/skill-reviewer/SKILL.md` does this correctly for
 its ledger.
 
 (The former `nix/` middle layer is gone: `flake.nix` and everything under it

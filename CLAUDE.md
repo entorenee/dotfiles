@@ -280,7 +280,7 @@ The Claude Code configuration is Nix-managed in `modules/home/claude/`. The glob
 | ------------------ | ----------------------------------------------------------------------------------- | ------------------------------------------ |
 | Add MCP server     | `hosts/darwin/fw-skyler/claude.nix` or `roles/home/personal-claude.nix`                 | `make rebuild`                             |
 | Add hook           | Create script in `modules/home/claude/config/hooks/`, add to `default.nix` settings   | Rebuild                                    |
-| Add skill          | Add to `modules/home/claude/config/skills/`                                           | `git add` it, then rebuild — see Permissions below |
+| Add skill          | Add to `modules/home/claude/config/skills/`                                           | Stage it (the user's action — Claude is denied `git add`), then rebuild — see Permissions below |
 | Add agent          | Add to `modules/home/claude/config/agents/`                                           | Rebuild                                    |
 | Change plugin      | Edit `enabledPlugins` in `modules/home/claude/default.nix`                            | Rebuild                                    |
 | Change permissions | Edit `permissions` in `modules/home/claude/default.nix` (base), `hosts/darwin/fw-skyler/claude.nix` (work), or `roles/home/personal-claude.nix` (personal) | Rebuild |

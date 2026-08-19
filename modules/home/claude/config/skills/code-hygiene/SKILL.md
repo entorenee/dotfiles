@@ -81,7 +81,7 @@ Parse the scope reference per the priority order above. If an Asana task ID is p
 
 **Load project convention docs.** Locate and read the project's own convention sources — this is what makes the Phase 3.5 scan project-specific instead of generic:
 
-1. The nearest `CLAUDE.md` chain — repo root first, then any `CLAUDE.md` closer to the changed files (e.g. an app subdirectory). A root `CLAUDE.md` often `@`-imports a project doc (e.g. `@fwapp2proto/docs/CODE_CONVENTIONS.md`); follow those imports.
+1. The nearest `CLAUDE.md` chain — repo root first, then any `CLAUDE.md` closer to the changed files (e.g. an app subdirectory). A root `CLAUDE.md` often `@`-imports a per-project doc (`@<project>/docs/CODE_CONVENTIONS.md` and the like); follow those imports.
 2. Any dedicated convention doc the `CLAUDE.md` points at or that sits beside the changed files: `CODE_CONVENTIONS.md`, `STYLE.md`, `CONTRIBUTING.md`, `docs/conventions*`.
 
 From those docs, extract an explicit **documented-bans list** — the "never do X", "always use Y instead of X", banned-API, and banned-pattern rules. For each, record the rule text and its source `file:line` so findings can cite it. Examples of the *kind* of rule to capture (do not assume these exist — only capture what the docs actually state): banned logging calls, banned styling patterns (styled `Pressable` used as a button, hardcoded hex colors in `className` **or** in color props like `color="#fff"`, arbitrary-bracket Tailwind values), banned state/data-layer patterns, required wrappers. Also note any explicit **exceptions** the doc grants (e.g. "`bg-red-600` is allowed for destructive semantics") so the Phase 3.5 scan doesn't flag a sanctioned pattern.
@@ -159,7 +159,7 @@ Mechanically check the branch diff against the **documented-bans list** captured
    - "no arbitrary brackets" → flag `p-[`, `gap-[`, `text-[NNpx]`, etc. where a preset exists
    - "banned API X, use Y" → flag additions calling `X(`
 2. Respect documented **exceptions** — if the doc sanctions a pattern (e.g. `bg-red-600` for destructive, `text-white` on dark backgrounds), do not flag it.
-3. Scope to the projects the docs apply to. A convention doc under `fwapp2proto/` governs `fwapp2proto/**`; do not flag files in sibling projects against another project's rules.
+3. Scope to the projects the docs apply to. A convention doc living under one project directory governs that project's subtree only; do not flag files in sibling projects against another project's rules.
 
 **Output:** every violation becomes a Phase 4 finding under "Convention Violations", citing the offending `file:line`, the diff content, and the rule's source `file:line`.
 

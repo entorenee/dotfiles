@@ -128,8 +128,9 @@ Ranking never happens before this pass. An unverified finding ranks Low at best 
 Segment findings by **app version / release** — it is a primary axis, not an afterthought.
 
 - **Discover the current released version(s)** — do not assume. Read app config, check the store
-  listing, or read the version distribution straight from the analytics tool. The mobile app is
-  **`fwapp2proto`**.
+  listing, or read the version distribution straight from the analytics tool. Identify *which*
+  package is the shipped app from the project's own `CLAUDE.md` or manifest rather than assuming
+  a name; a monorepo usually documents that in a projects table.
 - **Discount** friction or errors that are concentrated in **old versions and absent from the
   current one** — flag these as *"likely already fixed in `<version>`"* rather than ranking them as
   live problems. Conversely, a finding that is **new or rising in the current release** is more
