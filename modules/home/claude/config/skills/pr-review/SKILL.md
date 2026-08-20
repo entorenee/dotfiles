@@ -1,6 +1,6 @@
 ---
 name: pr-review
-description: Use when reviewing a GitHub pull request or a diff with multiple specialized review agents and you want every finding verified against the actual code before it is reported. Triggers on "review this PR", "kick off a PR review", pre-merge review requests.
+description: Use when reviewing a GitHub pull request or a diff with multiple specialized review agents and you want every finding verified against the actual code before it is reported. Triggers on "review this PR", "kick off a PR review", pre-merge review requests — and equally on re-review requests once a PR has been reviewed before: "the PR has been updated", "there are new pushes", "review the changes against your previous concerns", "which of your findings are fixed".
 ---
 
 # PR Review (grounded)
@@ -24,6 +24,12 @@ Runs the `pr-review-toolkit:review-pr` plugin as the base engine, then adds a ma
 3. **Ground every finding in code (gate — BEFORE aggregating).** See below. Do not summarize a finding you have not personally verified.
 4. **Aggregate** using the output contract below, naming the SHA reviewed. If the head moved while the review was running, say so rather than silently reporting against a diff that has been superseded.
 5. **Write the review to a file** at `$ARTIFACTS/reviews/YYYY-MM-DD-pr<n>-<slug>-review.md`, with `Reviewed at <HEAD_SHA>` in its header, and print the absolute path. Do this as part of the run, not on request — the file is what the second pass reads. A review that exists only in chat scrollback cannot be diffed against later, which forces the whole re-review to be driven by hand.
+
+   **Put the re-review contract in the file's own header**, one line, immediately after the SHA:
+
+   > *Re-reviews update this file in place — refresh the SHA, mark resolved items, append new findings. Never renumber, never start a new file.*
+
+   A re-review is frequently requested in words that do not load this skill ("the PR has been updated"), and in that case the prior review file is the only instruction the run will see. The rule has to travel with the artifact, not only with the skill.
 
 ## Re-review — when a prior review file exists
 
@@ -58,4 +64,3 @@ Agents overstate severity, misremember how a helper behaves, and assert root cau
 
 - **Never post to GitHub** (comments, reviews, approvals). Surface everything in chat.
 - **Surface decisions and forks as plain chat text**, not a modal picker.
-- **Keep the review file current.** When findings are fixed or dropped after the first report, update the file rather than only saying so in chat.
