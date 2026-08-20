@@ -95,6 +95,13 @@ These are **hard requirements**, not suggestions:
   | Consolidated analysis | `$ARTIFACTS/consolidated/` |
   | Dead-code surveys | `$ARTIFACTS/dead-code/` |
   | Release notes / changelogs | `$ARTIFACTS/changelogs/` |
+  | Domain-assumption registers | `$ARTIFACTS/registers/<branch>.md` |
+
+  **Registers are keyed by branch, not by date**, and are the one area that is read
+  before work rather than written after it. `/` in the branch name becomes `-`, matching
+  worktrunk. See the `domain-register` skill for the three states and the graduation
+  rule; the branch keying plus remote-name resolution is what lets a register written on
+  a feature branch be read from a sibling worktree and survive `wt remove`.
 
 - **Print the absolute path when you write one.** They are no longer in the editor tree, so an unannounced artifact is an invisible one.
 - **Real product documentation still belongs in `docs/`** and is committed as normal. The distinction is intent: a throwaway working artifact → `$ARTIFACTS/`; documentation meant to ship with the repo → `docs/`.

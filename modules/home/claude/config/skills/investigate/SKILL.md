@@ -194,11 +194,22 @@ ever orientation's; a column that looked like the obvious join key was "not the
 right case" and a hardcoded map was wanted instead.
 
 None of that is discoverable from the source. So before calling a root cause
-confirmed, list the assumptions about *intended product behavior* it depends on
-and mark each **verified in code** or **assumed**. If a load-bearing assumption
-is assumed, that is a question for the user, not a detail to note in passing —
-and a divergence between two surfaces may mean they answer different questions
-rather than that one is broken.
+confirmed, list the assumptions about *intended product behavior* it depends on and
+record each in the register — **invoke `domain-register`** for the format, the
+location, and the graduation rule.
+
+**Three states, and only two of them proceed.** `verified: <path:line>` and `assumed`
+both continue the run, so on their own they leave a load-bearing guess indistinguishable
+from a cited fact. `blocked: <who can answer>` **stops.** Use it when the rule is
+load-bearing — a different answer changes the fix — and nothing in the repository can
+settle it. Do everything that does not depend on the answer first, then stop and name
+both the question and the person.
+
+Do not downgrade a `blocked` row to `assumed` by picking the likelier reading. That is
+the move this state exists to prevent, and it leaves no trace.
+
+A divergence between two surfaces may mean they answer different questions rather than
+that one is broken — that is a register row, not a bug, until someone confirms which.
 
 **Prove the mechanism in isolation.** Reproduce the suspected mechanism in the smallest possible standalone form — a few-line script or a focused unit test — using the project's *actual* dependency versions. A theory you can describe but cannot reproduce in isolation is still a hypothesis. When the evidence is "the response shows X," reproduce X from the raw inputs rather than inferring it; the isolated repro is what turns a plausible story into a confirmed root cause (and it usually becomes the Red test in step 6).
 
@@ -218,11 +229,11 @@ After confirming root cause and before writing any fix, check if tests already c
 
 ### 5c. Hand Back Before Fixing
 
-**Stop here and wait.** Root cause in hand and the fix looking obvious is exactly
-where this workflow loses the human: across 19 recorded runs it was interrupted
-16 times — 0.84 per run — and those interruptions cluster on the message
-announcing a confirmed root cause or opening a long autonomous stretch. That is a gate the human keeps
-inserting by hand. It belongs here.
+**Stop here and wait.** Root cause in hand and the fix looking obvious is exactly where
+this workflow loses the human. Interruptions cluster on two messages: the one announcing
+a confirmed root cause, and the one opening a long autonomous stretch — which are the
+same moment. That is a gate the human keeps inserting by hand, so it belongs here rather
+than being re-imposed from outside every time.
 
 Post four things, then stop:
 
@@ -395,7 +406,7 @@ These tools are especially valuable when the developer has not been able to repr
 | Localize layer | Decided persisted vs cache/serialization; inspected request/response payloads |
 | Scope | User confirmed fix boundary |
 | Root cause | Can explain WHY, not just WHERE |
-| Product assumptions | Each one listed and marked verified-in-code or assumed |
+| Product assumptions | Each one a register row: `verified: <path:line>`, `assumed` (and stated in the hand-back), or `blocked: <who>` (and stopped) |
 | Mechanism proof | Reproduced the root cause in isolation with the real dependency versions |
 | Prior art | Grepped code + git history for the same class; blast radius stated |
 | Existing tests | Checked; passing tests on buggy code investigated; bug-encoding tests flipped |
