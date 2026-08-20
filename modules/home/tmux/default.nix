@@ -1,4 +1,5 @@
 {
+  config,
   tmux-powerkit,
   lib,
   pkgs,
@@ -14,7 +15,6 @@
       keyMode = "vi";
       mouse = true;
       plugins = with pkgs; [
-        # tmuxPlugins.sensible
         tmuxPlugins.vim-tmux-navigator
         {
           plugin = tmux-powerkit.packages.${pkgs.stdenv.hostPlatform.system}.default;
@@ -39,5 +39,12 @@
       ];
     };
   };
-  xdg.configFile."tmux/tmux.conf".text = lib.mkOrder 600 (builtins.readFile ./tmux.conf);
+  # Substituted at build time rather than left as
+  # ${MY_CLAUDE_ARTIFACTS_ROOT} for tmux to expand.
+  xdg.configFile."tmux/tmux.conf".text = lib.mkOrder 600 (
+    builtins.replaceStrings
+    ["@artifactsRoot@"]
+    [config.home.sessionVariables.MY_CLAUDE_ARTIFACTS_ROOT]
+    (builtins.readFile ./tmux.conf)
+  );
 }
