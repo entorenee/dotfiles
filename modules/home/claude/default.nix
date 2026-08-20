@@ -33,6 +33,8 @@
     "www.gh-dash.dev"
   ];
 in {
+  imports = [./friction-log];
+
   programs.claude-code = {
     enable = true;
     context = ./config/CLAUDE.md;

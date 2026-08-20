@@ -6,6 +6,8 @@
   path = config-personal
 [includeIf "gitdir:~/code/personal/"]
   path = config-personal
+[includeIf "gitdir:~/claude-friction/"]
+  path = config-personal
 [includeIf "gitdir:~/code/work/"]
   path = config-work
 
