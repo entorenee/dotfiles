@@ -61,9 +61,13 @@
   }: let
     lib = nixpkgs.lib;
 
-    # Universal rather than a per-host opt-in like overlays/pnpm-pin.nix:
-    # every host imports the `claude` module via roles/home/cli.nix.
-    baseOverlays = [(import ./overlays/claude-code-unstable.nix {inherit nixpkgs-unstable;})];
+    # Universal rather than a per-host opt-in like overlays/pnpm-pin.nix: every
+    # host imports the `claude` module via roles/home/cli.nix, and the `git`
+    # module via roles/home/base.nix.
+    baseOverlays = [
+      (import ./overlays/claude-code-unstable.nix {inherit nixpkgs-unstable;})
+      (import ./overlays/git-up-2.5.nix)
+    ];
 
     mkHomeManagerArgs = import ./lib/home-manager-args.nix {
       inherit lib navi-cheatsheets tmux-powerkit worktrunk;
