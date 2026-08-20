@@ -112,8 +112,7 @@ These are **hard requirements**, not suggestions:
 
 These are **hard requirements**, not suggestions:
 
-- **For any non-trivial change, state scope before editing.** Before touching code on a task that isn't a one-line or mechanical edit, post: (1) a one-sentence scope statement, (2) a 3-bullet approach, and (3) what is explicitly **out of scope**. Then pause for confirmation. This applies to ad-hoc tasks too — not just work routed through the `feature-design-doc` / `feature-plan` skills.
-- **Spend at most a couple of tool calls locating relevant code before proposing the plan.** For pure lookups ("where is X?"), return the answer only — do not begin changes. Do not investigate at length before acting; surface a short plan first, then execute.
+- **For pure lookups ("where is X?"), return the answer only — do not begin changes.** A question about where something lives is not authorization to alter it.
 - **Remove obsolete logic rather than layering new code beside it.** When a change supersedes existing logic (e.g. replacing a text-based check with a status-code check), delete the old path in the same change unless told to keep it. Do not leave both alive.
 - **Do not expand scope or bundle out-of-scope work into a commit without explicit approval.** If you discover adjacent work worth doing, name it and ask — do not fold it in.
 - **Route bug, test-failure, and unexpected-behavior investigations through the `investigate` skill.** It enforces the scope control and root-cause verification above. Invoke it before proposing a fix rather than debugging ad-hoc.
