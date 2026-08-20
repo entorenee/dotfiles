@@ -1,13 +1,13 @@
 ---
 name: feature-design-doc
-description: Use when starting a new feature from a ticket or spec and need a technical design document before implementation. Outputs an authoritative design doc that locks in scope, alternatives considered, file layout, edge cases, and out-of-scope before any plan or code is written.
+description: Use when about to start building a feature from a ticket, before the first file is written — surfaces the domain rules and edge cases a mature codebase does not make obvious, and locks scope, alternatives, file layout, and out-of-scope into a design doc. Use it especially when the implementation looks obvious, since that is when wrong assumptions get built on. Not for bug fixes — use investigate.
 ---
 
 # Feature Design Doc
 
 ## Overview
 
-Produce a self-contained technical design document for a new feature, written to `docs/local/plans/YYYY-MM-DD-<slug>.md` (repo-root-relative; git-ignored dev artifact). The design doc is the **authoritative spec** — every later artifact (implementation plan, QA checklist, PR description) references it.
+Produce a self-contained technical design document for a new feature, written to `$ARTIFACTS/plans/YYYY-MM-DD-<slug>.md` (dev artifact; the artifact root is defined in the global CLAUDE.md under "Dev Artifact Storage"). The design doc is the **authoritative spec** — every later artifact (implementation plan, QA checklist, PR description) references it.
 
 This skill writes the design only. It does **not** produce an implementation plan or QA checklist — those come from `feature-plan`. For the full ticket-to-plan flow, use `feature-spec` instead.
 
@@ -56,7 +56,7 @@ digraph design_doc_flow {
 Resolve before writing:
 
 1. **Ticket reference** — Asana task ID/URL, GitHub issue number, or freeform description. Fetch it via the relevant MCP / `gh` command. If no reference, ask.
-2. **Target file path** — default `docs/local/plans/YYYY-MM-DD-<slug>.md` (repo-root-relative). Use today's date and a kebab-case slug from the ticket title (e.g. `2026-05-20-stream-screenshare-landscape.md`).
+2. **Target file path** — default `$ARTIFACTS/plans/YYYY-MM-DD-<slug>.md`. Use today's date and a kebab-case slug from the ticket title (e.g. `2026-05-20-stream-screenshare-landscape.md`).
 3. **Branch + base branch** — capture from `git status` / `git remote`. Goes in the header.
 4. **Existing patterns to mirror** — `grep` for similar features that already exist in the codebase. The design's strongest move is "we already do X for Y, mirror that here."
 
@@ -166,7 +166,7 @@ Numbered commit sequence (3-5 commits typically; see commit cadence rules in `fe
 
 After writing the design doc:
 
-1. **Print the file path** so the user can open it.
+1. **Print the absolute file path** so the user can open it.
 2. **Print a 3-5 bullet summary** of what the design says: chosen approach, files affected, key edge cases.
 3. **Stop the turn.** Do NOT continue to `feature-plan` or any other follow-up work. Wait for explicit user sign-off ("design looks good", "proceed to plan", etc.).
 4. If the user requests changes, edit and re-print. Do not invoke `feature-plan` until they say so.
@@ -179,6 +179,8 @@ After writing the design doc:
 - **Open questions with no fallback.** A design doc punts cleanly; a research request blocks.
 - **Letting the doc become a narrative.** It's a reference, not a story. Future-you should be able to read any one section without reading the rest.
 
-## Reference Example
+## What a finished one looks like
 
-See `fwapp2proto/docs/plans/2026-05-20-stream-screenshare-landscape.md` in the fw_monorepo for a production-quality example of this template applied to a real feature.
+Every section of the template filled or explicitly marked not-applicable; a file layout table that is exhaustive rather than representative; alternatives recorded with the reason each was rejected; and open questions each carrying a fallback so the doc never blocks on research.
+
+Do not cite a specific design doc here. Paths into a work repository go stale and this repository is public.

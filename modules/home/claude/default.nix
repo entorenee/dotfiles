@@ -1,4 +1,11 @@
-{lib, ...}: let
+{
+  config,
+  lib,
+  ...
+}: let
+  # Absolute, not `~/…`: a JSON settings value is literal and would not expand.
+  artifactsRoot = "${config.xdg.dataHome}/claude/artifacts";
+
   skillNames =
     builtins.attrNames (builtins.readDir ./config/skills)
     ++ map (lib.removeSuffix ".md")
@@ -79,6 +86,7 @@ in {
         # The sandbox proxy binds 127.0.0.1 only; Node 18+ tries IPv6 first and
         # fails before falling back.
         NODE_OPTIONS = "--dns-result-order=ipv4first";
+        MY_CLAUDE_ARTIFACTS_ROOT = artifactsRoot;
       };
       sandbox.enabled = true;
       # Without this a sandbox that fails to start degrades to no sandbox at all
@@ -94,6 +102,8 @@ in {
       # Identity roles allow the whole gh config dir; this re-blocks the one
       # file an OAuth token could land in. denyRead wins over allowRead.
       sandbox.filesystem.denyRead = ["~/.config/gh/hosts.yml"];
+      sandbox.filesystem.allowRead = [artifactsRoot];
+      sandbox.filesystem.allowWrite = [artifactsRoot];
 
       # Registry-metadata reads run unsandboxed so they reuse the real ~/.npm
       # and pnpm caches.
@@ -140,10 +150,7 @@ in {
       effortLevel = "high";
       alwaysThinkingEnabled = true;
       cleanupPeriodDays = 365;
-      # Stated rather than left implicit: /config can flip this per-machine into
-      # acceptEdits or auto, and the allow/deny lists are written assuming the
-      # per-call prompt is still the backstop.
-      permissions.defaultMode = "default";
+      permissions.defaultMode = "auto";
       permissions.allow =
         [
           # Read access for dotfiles (skills, agents, nix modules)
@@ -297,6 +304,15 @@ in {
         "Bash(git push *--force-with-lease*)"
         "Bash(git reset --hard*)"
         "Bash(git commit*)"
+        # Staging is the user's own review marker, so it is theirs to set.
+        # One form is enough: rtk refuses to rewrite `git add` (measured on rtk
+        # 0.41.0, `rtk rewrite "git add ."` exits 2), and hooks/rtk-rewrite.sh
+        # passes exit 2 through unchanged, so no `rtk git add` form ever reaches
+        # the matcher for `Bash(rtk *)` to wave through. Same reason `git commit`
+        # above needs no twin. `git mv` stays permitted (exit 1, no rtk
+        # equivalent). A `Bash(rtk git add*)` twin was removed 2026-08-19 as
+        # unreachable — its comment claimed exit 3, which measurement disproved.
+        "Bash(git add*)"
         # rtk proxy is an arbitrary-command escape hatch (per RTK.md)
         "Bash(rtk proxy*)"
         # pnpm exec sandbox escapes — block interpreters / shells / rm via pnpm exec
@@ -367,6 +383,10 @@ in {
       ];
     };
   };
+
+  # Duplicated from settings.env deliberately: this copy is what lets the skill
+  # scripts resolve the root when run outside a Claude session.
+  home.sessionVariables.MY_CLAUDE_ARTIFACTS_ROOT = artifactsRoot;
 
   programs.zsh.shellAliases = {
     claude-yolo = "claude --dangerously-skip-permissions";

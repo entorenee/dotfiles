@@ -1,12 +1,12 @@
 # Skyler Lemay dotfiles
 
-This repository contains dotfiles shared across multiple computer systems, differentiating between work and personal profiles in terms of package installation and configuration. Key tools used:
+This repository contains dotfiles shared across multiple computer systems — macOS laptops, a Linux desktop, and several Raspberry Pi hosts. Each machine names the roles it wants (a capability tier such as `cli` or `gui`, plus an identity such as personal or work) rather than selecting a profile; package installation and configuration follow from that. Key tools used:
 
 * **[Nix](https://nixos.org/)** — package management and system configuration across all platforms
 * **[Home Manager](https://github.com/nix-community/home-manager)** — user-space configuration management; used standalone on Linux and in conjunction with Nix Darwin on macOS
 * **[Nix Darwin](https://github.com/nix-darwin/nix-darwin)** — macOS-specific system configuration
 
-Most files are public and can be shared across systems. Some files are private and are consequently encrypted with the unencrypted versions placed in gitignore. This may be due to licensing restrictions, paid products including fonts, or sensitive/confidential information. These files are encrypted using GPG with the respective public keys of one or more of my profiles. They will not be accessible to others using the repository.
+Everything in this repository is public. A small number of assets cannot be — paid fonts, mostly, under licenses that forbid redistribution — and those live in a separate private repository rather than as encrypted blobs here. `modules/home/fonts/default.nix` fetches it directly with `builtins.fetchGit` pinned to an explicit revision, deliberately *not* as a flake input, so only the hosts that import the fonts module ever authenticate. See [PRIVATE-ASSETS.md](PRIVATE-ASSETS.md) for why that shape was chosen and when to reverse it. If you fork this, note that the fetch is not optional at evaluation time: any host importing `roles/home/gui.nix` will fail to evaluate without access to that repository, so drop the fonts module from `gui.nix` or point it at your own. Hosts on the `cli` or `minimal` tiers are unaffected, which is the whole reason the fetch lives in the module rather than in `flake.nix`.
 
 This configuration is highly opinionated and tailored to my preferences. Various aspects of it can be broken out into separate flows and scripts. This is not a plug and play solution for other engineers, though aspects of it may be used and adjusted to fit your needs. Strong preferences include:
 
@@ -96,9 +96,11 @@ This repository also ships with [tmuxinator](https://github.com/tmuxinator/tmuxi
 
 Claude Code configuration is declaratively managed via the `modules/home/claude/` module. Settings, hooks, skills, and agents are version-controlled and symlinked into `~/.claude/`.
 
-- **Settings**: `settings.json` is generated from `settings-base.json` merged with profile-specific overrides (`settings-work.json` / `settings-personal.json`). It is read-only (Nix store symlink). To change settings, edit the JSON files and rebuild.
+- **Settings**: declared as Nix options under `programs.claude-code.settings`, with the base in `modules/home/claude/default.nix` and identity additions in `roles/home/personal-claude.nix` or `hosts/darwin/fw-skyler/claude.nix`. There are no `settings-*.json` files and no profile string — a host imports the identity file it wants. The generated `settings.json` is read-only (a Nix store symlink), so edit the Nix and rebuild.
 - **Hooks**: Stored in `modules/home/claude/config/hooks/` and symlinked to `~/.claude/hooks/`.
-- **Skills & Agents**: Stored in `modules/home/claude/config/skills/` and `agents/`, symlinked to `~/.claude/`.
+- **Skills, commands & agents**: Stored under `modules/home/claude/config/` and symlinked into `~/.claude/`. Adding a skill or command also needs it git-tracked before the rebuild — the permission entry is derived from the flake source, which cannot see untracked files.
+
+**Quit all Claude Code sessions before `make rebuild`.** A rebuild that changes `settings.json` while a session is live deletes it. `make rebuild` refuses when it detects one; `make claude-sessions` lists them.
 
 ### Linux note
 

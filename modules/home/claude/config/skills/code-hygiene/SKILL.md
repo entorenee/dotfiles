@@ -1,6 +1,6 @@
 ---
 name: code-hygiene
-description: Use when cleaning up a feature branch at any stage of development — removes dev artifacts, checks scope compliance against a ticket or description, identifies test gaps, and auto-adds unit tests to existing suites. Usable standalone or as part of the pre-pr orchestrator.
+description: Use mid-development on a feature branch, when a PR is not close yet but the work has accumulated debris worth clearing while it is still fresh — removes dev artifacts, applies the convention fixes the project's own docs spell out, checks scope drift against the ticket, identifies test gaps, and auto-adds unit tests to existing suites. Also runs inside the pre-pr orchestrator; invoke it directly when you want the cleanup without the full pre-PR pass.
 ---
 
 # Code Hygiene
@@ -81,7 +81,7 @@ Parse the scope reference per the priority order above. If an Asana task ID is p
 
 **Load project convention docs.** Locate and read the project's own convention sources — this is what makes the Phase 3.5 scan project-specific instead of generic:
 
-1. The nearest `CLAUDE.md` chain — repo root first, then any `CLAUDE.md` closer to the changed files (e.g. an app subdirectory). A root `CLAUDE.md` often `@`-imports a project doc (e.g. `@fwapp2proto/docs/CODE_CONVENTIONS.md`); follow those imports.
+1. The nearest `CLAUDE.md` chain — repo root first, then any `CLAUDE.md` closer to the changed files (e.g. an app subdirectory). A root `CLAUDE.md` often `@`-imports a per-project doc (`@<project>/docs/CODE_CONVENTIONS.md` and the like); follow those imports.
 2. Any dedicated convention doc the `CLAUDE.md` points at or that sits beside the changed files: `CODE_CONVENTIONS.md`, `STYLE.md`, `CONTRIBUTING.md`, `docs/conventions*`.
 
 From those docs, extract an explicit **documented-bans list** — the "never do X", "always use Y instead of X", banned-API, and banned-pattern rules. For each, record the rule text and its source `file:line` so findings can cite it. Examples of the *kind* of rule to capture (do not assume these exist — only capture what the docs actually state): banned logging calls, banned styling patterns (styled `Pressable` used as a button, hardcoded hex colors in `className` **or** in color props like `color="#fff"`, arbitrary-bracket Tailwind values), banned state/data-layer patterns, required wrappers. Also note any explicit **exceptions** the doc grants (e.g. "`bg-red-600` is allowed for destructive semantics") so the Phase 3.5 scan doesn't flag a sanctioned pattern.
@@ -159,11 +159,20 @@ Mechanically check the branch diff against the **documented-bans list** captured
    - "no arbitrary brackets" → flag `p-[`, `gap-[`, `text-[NNpx]`, etc. where a preset exists
    - "banned API X, use Y" → flag additions calling `X(`
 2. Respect documented **exceptions** — if the doc sanctions a pattern (e.g. `bg-red-600` for destructive, `text-white` on dark backgrounds), do not flag it.
-3. Scope to the projects the docs apply to. A convention doc under `fwapp2proto/` governs `fwapp2proto/**`; do not flag files in sibling projects against another project's rules.
+3. Scope to the projects the docs apply to. A convention doc living under one project directory governs that project's subtree only; do not flag files in sibling projects against another project's rules.
 
-**Output:** every violation becomes a Phase 4 finding under "Convention Violations", citing the offending `file:line`, the diff content, and the rule's source `file:line`.
+**Output:** every violation is either auto-fixed (policy below) or becomes a Phase 4 finding under "Convention Violations", citing the offending `file:line`, the diff content, and the rule's source `file:line`.
 
-**Do not auto-fix convention violations.** The correct replacement (which token? which Button variant?) requires judgment, and some are codebase-wide patterns the engineer may legitimately defer. Surface them; let the engineer decide.
+**Auto-fix policy.** A convention violation is auto-fixable when the documented rule **names its own replacement** and that replacement takes no further choice — "use `logError` instead of `console.error`", a banned API with exactly one documented successor, a literal with exactly one matching token. Apply those and list each under "Auto-fixed" with its rule citation.
+
+Surface rather than fix when any of these hold:
+
+- The rule bans a pattern without naming what replaces it, or names more than one candidate (*which* Button variant? *which* color token?).
+- The right replacement depends on what the call site is trying to do rather than on the rule.
+- The violation is a codebase-wide pattern this diff merely extends — fixing it here either misses the rest or balloons the diff. Say which, and how many other sites exist.
+- The fix would touch a line the branch did not introduce. Phase 2's diff-only rule is not relaxed for conventions.
+
+**A swap that does not hold up is not a fix.** After each auto-fixed violation, re-read the edited region and confirm the replacement is used correctly — right import, right props, right arity. Then run the project's typecheck once after all swaps (from `PROJECT_COMMANDS` when running under `pre-pr`; from the project manifest when running standalone). If a swap does not hold, revert it and demote that violation to a Phase 4 finding stating what broke. A half-applied convention fix is worse than an unfixed violation, because it reads as done.
 
 ### Phase 3.6 — Comment Review
 
@@ -204,6 +213,7 @@ Present all findings that require engineer judgment. **Do not act on any of thes
 - Removed `console.log` at `src/lib/api/client.ts:47`
 - Removed `console.log` at `src/components/ProfileScreen.tsx:23`
 - Removed commented-out code block at `src/utils/format.ts:15-22`
+- Replaced `console.error` with `logError` at `src/lib/api/client.ts:112` — rule: `docs/CODE_CONVENTIONS.md:44` — typecheck clean after
 - Added 2 unit tests to `src/lib/hooks/__tests__/useAuth.test.ts` — both fail against HEAD, pass after ✅
 
 ### Needs Your Review
@@ -239,7 +249,8 @@ Present all findings that require engineer judgment. **Do not act on any of thes
 ## Rules
 
 - **Never auto-fix anything in Phase 4** — all findings require explicit engineer approval before action
-- **Convention checks come from the project's own docs, never hardcoded** — if a project documents no bans, skip Phase 3.5 and say so. Never auto-fix a convention violation; surface it with the rule citation and respect documented exceptions.
+- **Convention checks come from the project's own docs, never hardcoded** — if a project documents no bans, skip Phase 3.5 and say so, and respect every documented exception.
+- **Auto-fix a convention violation only when the documented rule names its one replacement** — verify the swap afterward, and demote it to a finding if it does not hold. Anything requiring a choice between candidates is a Phase 4 finding, not a fix.
 - **Never touch pre-existing code** — only lines introduced in the branch diff
 - **Never create new test files** — only extend existing test suites
 - **Never auto-add integration or E2E tests** — suggest only

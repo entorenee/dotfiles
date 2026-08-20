@@ -8,7 +8,9 @@ Guide the user to edit the Nix config files in their dotfiles repo rather than w
 
 ## Git
 
-- **Never run `git commit` (or anything that finalizes a commit).** I use a Yubikey for GPG commit signing which requires physical touch and does not work with automated commits. Staging is fine — `git add`, `git mv`, `git rm`, etc. are all okay to use, including as part of a file reorganization. Just don't commit; report what changed and let me review and commit myself.
+- **Never run `git commit` (or anything that finalizes a commit).** I use a Yubikey for GPG commit signing which requires physical touch and does not work with automated commits. Report what changed and let me review and commit myself.
+- **Never run `git add` either — leave every edit unstaged.** I use the staging area as my own review marker: a staged file means *I* have read it. Staging on my behalf destroys that signal and marks work reviewed when it is not. Finish the edits, say which files changed, and stop. If something is already staged, `git restore --staged <paths>` unstages it without touching the working tree.
+- **`git mv` is the one exception, and it is deliberate.** Use it for renames instead of plain `mv`, so the rename is recorded rather than left to git's similarity detection and the new path never sits untracked. It does stage the change — that is the trade I want here. For deletions use plain `rm`: the file goes away and git reports an unstaged deletion, so nothing is marked reviewed on my behalf.
 
 ## Bash
 
@@ -42,7 +44,7 @@ Guide the user to edit the Nix config files in their dotfiles repo rather than w
 - **Exception:** macOS GUI apps (casks) should use Homebrew, since Nix does not manage macOS UI apps well.
 - `/nix/store` is read-only — never attempt writes there.
 - Use native home-manager modules (e.g., `programs.claude-code`) rather than custom activation scripts or manual JSON edits. If a home-manager module exists for a tool (e.g., `programs.git`, `programs.zsh`), prefer it over adding raw packages to `home.packages`.
-- For MCP server configuration, prefer updating the corresponding Nix profile (`work.nix` or `personal.nix`) for deterministic, reproducible config. Fall back to `claude mcp add` only for quick testing.
+- For MCP server configuration, prefer updating the identity file the machine imports — `hosts/darwin/fw-skyler/claude.nix` for work, `roles/home/personal-claude.nix` for personal — for deterministic, reproducible config. Fall back to `claude mcp add` only for quick testing.
 - **Do not auto-run `@nix-validator` after every Nix edit.** For simple, low-risk changes, ask before running it. For large refactors, use your judgment to validate at critical checkpoints.
 
 ## Project Command Discovery
@@ -71,21 +73,33 @@ Before running any build, test, lint, typecheck, format, or package-manager comm
 
 These are **hard requirements**, not suggestions:
 
-- **Non-committed dev artifacts go in `<repo-root>/docs/local/`, never elsewhere under `docs/`.** Plans, design docs, QA checklists, PR/code reviews, error-triage reports, analytics/regression/consolidated write-ups, dead-code surveys — anything I generate as a working artifact rather than product documentation — is a dev artifact. Write it under `docs/local/<area>/` at the repo root, keeping the existing per-area subfolders:
+- **Dev artifacts live outside the repo, in `$ARTIFACTS/<area>/`.** Plans, design docs, QA checklists, PR/code reviews, error-triage reports, analytics/regression/consolidated write-ups, dead-code surveys — anything I generate as a working artifact rather than product documentation — is a dev artifact. Resolve the root once per session:
+
+  ```bash
+  ARTIFACTS="${MY_CLAUDE_ARTIFACTS_ROOT:?run 'make rebuild', then start a new session}/$(basename -s .git \
+    "$(git remote get-url origin 2>/dev/null || git rev-parse --show-toplevel)")"
+  mkdir -p "$ARTIFACTS/<area>"
+  ```
+
+  `MY_CLAUDE_ARTIFACTS_ROOT` is injected by `modules/home/claude/default.nix` into both this session and the shell, so it is the one place the root is written down — never hardcode the path here or in a skill. The `:?` is deliberate: an unset root should stop you, not quietly write to `/<repo>/<area>/`.
+
+  Keying on the **remote name** is what makes this worktree-proof: every worktree of `fw_monorepo` resolves to the same `fw_monorepo` directory, so an artifact written from a feature branch is readable from every sibling and survives `wt remove`. The `rev-parse` fallback covers a repo with no remote.
 
   | Area | Path |
   |---|---|
-  | Plans / design docs / QA | `docs/local/plans/` |
-  | PR & code reviews | `docs/local/reviews/` |
-  | Error triage | `docs/local/error-triage/` |
-  | Analytics friction | `docs/local/analytics/` |
-  | Regression analysis | `docs/local/regressions/` |
-  | Consolidated analysis | `docs/local/consolidated/` |
-  | Dead-code surveys | `docs/local/dead-code/` |
+  | Plans / design docs / QA | `$ARTIFACTS/plans/` |
+  | PR & code reviews | `$ARTIFACTS/reviews/` |
+  | Error triage | `$ARTIFACTS/error-triage/` |
+  | Analytics friction | `$ARTIFACTS/analytics/` |
+  | Regression analysis | `$ARTIFACTS/regressions/` |
+  | Consolidated analysis | `$ARTIFACTS/consolidated/` |
+  | Dead-code surveys | `$ARTIFACTS/dead-code/` |
+  | Release notes / changelogs | `$ARTIFACTS/changelogs/` |
 
-- **`docs/local/` is git-ignored** (`**/docs/local/` in the repo's `.gitignore`) so these never get committed. Create the directory if it does not exist; never `git add`/`commit` anything under it — version control of a dev artifact is my explicit call, not the default.
-- **Real product documentation still belongs in `docs/`** and is committed as normal. The distinction is intent: a throwaway working artifact → `docs/local/`; documentation meant to ship with the repo → `docs/`.
-- If a repo has **no `.gitignore` entry** for `**/docs/local/` yet, add one as part of the first artifact write in that repo (and tell me), so the folder stays uncommitted.
+- **Print the absolute path when you write one.** They are no longer in the editor tree, so an unannounced artifact is an invisible one.
+- **Real product documentation still belongs in `docs/`** and is committed as normal. The distinction is intent: a throwaway working artifact → `$ARTIFACTS/`; documentation meant to ship with the repo → `docs/`.
+- **Nothing about this is git-managed**, which is the point — no `.gitignore` entry to add per repo, nothing that can be committed by accident, nothing that a worktree removal or a `docs/local` cleanup can destroy.
+- **`<repo-root>/docs/local/` is the retired location.** Superseded 2026-08-17. If you find artifacts there, they predate the move; read them, and say so rather than writing anything new alongside them.
 
 ## Scope & Approach
 

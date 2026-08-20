@@ -14,8 +14,20 @@ set -uo pipefail
 SETTINGS="${SETTINGS:-$HOME/.claude/settings.json}"
 REPO="${REPO:-$HOME/dotfiles}"
 CFG="$REPO/modules/home/claude/config"
+# Left empty rather than defaulted when unset: this script never hard-fails, so
+# check_skill_inventory reports the gap as REVIEW rather than guessing a path
+# and announcing a missing ledger that may well exist elsewhere.
+ARTIFACTS="${ARTIFACTS:-${MY_CLAUDE_ARTIFACTS_ROOT:+$MY_CLAUDE_ARTIFACTS_ROOT/dotfiles}}"
 
 emit() { printf '%s\t%s\t%s\n' "$1" "$2" "$3"; }
+
+# Checks 2 and 3 read their expected state out of settings.json, so an
+# unreadable one makes their queries return empty — which reads as "nothing
+# wrong" for check 2 and as "every hook is unregistered" for check 3. Both are
+# false, and both fire in exactly the scenario check 1 exists to catch. Same
+# guard idiom as check_hooks' empty-$on_disk case: say what could not be
+# checked rather than asserting on a file that was never read.
+settings_readable() { jq -e . "$SETTINGS" >/dev/null 2>&1; }
 
 # --- Check 1: settings.json symlink integrity ---------------------------------
 # The documented failure mode: a rebuild during a live session unlinks this file
@@ -40,6 +52,10 @@ check_symlink() {
 # can do soundly -- and a false "dead rule" claim is worse than no claim.
 check_dead_allows() {
   local dead heads
+  if ! settings_readable; then
+    emit REVIEW dead-allow "settings.json is unreadable (see the symlink finding above), so the allow/deny lists could not be compared — this check is skipped, not passed"
+    return
+  fi
   dead=$(jq -r '[.permissions.allow[]] - ([.permissions.allow[]] - [.permissions.deny[]]) | .[]' "$SETTINGS" 2>/dev/null)
   if [[ -n "$dead" ]]; then
     while read -r r; do
@@ -68,6 +84,10 @@ check_dead_allows() {
 # silently, which is the worst case.
 check_hooks() {
   local registered on_disk missing_reg orphan
+  if ! settings_readable; then
+    emit REVIEW hooks "settings.json is unreadable (see the symlink finding above), so hook registration could not be read — reporting every hook as unregistered would name the wrong fix. Restore settings.json first, then re-run."
+    return
+  fi
   registered=$(jq -r '.hooks | to_entries[] | .value[] | .hooks[]?.command // empty' "$SETTINGS" 2>/dev/null \
                | sed 's|.*/||' | sort -u)
   on_disk=$([[ -d "$CFG/hooks" ]] && find "$CFG/hooks" -maxdepth 1 -name '*.sh' -exec basename {} \; | sort -u)
@@ -108,7 +128,81 @@ check_hooks() {
     && emit OK hooks "all $(printf '%s\n' "$on_disk" | grep -c .) hook scripts registered and executable"
 }
 
+# --- Check 4: skill inventory drift -------------------------------------------
+# Structural only. Whether a skill is *working* is behavioural and belongs to
+# /system-review; folding it in here is what "When NOT to Use" warns against.
+check_skill_inventory() {
+  local units ledger rows untracked orphans unreviewed n
+
+  if [[ ! -d "$CFG/skills" ]]; then
+    emit REVIEW skill-inventory "no skills directory under $CFG — check that CFG points at the live config tree"
+    return
+  fi
+
+  # A unit is a skills/ dir holding a SKILL.md, or a commands/*.md — not a bare
+  # directory listing, which picks up stray empty dirs and reports them broken.
+  units=$( { find "$CFG/skills" -mindepth 2 -maxdepth 2 -name SKILL.md 2>/dev/null \
+               | sed "s#^$CFG/skills/##; s#/SKILL.md\$##"
+             ls -1 "$CFG/commands" 2>/dev/null | sed 's/\.md$//'; } | sort -u )
+
+  # A unit git does not track is invisible to flake eval, so default.nix never
+  # generates its Skill(<name>) rule and it prompts on first use while looking
+  # correctly installed.
+  untracked=""
+  if ! git -C "$REPO" rev-parse --git-dir >/dev/null 2>&1; then
+    # Same guard as check_hooks: without this, a REPO that is not a checkout
+    # reports every unit as broken. Say what could not be checked instead.
+    emit REVIEW skill-inventory "$REPO is not a git checkout — cannot verify that units are tracked, so Skill() permission generation is unverified here"
+  else
+    while read -r u; do
+      [[ -z "$u" ]] && continue
+      local f
+      if   [[ -f "$CFG/skills/$u/SKILL.md" ]]; then f="modules/home/claude/config/skills/$u/SKILL.md"
+      elif [[ -f "$CFG/commands/$u.md"     ]]; then f="modules/home/claude/config/commands/$u.md"
+      else continue; fi
+      git -C "$REPO" ls-files --error-unmatch -- "$f" >/dev/null 2>&1 && continue
+      untracked="$untracked $u"
+      emit FAIL skill-inventory "$u is untracked ($f) — flake eval cannot see it, so no Skill($u) permission is generated and it prompts on first use. Ask the user to stage it — staging is theirs — then rebuild."
+    done <<<"$units"
+  fi
+
+  if [[ -z "$ARTIFACTS" ]]; then
+    emit REVIEW skill-inventory "MY_CLAUDE_ARTIFACTS_ROOT is unset, so the review ledger cannot be located — run 'make rebuild', then start a new session. Ledger checks skipped."
+    [[ -z "$untracked" ]] && emit OK skill-inventory "tracking verified for $(printf '%s\n' "$units" | grep -c .) unit(s)"
+    return
+  fi
+
+  ledger="$ARTIFACTS/skill-reviewer/LEDGER.md"
+  if [[ ! -f "$ledger" ]]; then
+    emit REVIEW skill-inventory "no review ledger at $ledger — it is machine-local and lives outside the repo, so a fresh machine legitimately has none. Baselines must be re-derived before any delta is claimed."
+    [[ -z "$untracked" ]] && emit OK skill-inventory "tracking verified for $(printf '%s\n' "$units" | grep -c .) unit(s)"
+    return
+  fi
+
+  rows=$(grep -oE '^## [a-z0-9-]+' "$ledger" 2>/dev/null | sed 's/^## //' | sort -u)
+
+  # A ledger row for a unit that no longer exists is real drift: a review whose
+  # subject was renamed or deleted, still presenting as a live baseline.
+  orphans=$(comm -13 <(printf '%s\n' "$units") <(printf '%s\n' "$rows"))
+  while read -r r; do
+    [[ -z "$r" ]] && continue
+    emit FAIL skill-inventory "ledger has a row for '$r', which is neither a skill nor a command — renamed or deleted. Retire the row or restore the unit."
+  done <<<"$orphans"
+
+  # One counted line, not one per unit: most are legitimately below the review
+  # threshold, and a wall of REVIEW rows would bury the two findings above.
+  unreviewed=$(comm -23 <(printf '%s\n' "$units") <(printf '%s\n' "$rows"))
+  n=$(printf '%s\n' "$unreviewed" | grep -c .)
+  if [[ $n -gt 0 ]]; then
+    emit REVIEW skill-inventory "$n of $(printf '%s\n' "$units" | grep -c .) units have no ledger row (e.g. $(printf '%s' "$unreviewed" | head -4 | tr '\n' ' ')) — expected while the cadence is young; run /system-review to see which have crossed their threshold"
+  fi
+
+  [[ -z "$untracked$orphans" ]] \
+    && emit OK skill-inventory "all units tracked; every ledger row names a live unit"
+}
+
 check_symlink
 check_dead_allows
 check_hooks
+check_skill_inventory
 exit 0

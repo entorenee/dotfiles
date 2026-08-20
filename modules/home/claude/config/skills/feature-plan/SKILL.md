@@ -1,6 +1,6 @@
 ---
 name: feature-plan
-description: Use after a feature design doc is approved and an implementation plan is needed. Outputs a phased plan with explicit MANUAL REVIEW CHECKPOINT gates between phases (one commit per phase, not per task) and a paired risk-ordered QA checklist.
+description: Use when a feature is about to be built and the work will span more than one sitting or more than one commit — turns it into phased commits with explicit MANUAL REVIEW CHECKPOINT gates between them (one commit per phase, not per task) and a paired risk-ordered QA checklist. A design doc is the ideal input but not a precondition.
 ---
 
 # Feature Implementation Plan
@@ -9,8 +9,8 @@ description: Use after a feature design doc is approved and an implementation pl
 
 Produce two paired documents from an approved design doc:
 
-1. **Implementation plan** — `docs/local/plans/YYYY-MM-DD-<slug>-plan.md` (repo-root-relative; git-ignored dev artifact). Phased structure with explicit checkpoints between phases.
-2. **QA checklist** — `docs/local/plans/YYYY-MM-DD-<slug>-qa.md`. Risk-ordered manual test matrix.
+1. **Implementation plan** — `$ARTIFACTS/plans/YYYY-MM-DD-<slug>-plan.md` (dev artifact; the artifact root is defined in the global CLAUDE.md under "Dev Artifact Storage"). Phased structure with explicit checkpoints between phases.
+2. **QA checklist** — `$ARTIFACTS/plans/YYYY-MM-DD-<slug>-qa.md`. Risk-ordered manual test matrix.
 
 This skill writes the plan + QA only. It does **not** write the design doc — `feature-design-doc` does that. For the full ticket-to-plan flow, use `feature-spec`.
 
@@ -42,7 +42,7 @@ This skill writes the plan + QA only. It does **not** write the design doc — `
 - "New component skeleton + lifecycle effects" — one phase
 - "Wiring into parent + safety effect + integration test" — one phase
 
-**Anti-example to avoid:** the screenshare landscape plan at `fwapp2proto/docs/plans/2026-05-20-stream-screenshare-landscape-plan.md` has 11 per-task commits. Do NOT mirror that cadence. The session-suspense gate plan at `2026-04-20-session-suspense-gate.md` (3 phases, 3 commits) is the correct shape.
+**Anti-example to avoid:** a plan that assigns one commit per task. A real one ran to 11 commits for a single feature, which turns review into a click-stream and buries the vertical slices. Three phases and three commits, each an independently reviewable slice, is the shape to aim for.
 
 ## Plan Template
 
@@ -235,7 +235,7 @@ If fail: <fix path from design doc>.
 
 After writing the plan + QA:
 
-1. **Print both file paths.**
+1. **Print both absolute file paths.**
 2. **Get explicit sign-off on the commit chunks before execution.** Each phase = one commit-sized chunk = one review unit. List each phase (files touched, what's reviewed at its checkpoint), then ask: *"These are the N commits I'll build. I stop after each for you to review and sign it. Confirm or adjust the boundaries before I start."* Negotiate granularity here: too many stops = over-fragmented (see the Commit Cadence Rule); too few = the user can't review in reasonable units. Settle it now so execution never has to guess where to stop.
 3. **Resolve every stop/continue question now, never at execution time.** If you are unsure whether something is a review boundary, that is a planning question — surface it in step 2. Do not carry the ambiguity into execution and quietly resolve it as "keep going."
 4. Do NOT auto-invoke `superpowers:executing-plans`. Wait for the user to say "execute" or similar.
@@ -248,7 +248,9 @@ After writing the plan + QA:
 - **QA doc with happy path first.** Risk-order. The doc earns its keep when something breaks; happy-path-first buries the leverage.
 - **Treating the QA doc as test cases for QE.** It's a checklist for the engineer (the user) to walk through on real devices, plus a deviation log. Findings stay in the doc.
 
-## Reference Examples
+## What a correct one looks like
 
-- **Phased plan (correct shape):** `fwapp2proto/docs/plans/2026-04-20-session-suspense-gate.md` — 3 phases, 3 commits, explicit `-- MANUAL REVIEW CHECKPOINT --` gates.
-- **QA doc (correct shape):** `fwapp2proto/docs/plans/2026-05-20-stream-screenshare-landscape-qa.md` — risk-ordered, fix paths inline, decision matrix at end.
+- **Phased plan:** three phases, three commits, an explicit `-- MANUAL REVIEW CHECKPOINT --` between each, and every phase a vertical slice of ~2–5 files.
+- **QA doc:** risk-ordered rather than happy-path-first, fix paths inline next to each check, decision matrix at the end.
+
+Do not cite a specific plan file here. Paths into a work repository go stale and this repository is public.

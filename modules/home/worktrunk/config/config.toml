@@ -1,12 +1,15 @@
-# Worktrunk SYSTEM config (Nix-managed, read-only).
+# Worktrunk user config (Nix-managed, read-only).
 #
-# Deployed by modules/home/worktrunk/default.nix into the home-manager profile at
-# ~/.nix-profile/etc/xdg/worktrunk/config.toml, which worktrunk reads as shared
-# defaults. This is intentionally NOT the user config
-# (~/.config/worktrunk/config.toml): worktrunk owns that file and writes
-# machine-local state to it ([projects], prompt flags, a .lock). Keeping our
-# declarative settings in the read-only system config stops worktrunk from
-# mutating a git-tracked file. Edit here, then `make darwin-switch`.
+# Deployed by modules/home/worktrunk/default.nix to ~/.config/worktrunk/config.toml,
+# which is the only path worktrunk reads (36ba57b) — it has no system or
+# XDG_CONFIG_DIRS layer to fall back on.
+#
+# A read-only store symlink is safe here because worktrunk keeps machine-local
+# state in <repo>/.git/wt/, not in this file, so nothing writes it behind our
+# back. The tradeoff: user-invoked `wt config` writes (approvals, aliases) do
+# not persist and have to be declared here instead.
+#
+# Edit here, then `make rebuild`.
 
 skip-shell-integration-prompt = true
 

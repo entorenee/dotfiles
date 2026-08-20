@@ -61,7 +61,7 @@ digraph consolidate {
 exist, and merging them adds no fan-out cost beyond the reconciliation pass itself.
 
 - **Consolidate (default)** — read the existing report artifacts and merge them. Choose this
-  whenever fresh-enough reports exist under the leaves' `docs/local/` areas (below). No leaf re-run.
+  whenever fresh-enough reports exist under the leaves' `$ARTIFACTS` areas (below). No leaf re-run.
 - **Orchestrate (opt-in, expensive)** — only when the user explicitly asks to run the analyses
   fresh, or when no usable report exists for a domain they want included. Invoke the relevant leaf
   skills first (each writes its own artifact), then fall through to Consolidate over the results.
@@ -72,13 +72,13 @@ that matters), say so and offer Orchestrate rather than silently merging outdate
 
 ## Locating input reports
 
-The leaves write to `docs/local/<area>/YYYY-MM-DD-slug.md` (core §7):
+The leaves write to `$ARTIFACTS/<area>/YYYY-MM-DD-slug.md` (core §7):
 
 | Domain | Area path |
 |---|---|
-| Analytics friction | `docs/local/analytics/` |
-| Error triage | `docs/local/error-triage/` |
-| Regression analysis | `docs/local/regressions/` |
+| Analytics friction | `$ARTIFACTS/analytics/` |
+| Error triage | `$ARTIFACTS/error-triage/` |
+| Regression analysis | `$ARTIFACTS/regressions/` |
 
 Discover which reports exist (glob these directories), take the most recent per domain unless the
 user names specific files, and **state exactly which artifacts you are merging** (path + date) up
@@ -119,7 +119,7 @@ fan-out, and a tie-breaking re-query is a single query, not a partition sweep.
 Write the consolidated report to:
 
 ```
-docs/local/consolidated/YYYY-MM-DD-slug.md
+$ARTIFACTS/consolidated/YYYY-MM-DD-slug.md
 ```
 
 Follow the core §7 skeleton, with these consolidation-specific requirements:

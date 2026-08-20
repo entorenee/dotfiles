@@ -128,8 +128,9 @@ Ranking never happens before this pass. An unverified finding ranks Low at best 
 Segment findings by **app version / release** — it is a primary axis, not an afterthought.
 
 - **Discover the current released version(s)** — do not assume. Read app config, check the store
-  listing, or read the version distribution straight from the analytics tool. The mobile app is
-  **`fwapp2proto`**.
+  listing, or read the version distribution straight from the analytics tool. Identify *which*
+  package is the shipped app from the project's own `CLAUDE.md` or manifest rather than assuming
+  a name; a monorepo usually documents that in a projects table.
 - **Discount** friction or errors that are concentrated in **old versions and absent from the
   current one** — flag these as *"likely already fixed in `<version>`"* rather than ranking them as
   live problems. Conversely, a finding that is **new or rising in the current release** is more
@@ -142,14 +143,24 @@ Segment findings by **app version / release** — it is a primary axis, not an a
 Always write the report as **local markdown** to:
 
 ```
-docs/local/<area>/YYYY-MM-DD-slug.md
+$ARTIFACTS/<area>/YYYY-MM-DD-slug.md
 ```
 
-where `<area>` is the leaf's domain (e.g. `analytics`, `error-triage`, `regressions`). The path is
-relative to the root of the repo under analysis; create the directory if it does not exist.
+where `<area>` is the leaf's domain (e.g. `analytics`, `error-triage`, `regressions`). The root sits
+outside the repo under analysis; resolve it and create the directory if it does not exist:
 
-> **The artifact is a local dev artifact and is git-ignored (`**/docs/local/`).** It is not
-> meant to be committed — writing the file is the side effect; version control is the user's call.
+```bash
+ARTIFACTS="${MY_CLAUDE_ARTIFACTS_ROOT:?run 'make rebuild', then start a new session}/$(basename -s .git \
+  "$(git remote get-url origin 2>/dev/null || git rev-parse --show-toplevel)")"
+mkdir -p "$ARTIFACTS/<area>"
+```
+
+Keying on the remote name means every worktree of a repo resolves to the same directory, so the
+report is readable from every sibling worktree and survives `wt remove`.
+
+> **The artifact is a local dev artifact written outside the repo** — the artifact root is defined
+> in the global CLAUDE.md under "Dev Artifact Storage". Writing the file is the side effect; what
+> the user does with it afterwards is their call. Print its absolute path when you are done.
 
 Standard report skeleton (leaves may add domain sections, not remove these; §5-numbered
 "For engineering discussion" is the one **optional** section — include it when qualifying

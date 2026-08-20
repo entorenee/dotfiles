@@ -1,6 +1,6 @@
 ---
 name: feature-spec
-description: Use when starting a net-new feature from a ticket — orchestrates brainstorming, design-doc authoring, a hard sign-off gate, then implementation-plan and QA-checklist authoring. End-to-end ticket-to-plan flow with one hard stop between design and plan.
+description: Use when handed a net-new feature ticket and nothing has been decided yet — the default front door for feature work, so you do not have to choose between the feature skills. Runs the whole ticket-to-plan pass: brainstorming, design-doc authoring, a hard sign-off gate, then implementation-plan and QA-checklist authoring. Reach for feature-design-doc or feature-plan directly only when you want one of those pieces on its own.
 ---
 
 # Feature Spec (orchestrator)
