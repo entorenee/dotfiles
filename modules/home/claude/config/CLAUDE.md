@@ -115,7 +115,7 @@ These are **hard requirements**, not suggestions:
 - **For pure lookups ("where is X?"), return the answer only — do not begin changes.** A question about where something lives is not authorization to alter it.
 - **Remove obsolete logic rather than layering new code beside it.** When a change supersedes existing logic (e.g. replacing a text-based check with a status-code check), delete the old path in the same change unless told to keep it. Do not leave both alive.
 - **Do not expand scope or bundle out-of-scope work into a commit without explicit approval.** If you discover adjacent work worth doing, name it and ask — do not fold it in.
-- **Route bug, test-failure, and unexpected-behavior investigations through the `investigate` skill.** It enforces the scope control and root-cause verification above. Invoke it before proposing a fix rather than debugging ad-hoc.
+- **Route bug, test-failure, and unexpected-behavior investigations through the `investigate` skill.** It adds the gates this file cannot — a batched intake, the branch register, existing-test analysis, and a mandatory stop before any fix — and invokes `superpowers:systematic-debugging` for the root-cause method itself. Invoke it before proposing a fix rather than debugging ad-hoc.
 
 ## Code Review & Diagnosis
 
