@@ -118,19 +118,17 @@ Print the absolute path.
 
 ## Step 4 — hand back
 
-**Never commit.** Report what is uncommitted and hand over the command:
+**Write the file and stop. Do not run git here at all** — `services.git-sync` commits
+and pushes on its own, unsigned, within a few minutes. The log is a notepad; a
+per-entry commit gate would gate *when* an entry lands, not whether it is fair, and
+fairness is checked at review time by `friction-briefing`'s drill-down.
 
-```bash
-git -C "$ROOT" status --short
-```
+So the hand-back is one line: the absolute path, and that it will sync itself.
 
-```
-git -C "$MY_CLAUDE_FRICTION_ROOT" add entries/ && git -C "$MY_CLAUDE_FRICTION_ROOT" commit
-```
-
-Signing resolves to the personal key via the `includeIf "gitdir:~/claude-friction/"`
-stanza in `modules/home/git/config/config`. If signing fails, check that only one
-Yubikey is inserted.
+If the entry has *not* appeared on the remote after several minutes, the daemon is the
+thing to inspect — `launchctl print gui/$UID/org.nix-community.home.git-sync-claude-friction`
+on macOS, `systemctl --user status git-sync-claude-friction` on Linux. Report what it
+says; do not commit by hand to work around it.
 
 ## Quick reference
 
@@ -139,4 +137,4 @@ Yubikey is inserted.
 | 1 | Resolve `$MY_CLAUDE_FRICTION_ROOT`; hand over `git clone` if absent; `pull --ff-only` |
 | 2 | Grep `entries/` for the same class — update rather than duplicate |
 | 3 | Write `F<n>-YYYY-MM-DD-<slug>.md`; print the absolute path |
-| 4 | Report uncommitted entries; hand over the commit command; never commit |
+| 4 | Print the path and stop. **Run no git** — `git-sync` commits and pushes it unsigned within minutes |
