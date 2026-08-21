@@ -8,9 +8,23 @@
         # delete_/save_/update_/log_ and are not matched)
         "mcp__asana__get_*"
         "mcp__asana__search_*"
-        # vercel read-only (get_/list_/search_/check_/web_fetch_ prefixes;
+        # vercel read-only (list_/search_/check_/web_fetch_ prefixes;
         # add_/change_/deploy_/edit_/reply_ are mutating and not matched)
-        "mcp__plugin_claude-code-home-manager_vercel__get_*"
+        #
+        # `get_*` is deliberately NOT a single glob. get_access_to_vercel_url
+        # reads like a getter but returns a bypass for a protected deployment,
+        # so it is left off the allowlist to be considered per call — same
+        # treatment as copy_file and posthog's exec below. The families below
+        # are globs rather than 12 exact names so a new get_deployment_* or
+        # get_runtime_* tool is covered without another edit.
+        "mcp__plugin_claude-code-home-manager_vercel__get_agent_run*"
+        "mcp__plugin_claude-code-home-manager_vercel__get_deployment*"
+        "mcp__plugin_claude-code-home-manager_vercel__get_domain_*"
+        "mcp__plugin_claude-code-home-manager_vercel__get_project*"
+        "mcp__plugin_claude-code-home-manager_vercel__get_purchase_*"
+        "mcp__plugin_claude-code-home-manager_vercel__get_runtime_*"
+        "mcp__plugin_claude-code-home-manager_vercel__get_toolbar_*"
+        "mcp__plugin_claude-code-home-manager_vercel__get_web_*"
         "mcp__plugin_claude-code-home-manager_vercel__list_*"
         "mcp__plugin_claude-code-home-manager_vercel__search_*"
         "mcp__plugin_claude-code-home-manager_vercel__check_*"
