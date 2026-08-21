@@ -87,6 +87,39 @@ retired_terms() {
 
 fence_lines() { awk '/^```/{inf=!inf; next} inf{print NR}' "$1"; }
 
+# A quoted span in these documents holds RETIRED wording, not a live rule. The
+# convention this whole effort runs on is to keep a correction visible rather
+# than overwrite it — so a document states the old text verbatim, in quotes,
+# beside the new one. Any check that matches rule PHRASING then reads the
+# preserved correction as a fresh defect, and the only other escape is to stop
+# quoting, which pressures the documents to drop their own history to keep a
+# checker quiet. Same shape as fence_lines() above: a region the matcher does
+# not read.
+#
+# Double quotes ONLY, and that is a graded decision rather than an oversight.
+# `*...*` was proposed alongside them and CUT. Asterisks are EMPHASIS in these
+# documents, not quotation, so the span they delimit is usually live text.
+# Measured both ways against a fixture holding a live hedge inside emphasis
+# ("Pick the host set *as appropriate*"): quotes-only flags it, quotes+asterisks
+# reports OK. That is a false negative bought for nothing — neither variant
+# differed on the two real documents. A skip that blinds a check is worse than
+# the false positive it was written to remove.
+#
+# Scope is deliberate. Applied to the checks that match rule phrasing
+# (doc-unfalsifiable, doc-unenforced's artifact test) and to doc-attribution's
+# claim cell. NOT applied to doc-referent or doc-prescription: a path or a
+# command named inside a quotation is still a real referent, and still resolves
+# or does not.
+strip_quoted() {
+  awk '{ s=$0; while (match(s, /"[^"]*"/)) s = substr(s, 1, RSTART-1) substr(s, RSTART+RLENGTH); print s }'
+}
+
+# Same strip, carrying the original line number so a finding still points at a
+# line the reader can open.
+strip_quoted_numbered() {
+  awk '{ s=$0; while (match(s, /"[^"]*"/)) s = substr(s, 1, RSTART-1) substr(s, RSTART+RLENGTH); printf "%d:%s\n", NR, s }' "$1"
+}
+
 # --- Check 1: named referents exist -------------------------------------------
 # CHECKOUT mode. A manual sweep of these documents found ZERO broken referents,
 # so an empty result here is the expected state: this is regression protection,
@@ -160,11 +193,21 @@ check_attribution() {
       is_placeholder "$file" && continue
       [[ -f "$REPO/$file" ]] || continue   # a nonexistent file is check 1's finding
       rows=$((rows + 1))
+      # A row that records what it used to claim quotes the old wording in its
+      # own cell, which otherwise credits the file with everything the
+      # correction just moved away from it.
+      claim=$(strip_quoted <<<"$claim")
+      # Backticked paths are stripped for term harvesting but KEPT for the
+      # re-attribution test below. A path segment is not an option name — the
+      # word "modules" harvested out of `modules/darwin/homebrew/default.nix`
+      # is check 1's subject, not this check's — while the path itself is the
+      # only signal that says where the option went.
+      local claim_terms; claim_terms=$(sed -E 's#`[^`]*/[^`]*`##g' <<<"$claim")
       local missing="" term
       # Backticked identifiers plus bare lowercase words: the documented
       # instances of this class are stated in prose ("Homebrew taps/brews/casks,
       # launch agents"), so a backtick-only reading misses them entirely.
-      for term in $(grep -oE '`[a-zA-Z][a-zA-Z0-9_.*-]*`|[a-z][a-z]{3,}' <<<"$claim" | tr -d '`' | sort -u); do
+      for term in $(grep -oE '`[a-zA-Z][a-zA-Z0-9_.*-]*`|[a-z][a-z]{3,}' <<<"$claim_terms" | tr -d '`' | sort -u); do
         is_placeholder "$term" && continue
         [[ "$term" == *.nix ]] && continue
         # Words that describe the table itself rather than any option. Kept
@@ -175,6 +218,21 @@ check_attribution() {
         grep -qE "(^|[[:space:].{])${leaf}[[:space:].]*=" "$REPO/$file" && continue
         grep -qF -- "$leaf" "$REPO/$file" && continue
         grep -lE "(^|[[:space:].{])${leaf}[[:space:].]*=" $nixfiles >/dev/null 2>&1 || continue
+        # Re-attribution, not staleness — and this is the half of the
+        # quoted-span design that quoting could not carry. A corrected row says
+        # where the option ACTUALLY lives, and that explanation is unquoted
+        # prose, so stripping quotes leaves it credited with everything it just
+        # moved away. What separates the two cases is that a corrected row NAMES
+        # the destination file: the term appearing beside another .nix path that
+        # holds it is the row doing its job. Same two-tier test as the credited
+        # file above (assignment, else mention), applied to the file the row
+        # points at, so the standard is symmetric rather than laxer.
+        local other reattributed=0
+        for other in $(grep -oE '`[A-Za-z0-9_./-]+\.nix`' <<<"$claim" | tr -d '`'); do
+          [[ "$other" == "$file" || ! -f "$REPO/$other" ]] && continue
+          grep -qF -- "$leaf" "$REPO/$other" && { reattributed=1; break; }
+        done
+        (( reattributed )) && continue
         missing="$missing $term"
       done
       if [[ -n "$missing" ]]; then
@@ -289,9 +347,10 @@ check_unfalsifiable() {
         /hard requirements?.*not suggestions/ {inforce=1}
         /^#{1,3} / && NR>1 {inforce=0}
         NR==target {print (inforce ? "inside a hard-requirements section" : "")}' "$doc")
-      emit REVIEW doc-unfalsifiable "$(basename "$doc"):$n hedges${banner:+ $banner} — no behavior violates it: $(cut -c1-80 <<<"${line#"${line%%[![:space:]]*}"}")"
+      local orig; orig=$(sed -n "${n}p" "$doc")
+      emit REVIEW doc-unfalsifiable "$(basename "$doc"):$n hedges${banner:+ $banner} — no behavior violates it: $(cut -c1-80 <<<"${orig#"${orig%%[![:space:]]*}"}")"
       hits=$((hits + 1))
-    done < <(grep -niE "$hedges" "$doc")
+    done < <(strip_quoted_numbered "$doc" | grep -iE "$hedges")
   done
   [[ $hits -eq 0 ]] && emit OK doc-unfalsifiable "no unfalsifiable hedge clause found"
 }
@@ -331,7 +390,9 @@ check_unenforced_candidates() {
       # An obligation to produce something IS checkable afterwards. Word
       # boundaries matter: substring matching reads "rewrite" as "write" and
       # drops a genuine candidate.
-      grep -qiE '\b(print|write|report|state|say|record|surface|hand over)\b' <<<"$line" && continue
+      # Stripped first: a bullet whose correction quotes the word "said" or
+      # "report" would otherwise exempt itself on someone else's obligation.
+      grep -qiE '\b(print|write|report|state|say|record|surface|hand over)\b' <<<"$(strip_quoted <<<"$line")" && continue
       c=$((c + 1)); total=$((total + 1)); lines="$lines $n"
       [[ $c -ge 12 ]] && break
     done < <(grep -nE '^\s*[-*] \*\*(Never|Do NOT|Do not|Don.t)' "$doc")

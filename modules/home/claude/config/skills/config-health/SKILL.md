@@ -147,6 +147,17 @@ instance they were written for, and both were cut. Do not reintroduce them as gr
 a check that cannot find its own known defect turns an open question into a false
 all-clear, which is worse than the gap it was meant to close.
 
+**Quoted spans are invisible to three of the checks, deliberately.** These documents
+keep a correction visible rather than overwriting it, so they state retired wording
+verbatim in quotes beside the new rule. `doc-unfalsifiable`, `doc-unenforced`, and
+`doc-attribution`'s claim cell strip `"..."` before matching, or every preserved
+correction reads as a fresh defect and the documents get pressured to stop recording
+their own history. `doc-referent` and `doc-prescription` still read inside quotes — a
+path or command named in a quotation still resolves or does not. The residual risk is a
+live rule that happens to sit in quotes; measured against all 33 quoted spans in the two
+documents on 2026-08-21, none held a hedge, an artifact word, or a prohibition, so pick
+it up in the reading pass rather than expecting the script to.
+
 **Two script lines are instructions to you, not findings:**
 
 - `doc-priority` is a **weight**, never a finding. It fires when some sections of a
