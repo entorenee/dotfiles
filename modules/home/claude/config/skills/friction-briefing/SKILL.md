@@ -31,8 +31,10 @@ happened here.
 
 - Whether one skill is working → `skill-reviewer`
 - The periodic sweep of what is due → `system-review`
-- Capturing new friction → `friction-capture`. **This skill never writes to
-  `entries/`.** If rendering surfaces uncaptured friction, say so and invoke that.
+- Capturing *new* friction → `friction-capture`. This skill never creates an entry. If
+  rendering surfaces uncaptured friction, say so and invoke that. It may **correct** an
+  existing entry, but only from a Step 4 drill-down that showed the entry itself to be
+  wrong — never as a tidy-up pass.
 
 ## Hard rules
 
@@ -144,20 +146,55 @@ Dated files accumulate here deliberately, and this does not violate F8: each bri
 is a bounded snapshot of what was reported on a date, not a document that grows and
 must be read in full to be discounted. The current view is always the newest file.
 
-Print the absolute path.
+Print the absolute path. **The briefing is emitted before any drill-down** — that
+ordering is the design, not a formality, and Step 4 explains why.
 
-## Step 4 — hand back
+## Step 4 — stop, then drill down
 
-**Never commit.** Report what is uncommitted and hand over the command:
+**This is a real halt.** Treat it the way a plan phase treats a `MANUAL REVIEW
+CHECKPOINT`: emit the document, stop, and let the user read it. Then ask which points
+they want pressed on.
 
-```
-git -C "$MY_CLAUDE_FRICTION_ROOT" add briefings/ && git -C "$MY_CLAUDE_FRICTION_ROOT" commit
-```
+**Detail is produced on demand, never pre-emptively.** Pre-computing the evidence
+behind every entry is the context-heavy work this ordering avoids, and avoiding it is
+what makes a weekly cadence affordable. Detail is produced *against a document the user
+has already read*, for the entries they chose — so do not expand anything nobody asked
+about.
 
-**Export is not wired.** A Google Doc export was designed for this step and the
-`googledrive` MCP server is not registered; its allowlist rules are dead. Do not
-claim an export happened. Offer the markdown path and, if asked, point at the wiring
-work item in `2026-08-19-friction-log-phase-plan.md`.
+For each point the user presses, surface:
+
+- **The evidence behind the claim** — the `file:line`, commit, or command output the
+  entry cites, re-read rather than relayed from the entry's summary.
+- **The quotation in full.** A quotation trimmed to the supporting clause is the
+  mechanism of F13, and the drill-down is precisely where that becomes checkable.
+- **Who or what the finding is attributed to.** It must be a document or a line of
+  code. If drilling down reveals a finding attributed to a person's judgment, say so
+  plainly — that is the failure this step exists to catch, and reporting it is the
+  step working.
+
+**The halt is what sends the notification, so nothing needs to be called.** A
+`Notification` hook is already registered and fires on an idle prompt. Its body is the
+last assistant text block, whitespace-collapsed and truncated to **100 characters** —
+so the final line before halting *is* the banner. Lead with the artifact path and the
+ask; preamble is spent inside the only 100 characters the user sees.
+
+## Step 5 — refine, reconcile, and offer the export
+
+Fold the drill-down results back in. **Plural files, deliberately:** a drill-down can
+show that an *entry* misstates something, not merely that the briefing summarized it
+thinly. When it does, correct the entry too — and `friction-capture`'s rule governs
+how: **keep the correction visible rather than overwriting**, because the original
+error is usually the more useful record.
+
+Then confirm the markdown on disk matches what was concluded, and print the path again.
+
+**Do not run git.** `services.git-sync` commits and pushes both `briefings/` and
+`entries/` on its own, unsigned, within a few minutes. There is nothing to hand over.
+
+**Then offer the Google Drive export — and check before claiming it.** `googledrive` is
+registered nowhere today; six allowlist rules and a `CLAUDE.md` section describe it
+anyway. So ask, and if the server is absent say that plainly rather than reporting an
+export that did not happen. Asserting an unwired capability is F16 exactly.
 
 ## Quick reference
 
@@ -166,4 +203,5 @@ work item in `2026-08-19-friction-log-phase-plan.md`.
 | 1 | Resolve `$MY_CLAUDE_FRICTION_ROOT`; `pull --ff-only`; read all entries and the last briefing; **ask full detail or sanitized — default full** |
 | 2 | Group by theme, rank by consequence, roll up statuses |
 | 3 | Write `YYYY-MM-DD.md` (or `-sanitized.md`), state the mode in the document, decision surface first, evidence last; print the path |
-| 4 | Report uncommitted files; hand over the commit command; never commit; claim no export |
+| 4 | **Stop.** Let the user read it, then ask what to drill into. Per point: evidence re-read, quotation in full, attribution. Final line before the halt is the notification — path and ask first, 100 chars |
+| 5 | Fold results back into the briefing *and* into `entries/` where an entry itself was wrong, correction visible; no git; offer the Drive export and say so if it is absent |
