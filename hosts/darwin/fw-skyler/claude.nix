@@ -34,16 +34,6 @@
         "mcp__plugin_claude-code-home-manager_expo__workflow_validate"
         # NOTE: posthog exposes only a generic `exec` tool — intentionally NOT
         # allowlisted (arbitrary query/command surface; should prompt each time)
-        # google drive read-only (get_/search_/list_/read_/download_ prefixes)
-        "mcp__googledrive__get_*"
-        "mcp__googledrive__search_*"
-        "mcp__googledrive__list_*"
-        "mcp__googledrive__read_*"
-        "mcp__googledrive__download_*"
-        # create_file is the one mutating tool deliberately allowed — it lets
-        # the investigation skills export reports as native Google Docs.
-        # copy_file (the other write verb) is left to prompt each time.
-        "mcp__googledrive__create_file"
         # Docs for the MCP servers declared below. Explicit hosts, never
         # "*.example.com" — same rule as webFetchHosts in the base module.
         "WebFetch(domain:docs.sentry.io)"

@@ -379,24 +379,6 @@ claude mcp add --transport http \
   asana https://mcp.asana.com/v2/mcp
 ```
 
-#### Google Drive (`googledrive`, work profile)
-
-The official Google-hosted Drive MCP server (`https://drivemcp.googleapis.com/mcp/v1`) is bring-your-own-OAuth-client — there's no shared Anthropic app, so you must register a Google Cloud OAuth client before auth works.
-
-1. **Google Cloud (one-time):** In a Google Cloud project, enable both the **Google Drive API** and the **Google Drive MCP API**. Configure the OAuth consent screen with scopes `drive.readonly` and `drive.file`, then create an **OAuth 2.0 Web application** client with redirect URI `https://claude.ai/api/mcp/auth_callback`. Note the client ID and secret.
-
-2. **Auth (manual, one-time per machine):** Store the credentials in the Keychain and complete the OAuth flow:
-
-```bash
-claude mcp add --transport http \
-  --client-id "$GDRIVE_CLIENT_ID" \
-  --client-secret \
-  --callback-port 8080 \
-  googledrive https://drivemcp.googleapis.com/mcp/v1
-```
-
-The server exposes `create_file`, which converts uploaded markdown into a native Google Doc — this is what lets the investigation skills export reports to Drive. Only `create_file` and the read-only tools are allowlisted; `copy_file` prompts each time.
-
 ### Permissions
 
 Claude Code permissions live in `modules/home/claude/default.nix` (base) with additions in `roles/home/personal-claude.nix` or `hosts/darwin/fw-skyler/claude.nix`. Three coordinated layers:
