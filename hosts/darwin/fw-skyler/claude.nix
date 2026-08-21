@@ -32,19 +32,6 @@
         "mcp__plugin_claude-code-home-manager_expo__*_list"
         "mcp__plugin_claude-code-home-manager_expo__*_logs"
         "mcp__plugin_claude-code-home-manager_expo__workflow_validate"
-        # betterstack read-only — telemetry + uptime
-        # Globs cover list_/get_/build_ (telemetry_build_*query*_tool, both read);
-        # mutating verbs (add/create/delete/edit/import/move/remove/rename/toggle/
-        # update/acknowledge/escalate/resolve/reopen) are not matched.
-        "mcp__plugin_claude-code-home-manager_betterstack__better_stack_search_*"
-        "mcp__plugin_claude-code-home-manager_betterstack__telemetry_query"
-        "mcp__plugin_claude-code-home-manager_betterstack__telemetry_chart"
-        "mcp__plugin_claude-code-home-manager_betterstack__telemetry_export_dashboard_tool"
-        "mcp__plugin_claude-code-home-manager_betterstack__telemetry_list_*"
-        "mcp__plugin_claude-code-home-manager_betterstack__telemetry_get_*"
-        "mcp__plugin_claude-code-home-manager_betterstack__telemetry_build_*"
-        "mcp__plugin_claude-code-home-manager_betterstack__uptime_list_*"
-        "mcp__plugin_claude-code-home-manager_betterstack__uptime_get_*"
         # NOTE: posthog exposes only a generic `exec` tool — intentionally NOT
         # allowlisted (arbitrary query/command surface; should prompt each time)
         # google drive read-only (get_/search_/list_/read_/download_ prefixes)
@@ -59,7 +46,6 @@
         "mcp__googledrive__create_file"
         # Docs for the MCP servers declared below. Explicit hosts, never
         # "*.example.com" — same rule as webFetchHosts in the base module.
-        "WebFetch(domain:betterstack.com)"
         "WebFetch(domain:docs.sentry.io)"
         "WebFetch(domain:posthog.com)"
         "WebFetch(domain:mcp.posthog.com)"
@@ -74,10 +60,6 @@
       expo = {
         type = "http";
         url = "https://mcp.expo.dev/mcp";
-      };
-      betterstack = {
-        type = "http";
-        url = "https://mcp.betterstack.com";
       };
       sentry = {
         type = "http";
