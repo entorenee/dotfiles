@@ -178,7 +178,7 @@ last assistant text block, whitespace-collapsed and truncated to **100 character
 so the final line before halting *is* the banner. Lead with the artifact path and the
 ask; preamble is spent inside the only 100 characters the user sees.
 
-## Step 5 — refine, reconcile, and offer the export
+## Step 5 — refine and reconcile
 
 Fold the drill-down results back in. **Plural files, deliberately:** a drill-down can
 show that an *entry* misstates something, not merely that the briefing summarized it
@@ -191,10 +191,11 @@ Then confirm the markdown on disk matches what was concluded, and print the path
 **Do not run git.** `services.git-sync` commits and pushes both `briefings/` and
 `entries/` on its own, unsigned, within a few minutes. There is nothing to hand over.
 
-**Then offer the Google Drive export — and check before claiming it.** `googledrive` is
-registered nowhere today; six allowlist rules and a `CLAUDE.md` section describe it
-anyway. So ask, and if the server is absent say that plainly rather than reporting an
-export that did not happen. Asserting an unwired capability is F16 exactly.
+**The markdown file is the deliverable. There is no export step.** A Google Doc export
+was designed for this skill and then scrapped 2026-08-21: the server was never wired, and
+handing over a path the user can paste wherever they need it costs them less than the
+OAuth client the export would have required. **Do not offer an export, and do not
+reintroduce one** — the path is the hand-off.
 
 ## Quick reference
 
@@ -204,4 +205,4 @@ export that did not happen. Asserting an unwired capability is F16 exactly.
 | 2 | Group by theme, rank by consequence, roll up statuses |
 | 3 | Write `YYYY-MM-DD.md` (or `-sanitized.md`), state the mode in the document, decision surface first, evidence last; print the path |
 | 4 | **Stop.** Let the user read it, then ask what to drill into. Per point: evidence re-read, quotation in full, attribution. Final line before the halt is the notification — path and ask first, 100 chars |
-| 5 | Fold results back into the briefing *and* into `entries/` where an entry itself was wrong, correction visible; no git; offer the Drive export and say so if it is absent |
+| 5 | Fold results back into the briefing *and* into `entries/` where an entry itself was wrong, correction visible; no git; print the path — the markdown **is** the deliverable, there is no export |
