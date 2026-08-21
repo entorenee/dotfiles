@@ -14,17 +14,25 @@ One skill, two artifacts, one sign-off gate in the middle.
 | Plan document | `$ARTIFACTS/plans/YYYY-MM-DD-<slug>.md` | **Design** — approach, alternatives, files, edge cases, out-of-scope. Signed off, then **Implementation** — phases and checkpoints appended below it. |
 | QA checklist | `$ARTIFACTS/plans/YYYY-MM-DD-<slug>-qa.md` | Risk-ordered manual test matrix, checked off during testing |
 
-The artifact root is defined in the global `CLAUDE.md` under "Dev Artifact Storage."
+Artifact root: `CLAUDE.md` § Dev Artifact Storage.
 
-**Design and implementation share one document deliberately.** They describe the same
-change at two altitudes, and split across two files they duplicated six sections —
-background, the file table, out-of-scope, testing, QA findings, and the commit shape,
-which the phases already are. One document states each once. The **QA checklist stays
-separate** because it is checked off while testing, against a document that must not
-change underneath it.
+**This skill is the two templates below plus two hard stops.** Everything else it needs
+is already loaded or already invoked, so it is not restated here:
 
-The sign-off gate is what makes the design authoritative: phases are not written until
-the design half is approved, because once they exist the design assumptions are baked in.
+| Subject | Lives in |
+|---|---|
+| One commit per phase, and why (the Yubikey touch) | `CLAUDE.md` § Plan Execution |
+| Artifact paths, and never committing them | `CLAUDE.md` § Dev Artifact Storage |
+| Build/test/lint command discovery | `CLAUDE.md` § Project Command Discovery |
+| Never staging or committing | `CLAUDE.md` § Git |
+| Executing the phases once written | `superpowers:executing-plans`, or `superpowers:subagent-driven-development` in-session |
+
+**Design and implementation share one document** because split apart they duplicated six
+sections. The **QA checklist stays separate** because it is checked off while testing,
+against a document that must not shift underneath the tester.
+
+The sign-off gate is what makes the design authoritative: phases are not written until the
+design half is approved, because once they exist the design assumptions are baked in.
 
 ## When to Use
 
@@ -44,19 +52,17 @@ there is nothing to redirect to. When the approach is already settled, keep the 
 half short and say so — a thin design that names the files and the out-of-scope is worth
 more than a padded one. Do not manufacture alternatives to fill a section.
 
-## Optional enrichment
+## Before writing: brainstorm if the space is open, and open the register always
 
-`superpowers:brainstorming` sharpens "Alternatives considered" when the solution space is
-genuinely open — that section captures a brainstorm's output. **It is enrichment, never a
-precondition,** and skipping it needs no permission: if the ticket names the approach or
-the codebase already has the pattern to mirror, proceed. When it is skipped, say which
-alternatives went unexplored rather than letting the section imply it is exhaustive.
+**If the solution space is genuinely open, invoke `superpowers:brainstorming` first** and
+let "Alternatives considered" capture its output. Skip it when the ticket names the
+approach or the codebase already has the pattern to mirror — then say which alternatives
+went unexplored, rather than letting the section imply it was exhaustive.
 
-**Open the register before writing.** Invoke `domain-register`. The design's real risk is
-not a missing alternative, it is a product rule the repository does not contain. A rule
-you cannot settle is a `blocked` row that stops the design — not a sentence hedged in a
-paragraph, which proceeds by default and is never seen again. Without a register this
-document has no record of what it assumed about product behavior.
+**Open the register unconditionally.** Invoke `domain-register`. The design's real risk is
+not a missing alternative, it is a product rule the repository does not contain. A rule you
+cannot settle is a `blocked` row that **stops the design** — not a sentence hedged in a
+paragraph, which proceeds by default and is never read again.
 
 ## Workflow
 
@@ -97,17 +103,20 @@ Resolve before writing:
 2. **Target paths** — `$ARTIFACTS/plans/YYYY-MM-DD-<slug>.md` and `-qa.md`. Today's date, kebab-case slug from the ticket title.
 3. **Branch + base branch** — from `git status` / `git remote`. Goes in the header.
 4. **Existing patterns to mirror** — `grep` for features that already exist. The design's strongest move is "we already do X for Y, mirror that here."
-5. **Project commands** — discover from `package.json` / `pyproject.toml` / `Cargo.toml` / equivalent **before writing**. Pass exact commands (`pnpm test:ci`, not "run the tests") into the phases. Never guess them.
+5. **Project commands** — per `CLAUDE.md` § Project Command Discovery, resolved **before
+   writing**, because the phases quote them. Exact commands into the phases, never "run the
+   tests."
 
-## Commit Cadence Rule
+## Phase sizing
 
-**ONE COMMIT PER PHASE, not per task.** A medium feature lands in 3–5 commits. At 8+, you are over-fragmenting — consolidate.
+`CLAUDE.md` § Plan Execution already establishes one commit per phase and why. What it does
+not give you is the sizing call, which is this skill's job:
 
-**Why:** the user signs commits with a Yubikey GPG key, requiring a physical touch. Per-task commits create a click-stream; phase-sized commits group related work into reviewable units.
-
-**Phase sizing heuristic:** a phase is a vertical slice a reviewer would want to see as one commit, ~2–5 files. "New hook + its tests" is one phase. "New component skeleton + lifecycle effects" is one phase. "Wiring into parent + safety effect + integration test" is one phase.
-
-**Anti-pattern:** one commit per task. Eleven commits for a single feature turns review into a click-stream and buries the vertical slices.
+**A phase is a vertical slice a reviewer would want as one commit — roughly 2–5 files.**
+"New hook + its tests" is one phase. "New component skeleton + lifecycle effects" is one.
+"Wiring into parent + safety effect + integration test" is one. A medium feature lands in
+3–5. At 8+ you are over-fragmenting; consolidate. A phase touching six files for a single
+conceptual change is worse than two touching three each.
 
 ## Part 1 — the Design half
 
@@ -387,25 +396,11 @@ Also record anything that **deviated from the design half** during real-device t
 ## Common Mistakes
 
 - **Writing the design during implementation.** The point is locking scope before code. If implementation has started, this is a postmortem.
-- **Per-task commits instead of per-phase.** 8+ checkpoint markers means too many phases. Consolidate.
 - **A Files table that "covers most files."** Either exhaustive or wrong.
 - **Open questions with no fallback.** A plan punts cleanly; a research request blocks.
 - **Writing phases before sign-off.** Once phases exist the design assumptions are baked in, and redoing both costs more than waiting.
 - **Skipping the register and hedging the rule in prose instead.** Prose proceeds by default. That is the whole failure the register's `blocked` state exists to catch.
-- **A phase that scatters work across files.** One phase touching six files for a single conceptual change is worse than two touching three each.
 - **QA with the happy path first.** Risk-order it. The doc earns its keep when something breaks.
 - **Treating QA as test cases for QE.** It is a checklist for the engineer to walk on real devices, plus a deviation log.
 - **Letting the document become a narrative.** It is a reference. Any one section should be readable without the rest.
-
-## What a correct one looks like
-
-One document whose design half is signed off and whose implementation half is three
-phases, three commits, an explicit `-- MANUAL REVIEW CHECKPOINT --` between each, every
-phase a vertical slice of ~2–5 files drawing its scope from a Files table that is
-exhaustive rather than representative. Alternatives recorded with the reason each was
-rejected, or the space explicitly noted as closed. Every open question carrying a
-fallback. A register with no `blocked` row and every `assumed` row surfaced in the
-document. A QA checklist that is risk-ordered, with fix paths inline and a decision
-matrix at the end.
-
-Do not cite a specific plan file here. Paths into a work repository go stale and this repository is public.
+- **Citing a specific plan file as an example.** Paths into a work repository go stale, and this repository is public.
