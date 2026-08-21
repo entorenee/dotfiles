@@ -1,19 +1,21 @@
 ---
 name: config-health
-description: Use for a periodic health check of the Claude Code harness itself — settings.json symlink integrity, dead permission rules, hook registration, plus the permission-audit and fewer-permission-prompts analyses merged into one classified report. Orchestrates config-level checks only; NOT for product-code health (dead-code-survey, npm-cve, error-triage).
+description: Use for a periodic health check of the Claude Code harness itself — settings.json symlink integrity, dead permission rules, hook registration, instruction-document coherence (CLAUDE.md contradicting itself, its neighbour, or the live config), plus the permission-audit and fewer-permission-prompts analyses merged into one classified report. Orchestrates config-level checks only; NOT for product-code health (dead-code-survey, npm-cve, error-triage).
 ---
 
 # Config Health
 
 An orchestrator over the checks that tell you whether this **Claude Code
 installation** is working as configured — not whether your product code is
-healthy. It runs four deterministic config checks, fans out the two
+healthy. It runs two sets of deterministic checks (config state, and the
+coherence of the instruction documents themselves), fans out the two
 transcript-analysis skills, and merges everything into one report where every
 finding carries its evidence class and its fix.
 
 This skill is **read-only except for Nix files you approve at the end.** It
 never writes `~/.claude/settings.json` (a read-only Nix store symlink), never
-runs `make rebuild`, and never commits.
+edits an instruction document (see Step 1b), never runs `make rebuild`, and never
+commits.
 
 ## When to Use
 
@@ -21,6 +23,8 @@ runs `make rebuild`, and never commits.
 - Permission prompts feel excessive and you want the full picture, not one angle.
 - After adding several skills, commands, or hooks — drift accumulates silently.
 - Before deciding whether to tighten permission mode.
+- After a round of edits to `CLAUDE.md` — a rule added to one section routinely
+  contradicts one three sections down, and both readings stay defensible.
 
 ## When NOT to Use
 
@@ -37,7 +41,8 @@ runs `make rebuild`, and never commits.
 digraph config_health {
   rankdir=TB;
   "0. Insights pre-step (opt-out)" -> "1. Deterministic checks (inline)";
-  "1. Deterministic checks (inline)" -> "2. Build shared corpus once";
+  "1. Deterministic checks (inline)" -> "1b. Instruction-doc coherence (inline)";
+  "1b. Instruction-doc coherence (inline)" -> "2. Build shared corpus once";
   "2. Build shared corpus once" -> "3. Fan out: 2x sonnet subagents";
   "3. Fan out: 2x sonnet subagents" -> "4. Classify + rank (main, opus)";
   "4. Classify + rank (main, opus)" -> "5. Report";
@@ -108,6 +113,60 @@ Trust the script's own tiering. A `REVIEW` line is not a finding you may promote
 to `FAIL` by reasoning about it — verify it against the file or report it as
 review.
 
+## Step 1b — Instruction-document coherence (inline, no subagent)
+
+```bash
+REPO="$(git rev-parse --show-toplevel)" bash "$HOME/.claude/skills/config-health/doc-coherence.sh"
+```
+
+Same `STATUS<TAB>CHECK<TAB>DETAIL` contract, same tiering rules, same reason to run
+it inline. The subject is the **instruction documents themselves** — this repo's
+`CLAUDE.md`, the deployed global one, and whatever the global `@`-imports — read as
+plain text. The script knows nothing about how either file got where it is, and that
+is deliberate: this arm is the one part of `config-health` that works in any repo, and
+the deployment mechanism is irrelevant to whether a document contradicts itself.
+
+**The first line names the mode, and it decides what the rest means.** `CHECKOUT`
+means there is no deployed harness to compare against, so the policy check
+announces itself as *skipped, not passed*. Never report a checkout-mode run as a
+clean bill of health for the live-mode checks.
+
+**Then do the reading pass.** Seven of the fourteen documented failure classes are
+not mechanically detectable — competing thresholds on one event, adjacent sentences
+that undo each other, an absolute the same document voids earlier, a rationale
+naming an entity the document excludes, and the two documents contradicting each
+other. Read `$HOME/.claude/skills/config-health/references/instruction-doc-rubric.md`
+and apply it to the same documents the script just reported on. The rubric is the
+audit that produced these classes, reduced to a reading order; it also records which
+classes are deliberately out of scope and why.
+
+**Two checks are absent from the script on purpose, and the rubric carries them
+instead** — dangling cross-references, and a claim whose referent exists while the
+behavior attributed to it does not. Both were written, both failed to find the
+instance they were written for, and both were cut. Do not reintroduce them as greps:
+a check that cannot find its own known defect turns an open question into a false
+all-clear, which is worse than the gap it was meant to close.
+
+**Two script lines are instructions to you, not findings:**
+
+- `doc-priority` is a **weight**, never a finding. It fires when some sections of a
+  document carry a "hard requirements" banner and others do not, which means the
+  banner cannot arbitrate a labelled-vs-unlabelled conflict — so a conflict where
+  only one side is bannered is worse than one where neither is. Apply it to the
+  rubric findings; do not report it on its own.
+- `doc-unenforced` is a **handoff**. Those rules leave no artifact when followed, so
+  compliance is invisible in the record and no amount of reading settles it. Name the
+  count, say it routes to `skill-reviewer`, and rule on none of them.
+
+**This arm reports and never rewrites — this is a hard rule, not a default.** A check
+that edits instruction documents is a check that can quietly rewrite its own rules.
+Step 6 offers Nix edits; it must never offer to apply a `CLAUDE.md` edit, only to
+show the proposed wording.
+
+One class is **permanently uncovered and the report must say so**: a conflict between
+a document and the harness's own built-in instructions. Deciding it needs the harness
+prompt as an input, which nothing here has. State the gap; a guessed answer is worse.
+
 ## Step 2 — Build the shared corpus once
 
 Both analysis skills scan `~/.claude/projects/**/*.jsonl`. That is the single
@@ -174,6 +233,12 @@ findings now arrive from several places rather than one:
   *correctly*. A high count means auto mode suppressed the feedback that would
   have corrected the habit; the remedy is a CLAUDE.md rule or a hook.
 - **Config defect** — a Step 1 `FAIL`. Fix: repair the Nix config.
+- **Document defect** — a Step 1b `FAIL`, or a rubric finding. Fix: **a proposed
+  wording, never an applied edit.** These are the findings most likely to be
+  misfiled as one of the buckets above, because a document defect often *looks*
+  like a permission problem: a command the deny list blocks is a documentation
+  bug when the document tells you to run it, and loosening the deny to match the
+  prose is precisely the wrong repair.
 
 Misfiling the second bucket as the first is the primary failure mode of this
 skill, and its blast radius is larger than `permission-audit`'s alone: it
@@ -185,9 +250,10 @@ separate in the report:
 
 | Class | Source | How to state it |
 |---|---|---|
-| **Fact** | Step 1 checks | Assert plainly. Verified off disk. |
+| **Fact** | Step 1 and Step 1b `FAIL` lines | Assert plainly. Verified off disk. |
 | **Inference** | permission-audit, fewer-permission-prompts | *Always* hedged. See below. |
-| **Behavioural** | `/insights`, denial→replacement pairs | Points at a rule or hook, never at a permission. |
+| **Behavioural** | `/insights`, denial→replacement pairs, `doc-unenforced` candidates | Points at a rule or hook, never at a permission. |
+| **Reading** | the instruction-doc rubric | Quote both sides. A contradiction asserted without both quotations is not a finding. |
 
 **The inference caveat is mandatory and non-negotiable.** An approved permission
 prompt leaves *no trace whatsoever* in the transcripts. You therefore cannot
@@ -210,14 +276,21 @@ absolute path, and summarize inline. Order sections by actionability:
 
 1. **Config defects (facts)** — Step 1 `FAIL` lines, each with its one-line fix.
    Lead here: provable, cheap to fix, silent until checked.
-2. **Review items** — Step 1 `REVIEW` lines. Say what the script could not decide
-   and what the user should look at.
-3. **Missing allowlist entries (inferred)** — ranked by count, each with a real
+2. **Document defects** — Step 1b `FAIL` lines and rubric findings, each with the
+   two quotations that establish it and a **proposed wording**. Group by document,
+   and say which mode the script ran in. Note explicitly that nothing here was
+   applied.
+3. **Review items** — Step 1 and Step 1b `REVIEW` lines. Say what the script could
+   not decide and what the user should look at.
+4. **Missing allowlist entries (inferred)** — ranked by count, each with a real
    example command and the proposed narrow pattern. Carries the caveat.
-4. **Behaviour to correct** — with the proposed CLAUDE.md rule or hook. Never a
-   permission change.
-5. **Coverage** — whether `/insights` was included or skipped, which tier ran the
-   fan-out, whether the corpus was shared or re-scanned, and anything not checked.
+5. **Behaviour to correct** — with the proposed CLAUDE.md rule or hook. Never a
+   permission change. The `doc-unenforced` candidate list belongs here, named as a
+   handoff to `skill-reviewer` rather than as findings.
+6. **Coverage** — whether `/insights` was included or skipped, which tier ran the
+   fan-out, whether the corpus was shared or re-scanned, whether Step 1b ran in
+   `CHECKOUT` or `LIVE` mode, and anything not checked. The harness-conflict class
+   is permanently uncovered and belongs here every run, not only when someone asks.
 
 Report **every** finding. If you pare the apply-list down in Step 6, the full
 list still lives here so nothing is silently dropped.
@@ -239,6 +312,14 @@ only what is approved.
 - Never propose `permissions.deny` changes. Check every proposal against the
   existing deny list first: deny wins, so a contradictory allow entry is dead
   weight on arrival (and Step 1's `dead-allow` check will flag it next run).
+- **Never offer to apply an instruction-document edit.** Document defects are
+  reported with a proposed wording and stop there — including when the fix looks
+  trivial and the user says go ahead. The asymmetry with Nix files is deliberate:
+  a wrong permission is caught by the next run of this skill, while a rule
+  rewritten to match a mistaken reading becomes the premise every later session
+  reasons from. Hand over the wording; the edit is theirs.
+- A document defect is **never** repaired by loosening a permission. If a document
+  prescribes a command the deny list blocks, the document is wrong.
 - Adding a skill or command means getting it **git-tracked** in the same change.
   Its `Skill(<name>)` entry is derived by `readDir` in `default.nix` and must
   never be written by hand, but flake evaluation cannot see untracked files, so
