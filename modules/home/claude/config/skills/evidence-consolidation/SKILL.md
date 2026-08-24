@@ -141,8 +141,8 @@ Follow the core §7 skeleton, with these consolidation-specific requirements:
   tier ran any fan-out or tie-breaking re-query.
 
 **Provenance must be self-contained.** Unlike the leaf reports (which stay in-repo), the
-consolidated report is frequently the *only* artifact that travels — exported to a Google Doc,
-pasted into a ticket, read by someone without repo access. So:
+consolidated report is frequently the *only* artifact that travels — pasted into a doc or a
+ticket, read by someone without repo access. So:
 
 - Attribute per finding with a short italic *Sources:* line in **plain language** ("the friction
   sweep," "the error triage," "verified during consolidation") — not inline `[A]`/`[E]` sigils,

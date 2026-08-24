@@ -1,0 +1,24 @@
+; The friction log is the one repo that is not signed. It is a notepad synced by
+; `services.git-sync`, and a signature the Yubikey has to produce cannot be made
+; unattended. Identity still comes from the root [user] block.
+[commit]
+	gpgsign = false
+
+[tag]
+	gpgsign = false
+
+; git-sync refuses to run on a branch that has not opted in, and without
+; syncNewFiles it commits with `git add -u`, which never picks up a new entry
+; file. The Darwin launchd agent runs `git-sync` with no arguments, so these two
+; are the only way it is enabled there; the Linux unit passes `-s -n` itself.
+[git-sync]
+	syncEnabled = true
+	syncNewFiles = true
+
+; syncCommitMsg is read only as branch.<name>.syncCommitMsg — there is no
+; git-sync.* fallback for it, so the branch has to be named. pushRemote is what
+; git-sync-on-inotify sets for itself when it clones; setting it here covers the
+; hosts where the clone was made by hand.
+[branch "main"]
+	syncCommitMsg = friction log sync
+	pushRemote = origin

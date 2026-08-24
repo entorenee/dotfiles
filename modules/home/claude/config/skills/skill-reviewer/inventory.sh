@@ -61,8 +61,8 @@ error-triage evidence-consolidation
 regression-analysis evidence-consolidation
 code-hygiene pre-pr
 comment-review code-hygiene
-feature-design-doc feature-spec
-feature-plan feature-spec
+domain-register feature-plan
+domain-register investigate
 permission-audit config-health
 EOF
 
@@ -244,11 +244,11 @@ awk -F/ '
     # the loop measuring itself. (No apostrophes: this awk program sits inside a
     # single-quoted shell string.)
     else if (area == "skill-reviewer") next;
-    else if (area == "plans") {
-      if      (low ~ /design/)            owner = "feature-design-doc";
-      else if (low ~ /(-plan|-qa)\.md$/)  owner = "feature-plan";
-      else owner = "feature-plan|feature-design-doc|feature-spec";
-    }
+    # feature-plan is the sole live owner of this area, having absorbed two
+    # predecessors. Artifacts they produced are still on disk and are counted
+    # here, so a usage total over `plans/` is not a clean before/after for the
+    # consolidation -- it includes runs feature-plan did not make.
+    else if (area == "plans")         owner = "feature-plan";
     else if (area == "reviews") {
       # Boundary-anchored on both sides. `^pre-pr-` alone missed every dated
       # report, since the dated-filename convention this awk enforces two lines

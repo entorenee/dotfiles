@@ -33,6 +33,8 @@
     "www.gh-dash.dev"
   ];
 in {
+  imports = [./friction-log];
+
   programs.claude-code = {
     enable = true;
     context = ./config/CLAUDE.md;
@@ -313,7 +315,7 @@ in {
         # equivalent). A `Bash(rtk git add*)` twin was removed 2026-08-19 as
         # unreachable — its comment claimed exit 3, which measurement disproved.
         "Bash(git add*)"
-        # rtk proxy is an arbitrary-command escape hatch (per RTK.md)
+        # rtk proxy is an arbitrary-command escape hatch
         "Bash(rtk proxy*)"
         # pnpm exec sandbox escapes — block interpreters / shells / rm via pnpm exec
         "Bash(pnpm exec node*)"
@@ -394,7 +396,6 @@ in {
 
   # No matching programs.claude-code option, so these stay hand-wired.
   home.file = {
-    ".claude/RTK.md".source = ./config/RTK.md;
     ".claude/statusline.sh".source = ./config/statusline.sh;
   };
 }

@@ -8,16 +8,27 @@
         # delete_/save_/update_/log_ and are not matched)
         "mcp__asana__get_*"
         "mcp__asana__search_*"
-        # vercel read-only (get_/list_/search_/check_/web_fetch_ prefixes;
+        # vercel read-only (list_/search_/check_/web_fetch_ prefixes;
         # add_/change_/deploy_/edit_/reply_ are mutating and not matched)
-        "mcp__plugin_claude-code-home-manager_vercel__get_*"
+        #
+        # `get_*` is deliberately NOT a single glob. get_access_to_vercel_url
+        # reads like a getter but returns a bypass for a protected deployment,
+        # so it is left off the allowlist to be considered per call — same
+        # treatment as copy_file and posthog's exec below. The families below
+        # are globs rather than 12 exact names so a new get_deployment_* or
+        # get_runtime_* tool is covered without another edit.
+        "mcp__plugin_claude-code-home-manager_vercel__get_agent_run*"
+        "mcp__plugin_claude-code-home-manager_vercel__get_deployment*"
+        "mcp__plugin_claude-code-home-manager_vercel__get_domain_*"
+        "mcp__plugin_claude-code-home-manager_vercel__get_project*"
+        "mcp__plugin_claude-code-home-manager_vercel__get_purchase_*"
+        "mcp__plugin_claude-code-home-manager_vercel__get_runtime_*"
+        "mcp__plugin_claude-code-home-manager_vercel__get_toolbar_*"
+        "mcp__plugin_claude-code-home-manager_vercel__get_web_*"
         "mcp__plugin_claude-code-home-manager_vercel__list_*"
         "mcp__plugin_claude-code-home-manager_vercel__search_*"
         "mcp__plugin_claude-code-home-manager_vercel__check_*"
         "mcp__plugin_claude-code-home-manager_vercel__web_fetch_*"
-        # sentry read-only (whoami + find_/get_/search_ prefixes)
-        # Excludes analyze_issue_with_seer (billed AI call)
-        "mcp__plugin_claude-code-home-manager_sentry__whoami"
         "mcp__plugin_claude-code-home-manager_sentry__find_*"
         "mcp__plugin_claude-code-home-manager_sentry__get_*"
         "mcp__plugin_claude-code-home-manager_sentry__search_*"
@@ -32,34 +43,20 @@
         "mcp__plugin_claude-code-home-manager_expo__*_list"
         "mcp__plugin_claude-code-home-manager_expo__*_logs"
         "mcp__plugin_claude-code-home-manager_expo__workflow_validate"
-        # betterstack read-only — telemetry + uptime
-        # Globs cover list_/get_/build_ (telemetry_build_*query*_tool, both read);
-        # mutating verbs (add/create/delete/edit/import/move/remove/rename/toggle/
-        # update/acknowledge/escalate/resolve/reopen) are not matched.
-        "mcp__plugin_claude-code-home-manager_betterstack__better_stack_search_*"
-        "mcp__plugin_claude-code-home-manager_betterstack__telemetry_query"
-        "mcp__plugin_claude-code-home-manager_betterstack__telemetry_chart"
-        "mcp__plugin_claude-code-home-manager_betterstack__telemetry_export_dashboard_tool"
-        "mcp__plugin_claude-code-home-manager_betterstack__telemetry_list_*"
-        "mcp__plugin_claude-code-home-manager_betterstack__telemetry_get_*"
-        "mcp__plugin_claude-code-home-manager_betterstack__telemetry_build_*"
-        "mcp__plugin_claude-code-home-manager_betterstack__uptime_list_*"
-        "mcp__plugin_claude-code-home-manager_betterstack__uptime_get_*"
+        "mcp__plugin_claude-code-home-manager_expo__*_crashes"
+        # Named in full rather than globbed: `*_reviews` would sit one character
+        # from `appstore_reply_review` and `playstore_reply_review`, which post
+        # public replies. The suffix globs above are safe because nothing
+        # mutating ends in _info/_list/_logs/_crashes.
+        "mcp__plugin_claude-code-home-manager_expo__appstore_reviews"
+        "mcp__plugin_claude-code-home-manager_expo__playstore_reviews"
+        # Reads documentation and returns an `expo install` command as text; it
+        # installs nothing.
+        "mcp__plugin_claude-code-home-manager_expo__add_library"
         # NOTE: posthog exposes only a generic `exec` tool — intentionally NOT
         # allowlisted (arbitrary query/command surface; should prompt each time)
-        # google drive read-only (get_/search_/list_/read_/download_ prefixes)
-        "mcp__googledrive__get_*"
-        "mcp__googledrive__search_*"
-        "mcp__googledrive__list_*"
-        "mcp__googledrive__read_*"
-        "mcp__googledrive__download_*"
-        # create_file is the one mutating tool deliberately allowed — it lets
-        # the investigation skills export reports as native Google Docs.
-        # copy_file (the other write verb) is left to prompt each time.
-        "mcp__googledrive__create_file"
         # Docs for the MCP servers declared below. Explicit hosts, never
         # "*.example.com" — same rule as webFetchHosts in the base module.
-        "WebFetch(domain:betterstack.com)"
         "WebFetch(domain:docs.sentry.io)"
         "WebFetch(domain:posthog.com)"
         "WebFetch(domain:mcp.posthog.com)"
@@ -74,10 +71,6 @@
       expo = {
         type = "http";
         url = "https://mcp.expo.dev/mcp";
-      };
-      betterstack = {
-        type = "http";
-        url = "https://mcp.betterstack.com";
       };
       sentry = {
         type = "http";

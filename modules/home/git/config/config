@@ -2,13 +2,6 @@
 	email = 26767995+entorenee@users.noreply.github.com
 	name = Skyler Lemay
 
-[includeIf "gitdir:~/dotfiles/"]
-  path = config-personal
-[includeIf "gitdir:~/code/personal/"]
-  path = config-personal
-[includeIf "gitdir:~/code/work/"]
-  path = config-work
-
 [commit]
 	gpgsign = true
 
@@ -31,3 +24,16 @@
 	smudge = git-lfs smudge -- %f
 	process = git-lfs filter-process
 	required = true
+
+; Last, deliberately. Includes are expanded where the directive sits and the
+; last definition of a key wins, so an include placed above [commit] cannot
+; turn signing off — config-friction set gpgsign = false and the block below it
+; set it straight back to true. Verified with `config --show-origin`.
+[includeIf "gitdir:~/dotfiles/"]
+  path = config-personal
+[includeIf "gitdir:~/code/personal/"]
+  path = config-personal
+[includeIf "gitdir:~/claude-friction/"]
+  path = config-friction
+[includeIf "gitdir:~/code/work/"]
+  path = config-work

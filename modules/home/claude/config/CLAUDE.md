@@ -1,5 +1,3 @@
-@RTK.md
-
 # Claude Code Configuration (Nix-Managed)
 
 This Claude Code installation is declaratively managed via Nix home-manager.
@@ -19,7 +17,11 @@ Guide the user to edit the Nix config files in their dotfiles repo rather than w
   - **When a chain does prompt, diagnose the offending segment, don't guess.** Both this file and a prior session previously blamed the `cd …` prefix; that was wrong, and the wrong fix got adopted for weeks. Read `~/.claude/settings.json` and check each segment against `permissions.allow` / `permissions.deny` before concluding.
 - **Never use `node -e`, `python -c`, or similar to inspect files or config.** Arbitrary code execution can't be allowlisted (it's the escape hatch the `pnpm exec node`/`sh` denies exist to block), so it prompts every time. To read `package.json` scripts, lockfiles, or any file, use the Read tool — that's what Project Command Discovery already requires.
 - **Invoke project binaries via an allowlisted form, not a relative path.** Use `pnpm exec eslint …` / `npx eslint …` / `pnpm exec tsc …`, never `../node_modules/.bin/eslint …`. Relative `.bin/` paths match no allow pattern and prompt; the `pnpm exec <bin>` / `npx <bin>` forms are explicitly allowlisted.
-- **Scratch files go in the session scratchpad, never bare `/tmp`.** Writing or deleting under `/tmp`, `/private/tmp`, or any ad-hoc absolute path falls outside the sandbox write scope and prompts. Use the scratchpad directory given in the system prompt, or `D="$TMPDIR/<name>"; mkdir -p "$D"`. This is the single most common cause of denied commands in the history — `npm pack` in `/tmp` was denied three times in a row and only went through once it ran in `$TMPDIR/nextcm`; a `tsc --generateTrace` run was denied writing `/private/tmp/tsc-trace` and accepted writing the scratchpad. Scoping the directory correctly also removes most reasons to reach for `rm -f` cleanup, which is separately denied.
+- **Scratch files go in the session scratchpad or `$TMPDIR`, not bare `/tmp`.** Use the scratchpad directory named in the system prompt, or `D="$TMPDIR/<name>"; mkdir -p "$D"`. The harness itself instructs this — `$TMPDIR` is set to the correct sandbox-writable directory — and a session-scoped directory keeps scratch out of a shared namespace.
+  - **The reason is *not* write access.** `/tmp` and `/private/tmp` are both in `sandbox.filesystem.allowWrite` on every identity and in the live `settings.json` — check with `jq -r '.sandbox.filesystem.allowWrite[]'`. The preference above is about keeping scratch out of a shared namespace.
+  - **What actually caused the recorded denials was the command, not the path.** `npm pack` and `rm -f` match no allow pattern (see the bundling bullet above, which names both), so they prompt wherever they run. Moving them to `$TMPDIR` also happened to drop the `rm -f` cleanup, which is what made the difference. Diagnose a denial by checking the command against `permissions.allow`/`deny`, not by assuming the directory.
+- **rtk rewrites commands before they run, and it also decides their permission.** A `PreToolUse` hook (`~/.claude/hooks/rtk-rewrite.sh`) pipes every Bash command through `rtk rewrite`; `git status` becomes `rtk git status`, transparently. **The exit code is the decision**, which is why it matters here: `0` rewrites and returns `permissionDecision: "allow"`, bypassing allow/deny matching entirely; `3` rewrites and lets Claude Code prompt; `1` and `2` pass the command through untouched, so `permissions.deny` handles it natively. Measured 2026-08-21 with `rtk gain`: 1077 commands, 6.8M tokens saved, 78.4%. `Bash(rtk proxy*)` is denied — it is an arbitrary-command escape hatch.
+- **So when diagnosing why a command prompted, `settings.json` is necessary but not sufficient.** For anything rtk rewrites, the effective decision came from the hook, not the allowlist. Run `rtk rewrite "<cmd>"` and read its exit code alongside the allow/deny check above; the two together are the whole answer, and either alone has produced a wrong diagnosis before.
 - **Before proposing a new `Bash(...)` allow rule, run `rtk rewrite "<cmd>"` first.** Exit 0 or 3 means rtk rewrites the command to an `rtk …` form that the existing `Bash(rtk *)` entry already covers, so the new rule would be dead weight on arrival. Only exit 1 — no RTK equivalent — is a genuine allowlist gap. A 2026-08-10 audit proposed 10 patterns and this one check eliminated 7 of them (`git -C`, `curl`, `npx jest`, `pnpm exec turbo`/`prettier`/`prisma validate`).
 
 ## GitHub
@@ -45,7 +47,7 @@ Guide the user to edit the Nix config files in their dotfiles repo rather than w
 - `/nix/store` is read-only — never attempt writes there.
 - Use native home-manager modules (e.g., `programs.claude-code`) rather than custom activation scripts or manual JSON edits. If a home-manager module exists for a tool (e.g., `programs.git`, `programs.zsh`), prefer it over adding raw packages to `home.packages`.
 - For MCP server configuration, prefer updating the identity file the machine imports — `hosts/darwin/fw-skyler/claude.nix` for work, `roles/home/personal-claude.nix` for personal — for deterministic, reproducible config. Fall back to `claude mcp add` only for quick testing.
-- **Do not auto-run `@nix-validator` after every Nix edit.** For simple, low-risk changes, ask before running it. For large refactors, use your judgment to validate at critical checkpoints.
+- **Do not auto-run `@nix-validator` after a Nix edit.** For a small edit, run a plain `nix eval` on the affected host attribute and report it — that is cheap and falsifiable. Reach for the full validator only at a **commit boundary**, which is already a defined stop, and say you are doing it.
 
 ## Project Command Discovery
 
@@ -95,21 +97,27 @@ These are **hard requirements**, not suggestions:
   | Consolidated analysis | `$ARTIFACTS/consolidated/` |
   | Dead-code surveys | `$ARTIFACTS/dead-code/` |
   | Release notes / changelogs | `$ARTIFACTS/changelogs/` |
+  | Domain-assumption registers | `$ARTIFACTS/registers/<branch>.md` |
+
+  **Registers are keyed by branch, not by date**, and are the one area that is read
+  before work rather than written after it. `/` in the branch name becomes `-`, matching
+  worktrunk. See the `domain-register` skill for the three states and the graduation
+  rule; the branch keying plus remote-name resolution is what lets a register written on
+  a feature branch be read from a sibling worktree and survive `wt remove`.
 
 - **Print the absolute path when you write one.** They are no longer in the editor tree, so an unannounced artifact is an invisible one.
 - **Real product documentation still belongs in `docs/`** and is committed as normal. The distinction is intent: a throwaway working artifact → `$ARTIFACTS/`; documentation meant to ship with the repo → `docs/`.
 - **Nothing about this is git-managed**, which is the point — no `.gitignore` entry to add per repo, nothing that can be committed by accident, nothing that a worktree removal or a `docs/local` cleanup can destroy.
-- **`<repo-root>/docs/local/` is the retired location.** Superseded 2026-08-17. If you find artifacts there, they predate the move; read them, and say so rather than writing anything new alongside them.
+- **`<repo-root>/docs/local/` is the retired location.** Artifacts there predate the move; read them, and say so rather than writing anything new alongside them.
 
 ## Scope & Approach
 
 These are **hard requirements**, not suggestions:
 
-- **For any non-trivial change, state scope before editing.** Before touching code on a task that isn't a one-line or mechanical edit, post: (1) a one-sentence scope statement, (2) a 3-bullet approach, and (3) what is explicitly **out of scope**. Then pause for confirmation. This applies to ad-hoc tasks too — not just work routed through the `feature-design-doc` / `feature-plan` skills.
-- **Spend at most a couple of tool calls locating relevant code before proposing the plan.** For pure lookups ("where is X?"), return the answer only — do not begin changes. Do not investigate at length before acting; surface a short plan first, then execute.
+- **For pure lookups ("where is X?"), return the answer only — do not begin changes.** A question about where something lives is not authorization to alter it.
 - **Remove obsolete logic rather than layering new code beside it.** When a change supersedes existing logic (e.g. replacing a text-based check with a status-code check), delete the old path in the same change unless told to keep it. Do not leave both alive.
 - **Do not expand scope or bundle out-of-scope work into a commit without explicit approval.** If you discover adjacent work worth doing, name it and ask — do not fold it in.
-- **Route bug, test-failure, and unexpected-behavior investigations through the `investigate` skill.** It enforces the scope control and root-cause verification above. Invoke it before proposing a fix rather than debugging ad-hoc.
+- **Route bug, test-failure, and unexpected-behavior investigations through the `investigate` skill.** It adds the gates this file cannot — a batched intake, the branch register, existing-test analysis, and a mandatory stop before any fix — and invokes `superpowers:systematic-debugging` for the root-cause method itself. Invoke it before proposing a fix rather than debugging ad-hoc.
 
 ## Code Review & Diagnosis
 
@@ -194,7 +202,9 @@ wt remove                   # Remove current worktree; deletes branch if merged
 
 A session is anchored to the directory `claude` launched in; `wt switch` inside a Bash tool call runs in a subshell and cannot move it, so the conversation history and memory stay on the branch you started on. If you create a worktree partway through a session and want to keep the current conversation, run `/cd <new-worktree-path>` from the existing session — it relocates the session to the new worktree's project storage so the history follows. (`/branch` forks in the same directory and resume always re-anchors to the original directory; neither moves the session. `/cd` requires Claude Code v2.1.169+.)
 
-Prefer creating the worktree *before* launching `claude` when the work is planned — the worktrunk `post-switch` hook already spawns a fresh session in the new worktree. Use `/cd` for the mid-thought pivot case.
+Prefer creating the worktree *before* launching `claude` when the work is planned, and launch the session there yourself. Use `/cd` for the mid-thought pivot case.
+
+**The worktrunk `post-switch` hook does not start a session.** Its two hooks are `modules/home/worktrunk/hooks/tmux-switch.sh` (creates a tmux window and splits panes) and `pnpm-warm.sh` (detached install); nothing in that directory references `claude`.
 
 ### Memory across worktrees
 

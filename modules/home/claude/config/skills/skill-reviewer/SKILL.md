@@ -33,7 +33,7 @@ The ledger step is what makes this a loop rather than a one-off audit. A review 
 
 The single source for when a unit is due. `/system-review` reads this section; the ledger holds only measurements.
 
-Two tiers, because run volume varies by an order of magnitude across units. A weekly review of *most* units would examine 0–1 new runs — below the anecdote floor below — and would fill the ledger with rows that bury real trends. Measured 2026-08-19 over the 30 days those units were active: `investigate` about 4.4×/week and `pre-pr` about 3.7×, with everything else far below both. The two busiest units would sustain a weekly cadence; the rest would not, and the sweep exists so the cheap tier can tell you which is which.
+Two tiers, because run volume varies by an order of magnitude across units. A weekly review of *most* units would examine 0–1 new runs — below the anecdote floor below — and would fill the ledger with rows that bury real trends. Only the busiest one or two units would sustain a weekly cadence; the rest would not, and the sweep exists so the cheap tier can tell you which is which. Read the current rates from `inventory.sh` rather than from a figure written here.
 
 | Tier | Trigger | Cost | Does |
 |---|---|---|---|
@@ -45,7 +45,7 @@ Two tiers, because run volume varies by an order of magnitude across units. A we
 | ≥ 3 | 5 new runs, **or** 45 days since that unit's newest ledger row — whichever comes first |
 | < 3 | **Not eligible.** There is no pattern yet, only anecdote. If asked anyway, the finding *is* "insufficient evidence" — record that rather than manufacturing one. |
 
-**One threshold for every eligible unit, deliberately — do not reintroduce volume tiers.** An earlier version raised the bar to 8 runs above 10 recorded runs. Two things were wrong with it. The rule read the tier off a *moving* quantity, so a unit crossing 10 between reviews silently raised its own bar: measured 2026-08-19, `pr-review` went from two runs short of due to three runs short *by being used more*, falsifying the closing note in `plans/2026-08-12-skill-system-cadence-plan.md` that predicted it would reach its threshold on its own. And the direction was backwards — the ledger's headline finding is that `investigate`, the most-used unit, carries 3× the correction rate of `pre-pr`. Volume is a reason to review sooner, not later.
+**One threshold for every eligible unit, deliberately — do not reintroduce volume tiers.** Raising the bar for heavily-used units fails two ways. It reads the tier off a *moving* quantity, so a unit crossing the tier boundary between reviews silently raises its own bar and can recede from due *by being used more*. And the direction is backwards: the most-used units carry the highest correction rates, so volume is a reason to review sooner, not later.
 
 The 5 is an evidence floor: enough runs to see a pattern rather than an anecdote. The 45 days is a staleness ceiling for a unit that is used but used slowly — five runs may be a year away, and the text should not go unexamined that long.
 
@@ -119,7 +119,7 @@ So `no-evidence` means **not measured**. Every machine count is a floor. Before 
 
 The loose fallback — grep the skill name anywhere — is not the answer either: it returns roughly one hit per transcript, because the available-skills listing is injected into every session.
 
-**The corpus contains this review.** A session that analyses skill usage writes the invocation strings, and their grep output, into its own transcript. Plain text matching counts the review as a run — measured 2026-08-17 at 4 phantom `investigate` sessions and 1 phantom `pre-pr-autonomous`. Both `inventory.sh` and `mine.jq` pin their matches to the record shape a real invocation produces. Do not hand-roll a looser grep and trust the number.
+**The corpus contains this review.** A session that analyses skill usage writes the invocation strings, and their grep output, into its own transcript, so plain text matching counts the review itself as a run — inflating exactly the units a sweep looks at most. Both `inventory.sh` and `mine.jq` pin their matches to the record shape a real invocation produces. Do not hand-roll a looser grep and trust the number.
 
 Where the target's row lands decides whether Step 2b is worth running. **All eight verdicts are listed; a routing table missing one sends that unit down whichever branch looks closest, which is how `composed-only` got reviewed as if it were `used`.**
 
@@ -210,7 +210,8 @@ Weight the edits by where the evidence actually is:
 - **A gate the human keeps supplying by hand belongs in the skill.** Repeated interruptions at the same point in the workflow mean a missing hand-back, not an impatient user. This is the highest-value edit class and the easiest to overlook, because it looks like friction rather than error.
 - **Prefer deleting to adding.** A section with no hits across every run is a candidate for removal. Checklists fail by dilution far more often than by omission — if the review only ever adds, it is making the next review harder.
 - **Do not add a rule the evidence does not support**, however sensible it sounds. That is the failure mode this whole skill exists to prevent.
-- **A skill states the method; the project states the facts.** Never name a specific repository, package, path, or example file in a `SKILL.md` — those go stale silently, they narrow the skill to one codebase, and this repository is public. Measured 2026-08-19: four such citations across `feature-plan` and `feature-design-doc` pointed at plan documents, three of which no longer existed, and they were the *only* concrete anchor for the commit-cadence rule. Where a skill needs a project fact, tell it to read that fact from the project's own `CLAUDE.md` or manifest — which is both more resilient and the only version that stays correct when the project changes.
+- **A skill states the method; the project states the facts.** Never name a specific repository, package, path, or example file in a `SKILL.md` — those go stale silently, they narrow the skill to one codebase, and this repository is public. The failure is quiet: a citation that no longer resolves still reads as evidence, and it is worst when it is the *only* concrete anchor for a rule. Where a skill needs a project fact, tell it to read that fact from the project's own `CLAUDE.md` or manifest — both more resilient and the only version that stays correct when the project changes.
+- **Do not write adoption history into a skill.** Run counts, "this fired once in N sessions", and dated measurements belong in `LEDGER.md`, `testimony.txt`, or the friction log — the places built to hold them. In a `SKILL.md` they drift the moment the number changes, and tracking them is this skill's own job. State the rule; let the instrument carry the evidence.
 - **Say which edit you expect to fail.** Usually the one asking the human to hold a standard against their own convenience. Naming it now is what makes the next review able to check it.
 
 Present the edits and get approval before touching the file. Then apply them.

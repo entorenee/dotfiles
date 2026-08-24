@@ -47,7 +47,10 @@ A candidate you cannot justify in one sentence is a candidate to ask about, not 
 |---|---|
 | Repo patterns, tool conventions, CLI gotchas another machine would need | `CLAUDE.md` — **propose the edit and ask first**, it is committed |
 | User preferences, feedback on how to work, harness or machine quirks | memory file |
+| An obstacle that cost something and prompted an adaptation — about the tooling or the process, not a fact to recall | the friction log, via `friction-capture` |
 | Neither durable nor general | drop it |
+
+Memory and the friction log are not alternatives: memory changes how a future session *works*, the friction log records what the effort *cost* and what changed in response. One event can warrant both. Route to the log only when there is a cost and an adaptation to state — otherwise it is a memory entry.
 
 Memory lives in the per-project directory keyed by cwd. In a git worktree, write project- and repo-wide entries to the **default-branch** worktree's memory dir so they survive the branch; keep only branch-scoped notes local. (The dotfiles repo does not use worktrees, so this does not apply there.)
 
