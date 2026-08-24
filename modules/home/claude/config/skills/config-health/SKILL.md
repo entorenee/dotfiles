@@ -113,6 +113,33 @@ Trust the script's own tiering. A `REVIEW` line is not a finding you may promote
 to `FAIL` by reasoning about it — verify it against the file or report it as
 review.
 
+**`mcp-rules` stops at declared servers, and you finish it.** The script reconciles rules
+against the servers declared in `~/.claude.json`; it cannot see a server's actual tool names,
+because that needs a live authenticated roster. So an allowlist can name a real server, pass
+the script, and match nothing — which is exactly how nine `better_stack` rules survived a
+vendor renaming its whole tool surface, and how a `sentry__whoami` rule survived a tool that
+never existed.
+
+For each MCP server connected in **this** session, compare its rules against the tool names
+you can actually see and report four things:
+
+- **A rule matching no tool.** Dead. Name it and propose removing it.
+- **A glob catching a mutating tool.** `*_list` and `get_*` are safe by shape; a rule like
+  `search_*` can widen unexpectedly. Check each glob against the full roster, not against the
+  tools you happen to have used.
+- **A read-only tool with no rule.** Not a defect — a prompt per call. Worth reporting when it
+  is inconsistent with a sibling (`testflight_crashes` allowed while `playstore_crashes` is
+  not).
+- **A dispatcher tool.** Where one tool takes a command naming every operation — PostHog's
+  `exec`, Sentry's `execute_sentry_tool` — no name-based rule can separate read from write,
+  because MCP patterns match a server and a tool name and nothing else. **Zero rules is the
+  correct state for such a server**; do not report it as a gap, and do not propose allowing
+  the dispatcher.
+
+**A server that is not connected is skipped, not passed.** Say which servers you could not
+check. An unauthenticated server offers only its `authenticate` tools, so comparing rules
+against that roster reports every real rule as dead.
+
 ## Step 1b — Instruction-document coherence (inline, no subagent)
 
 ```bash

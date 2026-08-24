@@ -202,7 +202,78 @@ check_skill_inventory() {
 }
 
 check_symlink
+# --- Check 5: MCP rule / server reconciliation --------------------------------
+# JSON-only, so it runs without authenticating anything. That bounds it: this
+# arm reconciles rules against *declared servers*, never against a server's
+# actual tool names. Tool-name drift needs a live authenticated roster and is
+# handed to the rubric instead -- an allowlist can match nothing at all while
+# every server is correctly configured, and no amount of JSON reveals it.
+#
+# Two prefix forms carry meaning and must not be conflated:
+#   mcp__plugin_claude-code-home-manager_<name>__  a Nix-declared server; lives
+#     in the plugin's .mcp.json in the store, NOT in ~/.claude.json
+#   mcp__<name>__                                  a server added by `claude mcp
+#     add`; lives in ~/.claude.json
+# So a bare-prefix rule is checkable against ~/.claude.json and a plugin-prefix
+# rule is not. Checking the latter against ~/.claude.json reports every
+# Nix-declared server as missing.
+check_mcp_rules() {
+  local cj="$HOME/.claude.json"
+  if ! jq -e . "$SETTINGS" >/dev/null 2>&1; then
+    emit REVIEW mcp-rules "settings.json is unreadable (see the symlink finding above), so MCP rules could not be read — skipped, not passed"
+    return
+  fi
+  if ! jq -e . "$cj" >/dev/null 2>&1; then
+    emit REVIEW mcp-rules "$cj is unreadable, so hand-added servers cannot be enumerated — skipped, not passed"
+    return
+  fi
+
+  local user_servers proj_pairs rules bare_servers findings=0
+  user_servers=$(jq -r '(.mcpServers // {}) | keys[]?' "$cj" 2>/dev/null | sort -u)
+  proj_pairs=$(jq -r '(.projects // {}) | to_entries[] | .key as $p | ((.value.mcpServers // {}) | keys[]?) | "\(.)\t\($p)"' "$cj" 2>/dev/null)
+  rules=$(jq -r '[.permissions.allow[]?, .permissions.deny[]?] | .[] | select(startswith("mcp__"))' "$SETTINGS" 2>/dev/null)
+  bare_servers=$(sed -n 's/^mcp__\([^_][^_]*\)__.*/\1/p' <<<"$rules" | grep -v '^plugin_' | sort -u)
+
+  # A project-scoped server resolves in that repo and nowhere else, with no
+  # error anywhere else. `claude mcp add` defaults to --scope local, so this is
+  # the shape a correct-looking command produces.
+  local srv path
+  while IFS=$'\t' read -r srv path; do
+    [[ -z "$srv" ]] && continue
+    if grep -qxF "$srv" <<<"$user_servers"; then
+      emit FAIL mcp-rules "'$srv' is declared BOTH at user scope and under projects[\"$path\"] in ~/.claude.json — two registrations of one server. Remove the project-scoped copy with 'claude mcp remove $srv' from that directory."
+    else
+      emit REVIEW mcp-rules "'$srv' is declared only under projects[\"$path\"] in ~/.claude.json, so it resolves in that directory and is silently absent everywhere else. If it is meant to be available generally, re-add it with --scope user."
+    fi
+    findings=$((findings + 1))
+  done <<<"$proj_pairs"
+
+  # A bare-prefix rule names a server that must be in ~/.claude.json. Absent
+  # means the rule matches nothing -- the state left behind by removing a
+  # server without removing its rules.
+  while read -r srv; do
+    [[ -z "$srv" ]] && continue
+    grep -qxF "$srv" <<<"$user_servers" && continue
+    grep -qF "$srv"$'\t' <<<"$proj_pairs" && continue
+    emit FAIL mcp-rules "permissions rules reference 'mcp__${srv}__*' but no server named '$srv' is declared in ~/.claude.json — the rules match nothing. Either the server was removed and its rules were not, or it is Nix-declared and the rules need the mcp__plugin_claude-code-home-manager_${srv}__ prefix."
+    findings=$((findings + 1))
+  done <<<"$bare_servers"
+
+  # A declared server with no rules is not broken; every call to it prompts.
+  # Reported because the cost is invisible -- nothing errors, it just asks.
+  while read -r srv; do
+    [[ -z "$srv" ]] && continue
+    grep -q "^mcp__${srv}__" <<<"$rules" && continue
+    emit REVIEW mcp-rules "'$srv' is declared in ~/.claude.json with no mcp__${srv}__ rule, so every call to it prompts. Zero rules is correct for a server whose whole surface is one dispatcher tool; otherwise it is a gap."
+    findings=$((findings + 1))
+  done <<<"$user_servers"
+
+  emit REVIEW mcp-rules "$(grep -c . <<<"$rules") MCP rule(s) checked against declared servers only. Whether each rule matches a tool the server actually offers is NOT checked here — it needs a live authenticated roster. Hand that to the rubric; do not read this line as tool-name coverage."
+  [[ $findings -eq 0 ]] && emit OK mcp-rules "every MCP rule names a declared server, and every declared server has at least one rule"
+}
+
 check_dead_allows
 check_hooks
 check_skill_inventory
+check_mcp_rules
 exit 0
