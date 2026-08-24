@@ -76,7 +76,7 @@ question and not as a task.
 
 ### `blocked` is the state that does work
 
-`verified` and `assumed` already existed, informally, in `investigate` step 5. The
+`verified` and `assumed` already existed, informally, in `investigate` step 4. The
 problem with that pair is that **both proceed**. A load-bearing assumption and a
 verified fact took the same path, so the only thing separating them was whether anyone
 happened to read the hand-back.

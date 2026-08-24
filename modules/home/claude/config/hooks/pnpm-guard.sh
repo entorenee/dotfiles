@@ -16,8 +16,7 @@ CMD=$(echo "$INPUT" | jq -r '.tool_input.command // empty')
 
 # Reject `rtk proxy` early with a clearer reason than the generic
 # permissions.deny message. rtk proxy is denied in this config because it
-# bypasses the rewrite hook (arbitrary-command escape hatch). Assistants
-# sometimes try it after reading RTK.md.
+# bypasses the rewrite hook (arbitrary-command escape hatch).
 if echo "$CMD" | grep -qE '^[[:space:]]*rtk[[:space:]]+proxy([[:space:]]|$)'; then
   REASON="rtk proxy is denied. Use the bare command (e.g., 'pnpm install') — the rtk-rewrite hook handles rewriting automatically."
   jq -n --arg reason "$REASON" '{

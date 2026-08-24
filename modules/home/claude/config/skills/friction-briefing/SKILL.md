@@ -64,7 +64,18 @@ convey.
 ```bash
 ROOT="${MY_CLAUDE_FRICTION_ROOT:?unset — run 'make rebuild', then start a new session}"
 ls "$ROOT/entries/" "$ROOT/briefings/"
+ls "$ROOT/entries/" | sed -n 's/^F\([0-9]*\)-.*/\1/p' | sort -n | uniq -d
 ```
+
+**If that last command prints anything, two entries share an F-number — name them in
+the briefing before ranking.** The number is a citation key (this file cites F8 and F13
+by number), so a duplicate makes every later reference to it ambiguous.
+
+This is the one failure mode multi-machine writing introduces, and it is silent by
+construction: two machines that both read the same highest number inside the 300s sync
+window write *differently-slugged* files, so the rebase at `git-sync:428` succeeds and
+git never reports a conflict. Nothing else in the system will ever mention it. Renumber
+the later entry — cheap, and `friction-capture` says the same.
 
 **Do not pull, and do not run git here at all.** Two independent reasons:
 

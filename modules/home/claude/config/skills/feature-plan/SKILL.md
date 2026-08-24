@@ -43,7 +43,7 @@ design half is approved, because once they exist the design assumptions are bake
 
 ## When NOT to Use
 
-- Small bug fixes, one-off scripts, chore work, pure documentation → go straight to a PR
+- One-off scripts, chore work, pure documentation → go straight to a PR
 - The work is one file and one commit — a plan is ceremony
 - A bug, test failure, or unexpected behavior → `investigate`
 

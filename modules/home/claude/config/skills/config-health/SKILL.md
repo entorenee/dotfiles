@@ -30,7 +30,12 @@ commits.
 
 - One specific question about permission mode → `permission-audit` directly.
 - Building an allowlist on a **new machine** with no history → `fewer-permission-prompts`.
-- Changing one setting or adding one hook → `update-config`.
+- Changing one setting or adding one hook → edit the Nix source and rebuild:
+  `modules/home/claude/default.nix` for base, `hosts/darwin/fw-skyler/claude.nix`
+  for work, `roles/home/personal-claude.nix` for personal, then `make rebuild`.
+  Not `update-config` — it writes `~/.claude/settings.json`, which this config
+  deploys read-only from the Nix store, and a write there is either refused or
+  lands in a project `settings.local.json` that silently outranks the module.
 - Product-code health (`dead-code-survey`, `npm-cve`, `dependency-upgrades`,
   `error-triage`) — deliberately out of scope. Folding those in produces a
   report nobody acts on.

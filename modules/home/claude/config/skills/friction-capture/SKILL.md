@@ -81,6 +81,13 @@ The residue is a numbering race no pull would close anyway: an entry written on
 another machine within the last sync interval is not visible here yet. If a number
 collides, say so — it is cheap to renumber and the daemon merges either way.
 
+**A collision will not announce itself, so step 3 checks for one after writing.** The
+two machines produce differently-slugged filenames, so there is nothing for git to
+conflict on: the rebase at `git-sync:428` succeeds and both entries land. Since the
+F-number is a citation key, the cost is not the duplicate file but every later
+reference to that number becoming ambiguous. `friction-briefing` re-checks the whole
+set at review time for the collision this local check cannot see.
+
 ## Step 2 — check for an existing entry
 
 ```bash
@@ -117,6 +124,16 @@ is not verified, write `unverified:` in front of it.>
 `graduated` means the rule became a test, a lint, or an encoded convention —
 executable rather than documentary. A graduated entry is a candidate for deletion,
 because CI now catches the drift the entry was holding.
+
+Then confirm the number you just used is unique — the daemon may have fast-forwarded
+another machine's entry in between your `ls` above and your write:
+
+```bash
+ls "$ROOT/entries/" | sed -n 's/^F\([0-9]*\)-.*/\1/p' | sort -n | uniq -d
+```
+
+Any output names a duplicated F-number. Renumber the entry you just wrote to the next
+free number and say so in the hand-back. Do not run git to resolve it.
 
 Print the absolute path.
 
