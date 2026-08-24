@@ -63,9 +63,30 @@ convey.
 
 ```bash
 ROOT="${MY_CLAUDE_FRICTION_ROOT:?unset — run 'make rebuild', then start a new session}"
-git -C "$ROOT" pull --ff-only 2>&1 | tail -1
 ls "$ROOT/entries/" "$ROOT/briefings/"
 ```
+
+**Do not pull, and do not run git here at all.** This step used to open with
+`git -C "$ROOT" pull --ff-only`, removed 2026-08-21 for two independent reasons:
+
+- **It needs a Yubikey touch** (the user's own account of the constraint, 2026-08-21), so
+  it cannot run unattended in the middle of a render. A skill that halts on a hardware
+  prompt at step 1 is a skill that does not get run.
+- **`git-sync` already does it, every run.** The daemon is bidirectional, not push-only:
+  `git fetch` at `git-sync:392`, `git merge --ff --ff-only` at `:418`, `git rebase` at `:428`,
+  and the script's own comment reads *"TODO make fetching/pushing optional"* — so fetching is
+  not optional. `git-sync.syncEnabled` is `true` here, so the gate at `:119` passes and the
+  fetch is reached on every run: every 300s and on every write. A manual pull duplicates the
+  daemon, using a credential path the daemon does not need.
+
+It is also the one command in this step that cannot run in the default sandbox — inside it
+the pull fails with *"Please make sure you have the correct access rights and the repository
+exists"*, which names a revoked deploy key rather than the `~/.ssh` read-deny that is the
+real cause. A reader would go audit GitHub.
+
+**So there is no case left for a pull here, including the multi-machine one.** If entries were
+captured on another machine, `git-sync` fetches and fast-forwards them in on its own,
+touch-free via the deploy key. Nothing to do.
 
 Read every entry. Read the most recent briefing too — the "what changed" section is a
 diff against it, and repeating an unchanged obstacle as though it were news is how a
@@ -201,7 +222,7 @@ reintroduce one** — the path is the hand-off.
 
 | Step | Action |
 |---|---|
-| 1 | Resolve `$MY_CLAUDE_FRICTION_ROOT`; `pull --ff-only`; read all entries and the last briefing; **ask full detail or sanitized — default full** |
+| 1 | Resolve `$MY_CLAUDE_FRICTION_ROOT`; **no git, no pull**; read all entries and the last briefing; **ask full detail or sanitized — default full** |
 | 2 | Group by theme, rank by consequence, roll up statuses |
 | 3 | Write `YYYY-MM-DD.md` (or `-sanitized.md`), state the mode in the document, decision surface first, evidence last; print the path |
 | 4 | **Stop.** Let the user read it, then ask what to drill into. Per point: evidence re-read, quotation in full, attribution. Final line before the halt is the notification — path and ask first, 100 chars |
