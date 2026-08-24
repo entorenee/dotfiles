@@ -84,6 +84,24 @@ Accept in priority order:
 4. **None** — ask. If still none, continue without scope and note that scope
    compliance was skipped.
 
+### Artifacts root and branch register
+
+```bash
+ARTIFACTS="${MY_CLAUDE_ARTIFACTS_ROOT:?run 'make rebuild', then start a new session}/$(basename -s .git \
+  "$(git remote get-url origin 2>/dev/null || git rev-parse --show-toplevel)")"
+REGISTER="$ARTIFACTS/registers/$(git rev-parse --abbrev-ref HEAD | tr '/' '-').md"
+cat "$REGISTER" 2>/dev/null
+```
+
+`domain-register` specifies that a register is read on resume and **diffed at PR
+time**, and this phase is the only place that diff can happen — a row is checked
+against the code *as built*, which does not exist until the review pass has read the
+diff. Without it a register only ever accumulates rows, which is the failure it was
+built to prevent.
+
+No register is the normal case: note it once and carry on. If one exists, hold every
+row until Phase 6 and resolve each against the diff there.
+
 ### Empty diff guard
 
 If `git diff --name-only $MERGE_BASE...HEAD` returns nothing, report "No changes
@@ -285,9 +303,7 @@ cost this skill is supposed to remove. Chat gets a short summary; the file is th
 artifact.
 
 ```bash
-ARTIFACTS="${MY_CLAUDE_ARTIFACTS_ROOT:?run 'make rebuild', then start a new session}/$(basename -s .git \
-  "$(git remote get-url origin 2>/dev/null || git rev-parse --show-toplevel)")"
-mkdir -p "$ARTIFACTS/reviews"
+mkdir -p "$ARTIFACTS/reviews"   # $ARTIFACTS resolved in Phase 1
 # → $ARTIFACTS/reviews/YYYY-MM-DD-<branch-or-pr>-pre-pr.md
 ```
 
@@ -326,6 +342,20 @@ Required section. If genuinely empty, write "None" — but check first: anything
 sandbox blocks, any prod-only data, anything needing a device, and any conclusion
 resting on a comment rather than executable code belongs here.
 - <claim> — <why unverifiable here>
+
+## Domain register
+Required section. Write "No register for this branch" if none exists — do not omit it,
+or a missing diff is indistinguishable from a missing register. When one exists, report
+every row against the code as built, using `domain-register`'s four outcomes:
+- `blocked` row still blocked — **the PR is not ready.** Say so rather than shipping
+  around it, and repeat it in the chat summary; this is the one register finding that
+  changes whether the branch should merge at all.
+- `assumed` row the implementation depends on — **goes in the PR description.** The
+  reviewer is the last person who can catch it.
+- `verified` row whose citation no longer resolves — re-verify. A moved line is not a
+  wrong rule, but an unresolvable citation is not evidence.
+- a rule the work relied on that no row covers — add it, and note that the register
+  missed it. That is the register's own failure mode and it is worth recording.
 
 ## Still needs you
 
