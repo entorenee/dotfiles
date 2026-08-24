@@ -66,12 +66,10 @@ ROOT="${MY_CLAUDE_FRICTION_ROOT:?unset — run 'make rebuild', then start a new 
 ls "$ROOT/entries/" "$ROOT/briefings/"
 ```
 
-**Do not pull, and do not run git here at all.** This step used to open with
-`git -C "$ROOT" pull --ff-only`, removed 2026-08-21 for two independent reasons:
+**Do not pull, and do not run git here at all.** Two independent reasons:
 
-- **It needs a Yubikey touch** (the user's own account of the constraint, 2026-08-21), so
-  it cannot run unattended in the middle of a render. A skill that halts on a hardware
-  prompt at step 1 is a skill that does not get run.
+- **A pull needs a Yubikey touch**, so it cannot run unattended in the middle of a render.
+  A skill that halts on a hardware prompt at step 1 is a skill that does not get run.
 - **`git-sync` already does it, every run.** The daemon is bidirectional, not push-only:
   `git fetch` at `git-sync:392`, `git merge --ff --ff-only` at `:418`, `git rebase` at `:428`,
   and the script's own comment reads *"TODO make fetching/pushing optional"* — so fetching is

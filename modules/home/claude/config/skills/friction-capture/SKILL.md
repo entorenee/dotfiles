@@ -67,15 +67,19 @@ than writing anywhere else:
 git clone git@github.com:entorenee/claude-friction.git "$MY_CLAUDE_FRICTION_ROOT"
 ```
 
-Then refresh before numbering, so a second machine does not reuse a number:
-
 ```bash
-git -C "$ROOT" pull --ff-only 2>&1 | tail -1
 mkdir -p "$ROOT/entries"
 ```
 
-A failed pull is not fatal — say so, proceed, and note that the number may
-collide with one written elsewhere.
+**Do not pull, and do not run git here at all.** `git-sync` fetches and
+fast-forwards this repo on its own every 300s and on every write, so the clone is
+already current for numbering. A manual pull duplicates the daemon, needs a
+Yubikey touch, and fails outright inside the sandbox with a message naming access
+rights rather than the `~/.ssh` read-deny that actually causes it.
+
+The residue is a numbering race no pull would close anyway: an entry written on
+another machine within the last sync interval is not visible here yet. If a number
+collides, say so — it is cheap to renumber and the daemon merges either way.
 
 ## Step 2 — check for an existing entry
 
@@ -134,7 +138,7 @@ says; do not commit by hand to work around it.
 
 | Step | Action |
 |---|---|
-| 1 | Resolve `$MY_CLAUDE_FRICTION_ROOT`; hand over `git clone` if absent; `pull --ff-only` |
+| 1 | Resolve `$MY_CLAUDE_FRICTION_ROOT`; hand over `git clone` if absent; **no git, no pull** |
 | 2 | Grep `entries/` for the same class — update rather than duplicate |
 | 3 | Write `F<n>-YYYY-MM-DD-<slug>.md`; print the absolute path |
 | 4 | Print the path and stop. **Run no git** — `git-sync` commits and pushes it unsigned within minutes |

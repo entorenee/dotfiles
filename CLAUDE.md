@@ -140,7 +140,7 @@ There is no `profile` argument and no `users/`. An identity is just **another ro
 | `roles/home/personal-claude.nix` | `programs.claude-code` additions, imported by `personal.nix` |
 | `roles/darwin/personal.nix` | nix-darwin options: Homebrew casks, and the Dock |
 
-**That table row said "Homebrew taps/brews/casks, launch agents, the Dock" until 2026-08-21, and only `casks` and the Dock were ever in that file.** Taps and brews live in `modules/darwin/homebrew/default.nix:16,24`; launch agents in `modules/darwin/launch-agents/default.nix:5`. Both are imported unconditionally, so neither is identity-scoped — which is the part the wrong row obscured. Reorganizations relocate options without anyone editing the table that describes them, so treat a table row crediting a file as a claim to re-check rather than as documentation.
+**Taps, brews, and launch agents are not identity-scoped.** Taps and brews live in `modules/darwin/homebrew/default.nix:16,24`; launch agents in `modules/darwin/launch-agents/default.nix:5`. Both are imported unconditionally, so the row above covers only `casks` and the Dock. Reorganizations relocate options without anyone editing the table that describes them, so treat a table row crediting a file as a claim to re-check rather than as documentation.
 
 Two module systems, so two directories and two lists: a home-manager module cannot set `homebrew.casks`, which is why `roles/darwin/` exists alongside `roles/home/` and a host splits its imports into `homeImports` and `darwinImports`.
 
@@ -233,7 +233,7 @@ Three `nixosConfigurations` live in `hosts/nixos/`, all `aarch64-linux`: `hub` (
 
 ### A Pi host states the same kind of attrset the Macs do
 
-`hosts/nixos/<name>/default.nix` states `{system, nixosImports, username ? null, homeImports ? []}`, and `flake.nix` instantiates it with a single `mkNixosHost ./hosts/nixos/<name>` — no positional arguments, matching `mkDarwinHost`/`mkHomeHost`. `nixosImports` carries that machine's `./configuration.nix` — **and in practice nothing else: all three hosts declare exactly `nixosImports = [./configuration.nix];`, and the `roles/nixos/` and `modules/nixos/` imports sit inside each `configuration.nix` rather than on the host attrset.** (Corrected 2026-08-21; this said `nixosImports` carried those role and module files directly. The import *relationships* were right and every named file exists — only the stated location was wrong, which is why no existence check catches it.) `homeImports` names the tier role directly: `lib/nixos.nix` no longer hardcodes `roles/home/cli.nix`, exactly as `flake.nix` stopped hardcoding `roles/home/gui.nix` for the Macs. A host declares what it is.
+`hosts/nixos/<name>/default.nix` states `{system, nixosImports, username ? null, homeImports ? []}`, and `flake.nix` instantiates it with a single `mkNixosHost ./hosts/nixos/<name>` — no positional arguments, matching `mkDarwinHost`/`mkHomeHost`. `nixosImports` carries that machine's `./configuration.nix` — **and in practice nothing else: all three hosts declare exactly `nixosImports = [./configuration.nix];`, and the `roles/nixos/` and `modules/nixos/` imports sit inside each `configuration.nix` rather than on the host attrset.** `homeImports` names the tier role directly: `lib/nixos.nix` no longer hardcodes `roles/home/cli.nix`, exactly as `flake.nix` stopped hardcoding `roles/home/gui.nix` for the Macs. A host declares what it is.
 
 Home-manager status per Pi — a decided question, not a pending one:
 
@@ -290,7 +290,7 @@ The Claude Code configuration is Nix-managed in `modules/home/claude/`. The glob
 
 ### Deployment Layout
 
-`agents/`, `commands/`, `hooks/`, `skills/`, and `CLAUDE.md` are deployed by the home-manager module's own options (`agentsDir`, `commandsDir`, `hooksDir`, `skills`, `context`) rather than hand-wired `home.file` entries. Only `statusline.sh`, which has no matching option, is still declared in `home.file`. (`RTK.md` was there too until 2026-08-21, when it was removed — it was `@`-imported into every session to carry install-verification notes, and the four facts a session actually needs moved into `config/CLAUDE.md` § Bash.)
+`agents/`, `commands/`, `hooks/`, `skills/`, and `CLAUDE.md` are deployed by the home-manager module's own options (`agentsDir`, `commandsDir`, `hooksDir`, `skills`, `context`) rather than hand-wired `home.file` entries. Only `statusline.sh`, which has no matching option, is still declared in `home.file`.
 
 Everything under `~/.claude` is therefore a symlink into the Nix store, and **every edit under `config/` needs a rebuild to take effect** — including hook scripts. The `*Dir` options have no `mkOutOfStoreSymlink` escape hatch, so they don't honor `my.dotfiles.mutable`; that's the accepted cost of the module being usable on a NixOS host with no `~/dotfiles` checkout.
 
@@ -333,9 +333,9 @@ It must print nothing, `~/.claude/{agents,commands,hooks,skills}` must be real d
 
 `make rebuild` refuses to run when it detects a live session, listing each one so you know what to quit. `make claude-sessions` shows the same list on its own. Override with `make rebuild FORCE=1` when you accept the loss.
 
-**Do not detect sessions with `pgrep -x claude` — it matches nothing, and the gate built on it passed silently for every rebuild until 2026-08-10.** The package is a Nix binary wrapper: `bin/claude` is a compiled stub that `execve`s `.claude-wrapped` in place, so the surviving process's `comm` reads `.claude-wrapped` and never `claude`. `-x` matches `comm`, so it always comes back empty. argv[0] *is* still `claude`, which is why `pgrep -af claude` lists the session and makes the failure look like something else. Verified on hester-prynne with `/bin/pgrep` (absolute path, so no shell rewriting involved): `pgrep -x claude` exited 1 while `ps -o comm=` on the live PID printed `.claude-wrapped`.
+**Do not detect sessions with `pgrep -x claude` — it matches nothing, and a gate built on it fails silently.** The package is a Nix binary wrapper: `bin/claude` is a compiled stub that `execve`s `.claude-wrapped` in place, so the surviving process's `comm` reads `.claude-wrapped` and never `claude`. `-x` matches `comm`, so it always comes back empty. argv[0] *is* still `claude`, which is why `pgrep -af claude` lists the session and makes the failure look like something else. Verified on hester-prynne with `/bin/pgrep` (absolute path, so no shell rewriting involved): `pgrep -x claude` exited 1 while `ps -o comm=` on the live PID printed `.claude-wrapped`.
 
-An earlier version of this section blamed the empty result on `pgrep` "missing the invoking process" and advised running from a plain terminal. That was wrong — `pgrep` excludes only itself, never its ancestors, and a rebuild launched from a separate tmux window failed to fire just the same. The advice actively hid the bug.
+`pgrep` excludes only itself, never its ancestors, so running the rebuild from a separate terminal or tmux window changes nothing.
 
 `make rebuild` uses the `CLAUDE_PIDS` variable in the `Makefile` instead, matching either name on the basename (macOS `ps` reports `comm` as a full path). It is deliberately `ps`/`awk` only: `procps` is not declared anywhere in this config, and a missing `pgrep` made the old gate fail *open* — `pgrep … 2>/dev/null` swallows "command not found" and the `&&` short-circuits to "no sessions running."
 
@@ -365,21 +365,30 @@ This had the sandbox fully disabled in this repo — for long enough that its ab
 
 ### MCP Servers
 
-MCP servers are declared in `roles/home/personal-claude.nix` or `hosts/darwin/fw-skyler/claude.nix` under `programs.claude-code.mcpServers`. The home-manager module writes these to `~/.claude.json` and they appear as `plugin:claude-code-home-manager:<name>`.
+MCP servers are declared in `roles/home/personal-claude.nix` or `hosts/darwin/fw-skyler/claude.nix` under `programs.claude-code.mcpServers`. The module writes them into the plugin's own `.mcp.json` in the Nix store, handed to the CLI as `--plugin-dir`, and they appear as `plugin:claude-code-home-manager:<name>` — so their tools are prefixed `mcp__plugin_claude-code-home-manager_<name>__`.
 
-MCP servers with OAuth (e.g., Asana) require a two-part setup:
+Nix-declared servers do **not** appear in `~/.claude.json`; that file holds only servers added by hand. A server present in both registers twice, under two different tool prefixes, and checking only `~/.claude.json` will not reveal it.
 
-1. **Config (Nix-managed):** Add the server to the `mcpServers` attrset in the relevant `claude.nix`. This gets deployed via `make rebuild`.
+**OAuth splits into two cases, and only one can be Nix-declared.**
 
-2. **Auth (manual, one-time):** Run the following command to store OAuth credentials in the macOS Keychain. This only needs to be done once per machine (survives Nix rebuilds).
+*Dynamic registration* (expo, sentry, posthog, vercel): declare in `claude.nix`, rebuild, then authenticate in-session with `/mcp`. No secret is involved.
+
+*A pre-registered confidential client* (Asana): **cannot be Nix-declared.** The plugin path carries a `client_id` but has no channel for a `client_secret`, so authentication fails with *"Client authentication failed. Check that client_id and client_secret match your registered app."* Setting `MCP_CLIENT_SECRET` in the environment does not reach it either. Only `claude mcp add` stores the secret, and it registers a server of its own as a side effect, so it cannot be paired with a Nix declaration. Asana therefore lives entirely outside Nix:
 
 ```bash
-claude mcp add --transport http \
+claude mcp add --scope user --transport http \
   --client-id "$ASANA_CLIENT_ID" \
   --client-secret \
   --callback-port 8080 \
   asana https://mcp.asana.com/v2/mcp
 ```
+
+`--scope user` is required, not optional. The default is `--scope local`, which registers the
+server under `projects["<cwd>"]` in `~/.claude.json` — so it resolves in whichever repo it was
+added from and nowhere else, with no error anywhere else. A user-scoped entry sits at the top
+level and reaches every repo.
+
+Its tools are `mcp__asana__*`, unprefixed, which is what the two `permissions.allow` rules in `claude.nix` match. Moving Asana into Nix would make those rules dead — they would need the plugin prefix.
 
 ### Permissions
 
@@ -422,7 +431,7 @@ Custom skills (in `modules/home/claude/config/skills/`) and custom slash command
 
 **Do not add a `Skill(<name>)` entry by hand — it is derived.** `default.nix` builds `skillNames` from `readDir ./config/skills` plus the `.md` files in `./config/commands`, and maps each to `Skill(<name>)` onto `permissions.allow`. A hand-written entry is a duplicate on arrival. Two things are still required:
 
-- **The new file or directory must be git-tracked — and staging it is the user's action, not Claude's.** `skillNames` reads the *flake source*, and flakes only see git-tracked files, so an untracked skill directory is invisible to eval: no permission entry is generated and it prompts on first use. Verified 2026-08-10: `Skill(comment-review)` was absent from the derived allowlist until the directory was staged, then appeared immediately. Claude asks for the staging and stops; `git add` is banned by the global `CLAUDE.md` and hard-blocked by `Bash(git add*)` in `permissions.deny`, so an instruction to run it cannot be followed. (This bullet said "**`git add` the new file**" until 2026-08-21, contradicting both — and `:283` above had it right the whole time.)
+- **The new file or directory must be git-tracked — and staging it is the user's action, not Claude's.** `skillNames` reads the *flake source*, and flakes only see git-tracked files, so an untracked skill directory is invisible to eval: no permission entry is generated and it prompts on first use. Verified 2026-08-10: `Skill(comment-review)` was absent from the derived allowlist until the directory was staged, then appeared immediately. Claude asks for the staging and stops; `git add` is banned by the global `CLAUDE.md` and hard-blocked by `Bash(git add*)` in `permissions.deny`, so an instruction to run it cannot be followed.
 - **Rebuild.** The names are read at eval time, so a new skill needs a rebuild to register (and to be symlinked).
 
 Plugin-distributed skills *are* namespaced (e.g., `superpowers:executing-plans`, `pr-review-toolkit:review-pr`), so a single glob per plugin namespace (`Skill(superpowers:*)`) trusts the entire plugin's skill set in one entry.

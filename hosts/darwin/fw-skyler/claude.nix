@@ -29,9 +29,6 @@
         "mcp__plugin_claude-code-home-manager_vercel__search_*"
         "mcp__plugin_claude-code-home-manager_vercel__check_*"
         "mcp__plugin_claude-code-home-manager_vercel__web_fetch_*"
-        # sentry read-only (whoami + find_/get_/search_ prefixes)
-        # Excludes analyze_issue_with_seer (billed AI call)
-        "mcp__plugin_claude-code-home-manager_sentry__whoami"
         "mcp__plugin_claude-code-home-manager_sentry__find_*"
         "mcp__plugin_claude-code-home-manager_sentry__get_*"
         "mcp__plugin_claude-code-home-manager_sentry__search_*"
@@ -46,6 +43,16 @@
         "mcp__plugin_claude-code-home-manager_expo__*_list"
         "mcp__plugin_claude-code-home-manager_expo__*_logs"
         "mcp__plugin_claude-code-home-manager_expo__workflow_validate"
+        "mcp__plugin_claude-code-home-manager_expo__*_crashes"
+        # Named in full rather than globbed: `*_reviews` would sit one character
+        # from `appstore_reply_review` and `playstore_reply_review`, which post
+        # public replies. The suffix globs above are safe because nothing
+        # mutating ends in _info/_list/_logs/_crashes.
+        "mcp__plugin_claude-code-home-manager_expo__appstore_reviews"
+        "mcp__plugin_claude-code-home-manager_expo__playstore_reviews"
+        # Reads documentation and returns an `expo install` command as text; it
+        # installs nothing.
+        "mcp__plugin_claude-code-home-manager_expo__add_library"
         # NOTE: posthog exposes only a generic `exec` tool — intentionally NOT
         # allowlisted (arbitrary query/command surface; should prompt each time)
         # Docs for the MCP servers declared below. Explicit hosts, never
