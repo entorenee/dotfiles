@@ -66,7 +66,6 @@
     # module via roles/home/base.nix.
     baseOverlays = [
       (import ./overlays/claude-code-unstable.nix {inherit nixpkgs-unstable;})
-      (import ./overlays/git-up-2.5.nix)
     ];
 
     mkHomeManagerArgs = import ./lib/home-manager-args.nix {
