@@ -151,7 +151,7 @@ in {
       tui = "fullscreen";
       effortLevel = "high";
       alwaysThinkingEnabled = true;
-      cleanupPeriodDays = 365;
+      cleanupPeriodDays = 90;
       permissions.defaultMode = "auto";
       permissions.allow =
         [
