@@ -50,8 +50,15 @@ what the cited quote actually showed. The audience makes this the most consequen
 rule here: the cost of being wrong is not a retracted finding but a
 misrepresentation of a person to their management.
 
-**Do not soften or inflate.** A `won't-fix` is reported as such. An `unverified:`
+**Do not soften or inflate.** A `wont-fix` is reported as such. An `unverified:`
 claim in an entry stays marked unverified in the briefing, or is left out.
+
+**Report `Status` and `Class` separately.** They are independent: an entry at
+`Status: resolved` with `Class: open` means the instance was fixed and the lesson
+never became executable, which is the normal state rather than an anomaly — 21 of
+22 entries were `Class: open` at the 2026-08-25 migration and none had reached
+`graduated`. Reporting only `Status` turns a log of unfinished lessons into a list
+of closed tickets, which is precisely the inflation the rule above forbids.
 
 **Length: layered, not compressed.** The subject is genuinely complex and the
 briefing has to carry *why* the obstacles are hard. Lead with the decision surface so

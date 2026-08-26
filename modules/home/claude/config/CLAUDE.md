@@ -166,6 +166,10 @@ remote.
 
 ## Scope & Approach
 
+- **State what a proposal rests on, before proposing it.** Name the load-bearing assumptions and
+  mark each `verified` / `inferred` / `assumed`, so a wrong premise can be rejected once instead
+  of the conclusion three times. An `inferred` or `assumed` premise that would change the
+  recommendation if false gets checked *before* building, not after.
 - **For pure lookups ("where is X?"), return the answer only.** A question about where something
   lives is not authorization to change it.
 - **Remove obsolete logic rather than layering new code beside it.** When a change supersedes

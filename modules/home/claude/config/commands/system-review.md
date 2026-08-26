@@ -13,9 +13,11 @@ That restraint is the whole design. A sweep that quietly turns into a review tak
 
 ```bash
 bash "$HOME/.claude/skills/skill-reviewer/inventory.sh" --json
+bash "$HOME/.claude/skills/skill-reviewer/signals.sh" --aging
+bash "$HOME/.claude/skills/skill-reviewer/signals.sh" --since <date of the oldest unscored prediction>
 ```
 
-That is the whole data-gathering step. Every field the buckets need is in it, already computed:
+Three commands, and that is the whole data-gathering step. The second reads the friction log rather than the transcripts, so it costs nothing and feeds only the Aging bucket. The third is skipped entirely when `rollups/PREDICTIONS.md` has no unscored prediction. Skip either and its bucket cannot be reported at all. Every field the buckets need is in one of the three, already computed:
 
 | Field | Use |
 |---|---|
@@ -46,10 +48,34 @@ Thresholds live in `skill-reviewer/SKILL.md` under **Cadence and thresholds**. R
 | **Quiet** | Had runs in an earlier window and none recently. Worth a mention — a skill that stopped being used is a finding, and the only one this sweep can make on its own. |
 | **Declined** | Verdict `unadopted`. Asked and answered — see below. |
 | **No evidence** | Verdict `no-evidence`: nothing in any arm. See below, because this bucket has burned us twice. |
+| **Aging** | Friction entries still at `Class: open` past the threshold — the lesson never became executable. From `signals.sh --aging`. See the cap below; this bucket has a backlog problem the others do not. |
+| **Predictions** | An instruction-text change whose measured outcome is now readable. From `signals.sh --since`, banded in `rollups/PREDICTIONS.md`. **The only bucket that can report something learned rather than something due.** |
 
 Sort on the `verdict` field, not on whether a count looks empty. `unadopted` and `no-evidence` both show zero sessions and are the same shape at a glance, but they are opposite states: one is a question already closed, the other is a question never asked.
 
 **`unadopted` is closed. Do not re-ask it.** The verdict exists precisely because the user has already said the unit has not run, and that answer is recorded in `skill-reviewer/testimony.txt` so it survives. Report it under Declined and move on. Putting it back in the "Ask about" line re-opens a question `testimony.txt` was created to close, which is the exact loop that file exists to break.
+
+**A prediction outside its band opens a discussion. It never fires a removal.** Read the band from `rollups/PREDICTIONS.md` — like every other threshold, it is not baked into the script. Then:
+
+- **Below the review threshold** (`typed turns` under the prediction's n) → report "not yet due" and nothing else. Do not score early, and **do not move the threshold**; if the window genuinely needs changing, that is a new prediction with a new baseline, not an edit to the existing one.
+- **Inconclusive** → say so plainly. **This is the expected outcome**, not a non-answer. Note how many consecutive reviews have been inconclusive; at three, the discussion opens anyway, starting from "remove".
+- **Outside the band in either direction** → raise it with the recommendation and the evidence, and stop. The decision is the user's.
+
+Automatic deletion on a failed prediction is the wrong default while the system is maturing: it removes rules on noisy evidence, and because that feels bad, the real response becomes quietly extending the window — worse than either honest option. Raising it here is also what gives this sweep a second kind of finding; without it the sweep can only ever report what is *due*, never what has been *learned*.
+
+**Ask what the user actually experienced, and write the answer down.** This is a required input to the discussion, not a courtesy, and it is the only evidence available for a **known, non-random blind spot**: the metric cannot see a wrong proposal corrected purely in prose — no edit, no rejected call — which is exactly the case the rule was written to fix. Measured in the session where the metric was designed, it caught one such failure and missed one. A discussion held on the number alone is therefore biased toward whatever the structural arms happen to catch, and confidently so.
+
+Record the answer under the prediction in `rollups/PREDICTIONS.md`, verbatim enough to be re-read later. `testimony.txt` is the precedent and the reason: it exists because the user's memory is *"the only record that is not re-derivable"*, and losing it means asking the same question twice — which has already happened here. Spoken testimony that is not written down is gone by the next review, and the next review will ask again.
+
+Two guards, both learned the hard way in this repo. An anecdote is **evidence about the tool, never about a person's judgment**. And where the account and the metric disagree, **report both and resolve neither** — a conflict is a finding, and flattening it into agreement is how a confident wrong answer gets made.
+
+**Always report the gaming check alongside the rate.** If rework falls while `interrupts` and `lexical` hold steady or rise, the likely explanation is the metric being gamed — re-editing less rather than being wrong less. Say that instead of banking the improvement.
+
+**The Aging bucket reports a COUNT plus the oldest three. Never the full list.** Twenty of the current entries were back-filled on two days in 2026-08, so they cross any threshold together — a bucket that prints everything past the line will one morning print twenty rows into a sweep whose entire reason for existing is that it takes two minutes. The count carries the signal; three examples carry the texture.
+
+`--aging` deliberately applies **no threshold** — it emits an `AGE` column and stops, because thresholds live in `skill-reviewer/SKILL.md` and a number baked into a script drifts from the one that was agreed. Apply the 45-day arm yourself, the same way you already do for `runs_since`.
+
+Two rows to read carefully rather than skim: `Class: MISSING` is a pre-migration entry with no `Class` line — a defect in the entry, not an aging signal. And an entry can sit at `Status: resolved` with `Class: open` indefinitely, which is not a contradiction: the instance was fixed and the lesson never became executable. **That combination is the normal state, not an anomaly** — 21 of 22 entries were `Class: open` at migration and none had ever reached `graduated`.
 
 **`no-evidence` means not measured.** It has never once meant "unused" when checked. Twice now an inventory reported units as never used and the user corrected it — three composed skills on 2026-08-12, then `regression-analysis`, an entry point nothing composes, on 2026-08-17. Report the bucket, ask, and write the answer into `skill-reviewer/testimony.txt` so the next sweep inherits it. Do not carry a unit into a "consider deleting" list off this bucket alone.
 
@@ -65,6 +91,12 @@ Quiet:        <unit>, last run <last_run>
 Declined:     <unit> — unadopted per testimony. Not a question.
 Ask about:    <unit> — no evidence in any arm
 Clock reset:  <unit> — <changed_subject> looks mechanical, not a revision
+Aging:        <n> entries open past threshold; oldest F<x> (<d>d), F<y>, F<z>
+              — or "none". Add "<m> never graduated" only when it changes.
+Prediction:   P<n> <rate>% vs band <lo>-<hi>% — improved | inconclusive (<k>x) |
+              outside band, discuss. Or "not yet due (<t>/<n> turns)".
+              When discussing: ask what they experienced, and write it into
+              PREDICTIONS.md under that prediction before the decision.
 Config:       <any FAIL from config-checks.sh skill-inventory, if it was run>
 ```
 

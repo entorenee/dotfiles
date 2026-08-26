@@ -21,8 +21,8 @@ signal and reads as a clean run.
 
 Fires on the *situation*, not on wanting a log entry:
 
-- A correction had to be given twice — the word "still" in user feedback is the
-  strongest single signal
+- A correction had to be given twice. Watch the situation, not a keyword: "still"
+  hits 41 of 815 typed turns (5%) and marks a question as often as a correction
 - An assumption turned out wrong after work was built on it
 - A command was refused, and the reason was a rule not written anywhere
 - A workaround was found by trial rather than by reading
@@ -118,12 +118,22 @@ symptom, since that is what a future reader meets first.>
 **Evidence:** <file:line, commit, transcript date, or command output. If a claim
 is not verified, write `unverified:` in front of it.>
 **Adaptation:** <what changed, or is proposed to change, in response.>
-**Status:** open | designed | in-progress | fixed | graduated | won't-fix
+**Status:** open | designed | in-progress | resolved | wont-fix
+**Class:** open | graduated | n-a
+**Status-detail:** <prose — dates, PR links, retained corrections. Free-form.>
 ```
 
-`graduated` means the rule became a test, a lint, or an encoded convention —
-executable rather than documentary. A graduated entry is a candidate for deletion,
-because CI now catches the drift the entry was holding.
+`Status` is this instance; `Class` is the lesson. Keep both enums bare — `--aging`
+greps them — and put every word of prose in `Status-detail:`, which runs to EOF.
+
+- `graduated` — became a test, lint, hook, or encoded convention. Candidate for
+  deletion: something else now catches the drift the entry was holding.
+- `open` — still documentary. This is the drain `--aging` reports.
+- `n-a` — resolved by removing the thing; no lesson left to encode.
+
+`Status: resolved` with `Class: open` is the normal shape, not a contradiction —
+21 of 22 entries, none ever `graduated`. An entry is not finished when it stops
+hurting.
 
 Then confirm the number you just used is unique — the daemon may have fast-forwarded
 another machine's entry in between your `ls` above and your write:

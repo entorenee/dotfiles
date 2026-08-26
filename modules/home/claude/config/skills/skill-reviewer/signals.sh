@@ -7,6 +7,8 @@
 #   bash signals.sh --denials    denials grouped by command shape
 #   bash signals.sh --verify     re-derive the aggregate independently and diff
 #   bash signals.sh --rollup     append a counts-only row to the friction repo
+#   bash signals.sh --aging      friction entries whose lesson is not yet executable
+#   bash signals.sh --since DATE the prediction metric for sessions on/after DATE
 #
 # Why a scanner and not a hook: every signal below is ALREADY recorded, so a
 # hook would re-write data that exists, add a moving part that can silently stop
@@ -24,14 +26,83 @@ case "${1:-}" in
   --denials) MODE=denials ;;
   --verify)  MODE=verify ;;
   --rollup)  MODE=rollup ;;
+  --aging)   MODE=aging ;;
+  --since)   MODE=since; SINCE="${2:?--since needs a YYYY-MM-DD date}" ;;
   "")        MODE=table ;;
   *) echo "unknown option: $1" >&2; exit 2 ;;
 esac
+SINCE="${SINCE:-}"
 
 TRANSCRIPTS="${SKILL_TRANSCRIPT_DIR:-$HOME/.claude/projects}"
 HERE="$(cd "$(dirname "$0")" && pwd)"
 FILTER="$HERE/signals.jq"
 [ -f "$FILTER" ] || { echo "missing signals.jq beside $0" >&2; exit 2; }
+
+# --aging reads the friction log, not the transcripts. Handled before the scan
+# below so it costs nothing.
+if [ "$MODE" = aging ]; then
+  ROOT="${MY_CLAUDE_FRICTION_ROOT:?unset — run 'make rebuild', then start a new session}"
+  [ -d "$ROOT/entries" ] || { echo "no entries dir at $ROOT" >&2; exit 1; }
+
+  # Portable epoch-from-YYYY-MM-DD: BSD date needs -j -f, GNU date needs -d.
+  #
+  # BOTH ENDS ARE PINNED TO MIDNIGHT, and that is load-bearing. BSD `date -j -f
+  # '%Y-%m-%d'` fills the time-of-day from the clock at the moment it runs, so an
+  # entry parsed a second after NOW was captured yields NOW-e just under a whole
+  # number of days — and integer division then reports one day less. Observed:
+  # two entries both dated 2026-08-19 reported ages 6 and 5 in the same run,
+  # purely from their position in the loop.
+  epoch() {
+    date -j -f '%Y-%m-%d %H:%M:%S' "$1 00:00:00" +%s 2>/dev/null \
+      || date -d "$1 00:00:00" +%s 2>/dev/null
+  }
+  NOW=$(epoch "$(date +%Y-%m-%d)")
+
+  # NO THRESHOLD IS APPLIED HERE, deliberately. /system-review's rule: thresholds
+  # live in skill-reviewer/SKILL.md, and baking one into a script means "the two
+  # will drift and the sweep will start enforcing a rule nobody agreed to." This
+  # emits the age; the sweep decides what is old.
+  {
+    printf 'AGE\tENTRY\tSTATUS\tCLASS\tTITLE\n'
+    for f in "$ROOT"/entries/F*.md; do
+      b=$(basename "$f")
+      d=$(echo "$b" | sed -n 's/^F[0-9]*-\([0-9-]\{10\}\)-.*/\1/p')
+      [ -n "$d" ] || continue
+      e=$(epoch "$d"); [ -n "$e" ] || continue
+      st=$(awk '/^\*\*Status:\*\*/{sub(/^\*\*Status:\*\*[ ]*/,""); print; exit}' "$f")
+      cl=$(awk '/^\*\*Class:\*\*/{sub(/^\*\*Class:\*\*[ ]*/,""); print; exit}' "$f")
+      # Pre-migration entries have no Class line. Report them rather than
+      # skipping — an unparseable entry is a finding, not an absence.
+      [ -n "$cl" ] || cl="MISSING"
+      [ "$cl" = "open" ] || [ "$cl" = "MISSING" ] || continue
+      ti=$(awk '/^# /{sub(/^# F[0-9]+ — /,""); print; exit}' "$f")
+      printf '%s\t%s\t%s\t%s\t%s\n' "$(( (NOW - e) / 86400 ))" \
+        "${b%%-*}" "${st:-?}" "$cl" "$(echo "$ti" | cut -c1-52)"
+    done | sort -rn
+  } | column -t -s "$(printf '\t')"
+
+  TOTAL=$(ls "$ROOT"/entries/F*.md 2>/dev/null | wc -l | tr -d ' ')
+  OPEN=$(grep -l '^\*\*Class:\*\* open' "$ROOT"/entries/F*.md 2>/dev/null | wc -l | tr -d ' ')
+  GRAD=$(grep -l '^\*\*Class:\*\* graduated' "$ROOT"/entries/F*.md 2>/dev/null | wc -l | tr -d ' ')
+  echo
+  printf '# %s entries: %s with Class open, %s graduated\n' "$TOTAL" "$OPEN" "$GRAD"
+  cat <<'EOF'
+# AGE is days since the entry was written — the only clock available, since
+#     nothing records when Class last changed. An entry updated for a recurrence
+#     keeps its original age, which is correct for a graduation drain: the
+#     question is how long the lesson has gone without becoming executable.
+# Class open      the lesson is still documentary. This is the drain.
+#       graduated it became a test, a lint, or an encoded convention. Candidate
+#                 for deletion — CI now catches the drift the entry was holding.
+#       n-a       resolved by removing the thing; no lesson left to encode.
+#       MISSING   pre-migration entry with no Class line. Fix the entry.
+#
+# Apply the threshold from skill-reviewer/SKILL.md; it is not applied here.
+# Report a COUNT plus the oldest few — 20 of these were back-filled on two days
+# in 2026-08, so they will all cross any threshold together.
+EOF
+  exit 0
+fi
 
 WORK="${TMPDIR:-/tmp}/skill-signals"
 mkdir -p "$WORK"
@@ -90,6 +161,36 @@ buckets() {
 
 case "$MODE" in
   json) cat "$ROWS" ;;
+
+  since)
+    # Scores a prediction in rollups/PREDICTIONS.md. Emits the per-turn rework
+    # rate, plus the two gaming-check arms, for sessions on/after DATE.
+    #
+    # NO BAND IS APPLIED HERE. The bands live in PREDICTIONS.md next to the
+    # baseline they were derived from — same reason --aging applies no threshold.
+    jq -r --arg since "$SINCE" '
+      map(select(.date >= $since))
+      | {sessions: length,
+         typed: (map(.typed)|add // 0),
+         rework: (map(.chains|map(.-1)|add // 0)|add // 0),
+         interrupts: (map(.interrupts)|add // 0),
+         lexical: (map(.lexical)|add // 0)}
+      | . + {rate: (if .typed==0 then 0 else (.rework*1000/.typed|round)/10 end)}
+      | "since:       \($since)",
+        "sessions:    \(.sessions)",
+        "typed turns: \(.typed)",
+        "rework turns:\(.rework)",
+        "REWORK RATE: \(.rate)%",
+        "interrupts:  \(.interrupts)   lexical: \(.lexical)   (gaming check)"' "$ROWS"
+    cat <<'EOF'
+
+# Compare REWORK RATE against the band in $MY_CLAUDE_FRICTION_ROOT/rollups/PREDICTIONS.md.
+# If `typed turns` is below the prediction's review threshold, the answer is
+# "not yet due" — do not score early, and do not move the threshold.
+# If rework falls while interrupts and lexical hold steady or rise, suspect the
+# metric before banking the result: re-editing less is the cheap way to game it.
+EOF
+    ;;
 
   denials)
     # Denials paired with the command that drew them. `toolDenialKind` is
@@ -165,6 +266,10 @@ EOF
   rollup)
     ROOT="${MY_CLAUDE_FRICTION_ROOT:?unset — run 'make rebuild', then start a new session}"
     [ -d "$ROOT/.git" ] || { echo "not a git repo: $ROOT" >&2; exit 1; }
+    # Instruction-corpus size. Proxy for F2 (comment verbosity), which was logged
+    # unmeasurable. Growth with no new rules is bloat; it costs context every run.
+    CFG="${SKILL_CONFIG_DIR:-$HOME/dotfiles/modules/home/claude/config}"
+    CORPUS=$(find "$CFG" -name '*.md' -exec cat {} + 2>/dev/null | wc -l | tr -d ' ')
     mkdir -p "$ROOT/rollups"
     STAMP=$(agg '[.[].date]|max')
     OUT="$ROOT/rollups/${STAMP:0:7}-$(hostname -s).md"
@@ -180,11 +285,14 @@ EOF
       echo "including those only measures how many short sessions the month happened to"
       echo "contain. Rate also rises with session length, so compare within a bucket too."
       echo
-      echo "| through | sessions | eligible | deep | rate | typed | interrupts | rule | user-rej | automode | max chain | lexical |"
-      echo "|---|---|---|---|---|---|---|---|---|---|---|---|"
+      echo "\`corpus\` = total lines of instruction .md under claude/config. Rising with no"
+      echo "new rules is prose bloat — it costs context on every run. See F2."
+      echo
+      echo "| through | sessions | eligible | deep | rate | typed | interrupts | rule | user-rej | automode | max chain | lexical | corpus |"
+      echo "|---|---|---|---|---|---|---|---|---|---|---|---|---|"
     } > "$OUT"
-    printf '| %s | %s | %s | %s | %s%% | %s | %s | %s | %s | %s | %s | %s |\n' \
-      "$STAMP" "$N" "$ELIG" "$DEEP" "$RATE" "$TYPED" "$INTR" "$D_RULE" "$D_USER" "$D_AUTO" "$CHMAX" "$LEX" >> "$OUT"
+    printf '| %s | %s | %s | %s | %s%% | %s | %s | %s | %s | %s | %s | %s | %s |\n' \
+      "$STAMP" "$N" "$ELIG" "$DEEP" "$RATE" "$TYPED" "$INTR" "$D_RULE" "$D_USER" "$D_AUTO" "$CHMAX" "$LEX" "$CORPUS" >> "$OUT"
     echo "$OUT"
     echo "git-sync commits and pushes this within ~300s. Do not run git here."
     ;;
