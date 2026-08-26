@@ -99,6 +99,15 @@ Each of these is a recurring pattern, not a hypothetical:
    keep the rationale on the line even if a doc also states it. The person
    auditing that line should not have to go find the doc.
 
+8. **Cut the sentence that interprets the fact you just stated.** A correct,
+   anchored comment followed by a line about its own significance: *"a systemd
+   timer skips a missed window unless Persistent is set. Same behaviour on both
+   platforms is the whole point of this pair."* The second sentence is the
+   defect. This is the hardest of these to see, because the comment passes the
+   attachment test — it does describe the thing it sits on. Test each sentence
+   separately: **name the wrong edit it prevents.** If you cannot, cut that
+   sentence.
+
 ## Workflow
 
 ### Phase 1 — Scope and baseline
