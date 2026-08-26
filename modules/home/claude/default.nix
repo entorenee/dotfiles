@@ -7,6 +7,9 @@
   # Absolute, not `~/…`: a JSON settings value is literal and would not expand.
   artifactsRoot = "${config.xdg.dataHome}/claude/artifacts";
 
+  # `~/…`, not absolute: a leading `/` in a permission pattern is project-relative.
+  artifactsGlob = "~${lib.removePrefix config.home.homeDirectory artifactsRoot}/**";
+
   # Not an xdg.* root: Claude Code hardcodes ~/.claude, so that is where
   # programs.claude-code deploys the skills tree.
   sweepDueScript = "${config.home.homeDirectory}/.claude/skills/skill-reviewer/sweep-due.sh";
@@ -189,6 +192,9 @@ in {
           # Read access for dotfiles (skills, agents, nix modules)
           "Read(~/dotfiles/**)"
           "Read(/nix/store/**)"
+          "Read(${artifactsGlob})"
+          "Edit(${artifactsGlob})"
+          "Write(${artifactsGlob})"
           # Trusted skill namespaces (plugins explicitly enabled above)
           "Skill(superpowers:*)"
           "Skill(pr-review-toolkit:*)"
