@@ -1,10 +1,14 @@
 # Dependency Upgrades - Detailed Reference
 
+> Commands below are written manager-neutral (`<pm>` = the project's package manager). Detect it
+> from the lockfile per `CLAUDE.md` § Project Command Discovery, and see the **Package manager**
+> table in `SKILL.md` for the npm/pnpm equivalents of each step.
+
 ## Pre-Upgrade Analysis
 
 ### Dependency Assessment
 
-Before starting any upgrade work, dispatch the `dependency-scoper` agent to produce the structured plan (within-major, deferred majors, coupled groups). Do not run `npm outdated` or per-package `npm view` loops in the main thread — the scoper handles this and keeps the registry chatter out of conversation context.
+Before starting any upgrade work, dispatch the `dependency-scoper` agent to produce the structured plan (within-major, deferred majors, coupled groups). Do not run outdated inventories or per-package registry-view loops in the main thread — the scoper handles this and keeps the registry chatter out of conversation context.
 
 The scoper output drives risk categorization:
 
@@ -15,7 +19,7 @@ The scoper output drives risk categorization:
 
 **"Low risk" is per-package, not per-batch.** A within-major bump that is low-risk in isolation can still break the tree via a duplicate/split install or a transitive pin (see the SKILL "Within-Major Isn't Automatically Safe" section). This is why `withinMajor` ships in small validated chunks, not as one commit — the risk is emergent from *resolution*, not just API surface.
 
-Use the scoper's `coupled` field to identify packages that must be updated together, and verify peer dependency requirements with `npm ls` / `pnpm ls` before attempting any update. After each chunk installs, confirm no unexpected **duplicate** copies appeared (`npm ls <pkg>` / `find node_modules -name <pkg> -type d`) — duplicates of type packages and shared cores are the silent killers.
+Use the scoper's `coupled` field to identify packages that must be updated together, and verify peer dependency requirements with the manager's `ls` before attempting any update. After each chunk installs, confirm no unexpected **duplicate** copies appeared (`<pm> ls <pkg>`, `find node_modules -name <pkg> -type d`, or `node_modules/.pnpm/<pkg>@*` under pnpm) — duplicates of type packages and shared cores are the silent killers.
 
 ### Baseline Establishment
 
@@ -23,10 +27,10 @@ Use the scoper's `coupled` field to identify packages that must be updated toget
 
 1. **Pin all versions** - Remove `^` and `~` prefixes from package.json
 2. **Verify zero errors** - The baseline MUST have:
-   - ZERO TypeScript errors (`npm run tsc`)
-   - ZERO ESLint errors (`npm run lint`)
-   - ALL tests passing (`npm run test`)
-   - Successful production build (`npm run build`)
+   - ZERO TypeScript errors (typecheck script)
+   - ZERO ESLint errors (lint script)
+   - ALL tests passing (test script)
+   - Successful production build (build script)
 3. **Commit the clean baseline** - This is your rollback point
 
 ## Phase-Based Execution Strategy
@@ -85,7 +89,7 @@ The following MUST be maintained at every phase:
 
 **AI Assistant Responsibilities (Automated Only):**
 
-- Execute dependency updates via npm commands
+- Execute dependency updates via the project's package manager
 - Run lightweight validation checks (tsc, lint, test)
 - Maintain memory file with current progress and status
 - Report results and STOP for approval
@@ -95,7 +99,7 @@ The following MUST be maintained at every phase:
 
 **Engineer Responsibilities (Manual Only):**
 
-- **Run production build** (`npm run build`) - CRITICAL
+- **Run production build** - CRITICAL
 - Manual dev server testing
 - Critical user path verification
 - Performance validation
@@ -118,7 +122,7 @@ The agent filters breaking changes to ones the codebase actually uses (via grep)
 
 ## Anti-Patterns
 
-1. **Never delete package-lock.json** - Use `npm ci` for clean installs
+1. **Never delete the lockfile** - reinstall from it (`npm ci` / `pnpm install --frozen-lockfile`)
 2. **Never update unrelated major packages simultaneously** - Update one ecosystem at a time
 3. **Never proceed with a broken state** - Fix before continuing; broken states compound
 4. **Never skip the build validation** - Dev server success != build success
@@ -138,7 +142,7 @@ The agent filters breaking changes to ones the codebase actually uses (via grep)
 ### Engineer-Approved Rollback Process:
 
 1. `git reset --hard HEAD~1` (engineer executes)
-2. `npm ci` to restore from lock file
+2. Clean install to restore from the lockfile
 3. Run full validation suite
 4. Root cause analysis before retry
 
@@ -229,7 +233,7 @@ After each phase, report:
 - Packages updated with version numbers
 - Issues encountered and resolutions
 - Next phase plan
-- **REMINDER: Engineer must run `npm run build` before proceeding**
+- **REMINDER: Engineer must run the production build before proceeding**
 
 ### Handoff Points
 
@@ -248,7 +252,7 @@ After each phase, report:
 **Solutions** (order of preference):
 1. Align versions (upgrade/downgrade to compatible versions)
 2. Check for newer versions with aligned dependencies
-3. Use npm `overrides` as last resort (document the reason)
+3. Use an override as last resort, in the file this manager reads (document the reason)
 4. Consider alternative packages
 
 ### Build-Only Errors
@@ -257,11 +261,11 @@ After each phase, report:
 
 **Common Causes**: TypeScript strict mode differences, dead code elimination, import resolution differences, environment variable handling
 
-**Prevention**: Always run `npm run build` as part of validation
+**Prevention**: Always run the production build as part of validation
 
-### npm ci Failures
+### Clean-install Failures
 
-**Issue**: `npm ci` fails without `--legacy-peer-deps`
+**Issue**: the clean install fails without `--legacy-peer-deps`
 
 **Prevention**: Resolve peer dependencies properly before committing. Never commit a state that requires `--legacy-peer-deps`.
 
@@ -269,8 +273,8 @@ After each phase, report:
 
 ```bash
 # Analysis — prefer dispatching the dependency-scoper agent over running these inline
-npm ls <package>                # Show dependency tree (peer-dep checks)
-npx --yes npm-check-updates --jsonUpgraded                # npm/yarn project
+<pm> ls <package>               # Show dependency tree (peer-dep checks)
+npm-check-updates --jsonUpgraded   # via npx / pnpm dlx
 pnpm dlx npm-check-updates --jsonUpgraded                 # pnpm project
 
 # AI Validation Suite (discover exact scripts from package.json first)
@@ -286,8 +290,8 @@ pnpm --filter <pkg> build       # Production build - MUST RUN
 pnpm --filter <pkg> dev         # Dev server check
 
 # Installation
-npm ci                          # Clean install from lock file
-npm install <package>@version   # Install specific version
+<pm> clean-install              # npm ci / pnpm install --frozen-lockfile
+<pm> add <package>@version      # Install specific version
 ```
 
 ## Engineer Validation Checklist
@@ -295,7 +299,7 @@ npm install <package>@version   # Install specific version
 ### After Each Phase:
 
 - [ ] All automated checks pass (tsc, lint, test)
-- [ ] Production build completes successfully (`npm run build`)
+- [ ] Production build completes successfully
 - [ ] Development server starts without errors
 - [ ] Critical user paths tested (auth, core features, CRUD, APIs)
 - [ ] No new console errors or warnings
