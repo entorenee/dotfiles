@@ -1,10 +1,23 @@
 {
   config,
   lib,
+  pkgs,
   ...
 }: let
   # Absolute, not `~/…`: a JSON settings value is literal and would not expand.
   artifactsRoot = "${config.xdg.dataHome}/claude/artifacts";
+
+  # Not an xdg.* root: Claude Code hardcodes ~/.claude, so that is where
+  # programs.claude-code deploys the skills tree.
+  sweepDueScript = "${config.home.homeDirectory}/.claude/skills/skill-reviewer/sweep-due.sh";
+
+  # This path is ours to pick, so it follows XDG. Only launchd needs it — a
+  # systemd unit's stderr goes to the journal.
+  sweepDueLog = "${config.xdg.stateHome}/claude/sweep-due.err";
+  # inventory.sh exits non-zero without the artifacts root, and neither launchd
+  # nor a systemd user unit inherits a login environment. PATH needs git and jq,
+  # which live in the user profile.
+  sweepDuePath = "${config.home.profileDirectory}/bin:/usr/bin:/bin:/usr/sbin:/sbin";
 
   skillNames =
     builtins.attrNames (builtins.readDir ./config/skills)
@@ -415,5 +428,72 @@ in {
   # No matching programs.claude-code option, so these stay hand-wired.
   home.file = {
     ".claude/statusline.sh".source = ./config/statusline.sh;
+  };
+
+  # Notifies when the sweep is overdue; it does not run it.
+  #
+  # Two gates of different kinds: `my.gui` because a notifier needs somewhere to
+  # notify (this module reaches headless `hub` via roles/home/cli.nix), and the
+  # platform because launchd and systemd are not interchangeable.
+  launchd.agents.claude-sweep-due = lib.mkIf (config.my.gui && pkgs.stdenv.isDarwin) {
+    enable = true;
+    config = {
+      ProgramArguments = [
+        "${pkgs.bash}/bin/bash"
+        "${config.home.homeDirectory}/.claude/skills/skill-reviewer/sweep-due.sh"
+      ];
+      # Fires on wake after a missed window, so a closed lid delays the check
+      # rather than skipping the week. No catch-up logic needed.
+      StartCalendarInterval = [
+        {
+          Weekday = 1;
+          Hour = 9;
+          Minute = 0;
+        }
+      ];
+      EnvironmentVariables = {
+        MY_CLAUDE_ARTIFACTS_ROOT = artifactsRoot;
+        PATH = sweepDuePath;
+      };
+      StandardErrorPath = sweepDueLog;
+      RunAtLoad = false;
+    };
+  };
+
+  # No home-manager service abstracts "run a script on a schedule", so both
+  # halves are hand-written and have to be changed together.
+  systemd.user.services.claude-sweep-due = lib.mkIf (config.my.gui && pkgs.stdenv.isLinux) {
+    Unit.Description = "Notify when the Claude skill sweep is overdue";
+    Service = {
+      Type = "oneshot";
+      ExecStart = "${pkgs.bash}/bin/bash ${sweepDueScript}";
+      Environment = [
+        "MY_CLAUDE_ARTIFACTS_ROOT=${artifactsRoot}"
+        "PATH=${sweepDuePath}"
+        # A user unit does not inherit the session bus from the login shell, and
+        # without it the timer fires, the script runs, and no banner appears.
+        # %t is XDG_RUNTIME_DIR.
+        "DBUS_SESSION_BUS_ADDRESS=unix:path=%t/bus"
+      ];
+    };
+  };
+
+  # launchd creates the stderr file but not its parent directory, and logs
+  # nothing at all if that directory is missing. Declaring the log itself would
+  # be worse than useless: home-manager deploys a read-only store symlink, which
+  # launchd cannot write to.
+  xdg.stateFile."claude/.keep" = lib.mkIf (config.my.gui && pkgs.stdenv.isDarwin) {
+    text = "";
+  };
+
+  systemd.user.timers.claude-sweep-due = lib.mkIf (config.my.gui && pkgs.stdenv.isLinux) {
+    Unit.Description = "Weekly check for an overdue Claude skill sweep";
+    Timer = {
+      OnCalendar = "Mon 09:00";
+      # Required for parity: launchd fires on wake after a missed window, a
+      # systemd timer skips it unless Persistent is set.
+      Persistent = true;
+    };
+    Install.WantedBy = ["timers.target"];
   };
 }

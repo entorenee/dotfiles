@@ -9,7 +9,9 @@
 #   bash signals.sh --rollup     append a counts-only row to the friction repo
 #   bash signals.sh --aging      friction entries whose lesson is not yet executable
 #   bash signals.sh --hooks      per-hook firing counts, cost, and last-fired date
-#   bash signals.sh --since DATE the prediction metric for sessions on/after DATE
+#   bash signals.sh --since [DATE] the prediction metric for sessions on/after
+#                                DATE; with no DATE, derives the oldest unscored
+#                                prediction's ship date from PREDICTIONS.md
 #
 # Why a scanner and not a hook: every signal below is ALREADY recorded, so a
 # hook would re-write data that exists, add a moving part that can silently stop
@@ -29,11 +31,33 @@ case "${1:-}" in
   --rollup)  MODE=rollup ;;
   --aging)   MODE=aging ;;
   --hooks)   MODE=hooks ;;
-  --since)   MODE=since; SINCE="${2:?--since needs a YYYY-MM-DD date}" ;;
+  # DATE is optional: handing it over by eye was the last manual step in the
+  # sweep, and the answer is already written down in PREDICTIONS.md.
+  --since)   MODE=since; SINCE="${2:-}" ;;
   "")        MODE=table ;;
   *) echo "unknown option: $1" >&2; exit 2 ;;
 esac
 SINCE="${SINCE:-}"
+
+# An unscored prediction is one whose Outcome still says so; the window starts at
+# the oldest such prediction's ship date. Parsed rather than passed so the sweep
+# has no argument for anyone to get wrong.
+if [ "$MODE" = since ] && [ -z "$SINCE" ]; then
+  PRED="${MY_CLAUDE_FRICTION_ROOT:-}/rollups/PREDICTIONS.md"
+  if [ -f "$PRED" ]; then
+    SINCE=$(awk '
+      /^\*\*Shipped:\*\*/ {
+        if (match($0, /[0-9]{4}-[0-9]{2}-[0-9]{2}/)) shipped = substr($0, RSTART, RLENGTH)
+      }
+      /^\*\*Outcome:\*\*/ && /not yet scored/ && shipped != "" { print shipped; shipped = "" }
+    ' "$PRED" | sort | head -1)
+  fi
+  if [ -z "$SINCE" ]; then
+    echo "--since: no unscored prediction found in ${PRED:-PREDICTIONS.md}; pass a date explicitly" >&2
+    exit 2
+  fi
+  echo "# --since derived from the oldest unscored prediction: $SINCE" >&2
+fi
 
 TRANSCRIPTS="${SKILL_TRANSCRIPT_DIR:-$HOME/.claude/projects}"
 HERE="$(cd "$(dirname "$0")" && pwd)"

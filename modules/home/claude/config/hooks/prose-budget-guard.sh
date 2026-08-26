@@ -2,27 +2,19 @@
 # prose-budget-guard.sh — Surface the context cost of an instruction edit at the
 # moment it is written.
 #
-# Every skill, command, and CLAUDE.md file under config/ is loaded into context
-# on invocation, so prose there is paid for on every run — unlike product code,
-# which is read on demand, and unlike $ARTIFACTS, which is never loaded at all.
-# Nothing measured that cost before, and the feedback loops in this repo all
-# produce more prose, so the corpus only grows.
+# Scope is config/**.md only: that prose is loaded into context on every
+# invocation, unlike product code (read on demand) or $ARTIFACTS (never loaded).
 #
-# WARNS, NEVER DENIES. No hook can judge whether prose is load-bearing, and a
-# new skill is legitimately 150 lines. The known weakness is that a warning can
-# simply be ignored; that is what makes this measurable — if the corpus keeps
-# growing at the same rate, warning was the wrong instrument.
+# Warns, never denies — no hook can judge whether prose is load-bearing, and a
+# new skill is legitimately 150 lines. Scored as P2 in rollups/PREDICTIONS.md.
 #
-# THREE EDIT ROUTES, TWO WAYS TO MEASURE. The Edit and Write tools carry the
-# before and after text in the payload, so the per-edit delta is exact. A Bash
-# command (sed -i, a heredoc, tee) carries an arbitrary shell string that cannot
-# be projected, so that route falls back to git: cumulative uncommitted added
-# lines for the corpus. Both numbers are honest about which one they are.
+# Two ways to measure, because the routes differ: Edit and Write carry the before
+# and after text, so the per-edit delta is exact; a Bash command carries a shell
+# string that cannot be projected, so it reports cumulative uncommitted growth
+# from git instead. Each message says which number it is.
 #
-# Matching Bash is not optional. Under `permissions.defaultMode = "auto"` the
-# harness instructs the model to make file changes through Bash wherever it can,
-# so a Write|Edit-only matcher misses the dominant route in the mode this
-# machine actually runs.
+# Do not narrow the matcher to Write|Edit. Under `defaultMode = "auto"` the
+# harness routes file changes through Bash, which is then the dominant route.
 
 set -uo pipefail
 
