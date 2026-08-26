@@ -27,12 +27,33 @@ confident, wrong diagnoses — which has already happened in this repo.
 | Mode in effect on a user turn | Yes | `user` entry, `.permissionMode` |
 | Mode in effect on a **tool call** | **No** — must be carried forward | — |
 | Prompt shown and **approved** | **No — leaves no trace whatsoever** | — |
-| Prompt shown and **denied** | Yes | `tool_result` text, `"has been denied"` |
-| Tool call rejected by the user | Yes | `tool_result` text, `"doesn't want to proceed"` |
+| Denial of any kind | Yes | `user` entry, **`.toolDenialKind`** |
 
 The critical consequence: **you cannot count prompts you approved.** Any claim
 about how often something prompted is an inference from rule matching, never a
 measurement. Say so in the report.
+
+### Read denials from `.toolDenialKind`, never from result text
+
+The field is structural and carries five values: `permission-rule`,
+`user-rejected`, `automode-blocked`, `automode-unavailable`, `interrupted`.
+
+Grepping result text for `has been denied` / `doesn't want to proceed` is wrong
+in both directions, and tempting enough that it needs refuting once. Measured
+2026-08-26 over the whole archive: 101 structural denial events, of which
+text-matching finds 74 and **invents 18 more** that carry no `toolDenialKind`
+at all (transcript prose quoting the phrase). What it misses is not random:
+
+| Missed | Why the text match fails |
+| --- | --- |
+| 21 `permission-rule` | Hook denials read *"python -c is denied: …"* — no `has been denied` substring |
+| 4 `automode-blocked` | Reads *"was denied by the Claude Code auto…"* |
+| 1 `automode-unavailable` | Model-unavailable fallback, different wording entirely |
+| 1 `interrupted` | `[Request interrupted by user for tool use]` |
+
+Every hook denial is in the missed set, so the text match is blind to exactly
+the population that must *never* be allowlisted. That is the failure mode this
+skill exists to prevent.
 
 ## Step 1 — Attribute modes
 
@@ -89,8 +110,8 @@ done
 
 ## Step 3 — Classify each finding by its actual fix
 
-This is the step that makes the report useful. Sort every hit into one of two
-buckets — they call for opposite responses:
+Sort every hit into the bucket that determines its remedy — they call for
+opposite responses:
 
 - **Missing allowlist entry.** A legitimate command with no matching rule
   (e.g. a read-only tool that simply was never added). Fix: propose a narrow
@@ -100,23 +121,45 @@ buckets — they call for opposite responses:
   `.bin/` paths). Fix: **do not allowlist it.** These prompt *correctly*. A high
   count here means auto mode suppressed the feedback that would have corrected
   the habit — the remedy is a CLAUDE.md rule or a hook, never a broader allow.
+- **Sandbox boundary.** No allow rule can bypass it. Changing it means editing
+  `sandbox.filesystem.*`, which is a hardening decision, not a convenience fix.
 
 Misfiling the second bucket as the first is the main failure mode of this
 skill: it converts a behavioural problem into permanently loosened permissions.
 
-## Step 4 — Pair denials with their replacements
+**For anything with a recorded denial, do not classify by hand — the bucket is
+already structural.** `signals.sh --denials` (step 4) derives it from
+`.toolDenialKind` plus the denial text: `allowlist-gap`, `hook-deny`,
+`sandbox-deny`, `user-rejected`. Hand classification is only for step 2's
+*inferred* blockers, which by definition have no denial to read.
+
+## Step 4 — Census the denials, then pair them with their replacements
+
+The census is already built. Do not re-derive it, and do not grep result text:
+
+```bash
+bash "$HOME/.claude/skills/skill-reviewer/signals.sh" --denials
+```
+
+It groups every denial by `.toolDenialKind`, classifies each into the step-3
+buckets, and prints the commonest command shapes per bucket with a footer
+saying what each bucket's remedy is. It includes subagent sidechains, which the
+session table excludes — a rule that blocks a subagent still needs fixing, and
+8 of the rule denials are sidechain-only.
+
+Then pair the interesting ones. The census reports shapes, not sequences, so
+this part is still yours to run — select structurally, never on text:
 
 ```bash
 cd "$HOME/.claude/projects" && find . -name '*.jsonl' -print0 | xargs -0 cat 2>/dev/null \
-  | jq -r 'select(.type=="user") | .message.content[]? | select(.type=="tool_result")
-           | (.content | if type=="array" then (.[]?.text // "") else (.//"") end)' \
-  | grep -E 'has been denied|doesn.t want to proceed'
+  | jq -rs 'map(select(.toolDenialKind != null))
+            | .[] | "\(.sessionId)\t\(.toolDenialKind)"'
 ```
 
-For each denial, find the next `Bash` call in the same session and report the
-pair. The delta is the signal — it shows what actually satisfied you, which is
-better evidence than any rule analysis. Expect low volume; a handful of these
-often beats a long frequency table.
+For each denial, find the next `Bash` call in that session and report the pair.
+The delta is the signal — it shows what actually satisfied you, which is better
+evidence than any rule analysis. Expect low volume; a handful of these often
+beats a long frequency table.
 
 ## Step 5 — Verify before asserting
 
@@ -140,9 +183,11 @@ Then use `AskUserQuestion` to offer applying **only the highest-value
 findings** — the ones in the "missing allowlist entry" bucket with a real count
 behind them. Apply only what is approved.
 
-- Permissions live in `modules/home/claude/default.nix` (base) or
-  `work.nix` / `personal.nix` (profile-specific). Never write
-  `~/.claude/settings.json` — it is a read-only Nix store symlink.
+- Permissions live in `modules/home/claude/default.nix` (base),
+  `hosts/darwin/fw-skyler/claude.nix` (work), or
+  `roles/home/personal-claude.nix` (personal) — an identity is a file the host
+  imports, not a profile string to branch on. Never write
+  `~/.claude/settings.json`; it is a read-only Nix store symlink.
 - Never propose `permissions.deny` changes. Check proposals against the
   existing deny list, since deny wins and a contradictory allow entry is dead
   weight.

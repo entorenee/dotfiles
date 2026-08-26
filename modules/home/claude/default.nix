@@ -57,9 +57,27 @@ in {
               type = "command";
               command = "~/.claude/hooks/exec-form-guard.sh";
             }
+            # Same reason: it looks for corpus paths in the command, which the
+            # rewritten form can relocate.
+            {
+              type = "command";
+              command = "~/.claude/hooks/prose-budget-guard.sh";
+            }
             {
               type = "command";
               command = "~/.claude/hooks/rtk-rewrite.sh";
+            }
+          ];
+        }
+        # The same guard on the tool-based edit routes. Both matchers are
+        # required: auto mode steers file edits through Bash, every other mode
+        # uses these tools, and the corpus can grow either way.
+        {
+          matcher = "Write|Edit";
+          hooks = [
+            {
+              type = "command";
+              command = "~/.claude/hooks/prose-budget-guard.sh";
             }
           ];
         }

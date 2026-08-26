@@ -196,6 +196,11 @@ EOF
     # Denials paired with the command that drew them. `toolDenialKind` is
     # structural; permission-audit's text-matching misses 21 of 57 rule denials.
     #
+    # Classify on `full`, display `shape`. The sandbox marker sits past 60 chars
+    # in a real denial ("ls in '<long path>' was blocked."), so testing the
+    # truncated string files it as hook-deny — which inverts the remedy: the
+    # footer would say "never allowlist" when no allow rule could help at all.
+    #
     # Sidechains are INCLUDED here, unlike the session table. A subagent blocked
     # by a permission rule has no human at the gate — so it is not a friction
     # signal — but it is still a rule that needs fixing, which is what this mode
@@ -206,16 +211,17 @@ EOF
       | jq -rs '
           map(select(.type=="user" and .toolDenialKind != null))
           | map({kind: .toolDenialKind,
-                 shape: ((.message.content // [])
+                 full: ((.message.content // [])
                          | if type=="array" then
                              (map(select(.type=="tool_result")
                               | (.content | if type=="array" then (map(.text//"")|join(" ")) else (.//"") end))
                               | join(" "))
                            else "" end
-                         | gsub("\\s+"; " ") | .[0:60])})
+                         | gsub("\\s+"; " "))})
+          | map(. + {shape: (.full | .[0:60])})
           | map(. + {src: (if .kind != "permission-rule" then .kind
-                           elif (.shape | test("^\\s*Permission to use ")) then "allowlist-gap"
-                           elif (.shape | test("was blocked\\.|For security, Claude Code may only")) then "sandbox-deny"
+                           elif (.full | test("^\\s*Permission to use ")) then "allowlist-gap"
+                           elif (.full | test("was blocked\\.|For security, Claude Code may only")) then "sandbox-deny"
                            else "hook-deny" end)})
           | group_by(.src)[]
           | "\(.[0].src)  (\(length))",
