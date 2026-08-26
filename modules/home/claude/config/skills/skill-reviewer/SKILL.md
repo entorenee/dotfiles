@@ -84,6 +84,7 @@ Named explicitly, because a loop whose arms are vague does not run.
 |---|---|
 | **Signal** | Human turns at the gate: corrections, interruptions, and review-time gaps. An interruption is the strongest of the three — the human stopped the run mid-flight — and the cheapest to miss, because it carries no text. |
 | **Collection** | `inventory.sh` for coverage, then `mine.jq` for gate evidence. One command each, no heroics; the alternative is reconstructing history by hand, which is why loops like this normally never run twice. |
+| **Structural signal** | `signals.sh` — interruptions, denials, and rework chains read from labelled fields rather than wording. This is the arm that sees friction **nobody caught**: the Signal row above requires a human to have said something, and `friction-capture` exists precisely because absorbed friction "produces no signal and reads as a clean run." |
 | **Feedback** | Edits to the reviewed skill's own `SKILL.md`, each citing the run that justifies it, plus a ledger row so the next review can measure movement. |
 
 ## Workflow
@@ -102,6 +103,48 @@ git --no-pager log --follow --date=short --format='%ad %h %s' \
 ```
 
 Directory moves and repo-wide refactors show up here and are **not** tightenings. Check what a commit actually changed before counting it. If a file's content has never changed, say that plainly — a workflow that has run 10 times and never been revised is the finding, not a footnote.
+
+### Step 1b — Read the structural signals
+
+```bash
+bash <skill-base-dir>/signals.sh            # per-session table + totals
+bash <skill-base-dir>/signals.sh --denials  # denials classified by what fixes them
+```
+
+Three things it answers that no other arm can:
+
+- **Interruptions and denials, counted.** Both are labelled fields
+  (`interruptedMessageId`, `toolDenialKind`), so neither depends on anyone having
+  written the friction down.
+- **Rework chains.** Consecutive human turns where the assistant went back and
+  re-edited its own work, or had a call rejected between turns. **Depth ≥ 3 is the
+  "confidently wrong until pushed back on several times" case.**
+
+  Score movement on **deep / eligible**, where eligible means ≥ 3 typed turns.
+  A depth-3 chain cannot occur in a shorter session, so including those measures
+  how many short sessions the period happened to contain, nothing more — at first
+  run that gap was 14% (all sessions) against 29% (eligible). The rate also climbs
+  with session length (0% / 8% / 35% / 53% / 75% across the turn buckets), so an
+  intervention that changes typical session length moves the headline by itself.
+  **Always check the within-bucket rates alongside the headline**, and do not score
+  a prediction until ≥ 30 eligible sessions have accumulated against the new text.
+
+  Baseline, 2026-08-26: **24 / 84 eligible = 29%**; 169 sessions total, deepest 8.
+- **Which denials are actually fixable by config.** `--denials` splits
+  `permission-rule` into `allowlist-gap` (a narrow allow rule may be right),
+  `hook-deny` (**never allowlist** — the denial is the intervention), and
+  `sandbox-deny` (a hardening decision, not a convenience fix).
+
+`signals.sh --verify` re-derives the aggregate with an independent query over the
+same files and diffs the two. Run it before quoting any number from this arm. It
+compares against a live re-derivation rather than a stored fixture on purpose: the
+archive is append-only, and `user-rejected` was observed changing from 33 to 34
+*during* a single measuring session.
+
+**Its counts are floors.** A wrong proposal corrected purely in prose — no edit, no
+rejected call — is invisible to every structural arm, and approved prompts leave no
+trace at all. The footer says so; repeat it in the review rather than quoting a
+total as if it were complete.
 
 ### Step 2a — Establish coverage before counting anything
 
