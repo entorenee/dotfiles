@@ -8,6 +8,7 @@
 #   bash signals.sh --verify     re-derive the aggregate independently and diff
 #   bash signals.sh --rollup     append a counts-only row to the friction repo
 #   bash signals.sh --aging      friction entries whose lesson is not yet executable
+#   bash signals.sh --hooks      per-hook firing counts, cost, and last-fired date
 #   bash signals.sh --since DATE the prediction metric for sessions on/after DATE
 #
 # Why a scanner and not a hook: every signal below is ALREADY recorded, so a
@@ -27,6 +28,7 @@ case "${1:-}" in
   --verify)  MODE=verify ;;
   --rollup)  MODE=rollup ;;
   --aging)   MODE=aging ;;
+  --hooks)   MODE=hooks ;;
   --since)   MODE=since; SINCE="${2:?--since needs a YYYY-MM-DD date}" ;;
   "")        MODE=table ;;
   *) echo "unknown option: $1" >&2; exit 2 ;;
@@ -240,6 +242,52 @@ EOF
 #                convenience fix.
 # user-rejected  you turned it down. Not a permission problem; read the next
 #                command in that session to see what satisfied you instead.
+EOF
+    ;;
+
+  hooks)
+    # Hook liveness. A warn-only hook has no other observable: it changes no
+    # permission decision and records no denial, so "did it ever fire" is
+    # otherwise unanswerable — which is F16's shape, a capability that is
+    # documented but silently inert.
+    #
+    # WHAT AN ABSENT ROW MEANS. A hook appears here only for calls where it
+    # WROTE TO STDOUT. A hook that passes silently produces no attachment at
+    # all, so exec-form-guard and pnpm-guard are invisible on the calls they
+    # allow; their interventions are denials and belong to --denials instead.
+    # For a warn-only guard the two coincide: an attachment IS a firing. Read a
+    # missing row as "never produced output", never as "never ran".
+    #
+    # Fields come from `attachment` on a `hook_success` row — command, exitCode,
+    # durationMs, and the entry timestamp. All four are present on every such
+    # row in the archive, so none of this is inferred from message text.
+    find "$TRANSCRIPTS" -name '*.jsonl' -print0 2>/dev/null \
+      | xargs -0 cat 2>/dev/null \
+      | jq -rs '
+          def med: sort | if length == 0 then 0 else .[(length / 2 | floor)] end;
+          [.[] | select(.type=="attachment" and .attachment.type=="hook_success"
+                        and (.attachment.command // "") != "")]
+          | group_by(.attachment.command)
+          | map({cmd: (.[0].attachment.command | sub("^.*/"; "")),
+                 fired: length,
+                 errors: (map(select((.attachment.exitCode // 0) != 0)) | length),
+                 med_ms: (map(.attachment.durationMs // 0) | med),
+                 max_ms: (map(.attachment.durationMs // 0) | max),
+                 last: (map(.timestamp // "") | max | .[0:10])})
+          | sort_by(-.fired)
+          | "HOOK                      FIRED  ERR  MED_MS  MAX_MS  LAST",
+            (.[] | "\(.cmd | .[0:24] | . + (" " * (24 - length)))  \(.fired | tostring | (" " * (5 - length)) + .)  \(.errors | tostring | (" " * (3 - length)) + .)  \(.med_ms | tostring | (" " * (6 - length)) + .)  \(.max_ms | tostring | (" " * (6 - length)) + .)  \(.last)")'
+    cat <<'EOF'
+
+# FIRED   calls where the hook wrote to stdout. For a warn-only guard that is
+#         its firing count; for a deny-guard see --denials instead.
+# ERR     nonzero exits. A guard that errors is failing open, silently.
+# MED_MS  per-call cost. Every PreToolUse hook on the Bash matcher is paid on
+#         EVERY Bash call, whether or not it fires — so a hook with FIRED=0 and
+#         a real MED_MS is pure overhead and should be removed, not tuned.
+# LAST    most recent firing. Compare against the window you are reviewing: a
+#         date that predates it means the hook went quiet, which for a guard
+#         wired to a live rule is a defect, not a success.
 EOF
     ;;
 

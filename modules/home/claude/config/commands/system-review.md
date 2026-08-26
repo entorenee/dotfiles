@@ -15,9 +15,11 @@ That restraint is the whole design. A sweep that quietly turns into a review tak
 bash "$HOME/.claude/skills/skill-reviewer/inventory.sh" --json
 bash "$HOME/.claude/skills/skill-reviewer/signals.sh" --aging
 bash "$HOME/.claude/skills/skill-reviewer/signals.sh" --since <date of the oldest unscored prediction>
+bash "$HOME/.claude/skills/skill-reviewer/signals.sh" --hooks
+bash "$HOME/.claude/hooks/prose-budget-guard.sh" --selftest
 ```
 
-Three commands, and that is the whole data-gathering step. The second reads the friction log rather than the transcripts, so it costs nothing and feeds only the Aging bucket. The third is skipped entirely when `rollups/PREDICTIONS.md` has no unscored prediction. Skip either and its bucket cannot be reported at all. Every field the buckets need is in one of the three, already computed:
+Five commands, and that is the whole data-gathering step. The second reads the friction log rather than the transcripts, so it costs nothing and feeds only the Aging bucket. The third is skipped entirely when `rollups/PREDICTIONS.md` has no unscored prediction. The fourth feeds the Inert bucket. The fifth takes about a second and answers the question the fourth cannot: `--hooks` says whether a guard *fired*, the selftest says whether it is still *correct*. A guard can be live and wrong. Report a nonzero exit as a defect under Inert — a failing selftest means the guard's behaviour has drifted from what it was built to do, which is worth more than any count in this sweep. Skip either and its bucket cannot be reported at all. Every field the buckets need is in one of the three, already computed:
 
 | Field | Use |
 |---|---|
@@ -50,6 +52,7 @@ Thresholds live in `skill-reviewer/SKILL.md` under **Cadence and thresholds**. R
 | **No evidence** | Verdict `no-evidence`: nothing in any arm. See below, because this bucket has burned us twice. |
 | **Aging** | Friction entries still at `Class: open` past the threshold — the lesson never became executable. From `signals.sh --aging`. See the cap below; this bucket has a backlog problem the others do not. |
 | **Predictions** | An instruction-text change whose measured outcome is now readable. From `signals.sh --since`, banded in `rollups/PREDICTIONS.md`. **The only bucket that can report something learned rather than something due.** |
+| **Inert** | A registered hook with `FIRED=0`, or one whose `LAST` predates this window. From `signals.sh --hooks`. A hook on the `Bash` matcher is paid on every Bash call, so one that never fires is pure overhead — recommend removal, not tuning. Read an absent row as "produced no output", never as "never ran": a hook that passes silently emits nothing, so the deny-guards live in `--denials` instead and are not expected here. |
 
 Sort on the `verdict` field, not on whether a count looks empty. `unadopted` and `no-evidence` both show zero sessions and are the same shape at a glance, but they are opposite states: one is a question already closed, the other is a question never asked.
 
