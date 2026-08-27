@@ -109,6 +109,19 @@ in {
           ];
         }
       ];
+      # Second channel for an overdue sweep, so a missed Monday banner is not
+      # the only one. Reads a record sweep-due.sh writes and decides nothing
+      # itself; the script's header carries why.
+      hooks.SessionStart = [
+        {
+          hooks = [
+            {
+              type = "command";
+              command = "~/.claude/hooks/sweep-due-session.sh";
+            }
+          ];
+        }
+      ];
       enabledPlugins = {
         "typescript-lsp@claude-plugins-official" = true;
         "superpowers@superpowers-marketplace" = true;

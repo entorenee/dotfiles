@@ -145,6 +145,41 @@ review_trailer_scan() { # $1 = git dir, $2 = path within it
       --format='%x1e%ad%x1f%B' -- "$2" 2>/dev/null | review_trailer_parse
 }
 
+# --------------------------------------------------------------------------
+# Corpus arm: does the archive still hold what every other count assumes?
+#
+# A transcript cut mid-record, or one that cannot be read, deflates every mined
+# count while the session total holds steady — so the output keeps its shape and
+# nothing downstream looks wrong. PLAYBOOK.md beside this file has the figures.
+#
+# Truncation cannot surface downstream as an error to unsuppress: `jq -sR`
+# slurps a file as a raw STRING, and half a record is still a valid string, so
+# jq exits 0 with an empty stderr. The loss is invisible by construction, and
+# looking for it here is the only way it is ever seen.
+#
+# The last line is the whole test. A complete JSONL transcript ends on a whole
+# record; a truncated one does not. Validating every line answers the same
+# question for minutes instead of seconds. Measured on the live archive — 415
+# files, 651 MB — this loop costs 1.3s against a ~9s whole-script run.
+# --------------------------------------------------------------------------
+corpus_scan() { # $1 = archive root, $2 = unreadable list, $3 = truncated list
+  local root="$1" unreadable="$2" truncated="$3" f n=0
+  : > "$unreadable"; : > "$truncated"
+
+  while IFS= read -r f; do
+    n=$((n + 1))
+    # Permission is tested first because `tail` on an unreadable file prints
+    # nothing and exits nonzero — the same signature a truncated file gives, and
+    # the two failures need different fixes.
+    if [ ! -r "$f" ]; then printf '%s\n' "$f" >> "$unreadable"; continue; fi
+    tail -1 "$f" 2>/dev/null | jq -e . >/dev/null 2>&1 \
+      || printf '%s\n' "$f" >> "$truncated"
+  done < <(find "$root" -type f -name '*.jsonl' 2>/dev/null | sort)
+
+  printf '%s\t%s\t%s\n' "$n" \
+    "$(wc -l < "$unreadable" | tr -d ' ')" "$(wc -l < "$truncated" | tr -d ' ')"
+}
+
 if [ "$MODE" = selftest ]; then
   T="$WORK/selftest"; rm -rf "$T"; mkdir -p "$T"
   pass=0; fail=0
@@ -228,6 +263,53 @@ if [ "$MODE" = selftest ]; then
     printf '  FAIL  newest commit wins when several carry the trailer — got "%s"\n' "$got"
   fi
 
+  # Corpus arm. Fixture FILES, never a scratch repo: the damage being modelled is
+  # a half-written file, and a fixture needing a commit does not get one here.
+  ccheck() { # $1 = label, $2 = expected "scanned unreadable truncated", $3 = root
+    local got
+    got=$(corpus_scan "$3" "$T/unreadable.txt" "$T/truncated.txt" \
+          | awk -F'\t' '{printf "%s %s %s", $1, $2, $3}')
+    if [ "$got" = "$2" ]; then pass=$((pass+1)); printf '  ok    %s\n' "$1"
+    else fail=$((fail+1)); printf '  FAIL  %s — expected "%s", got "%s"\n' "$1" "$2" "$got"; fi
+  }
+
+  mkdir -p "$T/corpus/whole"
+  printf '{"type":"user"}\n{"type":"assistant","isSidechain":false}\n' \
+    > "$T/corpus/whole/a.jsonl"
+  ccheck "a transcript ending on a whole record is intact" "1 0 0" "$T/corpus/whole"
+
+  mkdir -p "$T/corpus/cut"
+  printf '{"type":"user"}\n{"type":"assistant","isSid' > "$T/corpus/cut/b.jsonl"
+  ccheck "a transcript cut mid-record reads as truncated" "1 0 1" "$T/corpus/cut"
+
+  mkdir -p "$T/corpus/locked"
+  printf '{"type":"user"}\n' > "$T/corpus/locked/c.jsonl"
+  chmod 000 "$T/corpus/locked/c.jsonl"
+  ccheck "an unreadable transcript is counted, not skipped" "1 1 0" "$T/corpus/locked"
+
+  # Zero bytes is truncation, not intactness: the file holds no whole record, so
+  # it contributes nothing and must not read as a healthy transcript.
+  mkdir -p "$T/corpus/zero"; : > "$T/corpus/zero/d.jsonl"
+  ccheck "a zero-byte transcript is truncated, never intact" "1 0 1" "$T/corpus/zero"
+
+  mkdir -p "$T/corpus/mixed"
+  cp "$T/corpus/whole/a.jsonl" "$T/corpus/cut/b.jsonl" "$T/corpus/mixed/"
+  printf '{"type":"user"}\n' > "$T/corpus/mixed/c.jsonl"
+  chmod 000 "$T/corpus/mixed/c.jsonl"
+  printf 'not a transcript\n' > "$T/corpus/mixed/MEMORY.md"
+  ccheck "a mixed archive counts each kind, and scans only transcripts" \
+    "3 1 1" "$T/corpus/mixed"
+
+  # The counts are the alarm; the paths are what makes it actionable, so the
+  # lists are asserted too rather than trusted to follow from the totals.
+  got=$( { cat "$T/unreadable.txt" "$T/truncated.txt"; } | sed 's#.*/##' | tr '\n' ',')
+  if [ "$got" = "c.jsonl,b.jsonl," ]; then
+    pass=$((pass+1)); printf '  ok    damaged transcripts are named, not just counted\n'
+  else
+    fail=$((fail+1))
+    printf '  FAIL  damaged transcripts are named, not just counted — got "%s"\n' "$got"
+  fi
+
   printf '\n%d passed, %d failed\n' "$pass" "$fail"
   [ "$fail" -eq 0 ] || exit 1
   exit 0
@@ -260,6 +342,13 @@ EOF
 { ls -1 "$CONFIG_DIR/skills"; ls -1 "$CONFIG_DIR/commands" | sed 's/\.md$//'; } \
   | sed 's#/$##' | sort -u > "$WORK/units.txt"
 
+# Corpus arm — see corpus_scan() above for why the last line is the test.
+CORPUS_UNREADABLE="$WORK/corpus-unreadable.txt"
+CORPUS_TRUNCATED="$WORK/corpus-truncated.txt"
+read -r CORPUS_SCANNED CORPUS_N_UNREADABLE CORPUS_N_TRUNCATED \
+  < <(corpus_scan "$TRANSCRIPTS" "$CORPUS_UNREADABLE" "$CORPUS_TRUNCATED")
+CORPUS_GREP_ERR=0
+
 # --------------------------------------------------------------------------
 # Direct arm. Emits: unit, file, top|sub, YYYY-MM-DD
 #
@@ -286,6 +375,12 @@ grep -rH '"type":"assistant"' "$TRANSCRIPTS" 2>/dev/null \
         m = substr(m, RSTART+RLENGTH);
       }
     }' > "$WORK/direct.tsv"
+# PIPESTATUS[0], not $?: pipefail reports the LAST nonzero stage, so the second
+# grep finding no matches (1) masks the recursive grep erroring on a file it
+# cannot read (2) — the one status that means the corpus, not the query, is at
+# fault. stderr stays discarded so a permission warning does not scatter through
+# the table; the offending paths come from corpus_scan.
+[ "${PIPESTATUS[0]}" -eq 2 ] && CORPUS_GREP_ERR=$((CORPUS_GREP_ERR + 1))
 
 grep -rH '"content":"<command-message>' "$TRANSCRIPTS" 2>/dev/null \
   | awk -F'.jsonl:' 'NF>1 {
@@ -297,6 +392,7 @@ grep -rH '"content":"<command-message>' "$TRANSCRIPTS" 2>/dev/null \
         m = substr(m, RSTART+RLENGTH);
       }
     }' >> "$WORK/direct.tsv"
+[ "${PIPESTATUS[0]}" -eq 2 ] && CORPUS_GREP_ERR=$((CORPUS_GREP_ERR + 1))
 
 # One date per session, not per invocation: two invocations in one transcript are
 # one run, and runs_since counts runs.
@@ -561,8 +657,12 @@ awk -F'\t' '
   | sort -k3,3nr -k5,5nr -k1,1 > "$WORK/rows.tsv"
 
 if [ "$MODE" = json ]; then
-  jq -R -s --arg root "$ART_ROOT" --arg tx "$TRANSCRIPTS" --arg ls "$LEDGER_STATUS" '
-    { artifact_root: $root, transcripts: $tx, ledger_status: $ls,
+  jq -R -s --arg root "$ART_ROOT" --arg tx "$TRANSCRIPTS" --arg ls "$LEDGER_STATUS" \
+     --argjson cs "$(printf \
+        '{"scanned":%d,"unreadable":%d,"truncated":%d,"grep_errors":%d}' \
+        "$CORPUS_SCANNED" "$CORPUS_N_UNREADABLE" "$CORPUS_N_TRUNCATED" \
+        "$CORPUS_GREP_ERR")" '
+    { artifact_root: $root, transcripts: $tx, ledger_status: $ls, corpus_status: $cs,
       units: (split("\n") | map(select(length > 0) | split("\t") | {
         unit:            .[0],
         invocations:     (.[1] | tonumber),
@@ -585,7 +685,8 @@ if [ "$MODE" = json ]; then
 fi
 
 echo "# skill-inventory"
-echo "# transcripts : $TRANSCRIPTS"
+echo "# transcripts : $TRANSCRIPTS — $CORPUS_SCANNED scanned, \
+$CORPUS_N_UNREADABLE unreadable, $CORPUS_N_TRUNCATED truncated"
 echo "# artifacts   : $ART_ROOT — $ART_N files across $REPO_N repo(s)"
 echo "# ledger      : $ART_ROOT/skill-reviewer/LEDGER.md — $LEDGER_STATUS"
 echo
@@ -600,6 +701,18 @@ if [ -n "$LEDGER_STRAYS" ]; then
   echo
   echo "# MISPLACED LEDGERS — under a repo key, so NOT read. Move to the path above."
   printf '%s\n' "$LEDGER_STRAYS"
+fi
+
+DAMAGED_N=$((CORPUS_N_UNREADABLE + CORPUS_N_TRUNCATED))
+if [ "$((DAMAGED_N + CORPUS_GREP_ERR))" -gt 0 ]; then
+  echo
+  echo "# DAMAGED TRANSCRIPTS — every count above is deflated by an unknown amount."
+  echo "#   $CORPUS_N_UNREADABLE unreadable, $CORPUS_N_TRUNCATED truncated,\
+ $CORPUS_GREP_ERR grep error(s). A truncated file still greps and still slurps."
+  # Capped: a badly damaged archive would otherwise bury the table it warns about.
+  { sed 's#^#  unreadable  #' "$CORPUS_UNREADABLE"
+    sed 's#^#  truncated   #' "$CORPUS_TRUNCATED"; } | head -5
+  [ "$DAMAGED_N" -gt 5 ] && echo "  … and $((DAMAGED_N - 5)) more"
 fi
 
 AMBIG=$(grep -c '|' "$WORK/artifact-owned.tsv")

@@ -38,6 +38,44 @@ epoch() {
     || date -d "$1 00:00:00" +%s 2>/dev/null
 }
 
+# --------------------------------------------------------------------------
+# Run record. Appended on EVERY run, whatever the outcome.
+#
+# Without it a fired banner, a failed banner, and a week the agent never ran are
+# identical on disk — the script wrote nothing on success, and its stderr log
+# stays absent when nothing errors.
+#
+# It is also what makes a session-start check cheap. Deciding this fresh costs a
+# full inventory pass over the transcript archive, which is far too slow to run
+# when a session opens; reading the last line here is free.
+#
+# Beside sweep-due.err, in a directory the module already creates.
+STATE_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/claude"
+STATE="$STATE_DIR/sweep-due.state"
+record() { # $1 = decision (DUE|NOT-DUE|ERROR), $2 = reason
+  # Notify mode only — that is the scheduled path. `--check` is a manual query,
+  # and a record written from one would forge evidence that the agent fired,
+  # which is precisely what the staleness reader downstream is testing for.
+  [ "$MODE" = notify ] || return 0
+  mkdir -p "$STATE_DIR" 2>/dev/null || return 0
+  printf '%s\t%s\t%s\n' "$(date +%Y-%m-%dT%H:%M:%S)" "$1" "$2" >> "$STATE" 2>/dev/null || true
+}
+
+# `|| true` handles a non-zero exit, not a hang, and the notifier does hang —
+# observed blocking past two minutes in a non-interactive context and needing a
+# kill. macOS ships no `timeout`, so this is the portable form.
+with_timeout() { # $1 = seconds, rest = command
+  local secs="$1"; shift
+  "$@" >/dev/null 2>&1 &
+  local pid=$!
+  ( sleep "$secs"; kill -TERM "$pid" 2>/dev/null ) >/dev/null 2>&1 &
+  local watchdog=$!
+  wait "$pid" 2>/dev/null
+  kill -TERM "$watchdog" 2>/dev/null
+  wait "$watchdog" 2>/dev/null
+  return 0
+}
+
 # inventory.sh hard-fails when MY_CLAUDE_ARTIFACTS_ROOT is unset, which is the
 # default for a launchd agent. Its failure and "the sweep has never run" both
 # produce no output, and they call for opposite responses — so separate them
@@ -46,6 +84,7 @@ INV_OUT=$(bash "$INVENTORY" --json 2>&1)
 INV_RC=$?
 if [ "$INV_RC" -ne 0 ]; then
   echo "sweep-due: inventory.sh failed (rc=$INV_RC): $(printf '%s' "$INV_OUT" | head -1)" >&2
+  record ERROR "inventory.sh failed (rc=$INV_RC)"
   exit 2
 fi
 
@@ -72,6 +111,7 @@ else
   REASON="$AGE days since the last /system-review ($LAST)"
   if [ "$AGE" -lt "$THRESHOLD" ]; then
     [ "$MODE" = check ] && echo "not due: $REASON (threshold ${THRESHOLD}d)"
+    record NOT-DUE "$REASON"
     exit 0
   fi
 fi
@@ -81,18 +121,21 @@ if [ "$MODE" = check ]; then
   exit 0
 fi
 
+# Recorded BEFORE the banner, not after. The notifier is the part that hangs, so
+# a record written afterwards is exactly the record a hang loses.
+record DUE "$REASON"
+
 TITLE="Skill sweep due"
 BODY="$REASON. Run /system-review."
 
 # Same mechanism and fallback order as notify-attention.sh: terminal-notifier
 # when present, osascript otherwise, notify-send on Linux.
 if command -v terminal-notifier >/dev/null 2>&1; then
-  terminal-notifier -title "$TITLE" -message "$BODY" -sound Ping >/dev/null 2>&1 || true
+  with_timeout 10 terminal-notifier -title "$TITLE" -message "$BODY" -sound Ping
 elif command -v osascript >/dev/null 2>&1; then
-  osascript -e "display notification \"$BODY\" with title \"$TITLE\" sound name \"Ping\"" \
-    >/dev/null 2>&1 || true
+  with_timeout 10 osascript -e "display notification \"$BODY\" with title \"$TITLE\" sound name \"Ping\""
 elif command -v notify-send >/dev/null 2>&1; then
-  notify-send "$TITLE" "$BODY" >/dev/null 2>&1 || true
+  with_timeout 10 notify-send "$TITLE" "$BODY"
 fi
 
 exit 0

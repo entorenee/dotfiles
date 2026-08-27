@@ -39,7 +39,20 @@ lives at one canonical path above the repo layout, the date parse is anchored to
 the token after the em dash, and `ledger_status` reports `absent` / `empty` /
 `unparsed` / `split:<n>` / `parsed:<n>` so the three states that used to render
 as an identical column of dashes are now distinguishable. `inventory.sh
---selftest` pins all three against fixtures. F3, F4, F6 and F7 remain open.
+--selftest` pins all three against fixtures.
+
+**F3, F4, F6 and F7 are fixed too**, and F5 stayed a non-finding. A corpus arm now
+counts scanned / unreadable / truncated transcripts and names the damaged ones,
+catching the 22% silent deflation directly — a truncated file is found by its last
+line failing to parse, since a complete transcript ends on a whole record. Both
+transcript greps now check `PIPESTATUS` rather than discarding it. `sweep-due.sh`
+appends a run record on every scheduled run, so a fired, failed, and never-ran
+alert are finally distinguishable, and its notifier is bounded by a timeout. A
+`SessionStart` hook reads that record and surfaces an overdue sweep where the work
+happens, on any host.
+
+**Every mode in this playbook now fails loudly.** `inventory.sh --selftest` covers
+18 cases across all three arms.
 
 ### F1 — a malformed date silently becomes a *different, plausible* date
 
