@@ -54,10 +54,14 @@ LAST=$(printf '%s' "$INV_OUT" \
 
 NOW=$(epoch "$(date +%Y-%m-%d)")
 if [ -z "$LAST" ] || [ "$LAST" = null ]; then
-  # Never recorded. Due by definition, and say which case it is rather than
-  # reporting a fabricated age.
+  # Never recorded ON THIS MACHINE. `last_run` comes from this host's transcript
+  # archive, which does not sync, so a host that has never run the sweep reports
+  # null however many sweeps ran elsewhere — and the old wording, "/system-review
+  # has no recorded run", stated that as a global fact. On a second machine it
+  # made the banner fire every week with nothing that host could do to satisfy
+  # it. Scope the claim to what the state actually covers.
   AGE=""
-  REASON="/system-review has no recorded run"
+  REASON="/system-review has no recorded run on this machine"
 else
   THEN=$(epoch "$LAST")
   if [ -z "$THEN" ] || [ -z "$NOW" ]; then

@@ -113,6 +113,38 @@ ledger_scan() { # $1 = artifact root, $2 = output tsv; echoes the status
   fi
 }
 
+# Newest review trailer for one unit's file, on any machine. See the Review arm
+# below for why this reads the raw body rather than `%(trailers)`.
+# Split in two so the parsing half is testable without creating a commit. Commits
+# here are signed from a hardware key and cannot be scripted, so a selftest that
+# builds a scratch repo does not run — it silently produces zero commits and every
+# case reads EMPTY, which looks like a parser bug and is not one.
+#
+# The fixtures feed review_trailer_parse the exact byte shape `git log
+# --format='%x1e%ad%x1f%B'` emits, verified against a real commit.
+review_trailer_parse() { # stdin = that stream; echoes "date<TAB>host<TAB>runs"
+  # LC_ALL=C: tr is locale-sensitive and errors with "Illegal byte sequence" on
+  # input it cannot decode as the locale's charset. Commit bodies carry em dashes
+  # and whatever else a human typed, and this arm has to give the same answer on
+  # every machine, so the separators are treated as bytes rather than characters.
+  LC_ALL=C tr '\n' ' ' | LC_ALL=C tr '\036' '\n' \
+    | LC_ALL=C awk -F'\037' '
+        NF > 1 && $2 ~ /Reviewed-on:[ \t]*[^ \t]/ {
+          host = $2; sub(/.*Reviewed-on:[ \t]*/, "", host); sub(/[ \t].*/, "", host);
+          runs = "-";
+          if (match($2, /Runs-analyzed:[ \t]*[0-9]+/)) {
+            runs = substr($2, RSTART, RLENGTH); sub(/[^0-9]*/, "", runs);
+          }
+          gsub(/^[ \t]+|[ \t]+$/, "", $1);
+          printf "%s\t%s\t%s\n", $1, host, runs; exit
+        }'
+}
+
+review_trailer_scan() { # $1 = git dir, $2 = path within it
+  git -C "$1" log --follow --date=short --grep='Reviewed-on:' \
+      --format='%x1e%ad%x1f%B' -- "$2" 2>/dev/null | review_trailer_parse
+}
+
 if [ "$MODE" = selftest ]; then
   T="$WORK/selftest"; rm -rf "$T"; mkdir -p "$T"
   pass=0; fail=0
@@ -153,6 +185,48 @@ if [ "$MODE" = selftest ]; then
   printf '## investigate — 2026-08-12\n' > "$T/split/dotfiles/skill-reviewer/LEDGER.md"
   printf '## fw-investigate — 2026-08-26\n' > "$T/split/other-repo/skill-reviewer/LEDGER.md"
   check "ledgers under repo keys report split, never head -1" "split:2" "$T/split"
+
+  # Review arm. Fixtures are the byte shape `git log --format='%x1e%ad%x1f%B'`
+  # emits — RS \x1e, then the date, then US \x1f, then the whole message.
+  tcheck() { # $1 = label, $2 = expected "date host runs" or EMPTY, $3 = message
+    local got
+    got=$(printf '\036%s\037%b' "2026-08-19" "$3" | review_trailer_parse \
+          | awk -F'\t' '{printf "%s %s %s", $1, $2, $3}')
+    [ -z "$got" ] && got="EMPTY"
+    if [ "$got" = "$2" ]; then pass=$((pass+1)); printf '  ok    %s\n' "$1"
+    else fail=$((fail+1)); printf '  FAIL  %s — expected "%s", got "%s"\n' "$1" "$2" "$got"; fi
+  }
+
+  tcheck "a commit with no trailer yields nothing, never a date" "EMPTY" \
+    'chore: no trailer here\n'
+
+  tcheck "a clean trailer block parses" "2026-08-19 host-a 7" \
+    'refactor: edits\n\nReviewed-on: host-a\nRuns-analyzed: 7\n'
+
+  # The two shapes that yield ZERO trailers under git's own parser. Step 5 tells
+  # the user to paste `Expected to fail: …` into this very commit, so both are
+  # the expected case, not the exotic one.
+  tcheck "a spaced key beside it does not suppress the match" "2026-08-19 host-b 12" \
+    'refactor: edits\n\nExpected to fail: the description trigger\nReviewed-on: host-b\nRuns-analyzed: 12\n'
+
+  tcheck "placement above a later paragraph still parses" "2026-08-19 host-c 3" \
+    'refactor: edits\n\nReviewed-on: host-c\nRuns-analyzed: 3\n\nExpected to fail: wraps\nonto two lines\n'
+
+  tcheck "Runs-analyzed absent degrades to -, never to a guess" "2026-08-19 host-d -" \
+    'refactor: edits\n\nReviewed-on: host-d\n'
+
+  # Built from two printfs, not one string: in `%b`, `\036` followed by a digit
+  # is read as a longer octal escape (`\0362` is one byte, 0xF2) and silently
+  # corrupts the record separator.
+  got=$( { printf '\036%s\037%b' "2026-08-19" 'newer\n\nReviewed-on: host-new\nRuns-analyzed: 2\n'
+           printf '\036%s\037%b' "2026-01-01" 'older\n\nReviewed-on: host-old\nRuns-analyzed: 9\n'
+         } | review_trailer_parse | awk -F'\t' '{printf "%s %s %s", $1, $2, $3}')
+  if [ "$got" = "2026-08-19 host-new 2" ]; then
+    pass=$((pass+1)); printf '  ok    newest commit wins when several carry the trailer\n'
+  else
+    fail=$((fail+1))
+    printf '  FAIL  newest commit wins when several carry the trailer — got "%s"\n' "$got"
+  fi
 
   printf '\n%d passed, %d failed\n' "$pass" "$fail"
   [ "$fail" -eq 0 ] || exit 1
@@ -283,6 +357,38 @@ if git -C "$CONFIG_DIR" rev-parse --git-dir >/dev/null 2>&1; then
   done < "$WORK/units.txt" >> "$WORK/changed.tsv"
 fi
 
+# --------------------------------------------------------------------------
+# Review arm: when each unit was last reviewed on ANY machine.
+#
+# A review's record rides the commit that carries its edits. That commit is in
+# this repo, which already syncs, so the fact of a review needs no file of its
+# own and cannot fragment across machines the way a stored record does. The
+# ledger keeps the measurements; they describe one machine's transcript archive
+# and are meaningless anywhere else.
+#
+# Read from the raw body, NOT `%(trailers)`. Git's trailer parser takes only the
+# final paragraph and rejects the whole block if any line's key holds a space —
+# and Step 5 has long told the user to paste `Expected to fail: …` into this same
+# commit. Measured 2026-08-27 on git 2.54: a block mixing that line with
+# `Reviewed-on:` parses as ZERO trailers, as does a clean trailer block with that
+# line in a later paragraph. The failure is silent and total, so the tolerant
+# match is the correct one here and `%(trailers)` must not be reintroduced.
+#
+# `git log` is newest-first, so the first match is the most recent review and the
+# scan stops there. `--grep` pre-filters so the body walk stays cheap.
+# --------------------------------------------------------------------------
+: > "$WORK/reviewed-git.tsv"
+if git -C "$CONFIG_DIR" rev-parse --git-dir >/dev/null 2>&1; then
+  while read -r u; do
+    [ -n "$u" ] || continue
+    if   [ -f "$CONFIG_DIR/skills/$u/SKILL.md" ]; then p="skills/$u/SKILL.md"
+    elif [ -f "$CONFIG_DIR/commands/$u.md" ];     then p="commands/$u.md"
+    else continue; fi
+    r=$(review_trailer_scan "$CONFIG_DIR" "$p")
+    [ -n "$r" ] && printf '%s\t%s\n' "$u" "$r"
+  done < "$WORK/units.txt" >> "$WORK/reviewed-git.tsv"
+fi
+
 # Ledger arm — see ledger_scan() above for the path, parse and status rules.
 #
 # The ledger is machine-local and outside the repo, so a fresh machine
@@ -302,7 +408,10 @@ LEDGER_STRAYS=$(find "$ART_ROOT" -mindepth 3 -maxdepth 3 \
 # --------------------------------------------------------------------------
 find "$ART_ROOT" -mindepth 3 -maxdepth 3 -type f 2>/dev/null > "$WORK/artifact-files.txt"
 ART_N=$(wc -l < "$WORK/artifact-files.txt" | tr -d ' ')
-REPO_N=$(find "$ART_ROOT" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | wc -l | tr -d ' ')
+# `skill-reviewer` sits at this depth too, holding the ledger, but it is not a
+# repo — counting it inflates the figure the header prints.
+REPO_N=$(find "$ART_ROOT" -mindepth 1 -maxdepth 1 -type d ! -name skill-reviewer \
+         2>/dev/null | wc -l | tr -d ' ')
 
 # <repo>/<area>/<file>, so the area for the owner map is the second-to-last
 # component. No deduplication: with one root per remote there are no copies to
@@ -373,6 +482,7 @@ awk -F'\t' '
   FILENAME==atally { artf[$1]=$2; artr[$1]=$3; next }
   FILENAME==chg    { chgd[$1]=$2; chgs[$1]=$3; next }
   FILENAME==rev    { rvd[$1]=$2; next }
+  FILENAME==revgit { rgd[$1]=$2; rgh[$1]=$3; rgn[$1]=$4; next }
   FILENAME==comp   { split($0, e, " "); parent[e[1]] = parent[e[1]] " " e[2]; next }
   FILENAME==testim { if ($0 ~ /^#/ || $0 == "") next;
                      split($0, t, " "); said[t[1]]=t[2]; note[t[1]]=t[3]; next }
@@ -431,19 +541,23 @@ awk -F'\t' '
             : (via != "")        ? "reachable" : "no-evidence";
     if (said[unit] != "")
       via = via (via == "" ? "" : ",") "said:" (declined ? note[unit] : said[unit]);
-    printf "%s\t%d\t%d\t%d\t%d\t%d\t%s\t%s\t%s\t%d\t%s\t%s\t%s\t%s\n",
+    printf "%s\t%d\t%d\t%d\t%d\t%d\t%s\t%s\t%s\t%d\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n",
            unit, inv[unit], sess[unit], sub_[unit], artr[unit], artf[unit],
            (last[unit]=="" ? "-" : last[unit]),
            (chgd[unit]=="" ? "-" : chgd[unit]),
            (chgs[unit]=="" ? "-" : chgs[unit]),
            rs, (via == "" ? "-" : via), verdict, (cby == "" ? "-" : cby),
-           (rvd[unit]=="" ? "-" : rvd[unit]);
+           (rvd[unit]=="" ? "-" : rvd[unit]),
+           (rgd[unit]=="" ? "-" : rgd[unit]),
+           (rgh[unit]=="" ? "-" : rgh[unit]),
+           (rgn[unit]=="" ? "-" : rgn[unit]);
   }
 ' dtally="$WORK/direct-tally.tsv" atally="$WORK/artifact-tally.tsv" \
   chg="$WORK/changed.tsv" comp="$WORK/composition.txt" testim="$TESTIMONY" \
-  rev="$WORK/reviewed.tsv" \
+  rev="$WORK/reviewed.tsv" revgit="$WORK/reviewed-git.tsv" \
   "$WORK/direct-tally.tsv" "$WORK/artifact-tally.tsv" "$WORK/changed.tsv" \
-  "$WORK/composition.txt" "$TESTIMONY" "$WORK/reviewed.tsv" "$WORK/units.txt" \
+  "$WORK/composition.txt" "$TESTIMONY" "$WORK/reviewed.tsv" "$WORK/reviewed-git.tsv" \
+  "$WORK/units.txt" \
   | sort -k3,3nr -k5,5nr -k1,1 > "$WORK/rows.tsv"
 
 if [ "$MODE" = json ]; then
@@ -463,7 +577,10 @@ if [ "$MODE" = json ]; then
         via:             (if .[10] == "-" then null else .[10] end),
         verdict:         .[11],
         composed_by:     (if .[12] == "-" then null else .[12] end),
-        last_reviewed:   (if .[13] == "-" then null else .[13] end) })) }' < "$WORK/rows.tsv"
+        last_reviewed:     (if .[13] == "-" then null else .[13] end),
+        reviewed_anywhere: (if .[14] == "-" then null else .[14] end),
+        reviewed_host:     (if .[15] == "-" then null else .[15] end),
+        reviewed_runs:     (if .[16] == "-" then null else (.[16] | tonumber) end) })) }' < "$WORK/rows.tsv"
   exit 0
 fi
 
@@ -473,10 +590,10 @@ echo "# artifacts   : $ART_ROOT — $ART_N files across $REPO_N repo(s)"
 echo "# ledger      : $ART_ROOT/skill-reviewer/LEDGER.md — $LEDGER_STATUS"
 echo
 {
-  printf 'UNIT\tSESS\tSUB\tRUNS\tFILES\tLAST RUN\tREVIEWED\tSINCE\tVIA\tVERDICT\n'
-  awk -F'\t' '{ printf "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n",
+  printf 'UNIT\tSESS\tSUB\tRUNS\tFILES\tLAST RUN\tREVIEWED\tANYWHERE\tSINCE\tVIA\tVERDICT\n'
+  awk -F'\t' '{ printf "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n",
                 $1, $3, ($4>0?$4:"-"), ($5>0?$5:"-"), ($6>0?$6:"-"),
-                $7, $14, $10, $11, $12 }' "$WORK/rows.tsv"
+                $7, $14, ($15=="-" ? "-" : $15 "/" $16), $10, $11, $12 }' "$WORK/rows.tsv"
 } | column -t -s "$(printf '\t')"
 
 if [ -n "$LEDGER_STRAYS" ]; then

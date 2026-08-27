@@ -195,10 +195,17 @@ check_skill_inventory() {
 
   # One counted line, not one per unit: most are legitimately below the review
   # threshold, and a wall of REVIEW rows would bury the two findings above.
+  #
+  # Scoped to this machine, because the ledger is. A unit reviewed on another
+  # host has no row here and would otherwise be reported as never reviewed —
+  # the same false-global claim the sweep notifier used to make. The review
+  # record that IS shared lives in the commit trailers `inventory.sh` reads;
+  # `/system-review` is where that gets compared, so point at it rather than
+  # re-deriving it in a second script.
   unreviewed=$(comm -23 <(printf '%s\n' "$units") <(printf '%s\n' "$rows"))
   n=$(printf '%s\n' "$unreviewed" | grep -c .)
   if [[ $n -gt 0 ]]; then
-    emit REVIEW skill-inventory "$n of $(printf '%s\n' "$units" | grep -c .) units have no ledger row (e.g. $(printf '%s' "$unreviewed" | head -4 | tr '\n' ' ')) — expected while the cadence is young; run /system-review to see which have crossed their threshold"
+    emit REVIEW skill-inventory "$n of $(printf '%s\n' "$units" | grep -c .) units have no ledger row on this machine (e.g. $(printf '%s' "$unreviewed" | head -4 | tr '\n' ' ')) — expected while the cadence is young, and a unit reviewed on another host has no row here either; run /system-review, which reads the shared record, to see which have crossed their threshold"
   fi
 
   [[ -z "$untracked$orphans" ]] \

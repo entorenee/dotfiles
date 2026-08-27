@@ -25,10 +25,12 @@ Five commands, and that is the whole data-gathering step. The second reads the f
 |---|---|
 | `sessions` | Real runs. The only count that makes a unit reviewable. |
 | `subagent` | Sidechain invocations. Real uses, no human, never runs. |
-| `runs_since` | Runs against the *current* text — runs after `changed`. **This is the number the thresholds apply to.** |
+| `runs_since` | Runs against the *current* text — runs after `changed`. **This is what the run arm applies to**, and it is per-host: transcripts do not sync, so never sum it across machines. |
 | `changed` / `changed_subject` | When the unit last changed, and the commit subject. |
 | `last_run` | For the Quiet bucket. |
-| `last_reviewed` | Newest ledger row for the unit. **This is what the 45-day staleness arm measures from.** `null` means the arm cannot fire — never that the unit is overdue. `ledger_status` says why it is null. |
+| `reviewed_anywhere` | Newest commit carrying a `Reviewed-on:` trailer for the unit, from **any** host. **This is what the 45-day staleness arm measures from** — it rides the commits, so it needs no ledger. `null` means never reviewed anywhere, and the arm then counts from `changed`. |
+| `reviewed_host` / `reviewed_runs` | The host that ran that review and how many runs it analyzed. Report both when the staleness arm fires; a review done elsewhere left no local evidence behind. |
+| `last_reviewed` | Newest ledger row on *this machine*. Context only — no arm measures from it. `ledger_status` says why it is null. |
 | `ledger_status` | Top-level, not per-unit. `absent`/`empty` explain a `null` `last_reviewed` honestly; `unparsed` or `split:<n>` mean a populated ledger went unread — a defect, reported under Inert. |
 | `artifact_runs` | Dated reports. `artifact_files` includes CSV/SQL byproducts; do not read it as a run count. |
 | `verdict` | Pre-computed coverage class. |
@@ -37,9 +39,9 @@ Five commands, and that is the whole data-gathering step. The second reads the f
 
 **Check `changed_subject` before trusting `runs_since`.** A repo-wide move or a path rewrite counts as a content change to git and resets the counter, but is not a revision — the skill's own rules say a commit is not a tightening until you have read what it changed. When the subject looks mechanical (`lift nix/ to the repo root`, `adjust skills to use ARTIFACTS`), say so and treat the unit's real clock as older.
 
-The ledger is read from one canonical path, `$MY_CLAUDE_ARTIFACTS_ROOT/skill-reviewer/LEDGER.md` — **not** `$ARTIFACTS`, which expands to `$MY_CLAUDE_ARTIFACTS_ROOT/<repo>` and partitions the ledger on cwd. It is machine-local and lives outside the repo, so on a new machine there simply is not one — say so when `ledger_status` is `absent` or `empty`, rather than treating every unit as never-reviewed. Under any other status that sentence is false; see Inert.
+The ledger is read from one canonical path, `$MY_CLAUDE_ARTIFACTS_ROOT/skill-reviewer/LEDGER.md` — **not** `$ARTIFACTS`, which expands to `$MY_CLAUDE_ARTIFACTS_ROOT/<repo>` and partitions the ledger on cwd. It is machine-local and lives outside the repo, so on a new machine there simply is not one — say so when `ledger_status` is `absent` or `empty`, and read review history off `reviewed_anywhere`, which is identical on every machine. A missing ledger no longer hides a review or stalls an arm. Under any other status that sentence is false; see Inert.
 
-Thresholds live in `skill-reviewer/SKILL.md` under **Cadence and thresholds**. Read them there and apply them to `runs_since` yourself; do not restate them here or bake them into a script, or the two will drift and the sweep will start enforcing a rule nobody agreed to.
+Thresholds live in `skill-reviewer/SKILL.md` under **Cadence and thresholds**. Read them there and apply them to `runs_since` and `reviewed_anywhere` yourself; do not restate them here or bake them into a script, or the two will drift and the sweep will start enforcing a rule nobody agreed to.
 
 ## 2. Sort every unit into exactly one bucket
 
@@ -47,8 +49,8 @@ Thresholds live in `skill-reviewer/SKILL.md` under **Cadence and thresholds**. R
 |---|---|
 | **Due** | Crossed its threshold, counting runs since the commit that last changed it. |
 | **Accumulating** | Has runs, not yet at threshold. Report the count, not a recommendation. |
-| **Below the floor** | Under 3 recorded runs. Not reviewable. |
-| **Quiet** | Had runs in an earlier window and none recently. Worth a mention — a skill that stopped being used is a finding, and the only one this sweep can make on its own. |
+| **Below the floor** | Under 3 runs recorded *here* — runs are per-host and never summed. Not reviewable on run evidence, though the staleness arm can still make it Due. |
+| **Quiet** | Had runs here in an earlier window and none recently; say "on this machine", since another host's use is invisible. Worth a mention — a skill that stopped being used is a finding, and the only one this sweep can make on its own. |
 | **Declined** | Verdict `unadopted`. Asked and answered — see below. |
 | **No evidence** | Verdict `no-evidence`: nothing in any arm. See below, because this bucket has burned us twice. |
 | **Aging** | Friction entries still at `Class: open` past the threshold — the lesson never became executable. From `signals.sh --aging`. See the cap below; this bucket has a backlog problem the others do not. |
@@ -88,8 +90,9 @@ Two rows to read carefully rather than skim: `Class: MISSING` is a pre-migration
 Lead with the answer to the only question being asked:
 
 ```
-Due now:      <unit> (<runs_since> runs since <changed>, or <n> days since <last_reviewed>)
-              — or "nothing"
+Due now:      <unit> — <runs_since> runs since <changed>; or <n> days since
+              <reviewed_anywhere> on <reviewed_host> (<reviewed_runs> runs), or
+              since <changed> when never reviewed anywhere. Or "nothing".
 Accumulating: <unit> <runs_since>/<threshold>, ...
 Quiet:        <unit>, last run <last_run>
 Declined:     <unit> — unadopted per testimony. Not a question.
@@ -105,7 +108,7 @@ Ledger:       <ledger_status> — omit the line when it is `parsed:<n>`
 Config:       <any FAIL from config-checks.sh skill-inventory, if it was run>
 ```
 
-Say which arm made something due — the run count or the staleness clock. They imply different reviews: five fresh runs means there is new gate evidence to mine, whereas 45 quiet days usually means there is not, and the review is re-reading text against thin evidence. Under `ledger_status: absent` or `empty`, say the machine has no ledger once instead of printing `last_reviewed: null` on every line; under `unparsed` or `split` that claim is false, so report the defect instead.
+Say which arm made something due — the run count or the staleness clock — and on the staleness arm name `reviewed_host`. They imply different reviews: fresh local runs mean there is new gate evidence to mine, whereas a stale clock usually means there is not. When the last review ran on another host, say so and expect little or no local evidence: those runs are on a machine whose transcripts you cannot read, so the review is re-reading text. Under `ledger_status: absent` or `empty`, say the machine has no ledger once rather than on every line; under `unparsed` or `split` that claim is false, so report the defect instead.
 
 **"Nothing is due" is a complete and successful run.** Do not pad it with observations to look productive; the sweep is worth having precisely because it is usually empty.
 

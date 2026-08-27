@@ -49,20 +49,20 @@ Two tiers, because run volume varies by an order of magnitude across units. A we
 
 The 5 is an evidence floor: enough runs to see a pattern rather than an anecdote. The 45 days is a staleness ceiling for a unit that is used but used slowly — five runs may be a year away, and the text should not go unexamined that long.
 
-Both arms are computable from `inventory.sh` alone, which is the property that keeps the sweep to two minutes. They do not draw on the same source, though, and the difference decides when the second one can fire:
+Both arms are computable from `inventory.sh` alone, which is the property that keeps the sweep to two minutes. Neither needs the ledger; they measure different things, and that difference sets their scope:
 
 | Arm | Reads | Fires when the ledger is missing? |
 |---|---|---|
 | 5 new runs | `runs_since` — transcripts against the git history | Yes. Needs no ledger at all. |
-| 45 days | `last_reviewed` — the newest ledger row for that unit | **No.** |
+| 45 days | `reviewed_anywhere` — the newest commit recording a review of that unit | Yes. The record rides the commit, not the ledger. |
 
-`inventory.sh` emits `last_reviewed` by parsing `LEDGER.md`; before it did, this arm named a date nothing produced and could not be executed at all. The ledger is machine-local, so on a machine that has none — or for a unit that has never been reviewed on this one — `last_reviewed` is null and the staleness arm simply cannot fire. Say that rather than treating null as "reviewed long ago"; the run-count arm carries the cadence alone in that case, exactly as the never-reviewed rule below already specifies.
+A review's record travels in the commit that carries its edits, as `Reviewed-on:` and `Runs-analyzed:` trailers; `inventory.sh` greps them from the history of each unit's own file and emits `reviewed_anywhere`, `reviewed_host`, and `reviewed_runs`. The ledger stays machine-local because it holds measurements of one machine's transcript archive, which do not transfer — but *that* a review happened is a system-wide fact, so it belongs where the repo already syncs it. `last_reviewed` is still the local ledger's own date: a baseline for the delta, not a cadence input.
 
-**Known gap, deliberately left open:** a unit that is eligible (≥ 3 runs), never reviewed, and too slow to reach 5 runs is governed by neither arm and can wait indefinitely. Closing it means deciding what a never-reviewed unit's staleness clock starts from — most likely `changed` — and that is a cadence decision, not a defect fix. Do not close it silently as part of unrelated work.
+**The 5-run arm is per-host and is never summed across machines.** Transcripts do not sync, so gate evidence is inherently machine-local. Adding 3 runs on one host to 3 on another claims six runs are available when no single review can mine more than three — it would fire reviews exactly when they are least able to succeed, and launder a 3-run review as a 6-run one. The evidence floor only means anything per-corpus. **The 45-day arm is shared**, because it measures whether the shared *text* has gone unexamined, which is not a property of any one corpus. The two cover each other: the run arm guarantees each host's evidence eventually gets mined, the staleness arm only guarantees the text does not rot.
 
 **Runs are counted since the commit that last changed the unit, not since the last ledger row.** A skill edited last week has almost no runs against its current text, so reviewing it measures the text it no longer has. This replaces any hand-kept exclusion list: eligibility re-arms itself as runs accumulate. Step 1's `git log --follow` is where that date comes from.
 
-**A unit with no ledger row is due at 5 runs** regardless of how many it has accumulated. Never-reviewed is not the same as recently-reviewed.
+**A unit never reviewed anywhere starts its staleness clock from `changed`** — the commit that last changed it — so it is due at 5 new runs or 45 days past that edit, whichever lands first. That closes the gap where a unit with ≥ 3 runs, never reviewed, and too slow to reach 5 runs was governed by neither arm. Never-reviewed is not recently-reviewed.
 
 ## When to Use
 
@@ -261,7 +261,7 @@ Weight the edits by where the evidence actually is:
 
 Present the edits and get approval before touching the file. Then apply them.
 
-**Put the prediction in the commit message, not only in the ledger.** The ledger is git-ignored and re-derivable; a prediction is neither. Written into the commit that carries the edits, it survives the ledger and lands on a path the next review already walks — Step 1 runs `git log --follow` over the same file. Hand the user a `Expected to fail: <the fragile edit>` line to paste when they commit.
+**Put the review record in the commit message, not only in the ledger.** The ledger is git-ignored, machine-local, and re-derivable; a prediction is none of those, and that a review happened is a system-wide fact. Written into the commit that carries the edits, both survive the ledger and land on a path the next review already walks — Step 1 runs `git log --follow` over the same file, and the 45-day arm reads these lines. Hand the user all three to paste when they commit: `Reviewed-on: <host>`, `Runs-analyzed: <n>`, and `Expected to fail: <the fragile edit>`. Placement within the message does not matter, and the parser greps the raw body on purpose: git's own `%(trailers)` reads only the final paragraph and returns nothing at all when any key in the block contains a space, which `Expected to fail:` does.
 
 ### Step 6 — Write the ledger row
 
