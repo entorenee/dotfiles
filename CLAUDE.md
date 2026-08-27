@@ -369,11 +369,28 @@ MCP servers are declared in `roles/home/personal-claude.nix` or `hosts/darwin/fw
 
 Nix-declared servers do **not** appear in `~/.claude.json`; that file holds only servers added by hand. A server present in both registers twice, under two different tool prefixes, and checking only `~/.claude.json` will not reveal it.
 
-**OAuth splits into two cases, and only one can be Nix-declared.**
+**OAuth splits into three cases. The line that decides Nix-declarability is the client *secret*, not whether the client is pre-registered** — two of the three are declarable.
 
-*Dynamic registration* (expo, sentry, posthog, vercel): declare in `claude.nix`, rebuild, then authenticate in-session with `/mcp`. No secret is involved.
+*Dynamic registration* (expo, sentry, posthog, vercel): declare in `claude.nix` as a bare `{type, url}`, rebuild, then authenticate in-session with `/mcp`. No credential appears in the source.
 
-*A pre-registered confidential client* (Asana): **cannot be Nix-declared.** The plugin path carries a `client_id` but has no channel for a `client_secret`, so authentication fails with *"Client authentication failed. Check that client_id and client_secret match your registered app."* Setting `MCP_CLIENT_SECRET` in the environment does not reach it either. Only `claude mcp add` stores the secret, and it registers a server of its own as a side effect, so it cannot be paired with a Nix declaration. Asana therefore lives entirely outside Nix:
+*A pre-registered public client* (Slack): **also Nix-declarable.** Slack rejects dynamic registration — `/mcp` reports *"does not support dynamic client registration"* — so the entry names the client itself:
+
+```nix
+slack = {
+  type = "http";
+  url = "https://mcp.slack.com/mcp";
+  oauth = {
+    clientId = "1601185624273.8899143856786";
+    callbackPort = 3118;
+  };
+};
+```
+
+This survives because `programs.claude-code.mcpServers` is `attrsOf jsonFormat.type` and `lib.hm.mcp.addType` only ever *adds* a `type` field — it never filters — so an unknown `oauth` key reaches the generated `.mcp.json` untouched, in the same shape the official `slackapi/slack-mcp-plugin` ships. Both values are public and identical for every user; being a PKCE client, there is no secret to place.
+
+The prerequisite is not a credential but an approval: a workspace admin must enable MCP integration, and **until they do, the rebuild still succeeds and only `/mcp` fails** — so do not read a clean rebuild as a working connector.
+
+*A pre-registered confidential client* (Asana): **cannot be Nix-declared** — the secret is what has no channel, not the pre-registration. The plugin path carries a `client_id` but nowhere to put a `client_secret`, so authentication fails with *"Client authentication failed. Check that client_id and client_secret match your registered app."* Setting `MCP_CLIENT_SECRET` in the environment does not reach it either. Only `claude mcp add` stores the secret, and it registers a server of its own as a side effect, so it cannot be paired with a Nix declaration. Asana therefore lives entirely outside Nix:
 
 ```bash
 claude mcp add --scope user --transport http \

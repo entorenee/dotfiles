@@ -60,6 +60,7 @@
         "WebFetch(domain:docs.sentry.io)"
         "WebFetch(domain:posthog.com)"
         "WebFetch(domain:mcp.posthog.com)"
+        "WebFetch(domain:docs.slack.dev)"
       ];
       sandbox.filesystem = {
         allowRead = ["~/dotfiles" "~/code/work" "~/.config/gh" "/nix/store" "/tmp" "/private/tmp"];
@@ -72,6 +73,10 @@
         type = "http";
         url = "https://mcp.expo.dev/mcp";
       };
+      granola = {
+        type = "http";
+        url = "https://mcp.granola.ai/mcp";
+      };
       sentry = {
         type = "http";
         url = "https://mcp.sentry.dev/mcp";
@@ -79,6 +84,19 @@
       posthog = {
         type = "http";
         url = "https://mcp.posthog.com/mcp";
+      };
+      # Slack rejects dynamic client registration, so this entry names an OAuth
+      # client where the others don't. Both values are public and identical for
+      # every user — they identify Slack's own app, not this workspace, and are
+      # committed to slackapi/slack-mcp-plugin. PKCE public client: there is no
+      # secret, so nothing is missing here.
+      slack = {
+        type = "http";
+        url = "https://mcp.slack.com/mcp";
+        oauth = {
+          clientId = "1601185624273.8899143856786";
+          callbackPort = 3118;
+        };
       };
       vercel = {
         type = "http";
