@@ -29,7 +29,10 @@
 set -uo pipefail
 
 MODE=table
-[ "${1:-}" = "--json" ] && MODE=json
+case "${1:-}" in
+  --json) MODE=json ;;
+  --selftest) MODE=selftest ;;
+esac
 
 CONFIG_DIR="${SKILL_CONFIG_DIR:-$HOME/dotfiles/modules/home/claude/config}"
 TRANSCRIPTS="${SKILL_TRANSCRIPT_DIR:-$HOME/.claude/projects}"
@@ -44,6 +47,117 @@ TESTIMONY="$CONFIG_DIR/skills/skill-reviewer/testimony.txt"
 
 WORK="${TMPDIR:-/tmp}/skill-inventory"
 mkdir -p "$WORK"
+
+# --------------------------------------------------------------------------
+# Ledger arm: when each unit was last *reviewed*.
+#
+# The staleness half of the threshold — "45 days since the last row" — asks
+# about review history, which no other arm can answer: the direct arm knows
+# when a unit last ran, never when it was last examined.
+#
+# ONE canonical path, ABOVE the per-repo layout. The ledger measures the skill
+# system, which is machine-global — same units, same thresholds, whatever repo a
+# session started in. Keying it by repo partitioned on cwd, which is not a stable
+# identifier, and the read side then took `find … | head -1`: with two repo keys
+# one ledger was silently discarded. Measured 2026-08-27 on a two-key fixture, a
+# unit reviewed 2026-08-26 vanished outright and another reported a date 13 days
+# stale. Depth 3 is still scanned, but only to REPORT strays — never to read one.
+#
+# The date is anchored to the token after the em dash rather than found by
+# scanning the line. Scanning fell through a malformed date to whatever else
+# looked date-shaped — and the row convention allows a second date in a
+# parenthetical (`## pre-pr — 2026-08-12 (row renamed 2026-08-17)`), so the
+# fall-through landed on a real but WRONG field. It read newer, which suppresses
+# the staleness arm, so the failure hid overdue units rather than inventing them.
+#
+# Unit keys are lowercase-kebab, which is what drops the prose sections
+# (`## Provenance …`, `## Instrument change …`) without needing a filter.
+#
+# Status is emitted rather than inferred from an empty result. `absent`, `empty`
+# and `unparsed` all produced a column of dashes before, and only the first two
+# mean "no ledger" — the third means one exists and did not parse.
+# --------------------------------------------------------------------------
+ledger_scan() { # $1 = artifact root, $2 = output tsv; echoes the status
+  local root="$1" out="$2"
+  local canonical="$root/skill-reviewer/LEDGER.md"
+  local n_stray rows
+  : > "$out"
+
+  n_stray=$(find "$root" -mindepth 3 -maxdepth 3 -path '*/skill-reviewer/LEDGER.md' \
+            2>/dev/null | wc -l | tr -d ' ')
+
+  if [ -f "$canonical" ]; then
+    awk '
+      # $1 "##", $2 unit, $3 em dash, $4 date. Anchored: a row whose date is not
+      # in position 4 is not parsed at all, rather than parsed from elsewhere.
+      $1 == "##" && $2 ~ /^[a-z0-9-]+$/ && $3 == "—" &&
+      $4 ~ /^[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/ {
+        d = substr($4, 1, 10);
+        if (d > seen[$2]) seen[$2] = d;
+      }
+      END { for (u in seen) printf "%s\t%s\n", u, seen[u] }
+    ' "$canonical" > "$out"
+  fi
+
+  rows=$(wc -l < "$out" | tr -d ' ')
+
+  # A stray outranks the canonical result: rows exist somewhere they will not be
+  # read from, and that is the finding regardless of how well the canonical one
+  # parsed. It is also the migration signal — a ledger still under a repo key
+  # reports split:1 with nothing canonical yet.
+  if [ "$n_stray" -gt 0 ]; then echo "split:$n_stray"
+  elif [ ! -f "$canonical" ]; then echo "absent"
+  elif [ ! -s "$canonical" ]; then echo "empty"
+  elif [ "$rows" -eq 0 ]; then echo "unparsed"
+  else echo "parsed:$rows"
+  fi
+}
+
+if [ "$MODE" = selftest ]; then
+  T="$WORK/selftest"; rm -rf "$T"; mkdir -p "$T"
+  pass=0; fail=0
+  check() { # $1 = label, $2 = expected status, $3 = root, $4 = expected "unit=date,…"
+    local got extra=""
+    got=$(ledger_scan "$3" "$T/out.tsv")
+    if [ -n "${4:-}" ]; then
+      extra=$(sort "$T/out.tsv" | awk -F'\t' '{printf "%s=%s,", $1, $2}')
+      [ "$extra" = "$4" ] || got="$got rows=$extra"
+    fi
+    if [ "$got" = "$2" ]; then pass=$((pass+1)); printf '  ok    %s\n' "$1"
+    else fail=$((fail+1)); printf '  FAIL  %s — expected "%s", got "%s"\n' "$1" "$2" "$got"; fi
+  }
+
+  mkdir -p "$T/absent"
+  check "no ledger anywhere reads as absent" "absent" "$T/absent"
+
+  mkdir -p "$T/empty/skill-reviewer"; : > "$T/empty/skill-reviewer/LEDGER.md"
+  check "a zero-byte ledger is empty, not absent" "empty" "$T/empty"
+
+  mkdir -p "$T/good/skill-reviewer"
+  printf '## investigate — 2026-07-02\n\ntext\n\n## pre-pr — 2026-08-12 (row renamed 2026-08-17)\n\n## Provenance — state the matcher\n' \
+    > "$T/good/skill-reviewer/LEDGER.md"
+  check "well-formed rows parse, parenthetical date ignored" "parsed:2" "$T/good" \
+    "investigate=2026-07-02,pre-pr=2026-08-12,"
+
+  mkdir -p "$T/baddate/skill-reviewer"
+  printf '## investigate — 07/02/2026\n\n## pre-pr — 08/12/2026 (row renamed 2026-08-17)\n' \
+    > "$T/baddate/skill-reviewer/LEDGER.md"
+  check "off-convention dates fail loudly, never fall through" "unparsed" "$T/baddate"
+
+  mkdir -p "$T/reheaded/skill-reviewer"
+  printf '### investigate (2026-07-02)\n\n### pre-pr (2026-08-12)\n' \
+    > "$T/reheaded/skill-reviewer/LEDGER.md"
+  check "reorganized headers are unparsed, not absent" "unparsed" "$T/reheaded"
+
+  mkdir -p "$T/split/dotfiles/skill-reviewer" "$T/split/other-repo/skill-reviewer"
+  printf '## investigate — 2026-08-12\n' > "$T/split/dotfiles/skill-reviewer/LEDGER.md"
+  printf '## fw-investigate — 2026-08-26\n' > "$T/split/other-repo/skill-reviewer/LEDGER.md"
+  check "ledgers under repo keys report split, never head -1" "split:2" "$T/split"
+
+  printf '\n%d passed, %d failed\n' "$pass" "$fail"
+  [ "$fail" -eq 0 ] || exit 1
+  exit 0
+fi
 
 # --------------------------------------------------------------------------
 # Composition graph: "child parent" per line.
@@ -169,43 +283,16 @@ if git -C "$CONFIG_DIR" rev-parse --git-dir >/dev/null 2>&1; then
   done < "$WORK/units.txt" >> "$WORK/changed.tsv"
 fi
 
-# --------------------------------------------------------------------------
-# Ledger arm: when each unit was last *reviewed*.
-#
-# The staleness half of the threshold — "45 days since the last row" — asks
-# about review history, which no other arm can answer: the direct arm knows
-# when a unit last ran, never when it was last examined. Without this field the
-# arm is unexecutable, and /system-review is explicitly forbidden from deriving
-# it by hand. Adding it here is what that prohibition points at.
-#
-# Row headers are `## <unit> — <YYYY-MM-DD>`, but not uniformly: some carry a
-# parenthetical holding a second date (`## pre-pr — 2026-08-12 (row renamed
-# 2026-08-17)`), and some sections are not units at all (`## Provenance …`).
-# So take the FIRST date on the line, not the last, and key on a lowercase-kebab
-# token — which is what makes the prose sections drop out without a filter,
-# since they can never match a unit name.
+# Ledger arm — see ledger_scan() above for the path, parse and status rules.
 #
 # The ledger is machine-local and outside the repo, so a fresh machine
 # legitimately has none. Every unit then reports last_reviewed null, the
 # staleness arm cannot fire at all, and the run-count arm carries the cadence
-# alone. That is a limitation to state, not one to paper over with a guess.
-# --------------------------------------------------------------------------
-: > "$WORK/reviewed.tsv"
-LEDGER=$(find "$ART_ROOT" -mindepth 3 -maxdepth 3 -path '*/skill-reviewer/LEDGER.md' \
-         2>/dev/null | head -1)
-if [ -n "$LEDGER" ]; then
-  awk '
-    /^## [a-z0-9-]+ / {
-      u = $2; d = "";
-      for (i = 3; i <= NF; i++)
-        if ($i ~ /^[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/) {
-          d = substr($i, 1, 10); break
-        }
-      if (d != "" && d > seen[u]) seen[u] = d;
-    }
-    END { for (u in seen) printf "%s\t%s\n", u, seen[u] }
-  ' "$LEDGER" > "$WORK/reviewed.tsv"
-fi
+# alone. That is a limitation to state, not one to paper over with a guess —
+# and LEDGER_STATUS is what lets a reader tell it apart from a parse failure.
+LEDGER_STATUS=$(ledger_scan "$ART_ROOT" "$WORK/reviewed.tsv")
+LEDGER_STRAYS=$(find "$ART_ROOT" -mindepth 3 -maxdepth 3 \
+                -path '*/skill-reviewer/LEDGER.md' 2>/dev/null)
 
 # --------------------------------------------------------------------------
 # Artifact arm.
@@ -360,8 +447,8 @@ awk -F'\t' '
   | sort -k3,3nr -k5,5nr -k1,1 > "$WORK/rows.tsv"
 
 if [ "$MODE" = json ]; then
-  jq -R -s --arg root "$ART_ROOT" --arg tx "$TRANSCRIPTS" '
-    { artifact_root: $root, transcripts: $tx,
+  jq -R -s --arg root "$ART_ROOT" --arg tx "$TRANSCRIPTS" --arg ls "$LEDGER_STATUS" '
+    { artifact_root: $root, transcripts: $tx, ledger_status: $ls,
       units: (split("\n") | map(select(length > 0) | split("\t") | {
         unit:            .[0],
         invocations:     (.[1] | tonumber),
@@ -383,6 +470,7 @@ fi
 echo "# skill-inventory"
 echo "# transcripts : $TRANSCRIPTS"
 echo "# artifacts   : $ART_ROOT — $ART_N files across $REPO_N repo(s)"
+echo "# ledger      : $ART_ROOT/skill-reviewer/LEDGER.md — $LEDGER_STATUS"
 echo
 {
   printf 'UNIT\tSESS\tSUB\tRUNS\tFILES\tLAST RUN\tREVIEWED\tSINCE\tVIA\tVERDICT\n'
@@ -390,6 +478,12 @@ echo
                 $1, $3, ($4>0?$4:"-"), ($5>0?$5:"-"), ($6>0?$6:"-"),
                 $7, $14, $10, $11, $12 }' "$WORK/rows.tsv"
 } | column -t -s "$(printf '\t')"
+
+if [ -n "$LEDGER_STRAYS" ]; then
+  echo
+  echo "# MISPLACED LEDGERS — under a repo key, so NOT read. Move to the path above."
+  printf '%s\n' "$LEDGER_STRAYS"
+fi
 
 AMBIG=$(grep -c '|' "$WORK/artifact-owned.tsv")
 if [ "$AMBIG" -gt 0 ]; then
@@ -412,9 +506,11 @@ cat <<'EOF'
 #   RUNS     dated artifact reports. One run, so one report
 #   FILES    every artifact file, byproducts included. FILES > RUNS is normal
 #   REVIEWED newest ledger row for the unit. `-` means never reviewed on this
-#            machine, OR that this machine has no ledger at all — the two are
-#            indistinguishable here, so check whether the ledger exists before
-#            reading a column of dashes as "nothing has ever been reviewed"
+#            machine. Read the `ledger :` status in the header before reading a
+#            column of dashes as "nothing has ever been reviewed": absent and
+#            empty mean there is no ledger, unparsed means there IS one and it
+#            did not parse, and split means rows are sitting under a repo key
+#            where nothing will read them
 #   SINCE    runs against the current text, i.e. since the last content change
 #
 # COVERAGE — all eight verdicts, and what each does and does not license

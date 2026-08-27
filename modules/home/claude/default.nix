@@ -194,7 +194,6 @@ in {
           "Read(/nix/store/**)"
           "Read(${artifactsGlob})"
           "Edit(${artifactsGlob})"
-          "Write(${artifactsGlob})"
           # Trusted skill namespaces (plugins explicitly enabled above)
           "Skill(superpowers:*)"
           "Skill(pr-review-toolkit:*)"

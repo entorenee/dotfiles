@@ -28,7 +28,8 @@ Five commands, and that is the whole data-gathering step. The second reads the f
 | `runs_since` | Runs against the *current* text — runs after `changed`. **This is the number the thresholds apply to.** |
 | `changed` / `changed_subject` | When the unit last changed, and the commit subject. |
 | `last_run` | For the Quiet bucket. |
-| `last_reviewed` | Newest ledger row for the unit. **This is what the 45-day staleness arm measures from.** `null` means the arm cannot fire — never that the unit is overdue. |
+| `last_reviewed` | Newest ledger row for the unit. **This is what the 45-day staleness arm measures from.** `null` means the arm cannot fire — never that the unit is overdue. `ledger_status` says why it is null. |
+| `ledger_status` | Top-level, not per-unit. `absent`/`empty` explain a `null` `last_reviewed` honestly; `unparsed` or `split:<n>` mean a populated ledger went unread — a defect, reported under Inert. |
 | `artifact_runs` | Dated reports. `artifact_files` includes CSV/SQL byproducts; do not read it as a run count. |
 | `verdict` | Pre-computed coverage class. |
 
@@ -36,7 +37,7 @@ Five commands, and that is the whole data-gathering step. The second reads the f
 
 **Check `changed_subject` before trusting `runs_since`.** A repo-wide move or a path rewrite counts as a content change to git and resets the counter, but is not a revision — the skill's own rules say a commit is not a tightening until you have read what it changed. When the subject looks mechanical (`lift nix/ to the repo root`, `adjust skills to use ARTIFACTS`), say so and treat the unit's real clock as older.
 
-The ledger is at `$ARTIFACTS/skill-reviewer/LEDGER.md`; it is machine-local and lives outside the repo, so on a new machine there simply is not one — say so rather than treating every unit as never-reviewed.
+The ledger is read from one canonical path, `$MY_CLAUDE_ARTIFACTS_ROOT/skill-reviewer/LEDGER.md` — **not** `$ARTIFACTS`, which expands to `$MY_CLAUDE_ARTIFACTS_ROOT/<repo>` and partitions the ledger on cwd. It is machine-local and lives outside the repo, so on a new machine there simply is not one — say so when `ledger_status` is `absent` or `empty`, rather than treating every unit as never-reviewed. Under any other status that sentence is false; see Inert.
 
 Thresholds live in `skill-reviewer/SKILL.md` under **Cadence and thresholds**. Read them there and apply them to `runs_since` yourself; do not restate them here or bake them into a script, or the two will drift and the sweep will start enforcing a rule nobody agreed to.
 
@@ -52,7 +53,7 @@ Thresholds live in `skill-reviewer/SKILL.md` under **Cadence and thresholds**. R
 | **No evidence** | Verdict `no-evidence`: nothing in any arm. See below, because this bucket has burned us twice. |
 | **Aging** | Friction entries still at `Class: open` past the threshold — the lesson never became executable. From `signals.sh --aging`. See the cap below; this bucket has a backlog problem the others do not. |
 | **Predictions** | An instruction-text change whose measured outcome is now readable. From `signals.sh --since`, banded in `rollups/PREDICTIONS.md`. **The only bucket that can report something learned rather than something due.** |
-| **Inert** | A registered hook with `FIRED=0`, or one whose `LAST` predates this window. From `signals.sh --hooks`. A hook on the `Bash` matcher is paid on every Bash call, so one that never fires is pure overhead — recommend removal, not tuning. Read an absent row as "produced no output", never as "never ran": a hook that passes silently emits nothing, so the deny-guards live in `--denials` instead and are not expected here. |
+| **Inert** | A registered hook with `FIRED=0`, or one whose `LAST` predates this window. From `signals.sh --hooks`. A hook on the `Bash` matcher is paid on every Bash call, so one that never fires is pure overhead — recommend removal, not tuning. Read an absent row as "produced no output", never as "never ran": a hook that passes silently emits nothing, so the deny-guards live in `--denials` instead and are not expected here. A `ledger_status` of `unparsed` or `split:<n>` is a defect reported here too — both once produced a column of dashes indistinguishable from a fresh machine, so the sweep announced "this machine has no ledger" while a populated one sat unread. |
 
 Sort on the `verdict` field, not on whether a count looks empty. `unadopted` and `no-evidence` both show zero sessions and are the same shape at a glance, but they are opposite states: one is a question already closed, the other is a question never asked.
 
@@ -100,10 +101,11 @@ Prediction:   P<n> <rate>% vs band <lo>-<hi>% — improved | inconclusive (<k>x)
               outside band, discuss. Or "not yet due (<t>/<n> turns)".
               When discussing: ask what they experienced, and write it into
               PREDICTIONS.md under that prediction before the decision.
+Ledger:       <ledger_status> — omit the line when it is `parsed:<n>`
 Config:       <any FAIL from config-checks.sh skill-inventory, if it was run>
 ```
 
-Say which arm made something due — the run count or the staleness clock. They imply different reviews: five fresh runs means there is new gate evidence to mine, whereas 45 quiet days usually means there is not, and the review is re-reading text against thin evidence. If this machine has no ledger, say so once instead of printing `last_reviewed: null` on every line.
+Say which arm made something due — the run count or the staleness clock. They imply different reviews: five fresh runs means there is new gate evidence to mine, whereas 45 quiet days usually means there is not, and the review is re-reading text against thin evidence. Under `ledger_status: absent` or `empty`, say the machine has no ledger once instead of printing `last_reviewed: null` on every line; under `unparsed` or `split` that claim is false, so report the defect instead.
 
 **"Nothing is due" is a complete and successful run.** Do not pad it with observations to look productive; the sweep is worth having precisely because it is usually empty.
 

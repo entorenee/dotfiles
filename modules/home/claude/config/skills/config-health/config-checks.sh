@@ -14,10 +14,14 @@ set -uo pipefail
 SETTINGS="${SETTINGS:-$HOME/.claude/settings.json}"
 REPO="${REPO:-$HOME/dotfiles}"
 CFG="$REPO/modules/home/claude/config"
+# The root, not `$ARTIFACTS` — that name means the repo-keyed
+# `$MY_CLAUDE_ARTIFACTS_ROOT/<repo>` everywhere else, and the review ledger sits
+# above the repo layout. Named as `inventory.sh` names it, since both read it.
+#
 # Left empty rather than defaulted when unset: this script never hard-fails, so
 # check_skill_inventory reports the gap as REVIEW rather than guessing a path
 # and announcing a missing ledger that may well exist elsewhere.
-ARTIFACTS="${ARTIFACTS:-${MY_CLAUDE_ARTIFACTS_ROOT:+$MY_CLAUDE_ARTIFACTS_ROOT/dotfiles}}"
+ART_ROOT="${ART_ROOT:-${MY_CLAUDE_ARTIFACTS_ROOT:-}}"
 
 emit() { printf '%s\t%s\t%s\n' "$1" "$2" "$3"; }
 
@@ -166,13 +170,13 @@ check_skill_inventory() {
     done <<<"$units"
   fi
 
-  if [[ -z "$ARTIFACTS" ]]; then
+  if [[ -z "$ART_ROOT" ]]; then
     emit REVIEW skill-inventory "MY_CLAUDE_ARTIFACTS_ROOT is unset, so the review ledger cannot be located — run 'make rebuild', then start a new session. Ledger checks skipped."
     [[ -z "$untracked" ]] && emit OK skill-inventory "tracking verified for $(printf '%s\n' "$units" | grep -c .) unit(s)"
     return
   fi
 
-  ledger="$ARTIFACTS/skill-reviewer/LEDGER.md"
+  ledger="$ART_ROOT/skill-reviewer/LEDGER.md"
   if [[ ! -f "$ledger" ]]; then
     emit REVIEW skill-inventory "no review ledger at $ledger — it is machine-local and lives outside the repo, so a fresh machine legitimately has none. Baselines must be re-derived before any delta is claimed."
     [[ -z "$untracked" ]] && emit OK skill-inventory "tracking verified for $(printf '%s\n' "$units" | grep -c .) unit(s)"
