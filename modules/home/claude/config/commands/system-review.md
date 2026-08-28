@@ -28,9 +28,10 @@ Five commands, and that is the whole data-gathering step. The second reads the f
 | `runs_since` | Runs against the *current* text — runs after `changed`. **This is what the run arm applies to**, and it is per-host: transcripts do not sync, so never sum it across machines. |
 | `changed` / `changed_subject` | When the unit last changed, and the commit subject. |
 | `last_run` | For the Quiet bucket. |
-| `reviewed_anywhere` | Newest commit carrying a `Reviewed-on:` trailer for the unit, from **any** host. **This is what the 45-day staleness arm measures from** — it rides the commits, so it needs no ledger. `null` means never reviewed anywhere, and the arm then counts from `changed`. |
+| `reviewed_anywhere` | Newest commit carrying a `Reviewed-on:` trailer for the unit, from **any** host. **This is what the 45-day staleness arm measures from** — it rides the commits, so it needs no ledger. `null` means never reviewed anywhere, and the arm then counts from `changed`. `review_arm_status` says whether that null is expected. |
 | `reviewed_host` / `reviewed_runs` | The host that ran that review and how many runs it analyzed. Report both when the staleness arm fires; a review done elsewhere left no local evidence behind. |
-| `last_reviewed` | Newest ledger row on *this machine*. Context only — no arm measures from it. `ledger_status` says why it is null. |
+| `review_arm_status` | Top-level, not per-unit. `no-trailers-since:<date>` means the arm is live and nothing has carried a trailer since it shipped on that date — **the expected state, not a defect**, and never grounds for overriding the arm. `no-repo` means it could not run. `parsed:<n>` means n units carry one. |
+| `last_reviewed` | Newest ledger row on *this machine*. Context only — **no arm measures from it**, so it can never be used to talk a unit off the Due list. `ledger_status` says why it is null. |
 | `ledger_status` | Top-level, not per-unit. `absent`/`empty` explain a `null` `last_reviewed` honestly; `unparsed` or `split:<n>` mean a populated ledger went unread — a defect, reported under Inert. |
 | `artifact_runs` | Dated reports. `artifact_files` includes CSV/SQL byproducts; do not read it as a run count. |
 | `verdict` | Pre-computed coverage class. |
@@ -55,7 +56,7 @@ Thresholds live in `skill-reviewer/SKILL.md` under **Cadence and thresholds**. R
 | **No evidence** | Verdict `no-evidence`: nothing in any arm. See below, because this bucket has burned us twice. |
 | **Aging** | Friction entries still at `Class: open` past the threshold — the lesson never became executable. From `signals.sh --aging`. See the cap below; this bucket has a backlog problem the others do not. |
 | **Predictions** | An instruction-text change whose measured outcome is now readable. From `signals.sh --since`, banded in `rollups/PREDICTIONS.md`. **The only bucket that can report something learned rather than something due.** |
-| **Inert** | A registered hook with `FIRED=0`, or one whose `LAST` predates this window. From `signals.sh --hooks`. A hook on the `Bash` matcher is paid on every Bash call, so one that never fires is pure overhead — recommend removal, not tuning. Read an absent row as "produced no output", never as "never ran": a hook that passes silently emits nothing, so the deny-guards live in `--denials` instead and are not expected here. A `ledger_status` of `unparsed` or `split:<n>` is a defect reported here too — both once produced a column of dashes indistinguishable from a fresh machine, so the sweep announced "this machine has no ledger" while a populated one sat unread. |
+| **Inert** | A registered hook with `FIRED=0`, or one whose `LAST` predates this window. From `signals.sh --hooks`. A hook on the `Bash` matcher is paid on every Bash call, so one that never fires is pure overhead — recommend removal, not tuning. Read an absent row as "produced no output", never as "never ran": a hook that passes silently emits nothing, so the deny-guards live in `--denials` instead and are not expected here. A `ledger_status` of `unparsed` or `split:<n>` is a defect reported here too — both once produced a column of dashes indistinguishable from a fresh machine, so the sweep announced "this machine has no ledger" while a populated one sat unread. A `review_arm_status` of `no-repo` belongs here as well; `no-trailers-since:<date>` does **not** — on 2026-08-27 the first sweep after that arm shipped reported the arm's own zero as an instrument defect, which is what the status field now exists to prevent. |
 
 Sort on the `verdict` field, not on whether a count looks empty. `unadopted` and `no-evidence` both show zero sessions and are the same shape at a glance, but they are opposite states: one is a question already closed, the other is a question never asked.
 
@@ -105,6 +106,9 @@ Prediction:   P<n> <rate>% vs band <lo>-<hi>% — improved | inconclusive (<k>x)
               When discussing: ask what they experienced, and write it into
               PREDICTIONS.md under that prediction before the decision.
 Ledger:       <ledger_status> — omit the line when it is `parsed:<n>`
+Review arm:   <review_arm_status> — omit when `parsed:<n>`. Under
+              `no-trailers-since:<date>` say the arm is live and unexercised,
+              and that every staleness clock therefore counts from `changed`.
 Config:       <any FAIL from config-checks.sh skill-inventory, if it was run>
 ```
 

@@ -4,8 +4,9 @@ Companion to `SKILL.md`. That file says how the loop is *meant* to run; this one
 says what happens when an input is missing, stale, reorganized, or corrupt — and
 what the next operator should do about it.
 
-Every row below was executed, not reasoned about. Measured 2026-08-27 against a
-copied corpus; the live transcript archive was never modified.
+Every row below was executed, not reasoned about. F1–F8 were measured 2026-08-27
+against a copied corpus; the live transcript archive was never modified. F9 was not
+injected at all — it was observed in the first live run after the hardening landed.
 
 ## Why this file exists
 
@@ -15,7 +16,8 @@ does not produce a bad reading; it produces a bad rule that then shapes every
 future session. So the interesting question is never "does it work" but "when it
 is wrong, does it say so."
 
-The answer, for four of seven modes, is no.
+The answer, for four of seven modes, was no — and F9, added after the first
+post-hardening run, makes it five of eight.
 
 ## Failure modes
 
@@ -32,6 +34,7 @@ quiet plausible one is the thing this playbook is for.
 | F6 | Alert missed on run day | no record the alert fired, failed, or was due | **yes** |
 | F7 | Notifier blocks | script hangs with no timeout | no — but leaves no trace either |
 | F8 | A second repo grows a ledger | one ledger is read, the other discarded | **yes** |
+| F9 | A new arm's field is legitimately empty | the emptiness is reported as a defect, and the arm is overridden | **yes** |
 
 **F1, F2 and F8 are fixed** as of the ledger-arm change; their rows above record
 what was observed before it, which is what makes the fix testable. The ledger now
@@ -51,8 +54,12 @@ alert are finally distinguishable, and its notifier is bounded by a timeout. A
 `SessionStart` hook reads that record and surfaces an overdue sweep where the work
 happens, on any host.
 
+**F9 was found by running the loop, not by injecting into it**, and is fixed by the
+same emitted-status treatment — see its section below.
+
 **Every mode in this playbook now fails loudly.** `inventory.sh --selftest` covers
-18 cases across all three arms.
+22 cases across all three arms. Note what that sentence does *not* cover: F9 was a
+correct computation read wrongly, so a green suite was never going to catch it.
 
 ### F1 — a malformed date silently becomes a *different, plausible* date
 
@@ -211,6 +218,42 @@ are maintained. That is luck holding the line, not a defence.
 - **Catch before shipping** — run reviews from one repo, always. A convention no
   one has written down and nothing enforces.
 
+### F9 — a correctly computed value is read as a defect
+
+The other eight modes are the machine producing a wrong number. This one is the
+machine producing the **right** number and the reader drawing the wrong conclusion,
+which is why it survived a green suite and why it is the only mode here that was
+never injected.
+
+The review arm reads `Reviewed-on:` commit trailers. It shipped hours before the
+first sweep, so no commit carried one and `reviewed_anywhere` was null for all 25
+units — the only value it could possibly hold. The sweep reported that null as an
+instrument defect under Inert, then reached for `last_reviewed` — a field both
+`SKILL.md` and the command mark *"no arm measures from it"* — to talk two
+genuinely-due units back off the Due list, because the arm's answer felt wrong. In
+the same run it resolved `rollups/PREDICTIONS.md` against the skill directory
+instead of the friction repo and reported that no predictions existed, when three
+do. One shape, three times: **absence read as evidence.**
+
+The standing lesson, and it is not specific to this arm: **every arm must emit a
+status rather than leave one inferred from an empty column.** The ledger arm learned
+that at F2 and F8; the review arm shipped without it anyway. Treat it as a
+requirement for any arm added later.
+
+- **Detection** — `review_arm_status`, emitted every run: `no-trailers-since:<date>`
+  (arm live, nothing recorded since it shipped — **expected, not a defect**),
+  `no-repo` (arm could not run — a real defect), `parsed:<n>`. The ship date is
+  derived from the commit that introduced the arm, so it cannot drift.
+- **Alert** — a `Review arm:` line in the sweep report, omitted only when
+  `parsed:<n>`. The command's Inert bucket names `no-repo` as a defect and
+  `no-trailers-since` explicitly as not one.
+- **Fallback** — documented and unchanged: a unit never reviewed anywhere runs its
+  staleness clock from `changed`. The run-count arm is unaffected.
+- **Catch before shipping** — 4 selftest cases pin the three statuses and the
+  underivable-date degradation. Beyond that, the standing rule: `last_reviewed` is
+  context only. If a sweep ever cites it to move a unit on or off the Due list, that
+  sweep is wrong, whatever the rest of its reasoning looks like.
+
 ## Recovery plays
 
 Until the fix below lands, these are manual and belong to whoever runs the sweep.
@@ -221,6 +264,7 @@ Until the fix below lands, these are manual and belong to whoever runs the sweep
 | F3, F4 | Re-run the mining aggregate; compare `sessions` against the pre-filter's file count. Cross-check totals against `signals.sh --verify`. | Report counts as floors — which SKILL.md already requires — and do not score a prediction on a window containing an unexplained drop. |
 | F8 | `find "$ART_ROOT" -path '*/skill-reviewer/LEDGER.md'` — more than one line is the defect. | Run every review from the repo where the skills are maintained, so all rows land in one file. |
 | F6, F7 | Ask when the last `/system-review` ran. The absence of a notification is not evidence that none was due. | Run `sweep-due.sh --check` by hand; it is cheap, deterministic, and needs no GUI. |
+| F9 | **Now automatic** — read `review_arm_status`. `no-repo` is a defect; `no-trailers-since:<date>` is the expected state until the first review lands after that date, and must not be reported as one. | Staleness counts from `changed`, as documented for a never-reviewed unit. Never reach for `last_reviewed` to override an arm — it is context only, and a sweep that cites it to move a unit on or off the Due list is wrong. |
 
 Across every mode, one rule carries the most weight and needs no code: **a number
 from this loop is not evidence for an edit until a second arm agrees with it.**

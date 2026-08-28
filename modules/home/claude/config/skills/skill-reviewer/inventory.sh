@@ -145,6 +145,17 @@ review_trailer_scan() { # $1 = git dir, $2 = path within it
       --format='%x1e%ad%x1f%B' -- "$2" 2>/dev/null | review_trailer_parse
 }
 
+# Status for the review arm, on the ledger's precedent: emitted, never inferred
+# from an empty result. A null `reviewed_anywhere` reads two opposite ways — arm
+# shipped and unexercised, or trailers skipped — and P3 measures that difference.
+# The ship date separates a fresh mechanism from a lapsed habit. See F26.
+review_arm_status() { # $1 = repo|norepo, $2 = row count, $3 = arm ship date
+  if   [ "$1" != repo ];  then echo "no-repo"
+  elif [ "$2" -gt 0 ];    then echo "parsed:$2"
+  else echo "no-trailers-since:${3:-unknown}"
+  fi
+}
+
 # --------------------------------------------------------------------------
 # Corpus arm: does the archive still hold what every other count assumes?
 #
@@ -262,6 +273,23 @@ if [ "$MODE" = selftest ]; then
     fail=$((fail+1))
     printf '  FAIL  newest commit wins when several carry the trailer — got "%s"\n' "$got"
   fi
+
+  # Review-arm status. Split from the scan for the same reason the parser was:
+  # the decision is what has to be right, and it is testable without a commit.
+  scheck() { # $1 = label, $2 = expected, $3..$5 = repo flag, rows, ship date
+    local got
+    got=$(review_arm_status "$3" "$4" "${5:-}")
+    if [ "$got" = "$2" ]; then pass=$((pass+1)); printf '  ok    %s\n' "$1"
+    else fail=$((fail+1)); printf '  FAIL  %s — expected "%s", got "%s"\n' "$1" "$2" "$got"; fi
+  }
+
+  scheck "an unreadable repo says so, never that nothing was reviewed" \
+    "no-repo" norepo 0 2026-08-27
+  scheck "zero trailers reports the arm ship date, not a defect" \
+    "no-trailers-since:2026-08-27" repo 0 2026-08-27
+  scheck "an underivable ship date degrades to unknown, never to a guess" \
+    "no-trailers-since:unknown" repo 0 ""
+  scheck "trailers found report their count" "parsed:3" repo 3 2026-08-27
 
   # Corpus arm. Fixture FILES, never a scratch repo: the damage being modelled is
   # a half-written file, and a fixture needing a commit does not get one here.
@@ -485,6 +513,21 @@ if git -C "$CONFIG_DIR" rev-parse --git-dir >/dev/null 2>&1; then
   done < "$WORK/units.txt" >> "$WORK/reviewed-git.tsv"
 fi
 
+# The ship date is derived rather than written down, so it cannot drift from the
+# code it describes: the oldest commit that put `Reviewed-on` in this file. Only
+# looked up when there are no trailers, which is the only branch that prints it.
+REVIEW_ARM_REPO=norepo
+git -C "$CONFIG_DIR" rev-parse --git-dir >/dev/null 2>&1 && REVIEW_ARM_REPO=repo
+REVIEW_ARM_ROWS=$(wc -l < "$WORK/reviewed-git.tsv" | tr -d ' ')
+REVIEW_ARM_SINCE=""
+if [ "$REVIEW_ARM_REPO" = repo ] && [ "$REVIEW_ARM_ROWS" -eq 0 ]; then
+  REVIEW_ARM_SINCE=$(git -C "$CONFIG_DIR" log --date=short --format='%ad' \
+                     -S 'Reviewed-on' -- skills/skill-reviewer/inventory.sh \
+                     2>/dev/null | tail -1)
+fi
+REVIEW_ARM_STATUS=$(review_arm_status \
+                    "$REVIEW_ARM_REPO" "$REVIEW_ARM_ROWS" "$REVIEW_ARM_SINCE")
+
 # Ledger arm — see ledger_scan() above for the path, parse and status rules.
 #
 # The ledger is machine-local and outside the repo, so a fresh machine
@@ -658,11 +701,13 @@ awk -F'\t' '
 
 if [ "$MODE" = json ]; then
   jq -R -s --arg root "$ART_ROOT" --arg tx "$TRANSCRIPTS" --arg ls "$LEDGER_STATUS" \
+     --arg ras "$REVIEW_ARM_STATUS" \
      --argjson cs "$(printf \
         '{"scanned":%d,"unreadable":%d,"truncated":%d,"grep_errors":%d}' \
         "$CORPUS_SCANNED" "$CORPUS_N_UNREADABLE" "$CORPUS_N_TRUNCATED" \
         "$CORPUS_GREP_ERR")" '
-    { artifact_root: $root, transcripts: $tx, ledger_status: $ls, corpus_status: $cs,
+    { artifact_root: $root, transcripts: $tx, ledger_status: $ls,
+      review_arm_status: $ras, corpus_status: $cs,
       units: (split("\n") | map(select(length > 0) | split("\t") | {
         unit:            .[0],
         invocations:     (.[1] | tonumber),
@@ -689,6 +734,7 @@ echo "# transcripts : $TRANSCRIPTS — $CORPUS_SCANNED scanned, \
 $CORPUS_N_UNREADABLE unreadable, $CORPUS_N_TRUNCATED truncated"
 echo "# artifacts   : $ART_ROOT — $ART_N files across $REPO_N repo(s)"
 echo "# ledger      : $ART_ROOT/skill-reviewer/LEDGER.md — $LEDGER_STATUS"
+echo "# review arm  : Reviewed-on: trailers in $CONFIG_DIR — $REVIEW_ARM_STATUS"
 echo
 {
   printf 'UNIT\tSESS\tSUB\tRUNS\tFILES\tLAST RUN\tREVIEWED\tANYWHERE\tSINCE\tVIA\tVERDICT\n'
@@ -741,6 +787,11 @@ cat <<'EOF'
 #            empty mean there is no ledger, unparsed means there IS one and it
 #            did not parse, and split means rows are sitting under a repo key
 #            where nothing will read them
+#   ANYWHERE newest `Reviewed-on:` trailer on any machine, host/runs. Read the
+#            `review arm :` status the same way: no-trailers-since means the arm
+#            is live and nothing has carried a trailer since that date, which is
+#            the EXPECTED state until the first review lands after it shipped —
+#            not a defect. no-repo means the arm could not run at all
 #   SINCE    runs against the current text, i.e. since the last content change
 #
 # COVERAGE — all eight verdicts, and what each does and does not license

@@ -45,6 +45,8 @@ Two tiers, because run volume varies by an order of magnitude across units. A we
 | ≥ 3 | 5 new runs, **or** 45 days since that unit's newest ledger row — whichever comes first |
 | < 3 | **Not eligible.** There is no pattern yet, only anecdote. If asked anyway, the finding *is* "insufficient evidence" — record that rather than manufacturing one. |
 
+**Edit freeze, adopted 2026-08-27: a unit of the instrument itself — `skill-reviewer`, `system-review`, `inventory.sh`, `signals.sh`, the guards — is not edited again until it has run 5 times against its current text.** Both reported `runs_since: 0` on 2026-08-27 while being changed nine times in three days, so neither could ever reach the threshold it enforces on everything else: the instrument was being revised faster than it could measure itself. Fixing a defect that produced wrong output is the one exception, and it carries the same 5-run wait afterwards. Adding this rule was the last pre-freeze edit. Verify with `runs_since` before proposing any change here; the freeze lifts per unit, not all at once.
+
 **One threshold for every eligible unit, deliberately — do not reintroduce volume tiers.** Raising the bar for heavily-used units fails two ways. It reads the tier off a *moving* quantity, so a unit crossing the tier boundary between reviews silently raises its own bar and can recede from due *by being used more*. And the direction is backwards: the most-used units carry the highest correction rates, so volume is a reason to review sooner, not later.
 
 The 5 is an evidence floor: enough runs to see a pattern rather than an anecdote. The 45 days is a staleness ceiling for a unit that is used but used slowly — five runs may be a year away, and the text should not go unexamined that long.
