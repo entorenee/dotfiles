@@ -14,10 +14,13 @@
       General = {
         AutoSaveAfterEveryChange = false;
         ConfigVersion = 2;
+        HideWindowOnCopy = true;
       };
+
       Browser = {
         Enabled = true;
       };
+
       GUI = {
         ApplicationTheme = "dark";
         LaunchAtStartup = true;
@@ -25,6 +28,10 @@
         MinimizeOnStartup = true;
         ShowTrayIcon = true;
         TrayIconAppearance = "monochrome-light";
+      };
+
+      Security = {
+        ClearClipboardTimeout = 20;
       };
     };
   };
