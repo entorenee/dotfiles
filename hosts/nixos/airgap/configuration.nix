@@ -31,6 +31,12 @@
   };
 
   environment.systemPackages = with pkgs; [
+    # Generates the break-glass age identity, which must never touch a
+    # networked disk. Bare `age`, not `pkgs.agenix`: this host is not an agenix
+    # consumer and cannot become one — services.openssh.enable = false above
+    # leaves age.identityPaths at [], which trips agenix's assertion the moment
+    # any age.secrets is declared here.
+    age
     cryptsetup
     diceware
     ent

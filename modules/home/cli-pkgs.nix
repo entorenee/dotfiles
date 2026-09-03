@@ -20,6 +20,8 @@ in {
   # local shell tools go in minimal-pkgs.nix instead.
   home.packages = with pkgs;
     [
+      age # age-keygen, for generating the per-machine unlock identities
+      agenix # from agenix.overlays.default in flake.nix, not nixpkgs
       bash # tmux theme needs a more recent version of bash
       caddy
       cargo # Nix LSP dependency

@@ -23,6 +23,17 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    # Secrets. All three `follows` are load-bearing: stock Nix on the Pis
+    # fetches every locked input eagerly, so each unfollowed input is a full
+    # extra fetch on a 512MB Zero — here a second nixpkgs and the lnl7
+    # nix-darwin fork.
+    agenix = {
+      url = "github:ryantm/agenix";
+      inputs.nixpkgs.follows = "nixpkgs";
+      inputs.darwin.follows = "darwin";
+      inputs.home-manager.follows = "home-manager";
+    };
+
     # Custom navi cheatsheets
     navi-cheatsheets = {
       url = "path:./modules/home/navi";
@@ -48,6 +59,7 @@
   };
 
   outputs = {
+    agenix,
     home-manager,
     darwin,
     nixpkgs,
@@ -61,11 +73,16 @@
   }: let
     lib = nixpkgs.lib;
 
-    # Universal rather than a per-host opt-in like overlays/pnpm-pin.nix: every
-    # host imports the `claude` module via roles/home/cli.nix, and the `git`
-    # module via roles/home/base.nix.
+    # Universal rather than a per-host opt-in like overlays/pnpm-pin.nix,
+    # because both serve a tier rather than named machines: claude-code-unstable
+    # backs `programs.claude-code` in the `claude` module, and
+    # agenix.overlays.default supplies `pkgs.agenix` for editing and rekeying
+    # secrets — both reached through roles/home/cli.nix. Host-scoping would mean
+    # re-listing an overlay every time a host moved up a tier. Inert below that
+    # tier: `uptime` takes minimal.nix, which imports neither.
     baseOverlays = [
       (import ./overlays/claude-code-unstable.nix {inherit nixpkgs-unstable;})
+      agenix.overlays.default
     ];
 
     mkHomeManagerArgs = import ./lib/home-manager-args.nix {

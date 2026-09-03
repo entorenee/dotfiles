@@ -178,7 +178,9 @@ configure). Two shapes:
 - **Universal**: threaded as a `baseOverlays` list applied to every host in
   `flake.nix`, for something every current *and planned* host needs — e.g.
   `claude-code-unstable.nix`, since `programs.claude-code` reaches every host
-  via `roles/home/cli.nix`.
+  via `roles/home/cli.nix`. The other member is `agenix.overlays.default`, an
+  overlay a flake input supplies rather than an `overlays/` file; it is
+  universal because `pkgs.agenix` is the CLI for editing any secret.
 
 Don't default to universal. A host-scoped overlay that turns out to be needed
 everywhere should get promoted deliberately, not started broad "to be safe."
