@@ -55,7 +55,10 @@ Agents overstate severity, misremember how a helper behaves, and assert root cau
 
 ## Output contract
 
+The full table is the review file (step 5). **Chat gets a rendering of it, and the rendering is where this contract is most often lost** — it is the surface the next request comes from.
+
 - **One consolidated findings table**, columns `# | Severity | Item | Location | Detail`, **sorted by descending severity** (🔴 Blocker → 🟡 Worth fixing → 🟢 Minor). Consolidate for information density but leave enough detail to act on.
+- **Every finding carries `file:line` in `Location` — in chat as well as in the file.** A bare filename is not a location. Collapsing a range of 🟢 rows into one line is fine; **never collapse a 🔴, and never drop `Detail` from the chat rendering.**
 - Follow the table with a short **"Verified sound (no action)"** line naming what was checked and cleared.
 - Note which findings are **code-verified** vs. which rest on **operational config / environment you cannot see from the repo** (deploy env vars, infra) — attribute those rather than asserting them.
 - Never label a finding **Critical/Blocker** without a quoted line from the actual code.
