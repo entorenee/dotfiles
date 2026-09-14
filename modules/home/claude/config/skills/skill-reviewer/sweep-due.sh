@@ -5,6 +5,7 @@
 #   bash sweep-due.sh              notify if overdue, silent otherwise
 #   bash sweep-due.sh --check      print the decision, never notify
 #   bash sweep-due.sh --threshold N   override the 7-day cadence
+#   bash sweep-due.sh --ran        record that a sweep just ran, and exit
 #
 # Decides whether the sweep is due and says so. It does not run the sweep, read
 # the transcripts, or write an artifact — and must not become a Claude session on
@@ -18,11 +19,36 @@ MODE=notify
 while [ $# -gt 0 ]; do
   case "$1" in
     --check)     MODE=check ;;
+    --ran)       MODE=ran ;;
     --threshold) THRESHOLD="${2:?--threshold needs a number}"; shift ;;
     *) echo "unknown argument: $1" >&2; exit 2 ;;
   esac
   shift
 done
+
+
+# `--ran` records that a sweep actually happened. It is the only event that can
+# satisfy a DUE verdict, and the scheduled path cannot observe one — so without
+# it the session hook replays a Monday verdict all week, including to someone
+# who swept on Tuesday. Handled before inventory.sh: marking costs nothing and
+# must not pay for a pass over the transcript archive.
+#
+# A DIFFERENT file from sweep-due.state on purpose, and in a different root —
+# see the note inside. The `record()` comment below refuses the same thing for
+# `--check`, for the same reason.
+if [ "$MODE" = ran ]; then
+  # Under the artifacts root, not beside STATE in XDG state: `/system-review`
+  # runs inside a Claude Code session, and that sandbox refuses XDG state with
+  # "Operation not permitted" — the mark would silently never happen. It also
+  # keeps STATE unwritable from a session, so the session hook's staleness
+  # branch, which reads STATE's timestamp to tell a late agent from a dead one,
+  # cannot be forged. Same resolution order as sweep-due-session.sh; change both
+  # together.
+  RAN_DIR="${MY_AGENT_ARTIFACTS_ROOT:-${XDG_DATA_HOME:-$HOME/.local/share}/agents/artifacts}/skill-reviewer"
+  mkdir -p "$RAN_DIR" 2>/dev/null \
+    && printf '%s' "$(date +%Y-%m-%d)" > "$RAN_DIR/sweep-due.ran" 2>/dev/null
+  exit 0
+fi
 
 HERE="$(cd "$(dirname "$0")" && pwd)"
 INVENTORY="$HERE/inventory.sh"
