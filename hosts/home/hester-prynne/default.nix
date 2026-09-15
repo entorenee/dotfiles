@@ -7,6 +7,7 @@
     ../../../roles/home/personal-desktop.nix
     ../../../modules/home/mise
     ./autostart-suppression.nix
+    ./secrets.nix
   ];
   # protonmail-desktop (the nixpkgs package, not the Mac Homebrew cask) only
   # ever appears in this host's Linux-only package list.

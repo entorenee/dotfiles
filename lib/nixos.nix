@@ -5,6 +5,7 @@
 # deploys config as a store copy, not an out-of-store symlink: a Pi's
 # ~/dotfiles checkout may not exist when home-manager activates.
 {
+  agenix,
   nixpkgs,
   home-manager,
   lib,
@@ -18,8 +19,12 @@
     nixpkgs.lib.nixosSystem {
       inherit system;
       specialArgs = {inherit nixos-hardware yubikey-guide;};
+      # Every host takes the agenix module whether or not it declares a secret:
+      # agenix wraps its whole config block in `mkIf (cfg.secrets != {})`, so it
+      # is inert on the hosts that declare none.
       modules =
-        nixosImports
+        [agenix.nixosModules.default]
+        ++ nixosImports
         ++ lib.optionals (username != null) [
           home-manager.nixosModules.home-manager
           ({pkgs, ...}: {
@@ -43,7 +48,7 @@
             home-manager.useUserPackages = true;
             home-manager.backupFileExtension = "hm-backup";
             home-manager.users.${username} = {
-              imports = homeImports ++ [worktrunk.homeModules.default];
+              imports = homeImports ++ [worktrunk.homeModules.default agenix.homeManagerModules.age];
               my.dotfiles.mutable = false;
               _module.args = mkHomeManagerArgs system username;
             };

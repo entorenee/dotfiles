@@ -2,6 +2,7 @@
 # composes itself from. `homeImports`, `darwinImports` and `overlays` are all
 # passed through verbatim — nothing is spliced onto them here.
 {
+  agenix,
   darwin,
   home-manager,
   worktrunk,
@@ -10,7 +11,7 @@
 }: let
   mkDarwinConfig = username: system: homeImports: darwinImports: overlays:
     import ../system/darwin.nix {
-      inherit darwin home-manager username worktrunk homeImports darwinImports;
+      inherit agenix darwin home-manager username worktrunk homeImports darwinImports;
       overlays = baseOverlays ++ overlays;
       homeManagerArgs = mkHomeManagerArgs system username;
     }

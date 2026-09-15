@@ -33,6 +33,14 @@ in {
 
   home.file.".ssh/id_rsa_yubikey_work.pub".source = ./id_rsa_yubikey_work.pub;
 
+  age.identityPaths = ["${config.home.homeDirectory}/.config/age/keys.txt"];
+
+  age.secrets.friction-deploy = {
+    file = ../../../secrets/friction-deploy-fw-skyler.age;
+    path = "${config.home.homeDirectory}/.ssh/id_ed25519_friction";
+    mode = "0400";
+  };
+
   xdg.configFile."gh-dash/config.yml".source =
     lib.mkForce (config.lib.file.mkOutOfStoreSymlink ghDashConfig);
 }

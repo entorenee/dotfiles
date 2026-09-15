@@ -5,6 +5,17 @@
     ../../roles/home/gui.nix
     ../../roles/home/personal.nix
     ../../roles/home/personal-desktop.nix
+    # Inline rather than a host file: this machine has no directory of its own,
+    # matching the darwinImports precedent below.
+    ({config, ...}: {
+      age.identityPaths = ["${config.home.homeDirectory}/.config/age/keys.txt"];
+
+      age.secrets.friction-deploy = {
+        file = ../../secrets/friction-deploy-lyra-silvertongue.age;
+        path = "${config.home.homeDirectory}/.ssh/id_ed25519_friction";
+        mode = "0400";
+      };
+    })
   ];
   darwinImports = [
     ../../roles/darwin/personal.nix

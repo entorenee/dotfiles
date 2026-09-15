@@ -1,4 +1,5 @@
 {
+  agenix,
   nixpkgs,
   home-manager,
   baseOverlays,
@@ -19,6 +20,7 @@
         homeImports
         ++ [
           worktrunk.homeModules.default
+          agenix.homeManagerModules.age
           {
             home.username = username;
             home.homeDirectory = "/home/${username}";

@@ -1,4 +1,5 @@
 {
+  agenix,
   home-manager,
   darwin,
   homeManagerArgs,
@@ -22,7 +23,7 @@ darwin.lib.darwinSystem {
         home-manager.useGlobalPkgs = true;
         home-manager.useUserPackages = true;
         home-manager.users."${username}" = {
-          imports = homeImports ++ [worktrunk.homeModules.default];
+          imports = homeImports ++ [worktrunk.homeModules.default agenix.homeManagerModules.age];
           _module.args = homeManagerArgs;
         };
         home-manager.backupFileExtension = "hm-backup";
