@@ -91,7 +91,7 @@
 
     inherit
       (import ./lib/darwin.nix {
-        inherit darwin home-manager worktrunk baseOverlays mkHomeManagerArgs;
+        inherit agenix darwin home-manager worktrunk baseOverlays mkHomeManagerArgs;
       })
       mkDarwinConfig
       mkDarwinHost
@@ -99,7 +99,7 @@
 
     inherit
       (import ./lib/home.nix {
-        inherit nixpkgs home-manager baseOverlays mkHomeManagerArgs worktrunk;
+        inherit agenix nixpkgs home-manager baseOverlays mkHomeManagerArgs worktrunk;
       })
       mkHomeManagerConfig
       mkHomeHost
@@ -107,7 +107,7 @@
 
     inherit
       (import ./lib/nixos.nix {
-        inherit nixpkgs home-manager lib nixos-hardware yubikey-guide baseOverlays mkHomeManagerArgs worktrunk;
+        inherit agenix nixpkgs home-manager lib nixos-hardware yubikey-guide baseOverlays mkHomeManagerArgs worktrunk;
       })
       mkNixosConfig
       mkNixosHost
