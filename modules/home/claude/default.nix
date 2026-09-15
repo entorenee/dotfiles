@@ -124,7 +124,7 @@ in {
       ];
       enabledPlugins = {
         "typescript-lsp@claude-plugins-official" = true;
-        "superpowers@superpowers-marketplace" = true;
+        "superpowers@claude-plugins-official" = true;
         "frontend-design@claude-plugins-official" = true;
         "lua-lsp@claude-plugins-official" = true;
         "pr-review-toolkit@claude-plugins-official" = true;
