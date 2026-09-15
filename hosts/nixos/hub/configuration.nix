@@ -53,6 +53,15 @@
     mode = "0400";
   };
 
+  # Read-only on entorenee/dotfiles, so it can pull the checkout unattended but
+  # never push. hosts/nixos/hub/home.nix decides when ssh reaches for it.
+  age.secrets.dotfiles-deploy-hub = {
+    file = ../../../secrets/dotfiles-deploy-hub.age;
+    path = "/home/skyler/.ssh/id_ed25519_hub";
+    owner = "skyler";
+    mode = "0400";
+  };
+
   # skyler is in the wheel group but has no password, so password-authenticated
   # sudo can't work. Allow wheel to sudo without a password (login is SSH-key
   # only) so USB drives can be mounted when staging the airgapped Pi's files.

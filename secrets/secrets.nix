@@ -16,4 +16,5 @@ let
   hubHost = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGd15a4vpLYCxY7gNHflAiuYmZVyxQvM8iM3L+jGw4Md root@nixos";
 in {
   "friction-deploy-hub.age".publicKeys = [breakGlass hubHost];
+  "dotfiles-deploy-hub.age".publicKeys = [breakGlass hubHost];
 }
