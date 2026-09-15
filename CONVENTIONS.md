@@ -168,6 +168,18 @@ deliberately skip agenix's nix-darwin module. **The `.age` has to be
 git-tracked**: the flake can't see an untracked file, and the failure surfaces as
 a missing path rather than as anything to do with decryption.
 
+A desktop's *first* secret also needs `age.identityPaths`. It is a per-host
+option, set once and not per secret: the home-manager module defaults to
+`~/.ssh/id_ed25519` and `~/.ssh/id_rsa`, and neither exists on these machines —
+the identity is the hand-placed `~/.config/age/keys.txt`.
+
+**`path` is a symlink, not the decrypted file.** Plaintext is written to a
+runtime directory — `$XDG_RUNTIME_DIR/agenix` on Linux, `$(getconf
+DARWIN_USER_TEMP_DIR)/agenix` on macOS, a ramfs under `/run/agenix` on the Pis —
+and `path` is linked at it. ssh follows the link and checks the *target's* mode,
+which is what the entry's `mode` sets. None of it survives a reboot, so a secret
+that decrypts once is not thereby proven to decrypt on a cold boot.
+
 ## Overlays
 
 One overlay function per file in `overlays/`, applied where each config's `pkgs`

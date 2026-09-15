@@ -150,7 +150,14 @@ in {
       ];
       # Identity roles allow the whole gh config dir; this re-blocks the one
       # file an OAuth token could land in. denyRead wins over allowRead.
-      sandbox.filesystem.denyRead = ["~/.config/gh/hosts.yml"];
+      sandbox.filesystem.denyRead = [
+        "~/.config/gh/hosts.yml"
+        # The age identity decrypts every secret this machine is sent, so it
+        # outranks any single credential the entries around it protect. The
+        # decrypted keys need no entry: agenix writes them to a runtime dir
+        # outside every allowRead.
+        "~/.config/age"
+      ];
       sandbox.filesystem.allowRead = [artifactsRoot];
       sandbox.filesystem.allowWrite = [artifactsRoot];
 
@@ -398,6 +405,8 @@ in {
         "Edit(~/.zshrc)"
         "Edit(~/.ssh/**)"
         "Read(~/.ssh/**)"
+        "Edit(~/.config/age/**)"
+        "Read(~/.config/age/**)"
         "Read(~/.gnupg/**)"
         "Read(~/.aws/**)"
         "Read(~/.azure/**)"
