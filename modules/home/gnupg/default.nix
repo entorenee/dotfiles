@@ -14,29 +14,8 @@ in {
   programs.gpg = {
     enable = true;
 
-    settings = {
-      armor = true;
-      cert-digest-algo = "SHA512";
-      charset = "utf-8";
-      default-preference-list = "SHA512 SHA384 SHA256 AES256 AES192 AES ZLIB BZIP2 ZIP Uncompressed";
-      keyid-format = "0xlong";
-      list-options = "show-uid-validity";
-      no-comments = true;
-      no-emit-version = true;
-      no-greeting = true;
-      no-symkey-cache = true;
-      personal-cipher-preferences = "AES256 AES192 AES";
-      personal-compress-preferences = "ZLIB BZIP2 ZIP Uncompressed";
-      personal-digest-preferences = "SHA512 SHA384 SHA256";
-      require-cross-certification = true;
-      require-secmem = true;
-      s2k-cipher-algo = "AES256";
-      s2k-digest-algo = "SHA512";
-      throw-keyids = true;
-      use-agent = true;
-      verify-options = "show-uid-validity";
-      with-fingerprint = true;
-    };
+    # Also read by hosts/nixos/airgap — see ./settings.nix.
+    settings = import ./settings.nix;
 
     # Yubikey: use the internal CCID driver via pcscd rather than gnupg's own.
     scdaemonSettings.disable-ccid = true;
