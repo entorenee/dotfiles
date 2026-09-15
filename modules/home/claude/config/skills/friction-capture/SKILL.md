@@ -12,10 +12,11 @@ how the log's own worst error happened: an entry claiming seven corrections wher
 three were supported, plus a causal claim the cited quote contradicted when read
 in full.
 
-The log exists because `skill-reviewer` cannot see this class of cost. Its three
-arms — corrections, interruptions, review-time gaps — all require someone to have
-caught something. Friction that was absorbed rather than caught produces no
-signal and reads as a clean run.
+The log exists because friction that was absorbed rather than caught reads as a
+clean run. `skill-reviewer`'s gate arms — corrections, interruptions, review-time
+gaps — need someone to have caught something; its structural arm adds interruptions
+and denials, recorded whether or not anyone remarked. Neither sees a cost that
+produced no correction, no interruption and no denial. That is this log.
 
 ## When to Use
 
@@ -64,8 +65,12 @@ If `$ROOT` is not a git repository, stop and hand over the clone command rather
 than writing anywhere else:
 
 ```
-git clone git@github.com:entorenee/claude-friction.git "$MY_CLAUDE_FRICTION_ROOT"
+git clone git@claude-friction.github.com:entorenee/claude-friction.git "$MY_CLAUDE_FRICTION_ROOT"
 ```
+
+That host is an SSH alias, not a typo: plain `github.com` pins the personal Yubikey and
+would demand a touch on every unattended push. It must stay matched to the `uri` in the
+Nix module that sets `$MY_CLAUDE_FRICTION_ROOT`.
 
 ```bash
 mkdir -p "$ROOT/entries"
@@ -99,6 +104,11 @@ stronger evidence than a second entry, and two entries for one class split the
 count that makes it visible. **When correcting an entry, keep the correction
 visible rather than overwriting** — the error is usually the more useful record.
 
+**A recurrence updates an entry; a new friction never does.** Something noticed while
+reading an existing entry gets its own number, even though you found it there. A
+distinct friction lodged as a note inside another entry inherits that entry's `Status`
+and goes stale invisibly.
+
 ## Step 3 — write the entry
 
 Number from the highest existing entry:
@@ -112,8 +122,9 @@ Write `$ROOT/entries/F<n+1>-YYYY-MM-DD-<slug>.md`:
 ```markdown
 # F<n> — <one line naming the friction, not the fix>
 
-<What happened and what it cost. Two to five sentences. Name the observable
-symptom, since that is what a future reader meets first.>
+<What happened and what it cost. Name the observable symptom, since that is what a
+future reader meets first. **Hard cap: 120 words — count them.** Chronology, retained
+corrections, and follow-up go in `Status-detail:`, not here.>
 
 **Evidence:** <file:line, commit, transcript date, or command output. If a claim
 is not verified, write `unverified:` in front of it.>
@@ -131,9 +142,9 @@ greps them — and put every word of prose in `Status-detail:`, which runs to EO
 - `open` — still documentary. This is the drain `--aging` reports.
 - `n-a` — resolved by removing the thing; no lesson left to encode.
 
-`Status: resolved` with `Class: open` is the normal shape, not a contradiction —
-21 of 22 entries, none ever `graduated`. An entry is not finished when it stops
-hurting.
+`Status: resolved` with `Class: open` is the normal shape, not a contradiction. An
+entry is not finished when it stops hurting. For the live distribution read
+`signals.sh --aging`; do not restate a count here.
 
 Then confirm the number you just used is unique — the daemon may have fast-forwarded
 another machine's entry in between your `ls` above and your write:
