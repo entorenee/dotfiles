@@ -1,7 +1,16 @@
-.PHONY: help claude-sessions
+.PHONY: help claude-sessions friction-remote
 
 # Hostname or IP of the uptime-kuma Pi Zero, used by uptime-switch.
 UPTIME_HOST ?= uptime
+
+# The friction log's checkout and the ssh alias that reaches it with the agenix
+# deploy key rather than the Yubikey. Both restate
+# modules/home/claude/friction-log/default.nix — `services.git-sync` cannot set
+# either one: its `uri` is consulted only when cloning a missing directory, and
+# on Darwin not at all, since the launchd agent just runs `git-sync` in a
+# WorkingDirectory that must already exist.
+FRICTION_ROOT ?= $(HOME)/claude-friction
+FRICTION_URI ?= git@claude-friction.github.com:entorenee/claude-friction.git
 
 # PIDs of running Claude Code sessions. `pgrep -x claude` does NOT work: the
 # package is a Nix binary wrapper whose bin/claude execve's .claude-wrapped in
@@ -83,6 +92,14 @@ uptime-image:
 uptime-switch:
 	nixos-rebuild switch --flake ".#uptime" --target-host "uptime@$(UPTIME_HOST)" --sudo
 
+## Clone the friction log, or re-point an existing checkout at the deploy-key alias
+friction-remote:
+	@if [ -d "$(FRICTION_ROOT)/.git" ]; then \
+		git -C "$(FRICTION_ROOT)" remote set-url origin "$(FRICTION_URI)"; \
+	else \
+		git clone "$(FRICTION_URI)" "$(FRICTION_ROOT)"; \
+	fi
+	@echo "origin -> $$(git -C "$(FRICTION_ROOT)" remote get-url origin)"
 
 
 help:

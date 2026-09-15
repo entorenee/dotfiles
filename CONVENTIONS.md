@@ -180,6 +180,20 @@ and `path` is linked at it. ssh follows the link and checks the *target's* mode,
 which is what the entry's `mode` sets. None of it survives a reboot, so a secret
 that decrypts once is not thereby proven to decrypt on a cold boot.
 
+**On a new machine, run `make friction-remote` once after the first rebuild.**
+agenix places the friction log's deploy key, but nothing declarative points the
+checkout at it: `services.git-sync`'s `uri` applies only when cloning a directory
+that does not exist, and on macOS not at all. The target clones the repo through
+the `claude-friction.github.com` alias, or re-points an older checkout at it.
+
+Skip it and the sync uses the plain `github.com` remote, which matches the
+Yubikey block in `modules/home/ssh` — a key no background daemon can touch. It
+then fails every five minutes, reporting a network problem. If a push fails with
+`Permission denied (publickey)`, check the remote before anything else. A second
+cause looks similar: a leftover `id_ed25519_friction.pub` from before agenix
+makes ssh refuse the key outright (`contents do not match public`), and the fix
+is to delete the `.pub` — ssh derives it from the private key.
+
 ## Overlays
 
 One overlay function per file in `overlays/`, applied where each config's `pkgs`
