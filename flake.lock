@@ -88,11 +88,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1787377438,
-        "narHash": "sha256-Sxu1NLTD/Ern6hFGLlZmtKCSct3YQXZI/lls8RE1XeM=",
+        "lastModified": 1789267039,
+        "narHash": "sha256-LWiBv9yAYFi2LPbUhDGHPGKYskJQjj2fw12OlyO1uQo=",
         "owner": "nix-community",
         "repo": "home-manager",
-        "rev": "65258d5c65a250189fde2e35f490d15e064c4c62",
+        "rev": "ec172013fa62135f58fb58dd17ae9651e8f39727",
         "type": "github"
       },
       "original": {
@@ -121,11 +121,11 @@
         "nixpkgs": "nixpkgs_2"
       },
       "locked": {
-        "lastModified": 1788335262,
-        "narHash": "sha256-3jBEq8avfzlrsY4UpW4d5TOmm7ocseZfnitEJhqauyc=",
+        "lastModified": 1789417814,
+        "narHash": "sha256-xV9fcqtH6jJLVBF3ocqBBwZkPKEke+BujhEwT4Ye9Tc=",
         "owner": "nixos",
         "repo": "nixos-hardware",
-        "rev": "44d95795ee2d475b3d687325e26dcf4ca9104557",
+        "rev": "d40fd26f323c898b0c195d41aa5efadd85f57832",
         "type": "github"
       },
       "original": {
@@ -136,11 +136,11 @@
     },
     "nixpkgs": {
       "locked": {
-        "lastModified": 1788316716,
-        "narHash": "sha256-bc7rSpXIdn9QWGNqfWcPZWOhEVF8NoeAZkWq0XWnf/k=",
+        "lastModified": 1789286504,
+        "narHash": "sha256-eiEK7cKZORNEvX0GeF3RtNEF/JXhgf2RqSp3230q13E=",
         "owner": "nixos",
         "repo": "nixpkgs",
-        "rev": "3ed67ec0a4d3c7ab4ae1f04f8ee8df07bfa506a2",
+        "rev": "ef34387ddd751e1ab8857adf4676492d32eb24ec",
         "type": "github"
       },
       "original": {
@@ -152,11 +152,11 @@
     },
     "nixpkgs-unstable": {
       "locked": {
-        "lastModified": 1788316716,
-        "narHash": "sha256-bc7rSpXIdn9QWGNqfWcPZWOhEVF8NoeAZkWq0XWnf/k=",
+        "lastModified": 1789286504,
+        "narHash": "sha256-eiEK7cKZORNEvX0GeF3RtNEF/JXhgf2RqSp3230q13E=",
         "owner": "nixos",
         "repo": "nixpkgs",
-        "rev": "3ed67ec0a4d3c7ab4ae1f04f8ee8df07bfa506a2",
+        "rev": "ef34387ddd751e1ab8857adf4676492d32eb24ec",
         "type": "github"
       },
       "original": {
@@ -181,11 +181,11 @@
     },
     "nixpkgs_3": {
       "locked": {
-        "lastModified": 1788297115,
-        "narHash": "sha256-Z+vUNbfd2FIKkWOTkcT7RYlh3oFCnig/d2eXD1SWf2E=",
+        "lastModified": 1789344334,
+        "narHash": "sha256-vdhpDJ3Lr24lkZ+fDCjmBRRtw9/vcSzkqGJOJyF5h2U=",
         "owner": "nixos",
         "repo": "nixpkgs",
-        "rev": "a3116115851d68b8952a2a4221cc25a84e56b532",
+        "rev": "c3eea5b2156db11c7eeeada3dc737711255b253e",
         "type": "github"
       },
       "original": {
@@ -281,11 +281,11 @@
         "nixpkgs": "nixpkgs_4"
       },
       "locked": {
-        "lastModified": 1787896936,
-        "narHash": "sha256-pwCbe5Q9DJrb8ZhrMVuQCmYeWlx90ZX/sL4cyyoUvyo=",
+        "lastModified": 1788846942,
+        "narHash": "sha256-2nBOxV/56R/z1lAN6QunoV/w3kEQ/CJXf2lpMT6n5Zw=",
         "owner": "fabioluciano",
         "repo": "tmux-powerkit",
-        "rev": "450a7cdbb4e545a50a6f7f3c40183651fa82c6a1",
+        "rev": "6d7f8ff018aff96726eadaad29c90664f5bd1f3c",
         "type": "github"
       },
       "original": {
@@ -304,11 +304,11 @@
         "rust-overlay": "rust-overlay"
       },
       "locked": {
-        "lastModified": 1788430643,
-        "narHash": "sha256-SsRf/LI3V3O54bqkdstAPylkrLrRWOEHxWulsVYh1jY=",
+        "lastModified": 1789511533,
+        "narHash": "sha256-ZEQShPNs2dGc3rp16ZA1lT/qNfZwlMYxwhz5q3/s6I4=",
         "owner": "max-sixty",
         "repo": "worktrunk",
-        "rev": "bc2ec124d6be16b1af1d93c19820417328e071eb",
+        "rev": "85de5c9aa587cdf0bf42b4eed0baa830739b0bd9",
         "type": "github"
       },
       "original": {
@@ -320,11 +320,11 @@
     "yubikey-guide": {
       "flake": false,
       "locked": {
-        "lastModified": 1787112000,
-        "narHash": "sha256-/qjYZ9GUQJyyKuIG8LWY5FkIG0vfD2lZExNOPwE+BVQ=",
+        "lastModified": 1788933600,
+        "narHash": "sha256-TnK+yuQlov9WvzatD9Eyj1yvUS6XcNAHjz/V8yz/j1E=",
         "owner": "drduh",
         "repo": "yubikey-guide",
-        "rev": "7453578fb3a36d3a763d09a37dcd89fbe5c6ae27",
+        "rev": "104aa7fe30dcbe2b866212b675e75b201ff40eaf",
         "type": "github"
       },
       "original": {
