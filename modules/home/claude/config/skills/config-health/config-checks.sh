@@ -22,6 +22,10 @@ REPO="${REPO:-$HOME/dotfiles}"
 # defaults to the live path, so an unset environment behaves exactly as before.
 CFG="${CFG:-$REPO/modules/home/claude/config}"
 CLAUDE_JSON="${CLAUDE_JSON:-$HOME/.claude.json}"
+# The runtime plugin registry, which is the only record of what is actually
+# installed. `enabledPlugins` in settings.json states intent and resolves
+# nothing on its own, so neither half of a plugin check may be read off it.
+PLUGINS="${PLUGINS:-$HOME/.claude/plugins}"
 # The root, not `$ARTIFACTS` — that name means the repo-keyed
 # `$MY_CLAUDE_ARTIFACTS_ROOT/<repo>` everywhere else, and the review ledger sits
 # above the repo layout. Named as `inventory.sh` names it, since both read it.
@@ -250,7 +254,11 @@ check_mcp_rules() {
   user_servers=$(jq -r '(.mcpServers // {}) | keys[]?' "$cj" 2>/dev/null | sort -u)
   proj_pairs=$(jq -r '(.projects // {}) | to_entries[] | .key as $p | ((.value.mcpServers // {}) | keys[]?) | "\(.)\t\($p)"' "$cj" 2>/dev/null)
   rules=$(jq -r '[.permissions.allow[]?, .permissions.deny[]?] | .[] | select(startswith("mcp__"))' "$SETTINGS" 2>/dev/null)
-  bare_servers=$(sed -n 's/^mcp__\([^_][^_]*\)__.*/\1/p' <<<"$rules" | grep -v '^plugin_' | sort -u)
+  # The [^_][^_]* class is what excludes the plugin prefix: it cannot cross the
+  # underscore in `plugin_`, so a Nix-declared rule yields no match here at all.
+  # Broadening it to \(.*\) would pull every plugin-prefixed rule into this set
+  # and report each Nix-declared server as missing from ~/.claude.json.
+  bare_servers=$(sed -n 's/^mcp__\([^_][^_]*\)__.*/\1/p' <<<"$rules" | sort -u)
 
   # A project-scoped server resolves in that repo and nowhere else, with no
   # error anywhere else. `claude mcp add` defaults to --scope local, so this is
@@ -288,6 +296,121 @@ check_mcp_rules() {
 
   emit REVIEW mcp-rules "$(grep -c . <<<"$rules") MCP rule(s) checked against declared servers only. Whether each rule matches a tool the server actually offers is NOT checked here — it needs a live authenticated roster. Hand that to the rubric; do not read this line as tool-name coverage."
   [[ $findings -eq 0 ]] && emit OK mcp-rules "every MCP rule names a declared server, and every declared server has at least one rule"
+}
+
+# --- Check 6: enabled plugins vs the runtime registry -------------------------
+# An `enabledPlugins` key is `<plugin>@<marketplace>`, and both halves have to
+# resolve before the plugin contributes anything. Nothing reports the gap: an
+# unresolvable entry is simply inert, and the settings file still reads as if
+# the plugin were live.
+#
+# The two halves fail apart and are emitted apart, because the fix differs: an
+# unregistered marketplace needs the marketplace added, a missing install needs
+# the plugin installed. One merged line would name the wrong one half the time.
+check_enabled_plugins() {
+  local enabled known installed key plug mkt bad=0
+  if ! settings_readable; then
+    emit REVIEW enabled-plugins "settings.json is unreadable (see the symlink finding above), so enabledPlugins could not be read — reporting every plugin as unresolvable would name the wrong fix. Restore settings.json first, then re-run."
+    return
+  fi
+
+  # Same guard as check_hooks' empty-$on_disk case: an absent registry means
+  # this check did not run. Without it, a machine whose registry has not been
+  # written yet reports every enabled plugin as broken.
+  if ! jq -e . "$PLUGINS/known_marketplaces.json" >/dev/null 2>&1 \
+     || ! jq -e . "$PLUGINS/installed_plugins.json" >/dev/null 2>&1; then
+    emit REVIEW enabled-plugins "the plugin registry under $PLUGINS is missing or unreadable, so no enabled plugin could be resolved — skipped, not passed"
+    return
+  fi
+
+  enabled=$(jq -r '(.enabledPlugins // {}) | to_entries[] | select(.value) | .key' "$SETTINGS" 2>/dev/null | sort -u)
+  known=$(jq -r 'keys[]?' "$PLUGINS/known_marketplaces.json" 2>/dev/null)
+  installed=$(jq -r '(.plugins // {}) | keys[]?' "$PLUGINS/installed_plugins.json" 2>/dev/null)
+
+  while read -r key; do
+    [[ -z "$key" ]] && continue
+    plug=${key%@*}; mkt=${key##*@}
+    if ! grep -qxF "$mkt" <<<"$known"; then
+      emit FAIL enabled-plugins "'$key' names marketplace '$mkt', which is absent from known_marketplaces.json — nothing can resolve '$plug'. Add the marketplace, or drop the entry from enabledPlugins."
+      bad=1
+      continue
+    fi
+    grep -qxF "$key" <<<"$installed" && continue
+    emit FAIL enabled-plugins "'$key' is enabled but absent from installed_plugins.json — marketplace '$mkt' is known, so this needs the plugin installed, not the marketplace added."
+    bad=1
+  done <<<"$enabled"
+
+  [[ $bad -eq 0 ]] \
+    && emit OK enabled-plugins "all $(printf '%s\n' "$enabled" | grep -c .) enabled plugin(s) name a known marketplace and are installed"
+}
+
+# --- Check 7: plugin skill references written in this repo --------------------
+# This repo's own prose routes work to plugin units by name — `superpowers:
+# systematic-debugging`, `pr-review-toolkit:review-pr`. A plugin upgrade can
+# remove one, and the reference keeps reading as valid: it is prose, so nothing
+# type-checks it and the skill it names simply never loads.
+#
+# The `<plugin>` half is restricted to *enabled* plugins and `<name>` to
+# [a-z0-9-], which is what keeps ordinary prose colons and the literal
+# `Skill(superpowers:*)` allowlist glob out of the reference set.
+check_plugin_skill_refs() {
+  local enabled alt docs refs f r plug name path skipped="" dead=0
+  if ! settings_readable; then
+    emit REVIEW plugin-refs "settings.json is unreadable (see the symlink finding above), so the enabled plugin set could not be read — skipped, not passed"
+    return
+  fi
+  if ! jq -e . "$PLUGINS/installed_plugins.json" >/dev/null 2>&1; then
+    emit REVIEW plugin-refs "$PLUGINS/installed_plugins.json is missing or unreadable, so no reference could be resolved — skipped, not passed"
+    return
+  fi
+
+  enabled=$(jq -r '(.enabledPlugins // {}) | to_entries[] | select(.value) | .key' "$SETTINGS" 2>/dev/null | sort -u)
+  alt=$(printf '%s\n' "$enabled" | sed 's/@.*//' | grep -E '.' | sort -u | paste -sd'|' -)
+  if [[ -z "$alt" ]]; then
+    emit REVIEW plugin-refs "settings.json enables no plugins, so no <plugin>: prefix is recognised and every reference would read as ordinary prose — skipped, not passed"
+    return
+  fi
+
+  # Resolve only against the installPath the registry records. The cache keeps
+  # every superseded version of a plugin beside the installed one, across each
+  # marketplace it has ever been installed from, so a glob over
+  # cache/*/<plugin>/*/ resolves a reference against a version that is not
+  # loaded — and the check then cannot fail at all.
+  while read -r r; do
+    [[ -z "$r" ]] && continue
+    plug=${r%@*}
+    path=$(jq -r --arg k "$r" '.plugins[$k][0].installPath // empty' "$PLUGINS/installed_plugins.json" 2>/dev/null)
+    [[ -n "$path" && -d "$path" ]] && continue
+    emit REVIEW plugin-refs "'$plug' has no readable install directory (${path:-none recorded in installed_plugins.json}), so its references were skipped — a reference cannot be called dead while the install itself is absent"
+    skipped="$skipped $plug"
+  done <<<"$enabled"
+
+  # A missing skills/, commands/ or agents/ directory is normal — superpowers
+  # ships skills only, pr-review-toolkit commands and agents only.
+  docs=$( { find "$CFG/skills" -name '*.md' 2>/dev/null
+            find "$CFG/commands" "$CFG/agents" -maxdepth 1 -name '*.md' 2>/dev/null
+            [[ -f "$CFG/CLAUDE.md" ]] && printf '%s\n' "$CFG/CLAUDE.md"; } )
+  refs=""
+  while read -r f; do
+    [[ -z "$f" ]] && continue
+    refs="$refs"$'\n'$(grep -hoE "\\b($alt):[a-z0-9][a-z0-9-]*" "$f" 2>/dev/null)
+  done <<<"$docs"
+  refs=$(printf '%s\n' "$refs" | grep -E '.' | sort -u)
+
+  while read -r r; do
+    [[ -z "$r" ]] && continue
+    plug=${r%%:*}; name=${r#*:}
+    [[ "$skipped" == *" $plug"* ]] && continue
+    path=$(jq -r --arg p "$plug" '.plugins | to_entries[] | select(.key | startswith($p + "@")) | .value[0].installPath // empty' "$PLUGINS/installed_plugins.json" 2>/dev/null | head -1)
+    [[ -f "$path/skills/$name/SKILL.md" ]] && continue
+    [[ -f "$path/commands/$name.md"     ]] && continue
+    [[ -f "$path/agents/$name.md"       ]] && continue
+    emit FAIL plugin-refs "this repo's prose names '$r', but the installed tree at $path ships no skills/$name/SKILL.md, commands/$name.md or agents/$name.md — the reference loads nothing. Point it at a unit the installed version has."
+    dead=1
+  done <<<"$refs"
+
+  [[ $dead -eq 0 && -z "$skipped" ]] \
+    && emit OK plugin-refs "all $(printf '%s\n' "$refs" | grep -c .) plugin reference(s) in this repo resolve against the installed plugin trees"
 }
 
 if [ "$MODE" = selftest ]; then
@@ -474,6 +597,104 @@ if [ "$MODE" = selftest ]; then
   mcpcheck "a declared server with a matching rule passes" \
     "REVIEW:mcp-rules,OK:mcp-rules," "$T/mcp-asana.json" "$T/cj-user.json"
 
+  # --- check_enabled_plugins --------------------------------------------------
+  plugincheck() { # $1 = label, $2 = expected, $3 = SETTINGS, $4 = PLUGINS, $5 = substring
+    local got
+    got=$( SETTINGS=$3; PLUGINS=$4; probe check_enabled_plugins "$RAW" )
+    verdict "$1" "$2" "$(detail_has "$got" "${5:-}")"
+  }
+
+  mkdir -p "$T/reg-full" "$T/reg-noinstall"
+  printf '{"claude-plugins-official":{}}\n' >"$T/reg-full/known_marketplaces.json"
+  printf '{"version":2,"plugins":{"superpowers@claude-plugins-official":[{"scope":"user","installPath":"%s/pi-sp/superpowers/6.3.0"}]}}\n' \
+    "$T" >"$T/reg-full/installed_plugins.json"
+  printf '{"claude-plugins-official":{}}\n' >"$T/reg-noinstall/known_marketplaces.json"
+  # Holds an unrelated install rather than an empty set. With `plugins` empty,
+  # a check that merely asked whether ANY plugin was installed would fail this
+  # fixture for the right reason by accident, and the case could not tell
+  # membership from non-emptiness.
+  printf '{"version":2,"plugins":{"pr-review-toolkit@claude-plugins-official":[{"scope":"user","installPath":"%s/pi-sp/superpowers/6.3.0"}]}}\n' \
+    "$T" >"$T/reg-noinstall/installed_plugins.json"
+  printf '{"enabledPlugins":{"superpowers@claude-plugins-official":true}}\n'  >"$T/plug-known.json"
+  printf '{"enabledPlugins":{"superpowers@superpowers-marketplace":true}}\n'  >"$T/plug-foreign.json"
+  printf '{"enabledPlugins":{}}\n' >"$T/plug-none.json"
+
+  # The historical instance, from another host: the plugin was enabled under a
+  # marketplace that machine had never registered, and it silently did nothing.
+  plugincheck "an enabled plugin naming an unregistered marketplace fails" \
+    "FAIL:enabled-plugins," "$T/plug-foreign.json" "$T/reg-full" \
+    "absent from known_marketplaces.json"
+  # Different fix, so a different line: the marketplace is fine here and only
+  # the install is missing.
+  plugincheck "a known marketplace with no install is a distinct failure" \
+    "FAIL:enabled-plugins," "$T/plug-known.json" "$T/reg-noinstall" \
+    "absent from installed_plugins.json"
+  plugincheck "an enabled, installed plugin passes" \
+    "OK:enabled-plugins," "$T/plug-known.json" "$T/reg-full"
+  plugincheck "an absent registry skips the plugin check, never reports 5 broken plugins" \
+    "REVIEW:enabled-plugins," "$T/plug-known.json" "$T/reg-missing" \
+    "skipped, not passed"
+  plugincheck "an unreadable settings.json skips the plugin check, never passes it" \
+    "REVIEW:enabled-plugins," "$T/none.json" "$T/reg-full" \
+    "Restore settings.json first"
+
+  # --- check_plugin_skill_refs ------------------------------------------------
+  refcheck() { # $1 = label, $2 = expected, $3 = SETTINGS, $4 = PLUGINS, $5 = CFG, $6 = substring
+    local got
+    got=$( SETTINGS=$3; PLUGINS=$4; CFG=$5; probe check_plugin_skill_refs "$RAW" )
+    verdict "$1" "$2" "$(detail_has "$got" "${6:-}")"
+  }
+
+  # Two versions of one plugin, only one of them installed. The superseded tree
+  # carries the removed agent, so a check that globbed the cache instead of
+  # reading installPath would resolve 'superpowers:code-reviewer' here and the
+  # dead-reference case below could never fail.
+  mkdir -p "$T/pi-sp/superpowers/6.3.0/skills/systematic-debugging" \
+           "$T/pi-sp/superpowers/old/agents" \
+           "$T/pi-sp/pr-review-toolkit/1aa/commands"
+  printf '# systematic debugging\n' >"$T/pi-sp/superpowers/6.3.0/skills/systematic-debugging/SKILL.md"
+  printf '# code reviewer\n'        >"$T/pi-sp/superpowers/old/agents/code-reviewer.md"
+  printf '# review pr\n'            >"$T/pi-sp/pr-review-toolkit/1aa/commands/review-pr.md"
+  mkdir -p "$T/reg-refs" "$T/reg-gone"
+  printf '{"claude-plugins-official":{}}\n' >"$T/reg-refs/known_marketplaces.json"
+  printf '{"version":2,"plugins":{"superpowers@claude-plugins-official":[{"installPath":"%s/pi-sp/superpowers/6.3.0"}],"pr-review-toolkit@claude-plugins-official":[{"installPath":"%s/pi-sp/pr-review-toolkit/1aa"}]}}\n' \
+    "$T" "$T" >"$T/reg-refs/installed_plugins.json"
+  printf '{"claude-plugins-official":{}}\n' >"$T/reg-gone/known_marketplaces.json"
+  printf '{"version":2,"plugins":{"superpowers@claude-plugins-official":[{"installPath":"%s/pi-sp/superpowers/uninstalled"}]}}\n' \
+    "$T" >"$T/reg-gone/installed_plugins.json"
+  printf '{"enabledPlugins":{"superpowers@claude-plugins-official":true,"pr-review-toolkit@claude-plugins-official":true}}\n' \
+    >"$T/plug-two.json"
+
+  mkdir -p "$T/refs-live/skills/pre-pr" "$T/refs-live/commands" \
+           "$T/refs-dead/skills/pre-pr"
+  # A units-ship-differently fixture: the skill reference resolves under
+  # skills/, the command reference under commands/, and the allowlist glob in
+  # CLAUDE.md must not be read as a reference at all.
+  printf 'Delegate to superpowers:systematic-debugging first.\n' >"$T/refs-live/skills/pre-pr/SKILL.md"
+  printf 'Then run pr-review-toolkit:review-pr.\n'               >"$T/refs-live/commands/go.md"
+  printf 'Skill(superpowers:*) trusts the whole namespace.\n'    >"$T/refs-live/CLAUDE.md"
+  # The historical instance: superpowers 6.3.0 removed this agent while
+  # pre-pr/SKILL.md still named it.
+  printf 'Hand the diff to superpowers:code-reviewer.\n' >"$T/refs-dead/skills/pre-pr/SKILL.md"
+
+  refcheck "a reference the installed tree does not ship is dead" \
+    "FAIL:plugin-refs," "$T/plug-two.json" "$T/reg-refs" "$T/refs-dead" \
+    "ships no skills/code-reviewer/SKILL.md"
+  refcheck "references resolving under skills/ and commands/ pass" \
+    "OK:plugin-refs," "$T/plug-two.json" "$T/reg-refs" "$T/refs-live"
+  refcheck "an install directory that is absent skips its references" \
+    "REVIEW:plugin-refs," "$T/plug-known.json" "$T/reg-gone" "$T/refs-dead" \
+    "cannot be called dead while the install itself is absent"
+  refcheck "no enabled plugins means no prefix is recognised, not a clean bill" \
+    "REVIEW:plugin-refs," "$T/plug-none.json" "$T/reg-refs" "$T/refs-live" \
+    "no <plugin>: prefix is recognised"
+  refcheck "an absent registry skips the reference check, never passes it" \
+    "REVIEW:plugin-refs," "$T/plug-two.json" "$T/reg-missing" "$T/refs-live" \
+    "installed_plugins.json is missing or unreadable"
+  refcheck "an unreadable settings.json skips the reference check, never passes it" \
+    "REVIEW:plugin-refs," "$T/none.json" "$T/reg-refs" "$T/refs-live" \
+    "the enabled plugin set could not be read"
+
   printf '\n%d passed, %d failed\n' "$pass" "$fail"
   [ "$fail" -eq 0 ] || exit 1
   exit 0
@@ -484,4 +705,6 @@ check_dead_allows
 check_hooks
 check_skill_inventory
 check_mcp_rules
+check_enabled_plugins
+check_plugin_skill_refs
 exit 0
