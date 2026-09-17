@@ -11,9 +11,17 @@
 
 set -uo pipefail
 
+MODE=run
+case "${1:-}" in
+  --selftest) MODE=selftest ;;
+esac
+
 SETTINGS="${SETTINGS:-$HOME/.claude/settings.json}"
 REPO="${REPO:-$HOME/dotfiles}"
-CFG="$REPO/modules/home/claude/config"
+# Overridable so --selftest can point each check at a fixture tree. Every one
+# defaults to the live path, so an unset environment behaves exactly as before.
+CFG="${CFG:-$REPO/modules/home/claude/config}"
+CLAUDE_JSON="${CLAUDE_JSON:-$HOME/.claude.json}"
 # The root, not `$ARTIFACTS` — that name means the repo-keyed
 # `$MY_CLAUDE_ARTIFACTS_ROOT/<repo>` everywhere else, and the review ledger sits
 # above the repo layout. Named as `inventory.sh` names it, since both read it.
@@ -212,7 +220,6 @@ check_skill_inventory() {
     && emit OK skill-inventory "all units tracked; every ledger row names a live unit"
 }
 
-check_symlink
 # --- Check 5: MCP rule / server reconciliation --------------------------------
 # JSON-only, so it runs without authenticating anything. That bounds it: this
 # arm reconciles rules against *declared servers*, never against a server's
@@ -229,7 +236,7 @@ check_symlink
 # rule is not. Checking the latter against ~/.claude.json reports every
 # Nix-declared server as missing.
 check_mcp_rules() {
-  local cj="$HOME/.claude.json"
+  local cj="$CLAUDE_JSON"
   if ! jq -e . "$SETTINGS" >/dev/null 2>&1; then
     emit REVIEW mcp-rules "settings.json is unreadable (see the symlink finding above), so MCP rules could not be read — skipped, not passed"
     return
@@ -283,6 +290,196 @@ check_mcp_rules() {
   [[ $findings -eq 0 ]] && emit OK mcp-rules "every MCP rule names a declared server, and every declared server has at least one rule"
 }
 
+if [ "$MODE" = selftest ]; then
+  # Every fixture models a failure that has happened, or that the check's own
+  # comment names as its reason for existing. `doc-coherence.sh` cut two checks
+  # that could not reproduce their known instance; the same bar applies here, so
+  # the job of this harness is to prove each check can still fail.
+  T="${TMPDIR:-/tmp}/config-health-selftest"; rm -rf "$T"; mkdir -p "$T"
+  RAW="$T/raw.tsv"
+  pass=0; fail=0
+
+  verdict() { # $1 = label, $2 = expected, $3 = got
+    if [ "$3" = "$2" ]; then pass=$((pass+1)); printf '  ok    %s\n' "$1"
+    else fail=$((fail+1)); printf '  FAIL  %s — expected "%s", got "%s"\n' "$1" "$2" "$3"; fi
+  }
+
+  # Assertions land on the STATUS:CHECK enum, never on prose — a suite that
+  # breaks every time a detail line is reworded stops being run.
+  probe() { # $1 = check function, $2 = file to keep the raw TSV in
+    "$1" >"$2"
+    awk -F'\t' '{printf "%s:%s,", $1, $2}' "$2"
+  }
+  # Where two findings share a status and differ only in the fix they name, the
+  # enum alone cannot tell them apart. This pins one phrase of the detail for
+  # exactly those cases, and nothing more of it.
+  detail_has() { # $1 = collapsed pairs, $2 = substring ("" = nothing to pin)
+    if [ -n "$2" ] && ! grep -qF "$2" "$RAW"; then printf '%s detail!~%s' "$1" "$2"
+    else printf '%s' "$1"; fi
+  }
+
+  # --- check_symlink ----------------------------------------------------------
+  symcheck() { # $1 = label, $2 = expected, $3 = SETTINGS, $4 = detail substring
+    local got
+    got=$( SETTINGS=$3; probe check_symlink "$RAW" )
+    verdict "$1" "$2" "$(detail_has "$got" "${4:-}")"
+  }
+
+  printf '{"permissions":{"allow":["Bash(ls *)"],"deny":["Bash(rm -rf *)"]}}\n' >"$T/settings-good.json"
+  printf 'not json at all\n' >"$T/settings-broken.json"
+
+  # The documented rebuild-during-a-live-session failure: a running session
+  # unlinks the file and every permission rule goes with it. Missing, not
+  # malformed — which is why the two cases below must stay distinguishable.
+  symcheck "an absent settings.json fails as MISSING" \
+    "FAIL:symlink," "$T/none.json" "MISSING"
+  symcheck "a readable settings.json passes" \
+    "OK:symlink," "$T/settings-good.json"
+  # Different fix: re-running the rebuild restores an unlinked file and does
+  # nothing for a malformed one.
+  symcheck "malformed JSON fails as unreadable, not as missing" \
+    "FAIL:symlink," "$T/settings-broken.json" "unreadable"
+
+  # --- check_dead_allows ------------------------------------------------------
+  deadcheck() { # $1 = label, $2 = expected, $3 = SETTINGS, $4 = detail substring
+    local got
+    got=$( SETTINGS=$3; probe check_dead_allows "$RAW" )
+    verdict "$1" "$2" "$(detail_has "$got" "${4:-}")"
+  }
+
+  printf '{"permissions":{"allow":["Bash(git add*)"],"deny":["Bash(git add*)"]}}\n' >"$T/dead-dup.json"
+  printf '{"permissions":{"allow":["Bash(git status)"],"deny":["Bash(rm -rf *)"]}}\n' >"$T/dead-disjoint.json"
+
+  # The head-overlap REVIEW necessarily accompanies an exact duplicate — a rule
+  # duplicated verbatim shares its own command head. Both lines are asserted so
+  # that stays a stated consequence rather than a surprise.
+  deadcheck "a rule on both lists is reported dead" \
+    "FAIL:dead-allow,REVIEW:dead-allow," "$T/dead-dup.json" "in BOTH allow and deny"
+  deadcheck "disjoint allow and deny pass" \
+    "OK:dead-allow," "$T/dead-disjoint.json"
+  # The guard's whole reason for existing: an unreadable settings.json makes the
+  # jq query return empty, which reads as "no dead rules" — a pass asserted over
+  # a file that was never read.
+  deadcheck "an unreadable settings.json is skipped, never passed" \
+    "REVIEW:dead-allow," "$T/none.json" "is unreadable"
+
+  # --- check_hooks ------------------------------------------------------------
+  hookcheck() { # $1 = label, $2 = expected, $3 = SETTINGS, $4 = CFG, $5 = substring
+    local got
+    got=$( SETTINGS=$3; CFG=$4; probe check_hooks "$RAW" )
+    verdict "$1" "$2" "$(detail_has "$got" "${5:-}")"
+  }
+  reg() { # $1 = settings file, $2... = registered hook basenames
+    local f=$1 c sep="" cmds=""; shift
+    for c in "$@"; do cmds="$cmds$sep{\"type\":\"command\",\"command\":\"/h/$c\"}"; sep=","; done
+    printf '{"hooks":{"PreToolUse":[{"matcher":"*","hooks":[%s]}]}}\n' "$cmds" >"$f"
+  }
+
+  mkdir -p "$T/hooks-unreg/hooks" "$T/hooks-orphan/hooks" \
+           "$T/hooks-nonexec/hooks" "$T/hooks-empty/hooks" "$T/hooks-ok/hooks"
+  for d in hooks-unreg hooks-orphan hooks-nonexec hooks-ok; do
+    printf '#!/usr/bin/env bash\n' >"$T/$d/hooks/live.sh"; chmod 755 "$T/$d/hooks/live.sh"
+  done
+  reg "$T/reg-none.json"
+  reg "$T/reg-live.json" live.sh
+  reg "$T/reg-live-ghost.json" live.sh ghost.sh
+  chmod 644 "$T/hooks-nonexec/hooks/live.sh"
+
+  hookcheck "a hook on disk that nothing registers never fires" \
+    "FAIL:hooks," "$T/reg-none.json" "$T/hooks-unreg" "is not registered in settings.json"
+  hookcheck "a registered hook with no file errors on every trigger" \
+    "FAIL:hooks," "$T/reg-live-ghost.json" "$T/hooks-orphan" "has no file in config/hooks/"
+  hookcheck "a registered hook that is not executable fails silently" \
+    "FAIL:hooks," "$T/reg-live.json" "$T/hooks-nonexec" "NOT executable"
+  # Not hypothetical: CFG kept a stale "$REPO/nix/..." prefix and one run
+  # reported all 4 hooks missing while every one was present on disk.
+  hookcheck "an empty hooks dir is a CFG problem, not 4 orphaned hooks" \
+    "REVIEW:hooks," "$T/reg-live.json" "$T/hooks-empty" "check that CFG points at the live config tree"
+  hookcheck "registered and executable passes" \
+    "OK:hooks," "$T/reg-live.json" "$T/hooks-ok"
+
+  # --- check_skill_inventory --------------------------------------------------
+  invcheck() { # $1 = label, $2 = expected, $3 = REPO, $4 = CFG, $5 = ART_ROOT, $6 = substring
+    local got
+    got=$( REPO=$3; CFG=$4; ART_ROOT=$5; probe check_skill_inventory "$RAW" )
+    verdict "$1" "$2" "$(detail_has "$got" "${6:-}")"
+  }
+
+  mkdir -p "$T/inv-cfg/skills/alpha" "$T/inv-cfg/commands" "$T/inv-nongit" "$T/inv-git"
+  printf '# alpha\n' >"$T/inv-cfg/skills/alpha/SKILL.md"
+  printf '# beta\n'  >"$T/inv-cfg/commands/beta.md"
+  git -C "$T/inv-git" init -q >/dev/null 2>&1
+  mkdir -p "$T/led-full/skill-reviewer" "$T/led-orphan/skill-reviewer"
+  printf '## alpha — 2026-08-12\n\n## beta — 2026-08-13\n' >"$T/led-full/skill-reviewer/LEDGER.md"
+  printf '## alpha — 2026-08-12\n\n## gone — 2026-08-13\n' >"$T/led-orphan/skill-reviewer/LEDGER.md"
+
+  invcheck "a REPO that is not a checkout says so, never that units are broken" \
+    "REVIEW:skill-inventory,OK:skill-inventory," "$T/inv-nongit" "$T/inv-cfg" "$T/led-full" \
+    "is not a git checkout"
+  # An untracked unit is invisible to flake eval, so no Skill() rule is generated
+  # and it prompts on first use while looking correctly installed.
+  #
+  # The tracked -> OK path has no fixture: building one needs `git add`, which is
+  # denied here, so the only coverage of it is the live run.
+  invcheck "every untracked unit is named" \
+    "FAIL:skill-inventory,FAIL:skill-inventory," "$T/inv-git" "$T/inv-cfg" "$T/led-full" \
+    "is untracked"
+  invcheck "an unset ART_ROOT skips the ledger and still reports tracking" \
+    "FAIL:skill-inventory,FAIL:skill-inventory,REVIEW:skill-inventory," \
+    "$T/inv-git" "$T/inv-cfg" "" "MY_CLAUDE_ARTIFACTS_ROOT is unset"
+  invcheck "a ledger row naming no live unit is drift" \
+    "REVIEW:skill-inventory,FAIL:skill-inventory,REVIEW:skill-inventory," \
+    "$T/inv-nongit" "$T/inv-cfg" "$T/led-orphan" "ledger has a row for 'gone'"
+
+  # --- check_mcp_rules --------------------------------------------------------
+  mcpcheck() { # $1 = label, $2 = expected, $3 = SETTINGS, $4 = CLAUDE_JSON, $5 = substring
+    local got
+    got=$( SETTINGS=$3; CLAUDE_JSON=$4; probe check_mcp_rules "$RAW" )
+    verdict "$1" "$2" "$(detail_has "$got" "${5:-}")"
+  }
+
+  printf '{"permissions":{"allow":["mcp__ghost__get_x"],"deny":[]}}\n'  >"$T/mcp-ghost.json"
+  printf '{"permissions":{"allow":["mcp__asana__get_x"],"deny":[]}}\n'  >"$T/mcp-asana.json"
+  printf '{"permissions":{"allow":["mcp__plugin_claude-code-home-manager_expo__build_info"],"deny":[]}}\n' \
+    >"$T/mcp-plugin.json"
+  printf '{"permissions":{"allow":["Bash(ls *)"],"deny":[]}}\n' >"$T/mcp-norules.json"
+  printf '{"mcpServers":{}}\n'                >"$T/cj-empty.json"
+  printf '{"mcpServers":{"asana":{}}}\n'      >"$T/cj-user.json"
+  printf '{"mcpServers":{"asana":{}},"projects":{"/repo/a":{"mcpServers":{"asana":{}}}}}\n' >"$T/cj-both.json"
+  printf '{"mcpServers":{},"projects":{"/repo/a":{"mcpServers":{"asana":{}}}}}\n' >"$T/cj-project.json"
+
+  # The trailing REVIEW is the standing bound on this check — rules are
+  # reconciled against declared servers, never against a live tool roster — so it
+  # appears in every expectation below.
+  mcpcheck "a rule whose server is declared nowhere matches nothing" \
+    "FAIL:mcp-rules,REVIEW:mcp-rules," "$T/mcp-ghost.json" "$T/cj-empty.json" \
+    "no server named 'ghost'"
+  mcpcheck "user scope plus project scope is two registrations of one server" \
+    "FAIL:mcp-rules,REVIEW:mcp-rules," "$T/mcp-asana.json" "$T/cj-both.json" \
+    "BOTH at user scope"
+  # `claude mcp add` defaults to --scope local, so this is the shape a
+  # correct-looking command produces: it resolves in one directory and is
+  # silently absent everywhere else.
+  mcpcheck "a project-only server is surfaced, not passed" \
+    "REVIEW:mcp-rules,REVIEW:mcp-rules," "$T/mcp-asana.json" "$T/cj-project.json" \
+    "only under projects"
+  mcpcheck "a declared server with no rule costs a prompt per call" \
+    "REVIEW:mcp-rules,REVIEW:mcp-rules," "$T/mcp-norules.json" "$T/cj-user.json" \
+    "every call to it prompts"
+  # The conflation this check is built to avoid: a Nix-declared server lives in
+  # the plugin's .mcp.json in the store, so checking its rules against
+  # ~/.claude.json reports every one of them as a missing server.
+  mcpcheck "a plugin-prefixed rule is never reported as a missing server" \
+    "REVIEW:mcp-rules,OK:mcp-rules," "$T/mcp-plugin.json" "$T/cj-empty.json"
+  mcpcheck "a declared server with a matching rule passes" \
+    "REVIEW:mcp-rules,OK:mcp-rules," "$T/mcp-asana.json" "$T/cj-user.json"
+
+  printf '\n%d passed, %d failed\n' "$pass" "$fail"
+  [ "$fail" -eq 0 ] || exit 1
+  exit 0
+fi
+
+check_symlink
 check_dead_allows
 check_hooks
 check_skill_inventory
