@@ -151,16 +151,18 @@ passed because nothing looked wrong. An unverified check is a report line item.
 
 ### Step 2c — Dispatch the code reviewer
 
-Dispatch the `superpowers:code-reviewer` agent using the existing
-`code-reviewer.md` template.
+Dispatch a `general-purpose` subagent with the prompt template at
+`skills/requesting-code-review/code-reviewer.md` in the `superpowers` plugin.
+Superpowers ships no named agents — the reviewer persona lives in that template,
+so there is nothing to dispatch by name.
 
 **Template values:**
 
-- `{WHAT_WAS_IMPLEMENTED}` — from the scope reference
-- `{PLAN_OR_REQUIREMENTS}` — same, plus any Step 2b verification failures
-- `{BASE_SHA}` — the computed `MERGE_BASE`
-- `{HEAD_SHA}` — current `HEAD`
-- `{DESCRIPTION}` — one-line summary of the branch changes
+- `[DESCRIPTION]` — what was implemented, from the scope reference, plus a
+  one-line summary of the branch changes
+- `[PLAN_OR_REQUIREMENTS]` — same, plus any Step 2b verification failures
+- `[BASE_SHA]` — the computed `MERGE_BASE`
+- `[HEAD_SHA]` — current `HEAD`
 
 The reviewer operates on the branch **after** hygiene auto-fixes, so it will not
 flag artifacts that were already cleaned up.
