@@ -9,23 +9,23 @@ description: Use when a feature is about to be built from a ticket and the work 
 
 One skill, two artifacts, one sign-off gate in the middle.
 
-| Artifact | Path | Holds |
-|---|---|---|
-| Plan document | `$ARTIFACTS/plans/YYYY-MM-DD-<slug>.md` | **Design** — approach, alternatives, files, edge cases, out-of-scope. Signed off, then **Implementation** — phases and checkpoints appended below it. |
-| QA checklist | `$ARTIFACTS/plans/YYYY-MM-DD-<slug>-qa.md` | Risk-ordered manual test matrix, checked off during testing |
+| Artifact      | Path                                       | Holds                                                                                                                                                 |
+| ------------- | ------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Plan document | `$ARTIFACTS/plans/YYYY-MM-DD-<slug>.md`    | **Design** — approach, alternatives, files, edge cases, out-of-scope. Signed off, then **Implementation** — phases and checkpoints appended below it. |
+| QA checklist  | `$ARTIFACTS/plans/YYYY-MM-DD-<slug>-qa.md` | Risk-ordered manual test matrix, checked off during testing                                                                                           |
 
 Artifact root: `CLAUDE.md` § Dev Artifact Storage.
 
 **This skill is the two templates below plus two hard stops.** Everything else it needs
 is already loaded or already invoked, so it is not restated here:
 
-| Subject | Lives in |
-|---|---|
-| One commit per phase, and why (the Yubikey touch) | `CLAUDE.md` § Plan Execution |
-| Artifact paths, and never committing them | `CLAUDE.md` § Dev Artifact Storage |
-| Build/test/lint command discovery | `CLAUDE.md` § Project Command Discovery |
-| Never staging or committing | `CLAUDE.md` § Git |
-| Executing the phases once written | `superpowers:executing-plans`, or `superpowers:subagent-driven-development` in-session |
+| Subject                                           | Lives in                                                                               |
+| ------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| One commit per phase, and why (the Yubikey touch) | `CLAUDE.md` § Plan Execution                                                           |
+| Artifact paths, and never committing them         | `CLAUDE.md` § Dev Artifact Storage                                                     |
+| Build/test/lint command discovery                 | `CLAUDE.md` § Project Command Discovery                                                |
+| Never staging or committing                       | `CLAUDE.md` § Git                                                                      |
+| Executing the phases once written                 | `superpowers:executing-plans`, or `superpowers:subagent-driven-development` in-session |
 
 **Design and implementation share one document** because split apart they duplicated six
 sections. The **QA checklist stays separate** because it is checked off while testing,
@@ -122,7 +122,7 @@ conceptual change is worse than two touching three each.
 
 Write these sections, in this order, then **stop**. Skip one only if it genuinely does not apply.
 
-````markdown
+```markdown
 # <Feature Title>
 
 **Repo:** <repo name>
@@ -139,7 +139,7 @@ Write these sections, in this order, then **stop**. Skip one only if it genuinel
 
 ## Background
 
-Two paragraphs max. The *structural facts that shape the work* — not a retelling of the
+Two paragraphs max. The _structural facts that shape the work_ — not a retelling of the
 ticket. Name an existing pattern in the codebase this should mirror, with a link, or
 state explicitly that there isn't one.
 
@@ -162,9 +162,9 @@ The single file table for this document. **Exhaustive, not representative** — 
 phases below draw their scope from it, and implementation touching a file outside it
 means the design needs revising rather than silently expanding.
 
-| Path | State | Purpose |
-|---|---|---|
-| `path/a` | new | What it does |
+| Path     | State    | Purpose      |
+| -------- | -------- | ------------ |
+| `path/a` | new      | What it does |
 | `path/b` | modified | What changes |
 
 No other files change.
@@ -187,7 +187,7 @@ during a transient.
 ### Why we are not handling <X> in v1
 
 A deferred-but-tempting feature gets its own subsection with the cost/benefit. Distinct
-from Out of scope: this is *tempting and refused*, that is *never in frame*.
+from Out of scope: this is _tempting and refused_, that is _never in frame_.
 
 ## Domain assumptions
 
@@ -210,7 +210,7 @@ Each carries a known fallback, so a wrong answer does not block execution. A que
 with no fallback is a research request, not a design.
 
 1. **<question>** — fallback if unclear.
-````
+```
 
 ### HARD STOP — design sign-off
 
@@ -276,14 +276,17 @@ As above.
 **Files changed in this phase:** `<list>`
 
 **Suggested commit message:**
+
 ```
 <message>
 ```
 
 **What to test:**
+
 1. <check>
 
 **What could go wrong:**
+
 - <risk, and how to recover>
 
 **STOP here. Wait for the user to commit and confirm before starting Phase 2.**
@@ -298,8 +301,8 @@ As above, with its own checkpoint.
 
 ## Summary of changes
 
-| File | Change |
-|---|---|
+| File   | Change      |
+| ------ | ----------- |
 | `path` | Description |
 
 Reconcile against the Files table. A divergence is a design revision, not a footnote.
@@ -309,7 +312,7 @@ Reconcile against the Files table. A divergence is a design revision, not a foot
 
 A separate file, so it can be checked off while testing without the plan shifting underneath it.
 
-````markdown
+```markdown
 # <Feature Title> — Manual QA Checklist
 
 **Branch:** `<branch>`
@@ -370,28 +373,28 @@ Also record anything that **deviated from the design half** during real-device t
 - [ ] **Fix-now small** — minor issues resolved in this PR
 - [ ] **Fix-now structural** — a high-risk check failed, code change needed
 - [ ] **Punt** — known issues documented as follow-ups and called out in the PR
-````
+```
 
 ## HARD STOP — confirm the commit chunks
 
 1. **Print both absolute paths.**
-2. **Get explicit sign-off on the chunks.** Each phase is one commit-sized chunk and one review unit. List each — files touched, what its checkpoint reviews — then ask: *"These are the N commits I'll build. I stop after each for you to review and sign it. Confirm or adjust the boundaries before I start."* Negotiate granularity here: too many stops is over-fragmented, too few and the user cannot review in reasonable units.
+2. **Get explicit sign-off on the chunks.** Each phase is one commit-sized chunk and one review unit. List each — files touched, what its checkpoint reviews — then ask: _"These are the N commits I'll build. I stop after each for you to review and sign it. Confirm or adjust the boundaries before I start."_ Negotiate granularity here: too many stops is over-fragmented, too few and the user cannot review in reasonable units.
 3. **Resolve every stop/continue question now, never at execution time.** An unsure boundary is a planning question. Do not carry the ambiguity into execution and quietly resolve it as "keep going."
 4. **Do not auto-invoke execution.** Wait for "execute" or similar.
 
 ## Quality Bar
 
-| Section | Bar |
-|---|---|
-| Background | Names an existing pattern to mirror, or states there isn't one |
-| Alternatives | Two or more, each with a one-line rejection reason — or an explicit note that the space was not open |
-| Files | Exhaustive. If implementation deviates, the design is revised, not quietly widened |
-| Edge cases | The five minimum cases above, each with its handling |
-| Domain assumptions | Every `assumed` register row surfaced; no `blocked` row outstanding |
-| Out of scope | Explicit, and distinguished from "why not X in v1" |
-| Open questions | Each has a fallback |
-| Phases | 3–5 commits, each a vertical slice of ~2–5 files, each with What to test and What could go wrong |
-| QA | Risk-ordered, fix paths inline, decision matrix at the end |
+| Section            | Bar                                                                                                  |
+| ------------------ | ---------------------------------------------------------------------------------------------------- |
+| Background         | Names an existing pattern to mirror, or states there isn't one                                       |
+| Alternatives       | Two or more, each with a one-line rejection reason — or an explicit note that the space was not open |
+| Files              | Exhaustive. If implementation deviates, the design is revised, not quietly widened                   |
+| Edge cases         | The five minimum cases above, each with its handling                                                 |
+| Domain assumptions | Every `assumed` register row surfaced; no `blocked` row outstanding                                  |
+| Out of scope       | Explicit, and distinguished from "why not X in v1"                                                   |
+| Open questions     | Each has a fallback                                                                                  |
+| Phases             | 3–5 commits, each a vertical slice of ~2–5 files, each with What to test and What could go wrong     |
+| QA                 | Risk-ordered, fix paths inline, decision matrix at the end                                           |
 
 ## Common Mistakes
 

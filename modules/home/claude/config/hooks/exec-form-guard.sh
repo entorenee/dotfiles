@@ -62,9 +62,9 @@ if echo "$CMD" | grep -qE "$BIN_RE"; then
   # for it, listing it) rather than executing it.
   FIRST=$(echo "$CMD" | sed -E 's/^[[:space:]]*//' | head -1 | awk '{print $1}')
   case "$FIRST" in
-    grep | rg | egrep | fgrep | ls | find | fd | cat | head | tail | echo | printf | stat | readlink | wc)
-      exit 0
-      ;;
+  grep | rg | egrep | fgrep | ls | find | fd | cat | head | tail | echo | printf | stat | readlink | wc)
+    exit 0
+    ;;
   esac
 
   BIN=$(echo "$CMD" | grep -oE "$BIN_RE" | head -1 | sed -E 's|.*/||')

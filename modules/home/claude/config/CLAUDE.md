@@ -11,7 +11,7 @@ read-only — never write `settings.json` or similar directly. Point me at the N
 - **Never run `git commit`**, or anything that finalizes one. I GPG-sign with a Yubikey, which
   needs a physical touch and cannot be automated. Report what changed; I commit.
 - **Never run `git add` — leave every edit unstaged.** The staging area is my review marker: a
-  staged file means *I* have read it. Staging on my behalf marks work reviewed when it is not.
+  staged file means _I_ have read it. Staging on my behalf marks work reviewed when it is not.
   If something is already staged, `git restore --staged <paths>` unstages it without touching
   the working tree.
 - **`git mv` is the one deliberate exception.** Use it for renames so the rename is recorded and
@@ -47,7 +47,7 @@ read-only — never write `settings.json` or similar directly. Point me at the N
   execution can't be allowlisted — it is the escape hatch the `pnpm exec node`/`sh` denies exist
   to block — so it prompts every time. Read files with the Read tool.
 - **Invoke project binaries through an allowlisted form**, not a relative path: `pnpm exec
-  eslint …`, `npx eslint …`, `pnpm exec tsc …`, never `../node_modules/.bin/eslint …`.
+eslint …`, `npx eslint …`, `pnpm exec tsc …`, never `../node_modules/.bin/eslint …`.
 - **Scratch files go in the session scratchpad or `$TMPDIR`, not bare `/tmp`.** Use the
   scratchpad named in the system prompt, or `D="$TMPDIR/<name>"; mkdir -p "$D"`. This is not
   about write access — `/tmp` and `/private/tmp` are both in `sandbox.filesystem.allowWrite`
@@ -142,16 +142,16 @@ every worktree resolves to the same directory, so an artifact written on a featu
 readable from siblings and survives `wt remove`. The `rev-parse` fallback covers a repo with no
 remote.
 
-| Area | Path |
-|---|---|
-| Plans / design docs / QA | `$ARTIFACTS/plans/` |
-| PR & code reviews | `$ARTIFACTS/reviews/` |
-| Error triage | `$ARTIFACTS/error-triage/` |
-| Analytics friction | `$ARTIFACTS/analytics/` |
-| Regression analysis | `$ARTIFACTS/regressions/` |
-| Consolidated analysis | `$ARTIFACTS/consolidated/` |
-| Dead-code surveys | `$ARTIFACTS/dead-code/` |
-| Release notes / changelogs | `$ARTIFACTS/changelogs/` |
+| Area                        | Path                               |
+| --------------------------- | ---------------------------------- |
+| Plans / design docs / QA    | `$ARTIFACTS/plans/`                |
+| PR & code reviews           | `$ARTIFACTS/reviews/`              |
+| Error triage                | `$ARTIFACTS/error-triage/`         |
+| Analytics friction          | `$ARTIFACTS/analytics/`            |
+| Regression analysis         | `$ARTIFACTS/regressions/`          |
+| Consolidated analysis       | `$ARTIFACTS/consolidated/`         |
+| Dead-code surveys           | `$ARTIFACTS/dead-code/`            |
+| Release notes / changelogs  | `$ARTIFACTS/changelogs/`           |
 | Domain-assumption registers | `$ARTIFACTS/registers/<branch>.md` |
 
 - **Registers are keyed by branch, not date**, and are read before work rather than written
@@ -169,7 +169,7 @@ remote.
 - **State what a proposal rests on, before proposing it.** Name the load-bearing assumptions and
   mark each `verified` / `inferred` / `assumed`, so a wrong premise can be rejected once instead
   of the conclusion three times. An `inferred` or `assumed` premise that would change the
-  recommendation if false gets checked *before* building, not after.
+  recommendation if false gets checked _before_ building, not after.
 - **For pure lookups ("where is X?"), return the answer only.** A question about where something
   lives is not authorization to change it.
 - **Remove obsolete logic rather than layering new code beside it.** When a change supersedes
@@ -254,7 +254,7 @@ Branch names must start with a conventional-commit prefix: `fix/`, `feat/`, `doc
   Many of its home-manager modules deploy config via `config.lib.file.mkOutOfStoreSymlink`
   against a hardcoded `${config.home.homeDirectory}/dotfiles/...` path (see `modules/home/`
   `ghostty`, `karabiner`, `aerospace`). A rebuild from a worktree points `~/.config/*` back at
-  the *primary* checkout, so branch config never resolves and can't be tested until it merges.
+  the _primary_ checkout, so branch config never resolves and can't be tested until it merges.
 
 ### Moving a session into a new worktree mid-session
 
@@ -262,7 +262,7 @@ A session is anchored to the directory `claude` launched in; `wt switch` inside 
 in a subshell and cannot move it. To keep the current conversation, run `/cd <new-worktree-path>`
 — it relocates the session so history follows. (`/branch` forks in the same directory, and
 resume re-anchors to the original; neither moves the session.) Prefer creating the worktree
-*before* launching `claude` when work is planned; use `/cd` for the mid-thought pivot.
+_before_ launching `claude` when work is planned; use `/cd` for the mid-thought pivot.
 
 The worktrunk `post-switch` hook does not start a session — its two hooks are
 `modules/home/worktrunk/hooks/tmux-switch.sh` (tmux window and panes) and `pnpm-warm.sh`

@@ -20,7 +20,7 @@ produced no correction, no interruption and no denial. That is this log.
 
 ## When to Use
 
-Fires on the *situation*, not on wanting a log entry:
+Fires on the _situation_, not on wanting a log entry:
 
 - A correction had to be given twice. Watch the situation, not a keyword: "still"
   hits 41 of 815 typed turns (5%) and marks a question as often as a correction
@@ -41,7 +41,7 @@ Fires on the *situation*, not on wanting a log entry:
 ## Hard rules
 
 **Findings attach to documents and code, never to a person's judgment.** Write
-*"`default.nix:308` claimed X"*, never *"the reviewer was wrong to…"*. The log
+_"`default.nix:308` claimed X"_, never _"the reviewer was wrong to…"_. The log
 has already violated this once: an entry asserted, in a document intended for the
 user's CTO, that a review call of theirs had been mistaken — with no evidence, and
 the cited quote showed the opposite. The subject was a person's professional
@@ -99,7 +99,7 @@ set at review time for the collision this local check cannot see.
 grep -rl "<the-friction-in-two-words>" "$ROOT/entries/" 2>/dev/null
 ```
 
-If an entry covers the same *class* of friction, update it. A recurrence is
+If an entry covers the same _class_ of friction, update it. A recurrence is
 stronger evidence than a second entry, and two entries for one class split the
 count that makes it visible. **When correcting an entry, keep the correction
 visible rather than overwriting** — the error is usually the more useful record.
@@ -162,21 +162,21 @@ Print the absolute path.
 
 **Write the file and stop. Do not run git here at all** — `services.git-sync` commits
 and pushes on its own, unsigned, within a few minutes. The log is a notepad; a
-per-entry commit gate would gate *when* an entry lands, not whether it is fair, and
+per-entry commit gate would gate _when_ an entry lands, not whether it is fair, and
 fairness is checked at review time by `friction-briefing`'s drill-down.
 
 So the hand-back is one line: the absolute path, and that it will sync itself.
 
-If the entry has *not* appeared on the remote after several minutes, the daemon is the
+If the entry has _not_ appeared on the remote after several minutes, the daemon is the
 thing to inspect — `launchctl print gui/$UID/org.nix-community.home.git-sync-claude-friction`
 on macOS, `systemctl --user status git-sync-claude-friction` on Linux. Report what it
 says; do not commit by hand to work around it.
 
 ## Quick reference
 
-| Step | Action |
-|---|---|
-| 1 | Resolve `$MY_CLAUDE_FRICTION_ROOT`; hand over `git clone` if absent; **no git, no pull** |
-| 2 | Grep `entries/` for the same class — update rather than duplicate |
-| 3 | Write `F<n>-YYYY-MM-DD-<slug>.md`; print the absolute path |
-| 4 | Print the path and stop. **Run no git** — `git-sync` commits and pushes it unsigned within minutes |
+| Step | Action                                                                                             |
+| ---- | -------------------------------------------------------------------------------------------------- |
+| 1    | Resolve `$MY_CLAUDE_FRICTION_ROOT`; hand over `git clone` if absent; **no git, no pull**           |
+| 2    | Grep `entries/` for the same class — update rather than duplicate                                  |
+| 3    | Write `F<n>-YYYY-MM-DD-<slug>.md`; print the absolute path                                         |
+| 4    | Print the path and stop. **Run no git** — `git-sync` commits and pushes it unsigned within minutes |

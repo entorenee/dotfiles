@@ -78,10 +78,11 @@ is_placeholder() {
 # prefix and the trailing slash, the declaration never suppresses the mention and
 # check 1 hard-fails on the very sentence documenting the removal.
 retired_terms() {
-  { grep -hoE '`[^`]+`[^.]{0,90}(is the retired location|is retired|no longer exists|was removed|has been removed|is obsolete|has been retired)' "$1" 2>/dev/null \
-      | grep -oE '^`[^`]+`'
-    grep -hiE 'there is no |do not gate on |is the retired location|no longer hardcodes|was retired' "$1" 2>/dev/null \
-      | grep -oE '`[^`]+`'
+  {
+    grep -hoE '`[^`]+`[^.]{0,90}(is the retired location|is retired|no longer exists|was removed|has been removed|is obsolete|has been retired)' "$1" 2>/dev/null |
+      grep -oE '^`[^`]+`'
+    grep -hiE 'there is no |do not gate on |is the retired location|no longer hardcodes|was retired' "$1" 2>/dev/null |
+      grep -oE '`[^`]+`'
   } 2>/dev/null | tr -d '`' | sed -E 's#^<[^>]*>/?##; s#/$##' | sort -u
 }
 
@@ -142,11 +143,16 @@ strip_quoted_numbered() {
 # the worked example) and is counted, not failed.
 check_referents() {
   local doc broken=0 checked=0 external=0 n ref
-  local anchors; anchors=$(find "$REPO" -maxdepth 1 -mindepth 1 -type d -not -name '.*' -exec basename {} \; | sort)
-  [[ -z "$anchors" ]] && { emit REVIEW doc-referent "no top-level directories under $REPO — cannot anchor path references. Skipped, not passed."; return; }
+  local anchors
+  anchors=$(find "$REPO" -maxdepth 1 -mindepth 1 -type d -not -name '.*' -exec basename {} \; | sort)
+  [[ -z "$anchors" ]] && {
+    emit REVIEW doc-referent "no top-level directories under $REPO — cannot anchor path references. Skipped, not passed."
+    return
+  }
   for doc in "${DOCS[@]}"; do
     local fences retired
-    fences=$(fence_lines "$doc"); retired=$(retired_terms "$doc")
+    fences=$(fence_lines "$doc")
+    retired=$(retired_terms "$doc")
     while IFS=: read -r n ref; do
       [[ -z "$ref" ]] && continue
       grep -qx "$n" <<<"$fences" && continue
@@ -161,8 +167,8 @@ check_referents() {
       else
         external=$((external + 1))
       fi
-    done < <(grep -noE '`[A-Za-z0-9_.][A-Za-z0-9_./-]*/[A-Za-z0-9_./-]*`' "$doc" \
-             | sed 's/`//g' | grep -vE ':(https?|~)' )
+    done < <(grep -noE '`[A-Za-z0-9_.][A-Za-z0-9_./-]*/[A-Za-z0-9_./-]*`' "$doc" |
+      sed 's/`//g' | grep -vE ':(https?|~)')
   done
   [[ $external -gt 0 ]] && emit REVIEW doc-referent "$external anchored path(s) resolve nowhere in $REPO and their parent directory is absent too — usually a reference to another project's tree, which is legitimate. Spot-check if a rename is suspected."
   [[ $broken -eq 0 ]] && emit OK doc-referent "$checked anchored in-repo path reference(s) across ${#DOCS[@]} document(s) resolve — regression protection, currently holding"
@@ -182,16 +188,20 @@ check_referents() {
 # "options" appearing in prose inside a .nix comment.
 check_attribution() {
   local doc rows=0 flagged=0
-  local nixfiles; nixfiles=$(find "$REPO" -name '*.nix' -not -path '*/.git/*' 2>/dev/null)
+  local nixfiles
+  nixfiles=$(find "$REPO" -name '*.nix' -not -path '*/.git/*' 2>/dev/null)
   # The one check here whose subject matter is Nix-shaped, because a doc table
   # crediting a file with an option is a config-repo idiom. It degrades to a
   # stated skip elsewhere rather than pretending to have run.
-  [[ -z "$nixfiles" ]] && { emit REVIEW doc-attribution "no .nix files under $REPO — this is the one check keyed to a Nix config tree, and there is nothing here to compare a doc table against. Skipped, not passed; the rest of this arm is language-agnostic."; return; }
+  [[ -z "$nixfiles" ]] && {
+    emit REVIEW doc-attribution "no .nix files under $REPO — this is the one check keyed to a Nix config tree, and there is nothing here to compare a doc table against. Skipped, not passed; the rest of this arm is language-agnostic."
+    return
+  }
   for doc in "${DOCS[@]}"; do
     while IFS=$'\t' read -r n file claim; do
       [[ -z "$file" ]] && continue
       is_placeholder "$file" && continue
-      [[ -f "$REPO/$file" ]] || continue   # a nonexistent file is check 1's finding
+      [[ -f "$REPO/$file" ]] || continue # a nonexistent file is check 1's finding
       rows=$((rows + 1))
       # A row that records what it used to claim quotes the old wording in its
       # own cell, which otherwise credits the file with everything the
@@ -202,7 +212,8 @@ check_attribution() {
       # word "modules" harvested out of `modules/darwin/homebrew/default.nix`
       # is check 1's subject, not this check's — while the path itself is the
       # only signal that says where the option went.
-      local claim_terms; claim_terms=$(sed -E 's#`[^`]*/[^`]*`##g' <<<"$claim")
+      local claim_terms
+      claim_terms=$(sed -E 's#`[^`]*/[^`]*`##g' <<<"$claim")
       local missing="" term
       # Backticked identifiers plus bare lowercase words: the documented
       # instances of this class are stated in prose ("Homebrew taps/brews/casks,
@@ -230,18 +241,21 @@ check_attribution() {
         local other reattributed=0
         for other in $(grep -oE '`[A-Za-z0-9_./-]+\.nix`' <<<"$claim" | tr -d '`'); do
           [[ "$other" == "$file" || ! -f "$REPO/$other" ]] && continue
-          grep -qF -- "$leaf" "$REPO/$other" && { reattributed=1; break; }
+          grep -qF -- "$leaf" "$REPO/$other" && {
+            reattributed=1
+            break
+          }
         done
-        (( reattributed )) && continue
+        ((reattributed)) && continue
         missing="$missing $term"
       done
       if [[ -n "$missing" ]]; then
         emit REVIEW doc-attribution "$(basename "$doc"):$n credits $file with:$missing — each is a real option name elsewhere in the tree but absent from that file. Either it moved or the row is stale; a row may legitimately describe an effect rather than a literal option, so confirm before editing."
         flagged=$((flagged + 1))
       fi
-    # The claim is cells 3 onward, never the whole line: cell 2 holds the path
-    # being credited, and reading it as part of the claim makes every row credit
-    # its own filename's segments ("home" from `roles/home/…`) to itself.
+      # The claim is cells 3 onward, never the whole line: cell 2 holds the path
+      # being credited, and reading it as part of the claim makes every row credit
+      # its own filename's segments ("home" from `roles/home/…`) to itself.
     done < <(awk -F'|' '/^\|/ && NF>2 {
                if (match($2, /`[^`]+\.nix`/)) {
                  c=""; for (i=3; i<=NF; i++) c = c " " $i;
@@ -272,7 +286,8 @@ check_retired_vocab() {
   for doc in "${DOCS[@]}"; do
     local s term excl
     for s in "${seeds[@]}"; do
-      term="${s%%$'\t'*}"; excl="${s#*$'\t'}"
+      term="${s%%$'\t'*}"
+      excl="${s#*$'\t'}"
       while IFS=: read -r n line; do
         [[ -z "$line" ]] && continue
         grep -qiE "$excl" <<<"$line" && continue
@@ -304,7 +319,10 @@ check_denied_prescriptions() {
   local doc n cmd hits=0 checked=0
   local -a denies
   mapfile -t denies < <(jq -r '.permissions.deny[]? | select(startswith("Bash(")) | .[5:-1]' "$SETTINGS")
-  [[ ${#denies[@]} -eq 0 ]] && { emit REVIEW doc-prescription "permissions.deny holds no Bash() patterns — nothing to match against."; return; }
+  [[ ${#denies[@]} -eq 0 ]] && {
+    emit REVIEW doc-prescription "permissions.deny holds no Bash() patterns — nothing to match against."
+    return
+  }
   for doc in "${DOCS[@]}"; do
     while IFS=: read -r n cmd; do
       [[ -z "$cmd" ]] && continue
@@ -314,7 +332,8 @@ check_denied_prescriptions() {
         # shellcheck disable=SC2053
         [[ "$cmd" == $d ]] || continue
         # "by hand", "yourself", "manual" in the lead-in means the user runs it.
-        local lead; lead=$(sed -n "$(( n > 4 ? n-4 : 1 )),${n}p" "$doc")
+        local lead
+        lead=$(sed -n "$((n > 4 ? n - 4 : 1)),${n}p" "$doc")
         if grep -qiE 'by hand|yourself|manually|the user (runs|does)|one-time|once:' <<<"$lead"; then
           emit REVIEW doc-prescription "$(basename "$doc"):$n documents '$(cut -c1-60 <<<"$cmd")', which permissions.deny blocks via '$d'. The lead-in marks it a manual step, so this is probably correct — confirm the document says plainly that Claude cannot run it."
         else
@@ -347,7 +366,8 @@ check_unfalsifiable() {
         /hard requirements?.*not suggestions/ {inforce=1}
         /^#{1,3} / && NR>1 {inforce=0}
         NR==target {print (inforce ? "inside a hard-requirements section" : "")}' "$doc")
-      local orig; orig=$(sed -n "${n}p" "$doc")
+      local orig
+      orig=$(sed -n "${n}p" "$doc")
       emit REVIEW doc-unfalsifiable "$(basename "$doc"):$n hedges${banner:+ $banner} — no behavior violates it: $(cut -c1-80 <<<"${orig#"${orig%%[![:space:]]*}"}")"
       hits=$((hits + 1))
     done < <(strip_quoted_numbered "$doc" | grep -iE "$hedges")
@@ -364,7 +384,8 @@ check_unfalsifiable() {
 check_priority_markers() {
   local doc secs banners
   for doc in "${DOCS[@]}"; do
-    secs=$(grep -cE '^## ' "$doc"); banners=$(grep -cE 'hard requirements?.*not suggestions' "$doc")
+    secs=$(grep -cE '^## ' "$doc")
+    banners=$(grep -cE 'hard requirements?.*not suggestions' "$doc")
     [[ $secs -eq 0 || $banners -eq 0 || $banners -ge $secs ]] && continue
     emit REVIEW doc-priority "$(basename "$doc"): $banners of $secs top-level sections carry the hard-requirements banner, so it cannot arbitrate a labelled-vs-unlabelled conflict. Treat as a WEIGHT on other findings in this document, never as a finding on its own."
   done
@@ -393,7 +414,9 @@ check_unenforced_candidates() {
       # Stripped first: a bullet whose correction quotes the word "said" or
       # "report" would otherwise exempt itself on someone else's obligation.
       grep -qiE '\b(print|write|report|state|say|record|surface|hand over)\b' <<<"$(strip_quoted <<<"$line")" && continue
-      c=$((c + 1)); total=$((total + 1)); lines="$lines $n"
+      c=$((c + 1))
+      total=$((total + 1))
+      lines="$lines $n"
       [[ $c -ge 12 ]] && break
     done < <(grep -nE '^\s*[-*] \*\*(Never|Do NOT|Do not|Don.t)' "$doc")
     [[ $c -gt 0 ]] && emit REVIEW doc-unenforced "$(basename "$doc"): $c prohibition(s) leave no artifact when followed, so compliance is invisible in the record — lines$lines. Not a defect. Hand this list to skill-reviewer, which owns behavioral evidence; do not decide it here."
@@ -406,7 +429,7 @@ if [[ ${#DOCS[@]} -eq 0 ]]; then
   exit 0
 fi
 
-emit OK doc-inputs "$( ((LIVE)) && echo LIVE || echo CHECKOUT ) mode over ${#DOCS[@]} document(s): $(printf '%s ' "${DOCS[@]##*/}")"
+emit OK doc-inputs "$( ((LIVE)) && echo LIVE || echo CHECKOUT) mode over ${#DOCS[@]} document(s): $(printf '%s ' "${DOCS[@]##*/}")"
 check_referents
 check_attribution
 check_retired_vocab

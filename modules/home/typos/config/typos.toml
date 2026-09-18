@@ -2,12 +2,7 @@
 # https://github.com/crate-ci/typos/blob/master/docs/reference.md
 
 [files]
-extend-exclude = [
-  ".git/",
-  "node_modules/",
-  "dist/",
-  "*.lock",
-]
+extend-exclude = [".git/", "node_modules/", "dist/", "*.lock"]
 
 [default]
 # Use default locale (en-us)

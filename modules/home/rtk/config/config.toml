@@ -21,9 +21,5 @@
 # Excluding these lets the bare command run, which matches the existing
 # `Bash(gh …*)` allowlist entries — so no `command gh` bypass and no permission
 # prompt. The write-verb deny rules in the Claude config still apply unchanged.
-exclude_commands = [
-  "gh run view",
-  "gh pr diff",
-  "gh api",
-]
+exclude_commands = ["gh run view", "gh pr diff", "gh api"]
 transparent_prefixes = []

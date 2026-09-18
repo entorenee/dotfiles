@@ -24,9 +24,9 @@ ntype="$(printf '%s' "$payload" | jq -r '.notification_type // empty')"
 # Only notify on the two attention-worthy events; ignore the rest
 # (auth_success, elicitation_*, etc.).
 case "$ntype" in
-  permission_prompt) reason="🔐 Needs permission" ;;
-  idle_prompt) reason="💬 Waiting for input" ;;
-  *) exit 0 ;;
+permission_prompt) reason="🔐 Needs permission" ;;
+idle_prompt) reason="💬 Waiting for input" ;;
+*) exit 0 ;;
 esac
 
 cwd="$(printf '%s' "$payload" | jq -r '.cwd // empty')"
@@ -94,32 +94,32 @@ body="$reason"
 [ -n "$snippet" ] && body="$reason — $snippet"
 
 case "$(uname -s)" in
-  Darwin)
-    if command -v terminal-notifier >/dev/null 2>&1; then
-      # -group replaces any prior banner from the same session, so concurrent
-      # sessions each get one updating slot instead of a growing stack.
-      args=(-title "$title" -message "$body" -sound Ping)
-      [ -n "$sid" ] && args+=(-group "$sid")
-      # Clicking the banner jumps the terminal to the originating tmux
-      # session/window/pane; otherwise it just raises Ghostty.
-      if [ -n "$tmux_focus_cmd" ]; then
-        args+=(-execute "$tmux_focus_cmd")
-      else
-        args+=(-activate com.mitchellh.ghostty)
-      fi
-      terminal-notifier "${args[@]}" >/dev/null 2>&1 || true
+Darwin)
+  if command -v terminal-notifier >/dev/null 2>&1; then
+    # -group replaces any prior banner from the same session, so concurrent
+    # sessions each get one updating slot instead of a growing stack.
+    args=(-title "$title" -message "$body" -sound Ping)
+    [ -n "$sid" ] && args+=(-group "$sid")
+    # Clicking the banner jumps the terminal to the originating tmux
+    # session/window/pane; otherwise it just raises Ghostty.
+    if [ -n "$tmux_focus_cmd" ]; then
+      args+=(-execute "$tmux_focus_cmd")
     else
-      # Fallback if terminal-notifier isn't installed yet (e.g. pre-rebuild).
-      # Escape backslashes and double quotes for the AppleScript string literals.
-      esc() { printf '%s' "$1" | sed -e 's/\\/\\\\/g' -e 's/"/\\"/g'; }
-      osascript -e "display notification \"$(esc "$body")\" with title \"$(esc "$title")\" sound name \"Ping\"" >/dev/null 2>&1 || true
+      args+=(-activate com.mitchellh.ghostty)
     fi
-    ;;
-  Linux)
-    if command -v notify-send >/dev/null 2>&1; then
-      notify-send -a "Claude Code" "$title" "$body" >/dev/null 2>&1 || true
-    fi
-    ;;
+    terminal-notifier "${args[@]}" >/dev/null 2>&1 || true
+  else
+    # Fallback if terminal-notifier isn't installed yet (e.g. pre-rebuild).
+    # Escape backslashes and double quotes for the AppleScript string literals.
+    esc() { printf '%s' "$1" | sed -e 's/\\/\\\\/g' -e 's/"/\\"/g'; }
+    osascript -e "display notification \"$(esc "$body")\" with title \"$(esc "$title")\" sound name \"Ping\"" >/dev/null 2>&1 || true
+  fi
+  ;;
+Linux)
+  if command -v notify-send >/dev/null 2>&1; then
+    notify-send -a "Claude Code" "$title" "$body" >/dev/null 2>&1 || true
+  fi
+  ;;
 esac
 
 exit 0

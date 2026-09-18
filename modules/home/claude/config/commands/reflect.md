@@ -1,6 +1,7 @@
 ---
 description: Mine this session's friction points and store the durable ones to memory before the session closes or compacts.
-argument-hint: [optional focus — e.g. "just tooling gotchas" or "skip preferences"]
+argument-hint:
+  [optional focus — e.g. "just tooling gotchas" or "skip preferences"]
 ---
 
 # /reflect
@@ -14,7 +15,7 @@ The goal is an actively useful memory set, not a complete one. Bias toward few, 
 Re-read the session and list every point that cost something. Friction is the signal — smooth work teaches nothing worth storing.
 
 - **User corrections.** A wrong claim, a wrong assumption about repo state, a preference about how output should look. Highest-value; almost always worth keeping.
-- **Wasted tool calls.** A command that needed a different form, a path that read as empty because it was blocked, a binary that was not what it appeared to be. Record the *misleading symptom*, not just the fix — the symptom is what a future session encounters first.
+- **Wasted tool calls.** A command that needed a different form, a path that read as empty because it was blocked, a binary that was not what it appeared to be. Record the _misleading symptom_, not just the fix — the symptom is what a future session encounters first.
 - **Revised conclusions.** Any hypothesis stated confidently and later falsified. Record what falsified it.
 - **Repeated lookups.** Anything looked up twice, or re-derived because it was not written down.
 - **Surprises.** Behavior that contradicted a reasonable expectation.
@@ -43,18 +44,18 @@ A candidate you cannot justify in one sentence is a candidate to ask about, not 
 
 ## 4. Route by kind
 
-| Kind | Destination |
-|---|---|
-| Repo patterns, tool conventions, CLI gotchas another machine would need | `CLAUDE.md` — **propose the edit and ask first**, it is committed |
-| User preferences, feedback on how to work, harness or machine quirks | memory file |
-| An obstacle that cost something and prompted an adaptation — about the tooling or the process, not a fact to recall | the friction log, via `friction-capture` |
-| Neither durable nor general | drop it |
+| Kind                                                                                                                | Destination                                                       |
+| ------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------- |
+| Repo patterns, tool conventions, CLI gotchas another machine would need                                             | `CLAUDE.md` — **propose the edit and ask first**, it is committed |
+| User preferences, feedback on how to work, harness or machine quirks                                                | memory file                                                       |
+| An obstacle that cost something and prompted an adaptation — about the tooling or the process, not a fact to recall | the friction log, via `friction-capture`                          |
+| Neither durable nor general                                                                                         | drop it                                                           |
 
-Memory and the friction log are not alternatives: memory changes how a future session *works*, the friction log records what the effort *cost* and what changed in response. One event can warrant both. Route to the log only when there is a cost and an adaptation to state — otherwise it is a memory entry.
+Memory and the friction log are not alternatives: memory changes how a future session _works_, the friction log records what the effort _cost_ and what changed in response. One event can warrant both. Route to the log only when there is a cost and an adaptation to state — otherwise it is a memory entry.
 
 Memory lives in the per-project directory keyed by cwd. In a git worktree, write project- and repo-wide entries to the **default-branch** worktree's memory dir so they survive the branch; keep only branch-scoped notes local. (The dotfiles repo does not use worktrees, so this does not apply there.)
 
-**Promotion.** If a memory keeps getting exercised across three or more sessions, it has outgrown memory. Propose moving it — a *fact* to `CLAUDE.md`, a *repeatable procedure* to a skill — and delete the memory once promoted, rather than keeping both.
+**Promotion.** If a memory keeps getting exercised across three or more sessions, it has outgrown memory. Propose moving it — a _fact_ to `CLAUDE.md`, a _repeatable procedure_ to a skill — and delete the memory once promoted, rather than keeping both.
 
 ## 5. Budget
 

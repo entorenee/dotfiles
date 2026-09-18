@@ -84,7 +84,7 @@ Parse the scope reference per the priority order above. If an Asana task ID is p
 1. The nearest `CLAUDE.md` chain — repo root first, then any `CLAUDE.md` closer to the changed files (e.g. an app subdirectory). A root `CLAUDE.md` often `@`-imports a per-project doc (`@<project>/docs/CODE_CONVENTIONS.md` and the like); follow those imports.
 2. Any dedicated convention doc the `CLAUDE.md` points at or that sits beside the changed files: `CODE_CONVENTIONS.md`, `STYLE.md`, `CONTRIBUTING.md`, `docs/conventions*`.
 
-From those docs, extract an explicit **documented-bans list** — the "never do X", "always use Y instead of X", banned-API, and banned-pattern rules. For each, record the rule text and its source `file:line` so findings can cite it. Examples of the *kind* of rule to capture (do not assume these exist — only capture what the docs actually state): banned logging calls, banned styling patterns (styled `Pressable` used as a button, hardcoded hex colors in `className` **or** in color props like `color="#fff"`, arbitrary-bracket Tailwind values), banned state/data-layer patterns, required wrappers. Also note any explicit **exceptions** the doc grants (e.g. "`bg-red-600` is allowed for destructive semantics") so the Phase 3.5 scan doesn't flag a sanctioned pattern.
+From those docs, extract an explicit **documented-bans list** — the "never do X", "always use Y instead of X", banned-API, and banned-pattern rules. For each, record the rule text and its source `file:line` so findings can cite it. Examples of the _kind_ of rule to capture (do not assume these exist — only capture what the docs actually state): banned logging calls, banned styling patterns (styled `Pressable` used as a button, hardcoded hex colors in `className` **or** in color props like `color="#fff"`, arbitrary-bracket Tailwind values), banned state/data-layer patterns, required wrappers. Also note any explicit **exceptions** the doc grants (e.g. "`bg-red-600` is allowed for destructive semantics") so the Phase 3.5 scan doesn't flag a sanctioned pattern.
 
 If the project has no convention docs, record that and skip Phase 3.5 (note it in the report). **Never invent bans** — Phase 3.5 only enforces what a project doc explicitly states.
 
@@ -94,13 +94,14 @@ Remove development artifacts **only from lines introduced in the branch diff**. 
 
 **Auto-removed (no approval needed):**
 
-| Artifact | Detection |
-|----------|-----------|
-| `console.log` / `console.warn` / `console.error` | Statement on a diff-added line |
-| `debugger` | Statement on a diff-added line |
-| Commented-out code blocks | Multi-line `//` or `/* */` blocks on diff-added lines that contain code structure (function calls, variable assignments, JSX) — not prose comments |
+| Artifact                                         | Detection                                                                                                                                          |
+| ------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `console.log` / `console.warn` / `console.error` | Statement on a diff-added line                                                                                                                     |
+| `debugger`                                       | Statement on a diff-added line                                                                                                                     |
+| Commented-out code blocks                        | Multi-line `//` or `/* */` blocks on diff-added lines that contain code structure (function calls, variable assignments, JSX) — not prose comments |
 
 **Safety rules:**
+
 - **Logger files:** Skip auto-removal for `console.*` inside files whose path contains `logger`, `logging`, or `debug` in the name
 - **Diff-only:** Only target lines that appear as additions in the branch diff. Use the diff hunks to identify exact line ranges.
 - **Commented-out code vs. real comments:** Only remove comments that contain code patterns (e.g., `// const x = ...`, `// return <Foo />`). Preserve explanatory prose comments, TODOs, and documentation comments.
@@ -113,22 +114,24 @@ Identify new exports that lack test coverage and add unit tests where an existin
 
 **Step 1 — Find new exports:**
 Scan the diff for newly exported functions, hooks, constants, and types in:
+
 - Utility files (`lib/`, `utils/`, `helpers/`)
 - Custom hooks (`hooks/`, files matching `use*.ts`)
 - Pure functions and data transforms
 
 **Step 2 — Check for existing test files:**
 For each new export, look for a corresponding test file:
+
 - `*.test.ts` / `*.test.tsx` sibling
 - `__tests__/` directory with matching name
 
 **Step 3 — Auto-add or suggest:**
 
-| Condition | Action |
-|-----------|--------|
-| Test file exists | Add unit tests matching the file's existing patterns (imports, describe blocks, naming) |
-| No test file exists | **Do not create** — surface as a suggestion in Phase 4 |
-| Complex logic where expected behavior is ambiguous | **Do not auto-add** — surface as a suggestion in Phase 4 |
+| Condition                                          | Action                                                                                  |
+| -------------------------------------------------- | --------------------------------------------------------------------------------------- |
+| Test file exists                                   | Add unit tests matching the file's existing patterns (imports, describe blocks, naming) |
+| No test file exists                                | **Do not create** — surface as a suggestion in Phase 4                                  |
+| Complex logic where expected behavior is ambiguous | **Do not auto-add** — surface as a suggestion in Phase 4                                |
 
 **Scope:** Unit tests only — utilities, hooks, pure functions. Never auto-add integration or E2E tests.
 
@@ -144,7 +147,7 @@ If a test passes both before and after, **it pins nothing.** Say so plainly rath
 
 **Two traps that produce vacuously-passing tests, both seen in practice:**
 
-- **Default parameters in test helpers.** A signature like `mockThing(steps = [], ...)` silently turns `undefined` into `[]`, so a test meant to assert the *unknown* state asserts the *empty* state instead — and passes. When covering an absent/unknown case, assert the mock actually delivered `undefined`.
+- **Default parameters in test helpers.** A signature like `mockThing(steps = [], ...)` silently turns `undefined` into `[]`, so a test meant to assert the _unknown_ state asserts the _empty_ state instead — and passes. When covering an absent/unknown case, assert the mock actually delivered `undefined`.
 - **Mocking above the layer under test.** Mocking a data-fetching hook wholesale means the library never runs, so options like `placeholderData` or `select` are never invoked and the behavior you meant to pin is unobservable. If the mock level makes the real consequence unreachable, note that limitation in the report rather than implying end-to-end coverage.
 
 ### Phase 3.5 — Convention Compliance Scan
@@ -167,7 +170,7 @@ Mechanically check the branch diff against the **documented-bans list** captured
 
 Surface rather than fix when any of these hold:
 
-- The rule bans a pattern without naming what replaces it, or names more than one candidate (*which* Button variant? *which* color token?).
+- The rule bans a pattern without naming what replaces it, or names more than one candidate (_which_ Button variant? _which_ color token?).
 - The right replacement depends on what the call site is trying to do rather than on the rule.
 - The violation is a codebase-wide pattern this diff merely extends — fixing it here either misses the rest or balloons the diff. Say which, and how many other sites exist.
 - The fix would touch a line the branch did not introduce. Phase 2's diff-only rule is not relaxed for conventions.
@@ -185,8 +188,8 @@ factually wrong about the code below them.
 pre-existing code" rule as Phase 2. This is narrower than a standalone
 comment-review pass, which sweeps whole files.
 
-**Boundary with Phase 2:** Phase 2 already removes *commented-out code* on added
-lines. Phase 3.6 handles *prose* comments, which Phase 2 explicitly preserves.
+**Boundary with Phase 2:** Phase 2 already removes _commented-out code_ on added
+lines. Phase 3.6 handles _prose_ comments, which Phase 2 explicitly preserves.
 They do not overlap — if a block is commented-out code, it is Phase 2's.
 
 **Auto-fix policy:** comment deletions that the skill classifies as **Cut** with
@@ -210,6 +213,7 @@ Present all findings that require engineer judgment. **Do not act on any of thes
 ## Code Hygiene Report
 
 ### Auto-fixed
+
 - Removed `console.log` at `src/lib/api/client.ts:47`
 - Removed `console.log` at `src/components/ProfileScreen.tsx:23`
 - Removed commented-out code block at `src/utils/format.ts:15-22`
@@ -219,29 +223,35 @@ Present all findings that require engineer judgment. **Do not act on any of thes
 ### Needs Your Review
 
 #### Scope
+
 - `prisma/schema.prisma` was modified but not referenced in ticket scope — intentional?
 - `src/components/unrelated/Footer.tsx` changed but ticket describes header work
 
 #### Convention Violations
+
 - `components/video/ScreenshareLandscapeView.tsx:88` — styled `<Pressable>` used as a button (`className` + `onPress`) — rule: `docs/CODE_CONVENTIONS.md:117` "never create styled Pressable buttons — use Button/FWButton"
 - `components/video/CallScreen.tsx:142` — hardcoded hex `color="#fff"` on icon — rule: `docs/CODE_CONVENTIONS.md:378` "no `text-[#...]`/color literals — use the matching token"
 
 #### TODO/FIXME Comments
+
 - `src/components/FWButton.tsx:42` — `// TODO: add haptic feedback` — remove or keep?
 - `src/lib/api/client.ts:89` — `// FIXME: retry logic` — remove or keep?
 
 #### Comments
+
 - **Relocate:** `src/lib/cache.ts:8-14` restates the caching policy from
   `docs/ARCHITECTURE.md` — move the one detail the doc lacks, then remove inline?
 - **⚠️ Wrong comment:** `src/lib/api/client.ts:31` says "retries 3×" but the
   constant below it is `MAX_RETRIES = 5` — which is correct?
 
 #### Test Suggestions
+
 - **New test file needed:** `src/lib/utils/formatDate.ts` has no test file — consider creating `src/lib/utils/__tests__/formatDate.test.ts`
 - **Integration test:** The new form submission flow touches validation, API call, and navigation — consider an integration test
 - **Edge case:** `parseUserInput` doesn't handle empty string input — worth a test case
 
 #### Other Observations
+
 - `calculateTotal` in `src/utils/pricing.ts:30` duplicates logic from `src/lib/cart/totals.ts:12` — consider reusing
 - The new `UserCard` component is 180 lines — consider extracting the avatar section
 ```
@@ -258,5 +268,5 @@ Present all findings that require engineer judgment. **Do not act on any of thes
 - **Comment review is diff-scoped and comment-only** — never relocate a comment
   into a project doc without approval, and never fix code a comment reveals as
   wrong; report it
-- **Skip logger files** for console.* removal (path contains `logger`, `logging`, or `debug`)
+- **Skip logger files** for console.\* removal (path contains `logger`, `logging`, or `debug`)
 - **Report what you did** — every auto-fix and auto-added test must appear in the report with file:line references

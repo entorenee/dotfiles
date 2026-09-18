@@ -15,10 +15,10 @@ The dotfiles repo is at `~/dotfiles`, and `flake.nix` sits at its root.
 
 **Hosts to validate** (flake outputs are keyed by hostname, not persona):
 
-| Host | Dry-run command |
-|---------|----------------|
-| fw-skyler (work Mac) | `darwin-rebuild switch --flake ~/dotfiles#fw-skyler --dry-run` |
-| lyra-silvertongue (personal Mac) | `darwin-rebuild switch --flake ~/dotfiles#lyra-silvertongue --dry-run` |
+| Host                                   | Dry-run command                                                                                                                |
+| -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| fw-skyler (work Mac)                   | `darwin-rebuild switch --flake ~/dotfiles#fw-skyler --dry-run`                                                                 |
+| lyra-silvertongue (personal Mac)       | `darwin-rebuild switch --flake ~/dotfiles#lyra-silvertongue --dry-run`                                                         |
 | hester-prynne (personal Linux desktop) | `nix run home-manager -- --extra-experimental-features 'nix-command flakes' switch --flake ~/dotfiles#hester-prynne --dry-run` |
 
 **Important:** The macOS darwin-rebuild commands normally use `sudo`. For dry-run validation, attempt without `sudo` first. If it fails due to permissions, note it in the report — do not run `sudo` commands.
@@ -42,6 +42,7 @@ cd ~/dotfiles && git diff --cached --name-only
 ```
 
 Report which files changed and which hosts they affect:
+
 - `hosts/darwin/fw-skyler/*.nix` → affects fw-skyler only
 - `hosts/darwin/lyra-silvertongue.nix` → affects lyra-silvertongue only
 - `hosts/home/hester-prynne/*.nix` → affects hester-prynne only
@@ -94,31 +95,36 @@ Present results in this format:
 ## Nix Validation Report
 
 ### Files Changed
+
 - `modules/home/claude/default.nix` (shared — affects all hosts)
 
 ### Evaluation
-| Host | Status | Details |
-|---------|--------|---------|
-| fw-skyler | Pass | — |
-| lyra-silvertongue | Pass | — |
-| hester-prynne | Pass | — |
-| hub | Pass | — |
-| airgap | Pass | — |
-| uptime | Pass | — |
+
+| Host              | Status | Details |
+| ----------------- | ------ | ------- |
+| fw-skyler         | Pass   | —       |
+| lyra-silvertongue | Pass   | —       |
+| hester-prynne     | Pass   | —       |
+| hub               | Pass   | —       |
+| airgap            | Pass   | —       |
+| uptime            | Pass   | —       |
 
 ### Dry-run Rebuild
-| Host | Status | Details |
-|---------|--------|---------|
-| fw-skyler | Pass | 3 packages would be updated |
-| lyra-silvertongue | Pass | 1 package would be updated |
-| hester-prynne | Skipped | darwin-rebuild not available on this platform |
-| hub / airgap / uptime | N/A | evaluation-only — aarch64, deployed from the hub |
+
+| Host                  | Status  | Details                                          |
+| --------------------- | ------- | ------------------------------------------------ |
+| fw-skyler             | Pass    | 3 packages would be updated                      |
+| lyra-silvertongue     | Pass    | 1 package would be updated                       |
+| hester-prynne         | Skipped | darwin-rebuild not available on this platform    |
+| hub / airgap / uptime | N/A     | evaluation-only — aarch64, deployed from the hub |
 
 ### Issues Found
+
 None — all validations passed.
 ```
 
 If there are failures, include:
+
 - The exact error message (trimmed to relevant lines)
 - Which file and approximate location caused the issue (if parseable from the error)
 - A brief diagnosis of the likely cause (e.g., "infinite recursion suggests a self-referencing module import", "attribute 'foo' missing suggests a renamed or removed option")

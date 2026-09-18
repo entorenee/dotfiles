@@ -31,8 +31,8 @@ This file adds only what is domain-specific — it does not re-document the base
 - A single measured metric regression tied to a dashboard/alert/window → `regression-analysis`.
 - A known, reproduced bug needing a fix → `investigate` / `superpowers:systematic-debugging`.
 
-The tell for this skill: the **error tracker is the primary source** and the goal is *hygiene +
-triage across many issues*, not root-causing one measured metric.
+The tell for this skill: the **error tracker is the primary source** and the goal is _hygiene +
+triage across many issues_, not root-causing one measured metric.
 
 ## Workflow
 
@@ -66,14 +66,14 @@ in Coverage; do not hardcode a vendor.
 Classify each issue against the categories below. Fan out per partition (project / release) using the
 base's subagent digest schema so heavy issue payloads stay out of the main context.
 
-| Category | How to recognize | Typical mitigation |
-|---|---|---|
-| **Out of our control** | Third-party SDK internals, browser-extension injection, transient network blips — origin is outside our code. | Inbound filter on the tracker; `ignoreErrors` / deny-list at the SDK. |
-| **Expected & handled** | Caught and recovered in code but still captured (e.g. anticipated 4xx, user-cancelled flow). | `beforeSend` drop or downgrade to breadcrumb; stop capturing at the source. |
-| **Already fixed** | Concentrated in old app versions/releases, **absent from current** (ties to the base's app-version dimension). | Archive/resolve; scope alerts to current release. |
-| **Stale / dormant** | Not seen recently — last-seen well outside the window. | Auto-resolve / ignore until it recurs. |
-| **Negligible impact** | Very low event count **and** low unique-user count. | Mute / ignore; revisit only if it grows. |
-| **Poor grouping** | One root cause fragmented across many issues, or many distinct causes merged into one. | Regroup / fingerprint fix (merge or split the grouping rule). |
+| Category               | How to recognize                                                                                               | Typical mitigation                                                          |
+| ---------------------- | -------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
+| **Out of our control** | Third-party SDK internals, browser-extension injection, transient network blips — origin is outside our code.  | Inbound filter on the tracker; `ignoreErrors` / deny-list at the SDK.       |
+| **Expected & handled** | Caught and recovered in code but still captured (e.g. anticipated 4xx, user-cancelled flow).                   | `beforeSend` drop or downgrade to breadcrumb; stop capturing at the source. |
+| **Already fixed**      | Concentrated in old app versions/releases, **absent from current** (ties to the base's app-version dimension). | Archive/resolve; scope alerts to current release.                           |
+| **Stale / dormant**    | Not seen recently — last-seen well outside the window.                                                         | Auto-resolve / ignore until it recurs.                                      |
+| **Negligible impact**  | Very low event count **and** low unique-user count.                                                            | Mute / ignore; revisit only if it grows.                                    |
+| **Poor grouping**      | One root cause fragmented across many issues, or many distinct causes merged into one.                         | Regroup / fingerprint fix (merge or split the grouping rule).               |
 
 ## Mitigations (matched per category)
 

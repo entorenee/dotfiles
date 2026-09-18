@@ -9,7 +9,7 @@ description: Use when reviewing or cleaning up code comments — whether a codeb
 
 Comments rot for one reason: nothing forces them to stay true. A comment that
 sits on the line it describes gets re-read whenever that line changes. A comment
-that describes something *elsewhere* — a system-wide convention, another file's
+that describes something _elsewhere_ — a system-wide convention, another file's
 contents, a policy already written in the project's docs — is never re-read at
 the moment it becomes false.
 
@@ -35,7 +35,7 @@ For each comment ask: **does this describe the thing it sits on, or does it
 describe something global from a local vantage point?**
 
 **Anchored** — explains the very line, block, option, or absence it sits next to.
-Keep it, *even if it is long*. It is at the source, so whoever edits the code has
+Keep it, _even if it is long_. It is at the source, so whoever edits the code has
 it in front of them and can correct it in the same edit. A 10-line comment
 explaining a non-obvious workaround directly above that workaround is correct.
 
@@ -49,15 +49,15 @@ is usually admitting it is this kind.
 
 ## Four Buckets
 
-| Bucket | Test | Action |
-|---|---|---|
-| **Keep** | Anchored: a local constraint, a hard-won gotcha, a magic-value decode, or an actionable maintenance recipe. Something breaks if it is deleted. | Keep. Compress wording only. **Length is not a defect.** |
-| **Cut** | Detached, and the project docs already carry it. | Delete. |
-| **Relocate** | Detached, but the docs do *not* carry it yet. | Add it to the appropriate doc **first**, then delete inline. Never delete outright. |
-| **Negative space** | Documents a deliberate *absence* — why something is NOT here, NOT set, NOT used. | **Keep.** There is no code to rediscover this from. Compress prose, never content. |
+| Bucket             | Test                                                                                                                                           | Action                                                                              |
+| ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| **Keep**           | Anchored: a local constraint, a hard-won gotcha, a magic-value decode, or an actionable maintenance recipe. Something breaks if it is deleted. | Keep. Compress wording only. **Length is not a defect.**                            |
+| **Cut**            | Detached, and the project docs already carry it.                                                                                               | Delete.                                                                             |
+| **Relocate**       | Detached, but the docs do _not_ carry it yet.                                                                                                  | Add it to the appropriate doc **first**, then delete inline. Never delete outright. |
+| **Negative space** | Documents a deliberate _absence_ — why something is NOT here, NOT set, NOT used.                                                               | **Keep.** There is no code to rediscover this from. Compress prose, never content.  |
 
 **Relocate is the narrow case, not the default.** It applies only when a comment
-is *already* detached. Anchored content stays inline however long it is. This is
+is _already_ detached. Anchored content stays inline however long it is. This is
 what keeps the pass from being information destruction.
 
 ## Sub-Rules
@@ -77,7 +77,7 @@ Each of these is a recurring pattern, not a hypothetical:
    is it a story about the past?
 
 3. **When N files restate one fact, keep the copy at the decision point.**
-   Find the file where someone would actually be *making* that decision and keep
+   Find the file where someone would actually be _making_ that decision and keep
    it there; delete the rest. Usually the entry point or the definition site, not
    the consumers.
 
@@ -88,10 +88,10 @@ Each of these is a recurring pattern, not a hypothetical:
 
 5. **A cross-reference is only valid if the target already says it.** Before
    keeping or writing "see X", open X and confirm. Never write a pointer to
-   content a *later* change is supposed to create.
+   content a _later_ change is supposed to create.
 
 6. **Duplication across a reciprocal pair can be legitimate.** If two lists,
-   flags, or files must be edited in tandem, a short note at *each* edit site is
+   flags, or files must be edited in tandem, a short note at _each_ edit site is
    correct — whichever one you open, the constraint is there.
 
 7. **A comment justifying something dangerous earns its duplication.** A broad
@@ -100,9 +100,9 @@ Each of these is a recurring pattern, not a hypothetical:
    auditing that line should not have to go find the doc.
 
 8. **Cut the sentence that interprets the fact you just stated.** A correct,
-   anchored comment followed by a line about its own significance: *"a systemd
+   anchored comment followed by a line about its own significance: _"a systemd
    timer skips a missed window unless Persistent is set. Same behaviour on both
-   platforms is the whole point of this pair."* The second sentence is the
+   platforms is the whole point of this pair."_ The second sentence is the
    defect. This is the hardest of these to see, because the comment passes the
    attachment test — it does describe the thing it sits on. Test each sentence
    separately: **name the wrong edit it prevents.** If you cannot, cut that
@@ -147,7 +147,7 @@ Make the edits. Comments only.
 Prove it mechanically rather than by inspection.
 
 **Primary check — line-level diff audit (works everywhere).** Confirm every
-changed line is a comment or blank. For lines carrying a *trailing* comment,
+changed line is a comment or blank. For lines carrying a _trailing_ comment,
 strip the comment from both sides and confirm the remaining code is
 byte-identical. Any genuinely changed line of code is a bug in the pass.
 
@@ -167,7 +167,7 @@ empty. Stronger than the line audit but needs a reliable stripper.
 > **Do not rely on build-artifact identity unless you have confirmed the build
 > does not copy source files.** It is tempting to assume "comments are stripped
 > at parse time, so the artifact hash cannot move" — that is true of the
-> *language* and false of many *build systems*. Nix flakes copy the whole source
+> _language_ and false of many _build systems_. Nix flakes copy the whole source
 > tree and resolve in-repo path literals against it, so any byte change anywhere
 > rehashes every artifact referencing one; Docker `COPY`, Go `embed`, and
 > source-hashing bundlers behave the same way. If artifact hashes move, that is
@@ -190,16 +190,20 @@ describe a check you did not actually run.
 **Verification:** <which check, and its result>
 
 ### Cut (detached — docs already carry it)
+
 - `path/file:12-20` — restated the module layout; `CONTRIBUTING.md:88` has it
 
 ### Relocated
+
 - `path/file:5-9` — moved to `CONVENTIONS.md` under "Error handling", then removed
 
 ### Kept deliberately
+
 - `path/other:40-52` — long but anchored: explains the retry backoff constant
 - `path/third:8` — negative space: "do not add X here"
 
 ### ⚠️ Findings (code issues — NOT changed)
+
 - `path/file:81` — comment described a different setting than the one below it;
   the setting itself appears to be dead config
 ```
@@ -218,14 +222,14 @@ For a whole-codebase pass, work in batches with a review stop between each.
   the previous batch — it catches drift an intermediate batch would otherwise
   mask, and costs nothing extra.
 - If the whole pass is one logical change, batches can be **review units rather
-  than commits** (amend into one commit). If so: verify and review *before*
+  than commits** (amend into one commit). If so: verify and review _before_
   folding each batch in, since an amend leaves no per-batch revert.
 
 ## Expect to Find Wrong Comments
 
 A comment pass is worth running partly because it is the only process that reads
 prose against the code it describes. Neither compilers nor tests nor linters
-check whether a comment is *true*.
+check whether a comment is _true_.
 
 Comments that name a specific option, file, host, version, or value are the ones
 most likely to have drifted — verify each such claim against the code rather than

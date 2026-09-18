@@ -18,14 +18,19 @@ THRESHOLD=7
 MODE=notify
 while [ $# -gt 0 ]; do
   case "$1" in
-    --check)     MODE=check ;;
-    --ran)       MODE=ran ;;
-    --threshold) THRESHOLD="${2:?--threshold needs a number}"; shift ;;
-    *) echo "unknown argument: $1" >&2; exit 2 ;;
+  --check) MODE=check ;;
+  --ran) MODE=ran ;;
+  --threshold)
+    THRESHOLD="${2:?--threshold needs a number}"
+    shift
+    ;;
+  *)
+    echo "unknown argument: $1" >&2
+    exit 2
+    ;;
   esac
   shift
 done
-
 
 # `--ran` records that a sweep actually happened. It is the only event that can
 # satisfy a DUE verdict, and the scheduled path cannot observe one — so without
@@ -45,14 +50,17 @@ if [ "$MODE" = ran ]; then
   # cannot be forged. Same resolution order as sweep-due-session.sh; change both
   # together.
   RAN_DIR="${MY_AGENT_ARTIFACTS_ROOT:-${XDG_DATA_HOME:-$HOME/.local/share}/agents/artifacts}/skill-reviewer"
-  mkdir -p "$RAN_DIR" 2>/dev/null \
-    && printf '%s' "$(date +%Y-%m-%d)" > "$RAN_DIR/sweep-due.ran" 2>/dev/null
+  mkdir -p "$RAN_DIR" 2>/dev/null &&
+    printf '%s' "$(date +%Y-%m-%d)" >"$RAN_DIR/sweep-due.ran" 2>/dev/null
   exit 0
 fi
 
 HERE="$(cd "$(dirname "$0")" && pwd)"
 INVENTORY="$HERE/inventory.sh"
-[ -f "$INVENTORY" ] || { echo "missing inventory.sh beside $0" >&2; exit 2; }
+[ -f "$INVENTORY" ] || {
+  echo "missing inventory.sh beside $0" >&2
+  exit 2
+}
 command -v jq >/dev/null 2>&1 || exit 0
 
 # BOTH ENDS PINNED TO MIDNIGHT. BSD `date -j -f '%Y-%m-%d'` fills the
@@ -60,8 +68,8 @@ command -v jq >/dev/null 2>&1 || exit 0
 # an unpinned parse lands just under a whole number of days and integer
 # division reports one day less. This bit the --aging arm already.
 epoch() {
-  date -j -f '%Y-%m-%d %H:%M:%S' "$1 00:00:00" +%s 2>/dev/null \
-    || date -d "$1 00:00:00" +%s 2>/dev/null
+  date -j -f '%Y-%m-%d %H:%M:%S' "$1 00:00:00" +%s 2>/dev/null ||
+    date -d "$1 00:00:00" +%s 2>/dev/null
 }
 
 # --------------------------------------------------------------------------
@@ -84,17 +92,21 @@ record() { # $1 = decision (DUE|NOT-DUE|ERROR), $2 = reason
   # which is precisely what the staleness reader downstream is testing for.
   [ "$MODE" = notify ] || return 0
   mkdir -p "$STATE_DIR" 2>/dev/null || return 0
-  printf '%s\t%s\t%s\n' "$(date +%Y-%m-%dT%H:%M:%S)" "$1" "$2" >> "$STATE" 2>/dev/null || true
+  printf '%s\t%s\t%s\n' "$(date +%Y-%m-%dT%H:%M:%S)" "$1" "$2" >>"$STATE" 2>/dev/null || true
 }
 
 # `|| true` handles a non-zero exit, not a hang, and the notifier does hang —
 # observed blocking past two minutes in a non-interactive context and needing a
 # kill. macOS ships no `timeout`, so this is the portable form.
 with_timeout() { # $1 = seconds, rest = command
-  local secs="$1"; shift
+  local secs="$1"
+  shift
   "$@" >/dev/null 2>&1 &
   local pid=$!
-  ( sleep "$secs"; kill -TERM "$pid" 2>/dev/null ) >/dev/null 2>&1 &
+  (
+    sleep "$secs"
+    kill -TERM "$pid" 2>/dev/null
+  ) >/dev/null 2>&1 &
   local watchdog=$!
   wait "$pid" 2>/dev/null
   kill -TERM "$watchdog" 2>/dev/null
@@ -114,8 +126,8 @@ if [ "$INV_RC" -ne 0 ]; then
   exit 2
 fi
 
-LAST=$(printf '%s' "$INV_OUT" \
-  | jq -r '(.units[]? | select(.unit=="system-review") | .last_run) // empty' 2>/dev/null | head -1)
+LAST=$(printf '%s' "$INV_OUT" |
+  jq -r '(.units[]? | select(.unit=="system-review") | .last_run) // empty' 2>/dev/null | head -1)
 
 NOW=$(epoch "$(date +%Y-%m-%d)")
 if [ -z "$LAST" ] || [ "$LAST" = null ]; then
@@ -133,7 +145,7 @@ else
     echo "sweep-due: could not parse dates (last=$LAST)" >&2
     exit 2
   fi
-  AGE=$(( (NOW - THEN) / 86400 ))
+  AGE=$(((NOW - THEN) / 86400))
   REASON="$AGE days since the last /system-review ($LAST)"
   if [ "$AGE" -lt "$THRESHOLD" ]; then
     [ "$MODE" = check ] && echo "not due: $REASON (threshold ${THRESHOLD}d)"

@@ -40,9 +40,9 @@ digraph asana_review {
 
 Run two `search_tasks` queries **in parallel** with `completed: false` and `sort_by: "modified_at"`:
 
-| Query | Parameters |
-|---|---|
-| Assigned to me | `assignee_any: "me"`, `modified_on_after: <cutoff>` |
+| Query                    | Parameters                                           |
+| ------------------------ | ---------------------------------------------------- |
+| Assigned to me           | `assignee_any: "me"`, `modified_on_after: <cutoff>`  |
 | Following (not assigned) | `followers_any: "me"`, `modified_on_after: <cutoff>` |
 
 **Default cutoff:** 36 hours (covers checking at different times on subsequent days). If the user specifies a timeframe (e.g., `/asana-review 3d`), parse and use that instead.
@@ -80,6 +80,7 @@ Then ask: **"Pick a number to drill in, or say 'done' to finish."**
 Use `get_task` with the task GID (include comments and subtasks by default).
 
 Present:
+
 - **Description** (truncated if long — first 500 chars with option to expand)
 - **Recent comments** (last 5, with author and timestamp)
 - **Subtasks** (if any, with completion status)
@@ -87,6 +88,7 @@ Present:
 - **Assignee, due date, followers**
 
 Then present available actions:
+
 - **Comment** — add a comment to this task
 - **Move** — change the task's status (section)
 - **Complete** — mark the task as done
@@ -107,17 +109,19 @@ To move a task to a different status:
 1. Get the task's current project GID from its memberships
 2. Fetch project sections: `get_project` with `include_sections: true`
 3. Present available sections as numbered options:
+
    ```
    Current status: In Progress
-   
+
    Available statuses:
    1. To Do
    2. In Progress (current)
    3. In Review
    4. Done
-   
+
    Pick a number:
    ```
+
 4. Use `update_tasks` with `add_projects: [{ project_id, section_id }]` to move
 
 If the task is in multiple projects, ask which project's status to change.
@@ -125,17 +129,18 @@ If the task is in multiple projects, ask which project's status to change.
 ### 4c. Other Updates
 
 Support these on request:
+
 - **Reassign** — `update_tasks` with `assignee`
 - **Change due date** — `update_tasks` with `due_on`
 - **Mark complete** — `update_tasks` with `completed: true`
 
 ## Argument Parsing
 
-| Input | Cutoff |
-|---|---|
-| `/asana-review` | Last 36 hours |
-| `/asana-review 3d` | Last 3 days |
-| `/asana-review 1w` | Last 7 days |
+| Input               | Cutoff        |
+| ------------------- | ------------- |
+| `/asana-review`     | Last 36 hours |
+| `/asana-review 3d`  | Last 3 days   |
+| `/asana-review 1w`  | Last 7 days   |
 | `/asana-review 12h` | Last 12 hours |
 
 Calculate the ISO 8601 date from the current date and the offset for `modified_on_after`.

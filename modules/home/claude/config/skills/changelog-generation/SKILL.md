@@ -41,6 +41,7 @@ Generate stakeholder-friendly changelogs from pull request merges. Analyzes indi
 **Target audience**: Non-technical stakeholders
 
 **Writing style**:
+
 - Brief, high-level descriptions focusing on functionality, not implementation
 - Bullet points for easy scanning
 - No technical jargon or implementation details
@@ -49,6 +50,7 @@ Generate stakeholder-friendly changelogs from pull request merges. Analyzes indi
 - Present tense, active voice
 
 **Exclude**:
+
 - PR links
 - Technical implementation details
 - Code-specific terminology
@@ -58,12 +60,12 @@ Generate stakeholder-friendly changelogs from pull request merges. Analyzes indi
 
 Organize changes into these categories:
 
-| Category | Include |
-|----------|---------|
-| **New Features** | New functionality, pages, forms, first-time implementations |
-| **Bug Fixes** | Issue resolutions, error corrections, broken functionality fixes |
-| **Enhanced User Experience** | UI/UX improvements, performance enhancements, accessibility |
-| **[Dynamic 4th Category]** | Name based on remaining changes (e.g., "Infrastructure Updates", "Content Updates") |
+| Category                     | Include                                                                             |
+| ---------------------------- | ----------------------------------------------------------------------------------- |
+| **New Features**             | New functionality, pages, forms, first-time implementations                         |
+| **Bug Fixes**                | Issue resolutions, error corrections, broken functionality fixes                    |
+| **Enhanced User Experience** | UI/UX improvements, performance enhancements, accessibility                         |
+| **[Dynamic 4th Category]**   | Name based on remaining changes (e.g., "Infrastructure Updates", "Content Updates") |
 
 ### 4. Formatting
 
@@ -78,15 +80,19 @@ Organize changes into these categories:
 # [Project Name] Release Notes — [Date or Version]
 
 ## New Features
+
 - [Brief description]
 
 ## Bug Fixes
+
 - [Description of resolved issue]
 
 ## Enhanced User Experience
+
 - [UI/UX improvement]
 
 ## [Dynamic Category Name]
+
 - [Other improvements]
 ```
 
@@ -98,19 +104,23 @@ Organize changes into these categories:
 ## [Project Name]
 
 ### New Features
+
 - [Project-specific new functionality]
 
 ### Bug Fixes
+
 - [Project-specific fixes]
 
 ## [Another Project]
 
 ### Enhanced User Experience
+
 - [Project-specific improvements]
 
 ## System-Wide Changes
 
 ### [Dynamic Category Name]
+
 - [Shared schema/infrastructure changes]
 ```
 
@@ -121,6 +131,7 @@ Organize changes into these categories:
 ## Quality Checklist
 
 Before finalizing:
+
 - [ ] All descriptions are non-technical and stakeholder-friendly
 - [ ] Items properly categorized (by project in monorepos)
 - [ ] No PR links included

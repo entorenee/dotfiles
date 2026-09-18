@@ -1,12 +1,10 @@
-{ config, ... }:
-let
+{config, ...}: let
   nvimPath = "${config.home.homeDirectory}/dotfiles/modules/home/nvim/config";
-in
-{
+in {
   # The configured editor: LazyVim config plus the shell helpers that assume it.
   # The bare binary lives in ./package.nix, which roles/home/minimal.nix imports
   # on its own for hosts that must not fetch plugins — see the note there.
-  imports = [ ./package.nix ];
+  imports = [./package.nix];
 
   programs.zsh.initContent = ''
     vlist () {

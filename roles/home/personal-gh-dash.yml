@@ -1,6 +1,6 @@
 prSections:
-- title: My PRs
-  filters: author:@me
+  - title: My PRs
+    filters: author:@me
 
 defaults:
   preview:

@@ -30,8 +30,8 @@ set -uo pipefail
 
 MODE=table
 case "${1:-}" in
-  --json) MODE=json ;;
-  --selftest) MODE=selftest ;;
+--json) MODE=json ;;
+--selftest) MODE=selftest ;;
 esac
 
 CONFIG_DIR="${SKILL_CONFIG_DIR:-$HOME/dotfiles/modules/home/claude/config}"
@@ -81,10 +81,10 @@ ledger_scan() { # $1 = artifact root, $2 = output tsv; echoes the status
   local root="$1" out="$2"
   local canonical="$root/skill-reviewer/LEDGER.md"
   local n_stray rows
-  : > "$out"
+  : >"$out"
 
   n_stray=$(find "$root" -mindepth 3 -maxdepth 3 -path '*/skill-reviewer/LEDGER.md' \
-            2>/dev/null | wc -l | tr -d ' ')
+    2>/dev/null | wc -l | tr -d ' ')
 
   if [ -f "$canonical" ]; then
     awk '
@@ -96,20 +96,25 @@ ledger_scan() { # $1 = artifact root, $2 = output tsv; echoes the status
         if (d > seen[$2]) seen[$2] = d;
       }
       END { for (u in seen) printf "%s\t%s\n", u, seen[u] }
-    ' "$canonical" > "$out"
+    ' "$canonical" >"$out"
   fi
 
-  rows=$(wc -l < "$out" | tr -d ' ')
+  rows=$(wc -l <"$out" | tr -d ' ')
 
   # A stray outranks the canonical result: rows exist somewhere they will not be
   # read from, and that is the finding regardless of how well the canonical one
   # parsed. It is also the migration signal — a ledger still under a repo key
   # reports split:1 with nothing canonical yet.
-  if [ "$n_stray" -gt 0 ]; then echo "split:$n_stray"
-  elif [ ! -f "$canonical" ]; then echo "absent"
-  elif [ ! -s "$canonical" ]; then echo "empty"
-  elif [ "$rows" -eq 0 ]; then echo "unparsed"
-  else echo "parsed:$rows"
+  if [ "$n_stray" -gt 0 ]; then
+    echo "split:$n_stray"
+  elif [ ! -f "$canonical" ]; then
+    echo "absent"
+  elif [ ! -s "$canonical" ]; then
+    echo "empty"
+  elif [ "$rows" -eq 0 ]; then
+    echo "unparsed"
+  else
+    echo "parsed:$rows"
   fi
 }
 
@@ -127,8 +132,8 @@ review_trailer_parse() { # stdin = that stream; echoes "date<TAB>host<TAB>runs"
   # input it cannot decode as the locale's charset. Commit bodies carry em dashes
   # and whatever else a human typed, and this arm has to give the same answer on
   # every machine, so the separators are treated as bytes rather than characters.
-  LC_ALL=C tr '\n' ' ' | LC_ALL=C tr '\036' '\n' \
-    | LC_ALL=C awk -F'\037' '
+  LC_ALL=C tr '\n' ' ' | LC_ALL=C tr '\036' '\n' |
+    LC_ALL=C awk -F'\037' '
         NF > 1 && $2 ~ /Reviewed-on:[ \t]*[^ \t]/ {
           host = $2; sub(/.*Reviewed-on:[ \t]*/, "", host); sub(/[ \t].*/, "", host);
           runs = "-";
@@ -142,7 +147,7 @@ review_trailer_parse() { # stdin = that stream; echoes "date<TAB>host<TAB>runs"
 
 review_trailer_scan() { # $1 = git dir, $2 = path within it
   git -C "$1" log --follow --date=short --grep='Reviewed-on:' \
-      --format='%x1e%ad%x1f%B' -- "$2" 2>/dev/null | review_trailer_parse
+    --format='%x1e%ad%x1f%B' -- "$2" 2>/dev/null | review_trailer_parse
 }
 
 # Status for the review arm, on the ledger's precedent: emitted, never inferred
@@ -150,9 +155,12 @@ review_trailer_scan() { # $1 = git dir, $2 = path within it
 # shipped and unexercised, or trailers skipped — and P3 measures that difference.
 # The ship date separates a fresh mechanism from a lapsed habit. See F26.
 review_arm_status() { # $1 = repo|norepo, $2 = row count, $3 = arm ship date
-  if   [ "$1" != repo ];  then echo "no-repo"
-  elif [ "$2" -gt 0 ];    then echo "parsed:$2"
-  else echo "no-trailers-since:${3:-unknown}"
+  if [ "$1" != repo ]; then
+    echo "no-repo"
+  elif [ "$2" -gt 0 ]; then
+    echo "parsed:$2"
+  else
+    echo "no-trailers-since:${3:-unknown}"
   fi
 }
 
@@ -175,25 +183,32 @@ review_arm_status() { # $1 = repo|norepo, $2 = row count, $3 = arm ship date
 # --------------------------------------------------------------------------
 corpus_scan() { # $1 = archive root, $2 = unreadable list, $3 = truncated list
   local root="$1" unreadable="$2" truncated="$3" f n=0
-  : > "$unreadable"; : > "$truncated"
+  : >"$unreadable"
+  : >"$truncated"
 
   while IFS= read -r f; do
     n=$((n + 1))
     # Permission is tested first because `tail` on an unreadable file prints
     # nothing and exits nonzero — the same signature a truncated file gives, and
     # the two failures need different fixes.
-    if [ ! -r "$f" ]; then printf '%s\n' "$f" >> "$unreadable"; continue; fi
-    tail -1 "$f" 2>/dev/null | jq -e . >/dev/null 2>&1 \
-      || printf '%s\n' "$f" >> "$truncated"
+    if [ ! -r "$f" ]; then
+      printf '%s\n' "$f" >>"$unreadable"
+      continue
+    fi
+    tail -1 "$f" 2>/dev/null | jq -e . >/dev/null 2>&1 ||
+      printf '%s\n' "$f" >>"$truncated"
   done < <(find "$root" -type f -name '*.jsonl' 2>/dev/null | sort)
 
   printf '%s\t%s\t%s\n' "$n" \
-    "$(wc -l < "$unreadable" | tr -d ' ')" "$(wc -l < "$truncated" | tr -d ' ')"
+    "$(wc -l <"$unreadable" | tr -d ' ')" "$(wc -l <"$truncated" | tr -d ' ')"
 }
 
 if [ "$MODE" = selftest ]; then
-  T="$WORK/selftest"; rm -rf "$T"; mkdir -p "$T"
-  pass=0; fail=0
+  T="$WORK/selftest"
+  rm -rf "$T"
+  mkdir -p "$T"
+  pass=0
+  fail=0
   check() { # $1 = label, $2 = expected status, $3 = root, $4 = expected "unit=date,…"
     local got extra=""
     got=$(ledger_scan "$3" "$T/out.tsv")
@@ -201,46 +216,57 @@ if [ "$MODE" = selftest ]; then
       extra=$(sort "$T/out.tsv" | awk -F'\t' '{printf "%s=%s,", $1, $2}')
       [ "$extra" = "$4" ] || got="$got rows=$extra"
     fi
-    if [ "$got" = "$2" ]; then pass=$((pass+1)); printf '  ok    %s\n' "$1"
-    else fail=$((fail+1)); printf '  FAIL  %s — expected "%s", got "%s"\n' "$1" "$2" "$got"; fi
+    if [ "$got" = "$2" ]; then
+      pass=$((pass + 1))
+      printf '  ok    %s\n' "$1"
+    else
+      fail=$((fail + 1))
+      printf '  FAIL  %s — expected "%s", got "%s"\n' "$1" "$2" "$got"
+    fi
   }
 
   mkdir -p "$T/absent"
   check "no ledger anywhere reads as absent" "absent" "$T/absent"
 
-  mkdir -p "$T/empty/skill-reviewer"; : > "$T/empty/skill-reviewer/LEDGER.md"
+  mkdir -p "$T/empty/skill-reviewer"
+  : >"$T/empty/skill-reviewer/LEDGER.md"
   check "a zero-byte ledger is empty, not absent" "empty" "$T/empty"
 
   mkdir -p "$T/good/skill-reviewer"
   printf '## investigate — 2026-07-02\n\ntext\n\n## pre-pr — 2026-08-12 (row renamed 2026-08-17)\n\n## Provenance — state the matcher\n' \
-    > "$T/good/skill-reviewer/LEDGER.md"
+    >"$T/good/skill-reviewer/LEDGER.md"
   check "well-formed rows parse, parenthetical date ignored" "parsed:2" "$T/good" \
     "investigate=2026-07-02,pre-pr=2026-08-12,"
 
   mkdir -p "$T/baddate/skill-reviewer"
   printf '## investigate — 07/02/2026\n\n## pre-pr — 08/12/2026 (row renamed 2026-08-17)\n' \
-    > "$T/baddate/skill-reviewer/LEDGER.md"
+    >"$T/baddate/skill-reviewer/LEDGER.md"
   check "off-convention dates fail loudly, never fall through" "unparsed" "$T/baddate"
 
   mkdir -p "$T/reheaded/skill-reviewer"
   printf '### investigate (2026-07-02)\n\n### pre-pr (2026-08-12)\n' \
-    > "$T/reheaded/skill-reviewer/LEDGER.md"
+    >"$T/reheaded/skill-reviewer/LEDGER.md"
   check "reorganized headers are unparsed, not absent" "unparsed" "$T/reheaded"
 
   mkdir -p "$T/split/dotfiles/skill-reviewer" "$T/split/other-repo/skill-reviewer"
-  printf '## investigate — 2026-08-12\n' > "$T/split/dotfiles/skill-reviewer/LEDGER.md"
-  printf '## fw-investigate — 2026-08-26\n' > "$T/split/other-repo/skill-reviewer/LEDGER.md"
+  printf '## investigate — 2026-08-12\n' >"$T/split/dotfiles/skill-reviewer/LEDGER.md"
+  printf '## fw-investigate — 2026-08-26\n' >"$T/split/other-repo/skill-reviewer/LEDGER.md"
   check "ledgers under repo keys report split, never head -1" "split:2" "$T/split"
 
   # Review arm. Fixtures are the byte shape `git log --format='%x1e%ad%x1f%B'`
   # emits — RS \x1e, then the date, then US \x1f, then the whole message.
   tcheck() { # $1 = label, $2 = expected "date host runs" or EMPTY, $3 = message
     local got
-    got=$(printf '\036%s\037%b' "2026-08-19" "$3" | review_trailer_parse \
-          | awk -F'\t' '{printf "%s %s %s", $1, $2, $3}')
+    got=$(printf '\036%s\037%b' "2026-08-19" "$3" | review_trailer_parse |
+      awk -F'\t' '{printf "%s %s %s", $1, $2, $3}')
     [ -z "$got" ] && got="EMPTY"
-    if [ "$got" = "$2" ]; then pass=$((pass+1)); printf '  ok    %s\n' "$1"
-    else fail=$((fail+1)); printf '  FAIL  %s — expected "%s", got "%s"\n' "$1" "$2" "$got"; fi
+    if [ "$got" = "$2" ]; then
+      pass=$((pass + 1))
+      printf '  ok    %s\n' "$1"
+    else
+      fail=$((fail + 1))
+      printf '  FAIL  %s — expected "%s", got "%s"\n' "$1" "$2" "$got"
+    fi
   }
 
   tcheck "a commit with no trailer yields nothing, never a date" "EMPTY" \
@@ -264,13 +290,15 @@ if [ "$MODE" = selftest ]; then
   # Built from two printfs, not one string: in `%b`, `\036` followed by a digit
   # is read as a longer octal escape (`\0362` is one byte, 0xF2) and silently
   # corrupts the record separator.
-  got=$( { printf '\036%s\037%b' "2026-08-19" 'newer\n\nReviewed-on: host-new\nRuns-analyzed: 2\n'
-           printf '\036%s\037%b' "2026-01-01" 'older\n\nReviewed-on: host-old\nRuns-analyzed: 9\n'
-         } | review_trailer_parse | awk -F'\t' '{printf "%s %s %s", $1, $2, $3}')
+  got=$({
+    printf '\036%s\037%b' "2026-08-19" 'newer\n\nReviewed-on: host-new\nRuns-analyzed: 2\n'
+    printf '\036%s\037%b' "2026-01-01" 'older\n\nReviewed-on: host-old\nRuns-analyzed: 9\n'
+  } | review_trailer_parse | awk -F'\t' '{printf "%s %s %s", $1, $2, $3}')
   if [ "$got" = "2026-08-19 host-new 2" ]; then
-    pass=$((pass+1)); printf '  ok    newest commit wins when several carry the trailer\n'
+    pass=$((pass + 1))
+    printf '  ok    newest commit wins when several carry the trailer\n'
   else
-    fail=$((fail+1))
+    fail=$((fail + 1))
     printf '  FAIL  newest commit wins when several carry the trailer — got "%s"\n' "$got"
   fi
 
@@ -279,8 +307,13 @@ if [ "$MODE" = selftest ]; then
   scheck() { # $1 = label, $2 = expected, $3..$5 = repo flag, rows, ship date
     local got
     got=$(review_arm_status "$3" "$4" "${5:-}")
-    if [ "$got" = "$2" ]; then pass=$((pass+1)); printf '  ok    %s\n' "$1"
-    else fail=$((fail+1)); printf '  FAIL  %s — expected "%s", got "%s"\n' "$1" "$2" "$got"; fi
+    if [ "$got" = "$2" ]; then
+      pass=$((pass + 1))
+      printf '  ok    %s\n' "$1"
+    else
+      fail=$((fail + 1))
+      printf '  FAIL  %s — expected "%s", got "%s"\n' "$1" "$2" "$got"
+    fi
   }
 
   scheck "an unreadable repo says so, never that nothing was reviewed" \
@@ -295,46 +328,53 @@ if [ "$MODE" = selftest ]; then
   # a half-written file, and a fixture needing a commit does not get one here.
   ccheck() { # $1 = label, $2 = expected "scanned unreadable truncated", $3 = root
     local got
-    got=$(corpus_scan "$3" "$T/unreadable.txt" "$T/truncated.txt" \
-          | awk -F'\t' '{printf "%s %s %s", $1, $2, $3}')
-    if [ "$got" = "$2" ]; then pass=$((pass+1)); printf '  ok    %s\n' "$1"
-    else fail=$((fail+1)); printf '  FAIL  %s — expected "%s", got "%s"\n' "$1" "$2" "$got"; fi
+    got=$(corpus_scan "$3" "$T/unreadable.txt" "$T/truncated.txt" |
+      awk -F'\t' '{printf "%s %s %s", $1, $2, $3}')
+    if [ "$got" = "$2" ]; then
+      pass=$((pass + 1))
+      printf '  ok    %s\n' "$1"
+    else
+      fail=$((fail + 1))
+      printf '  FAIL  %s — expected "%s", got "%s"\n' "$1" "$2" "$got"
+    fi
   }
 
   mkdir -p "$T/corpus/whole"
   printf '{"type":"user"}\n{"type":"assistant","isSidechain":false}\n' \
-    > "$T/corpus/whole/a.jsonl"
+    >"$T/corpus/whole/a.jsonl"
   ccheck "a transcript ending on a whole record is intact" "1 0 0" "$T/corpus/whole"
 
   mkdir -p "$T/corpus/cut"
-  printf '{"type":"user"}\n{"type":"assistant","isSid' > "$T/corpus/cut/b.jsonl"
+  printf '{"type":"user"}\n{"type":"assistant","isSid' >"$T/corpus/cut/b.jsonl"
   ccheck "a transcript cut mid-record reads as truncated" "1 0 1" "$T/corpus/cut"
 
   mkdir -p "$T/corpus/locked"
-  printf '{"type":"user"}\n' > "$T/corpus/locked/c.jsonl"
+  printf '{"type":"user"}\n' >"$T/corpus/locked/c.jsonl"
   chmod 000 "$T/corpus/locked/c.jsonl"
   ccheck "an unreadable transcript is counted, not skipped" "1 1 0" "$T/corpus/locked"
 
   # Zero bytes is truncation, not intactness: the file holds no whole record, so
   # it contributes nothing and must not read as a healthy transcript.
-  mkdir -p "$T/corpus/zero"; : > "$T/corpus/zero/d.jsonl"
+  mkdir -p "$T/corpus/zero"
+  : >"$T/corpus/zero/d.jsonl"
   ccheck "a zero-byte transcript is truncated, never intact" "1 0 1" "$T/corpus/zero"
 
   mkdir -p "$T/corpus/mixed"
   cp "$T/corpus/whole/a.jsonl" "$T/corpus/cut/b.jsonl" "$T/corpus/mixed/"
-  printf '{"type":"user"}\n' > "$T/corpus/mixed/c.jsonl"
+  printf '{"type":"user"}\n' >"$T/corpus/mixed/c.jsonl"
   chmod 000 "$T/corpus/mixed/c.jsonl"
-  printf 'not a transcript\n' > "$T/corpus/mixed/MEMORY.md"
+  printf 'not a transcript\n' >"$T/corpus/mixed/MEMORY.md"
   ccheck "a mixed archive counts each kind, and scans only transcripts" \
     "3 1 1" "$T/corpus/mixed"
 
   # The counts are the alarm; the paths are what makes it actionable, so the
   # lists are asserted too rather than trusted to follow from the totals.
-  got=$( { cat "$T/unreadable.txt" "$T/truncated.txt"; } | sed 's#.*/##' | tr '\n' ',')
+  got=$({ cat "$T/unreadable.txt" "$T/truncated.txt"; } | sed 's#.*/##' | tr '\n' ',')
   if [ "$got" = "c.jsonl,b.jsonl," ]; then
-    pass=$((pass+1)); printf '  ok    damaged transcripts are named, not just counted\n'
+    pass=$((pass + 1))
+    printf '  ok    damaged transcripts are named, not just counted\n'
   else
-    fail=$((fail+1))
+    fail=$((fail + 1))
     printf '  FAIL  damaged transcripts are named, not just counted — got "%s"\n' "$got"
   fi
 
@@ -349,7 +389,7 @@ fi
 # Derive edges from invocation language, never by grepping for names: a name in
 # a "NOT for this, use X" line is a disclaimer, not an edge.
 # --------------------------------------------------------------------------
-cat > "$WORK/composition.txt" <<'EOF'
+cat >"$WORK/composition.txt" <<'EOF'
 evidence-analysis-core analytics-friction-analysis
 evidence-analysis-core error-triage
 evidence-analysis-core regression-analysis
@@ -367,8 +407,11 @@ EOF
 # --------------------------------------------------------------------------
 # Units.
 # --------------------------------------------------------------------------
-{ ls -1 "$CONFIG_DIR/skills"; ls -1 "$CONFIG_DIR/commands" | sed 's/\.md$//'; } \
-  | sed 's#/$##' | sort -u > "$WORK/units.txt"
+{
+  ls -1 "$CONFIG_DIR/skills"
+  ls -1 "$CONFIG_DIR/commands" | sed 's/\.md$//'
+} |
+  sed 's#/$##' | sort -u >"$WORK/units.txt"
 
 # Corpus arm — see corpus_scan() above for why the last line is the test.
 CORPUS_UNREADABLE="$WORK/corpus-unreadable.txt"
@@ -392,9 +435,9 @@ CORPUS_GREP_ERR=0
 # "isSidechain":true rather than by filename — an agent-*.jsonl name is a
 # convention, the field is the fact.
 # --------------------------------------------------------------------------
-grep -rH '"type":"assistant"' "$TRANSCRIPTS" 2>/dev/null \
-  | grep '"name":"Skill"' \
-  | awk -F'.jsonl:' 'NF>1 {
+grep -rH '"type":"assistant"' "$TRANSCRIPTS" 2>/dev/null |
+  grep '"name":"Skill"' |
+  awk -F'.jsonl:' 'NF>1 {
       f=$1; m=$2;
       side = (m ~ /"isSidechain":[ ]*true/) ? "sub" : "top";
       d = "-"; if (match(m, /"timestamp":"[^"]+"/)) d = substr(m, RSTART+13, 10);
@@ -402,7 +445,7 @@ grep -rH '"type":"assistant"' "$TRANSCRIPTS" 2>/dev/null \
         print substr(m, RSTART+9, RLENGTH-10) "\t" f "\t" side "\t" d;
         m = substr(m, RSTART+RLENGTH);
       }
-    }' > "$WORK/direct.tsv"
+    }' >"$WORK/direct.tsv"
 # PIPESTATUS[0], not $?: pipefail reports the LAST nonzero stage, so the second
 # grep finding no matches (1) masks the recursive grep erroring on a file it
 # cannot read (2) — the one status that means the corpus, not the query, is at
@@ -410,8 +453,8 @@ grep -rH '"type":"assistant"' "$TRANSCRIPTS" 2>/dev/null \
 # the table; the offending paths come from corpus_scan.
 [ "${PIPESTATUS[0]}" -eq 2 ] && CORPUS_GREP_ERR=$((CORPUS_GREP_ERR + 1))
 
-grep -rH '"content":"<command-message>' "$TRANSCRIPTS" 2>/dev/null \
-  | awk -F'.jsonl:' 'NF>1 {
+grep -rH '"content":"<command-message>' "$TRANSCRIPTS" 2>/dev/null |
+  awk -F'.jsonl:' 'NF>1 {
       f=$1; m=$2;
       side = (m ~ /"isSidechain":[ ]*true/) ? "sub" : "top";
       d = "-"; if (match(m, /"timestamp":"[^"]+"/)) d = substr(m, RSTART+13, 10);
@@ -419,7 +462,7 @@ grep -rH '"content":"<command-message>' "$TRANSCRIPTS" 2>/dev/null \
         print substr(m, RSTART+15, RLENGTH-30) "\t" f "\t" side "\t" d;
         m = substr(m, RSTART+RLENGTH);
       }
-    }' >> "$WORK/direct.tsv"
+    }' >>"$WORK/direct.tsv"
 [ "${PIPESTATUS[0]}" -eq 2 ] && CORPUS_GREP_ERR=$((CORPUS_GREP_ERR + 1))
 
 # One date per session, not per invocation: two invocations in one transcript are
@@ -444,7 +487,7 @@ awk -F'\t' '
           printf "%s\t%d\t%d\t%d\t%s\t%s\t%s\n", u, inv[u], sess[u], subinv[u],
                  (last[u]=="" ? "-" : last[u]), (dates[u]=="" ? "-" : dates[u]),
                  (fl[u]=="" ? "-" : fl[u]) }
-' "$WORK/direct.tsv" > "$WORK/direct-tally.tsv"
+' "$WORK/direct.tsv" >"$WORK/direct-tally.tsv"
 
 # --------------------------------------------------------------------------
 # Git arm: when each unit last actually changed.
@@ -466,19 +509,21 @@ awk -F'\t' '
 # 2026-07-28 to 2026-08-07. A too-old date inflates `runs_since`, so the effect
 # was units reading as due earlier than they are.
 # --------------------------------------------------------------------------
-: > "$WORK/changed.tsv"
+: >"$WORK/changed.tsv"
 if git -C "$CONFIG_DIR" rev-parse --git-dir >/dev/null 2>&1; then
   while read -r u; do
     [ -n "$u" ] || continue
-    if   [ -f "$CONFIG_DIR/skills/$u/SKILL.md" ]; then p="skills/$u/SKILL.md"
-    elif [ -f "$CONFIG_DIR/commands/$u.md" ];     then p="commands/$u.md"
+    if [ -f "$CONFIG_DIR/skills/$u/SKILL.md" ]; then
+      p="skills/$u/SKILL.md"
+    elif [ -f "$CONFIG_DIR/commands/$u.md" ]; then
+      p="commands/$u.md"
     else continue; fi
     git -C "$CONFIG_DIR" log --follow --numstat --date=short \
-        --format='C%ad %s' -- "$p" 2>/dev/null \
-      | awk -F'\t' -v u="$u" '
+      --format='C%ad %s' -- "$p" 2>/dev/null |
+      awk -F'\t' -v u="$u" '
           /^C/ { d = substr($0, 2, 10); s = substr($0, index($0, " ") + 1); next }
           NF == 3 && ($1 + $2) > 0 { printf "%s\t%s\t%s\n", u, d, s; exit }'
-  done < "$WORK/units.txt" >> "$WORK/changed.tsv"
+  done <"$WORK/units.txt" >>"$WORK/changed.tsv"
 fi
 
 # --------------------------------------------------------------------------
@@ -501,16 +546,18 @@ fi
 # `git log` is newest-first, so the first match is the most recent review and the
 # scan stops there. `--grep` pre-filters so the body walk stays cheap.
 # --------------------------------------------------------------------------
-: > "$WORK/reviewed-git.tsv"
+: >"$WORK/reviewed-git.tsv"
 if git -C "$CONFIG_DIR" rev-parse --git-dir >/dev/null 2>&1; then
   while read -r u; do
     [ -n "$u" ] || continue
-    if   [ -f "$CONFIG_DIR/skills/$u/SKILL.md" ]; then p="skills/$u/SKILL.md"
-    elif [ -f "$CONFIG_DIR/commands/$u.md" ];     then p="commands/$u.md"
+    if [ -f "$CONFIG_DIR/skills/$u/SKILL.md" ]; then
+      p="skills/$u/SKILL.md"
+    elif [ -f "$CONFIG_DIR/commands/$u.md" ]; then
+      p="commands/$u.md"
     else continue; fi
     r=$(review_trailer_scan "$CONFIG_DIR" "$p")
     [ -n "$r" ] && printf '%s\t%s\n' "$u" "$r"
-  done < "$WORK/units.txt" >> "$WORK/reviewed-git.tsv"
+  done <"$WORK/units.txt" >>"$WORK/reviewed-git.tsv"
 fi
 
 # The ship date is derived rather than written down, so it cannot drift from the
@@ -518,15 +565,15 @@ fi
 # looked up when there are no trailers, which is the only branch that prints it.
 REVIEW_ARM_REPO=norepo
 git -C "$CONFIG_DIR" rev-parse --git-dir >/dev/null 2>&1 && REVIEW_ARM_REPO=repo
-REVIEW_ARM_ROWS=$(wc -l < "$WORK/reviewed-git.tsv" | tr -d ' ')
+REVIEW_ARM_ROWS=$(wc -l <"$WORK/reviewed-git.tsv" | tr -d ' ')
 REVIEW_ARM_SINCE=""
 if [ "$REVIEW_ARM_REPO" = repo ] && [ "$REVIEW_ARM_ROWS" -eq 0 ]; then
   REVIEW_ARM_SINCE=$(git -C "$CONFIG_DIR" log --date=short --format='%ad' \
-                     -S 'Reviewed-on' -- skills/skill-reviewer/inventory.sh \
-                     2>/dev/null | tail -1)
+    -S 'Reviewed-on' -- skills/skill-reviewer/inventory.sh \
+    2>/dev/null | tail -1)
 fi
 REVIEW_ARM_STATUS=$(review_arm_status \
-                    "$REVIEW_ARM_REPO" "$REVIEW_ARM_ROWS" "$REVIEW_ARM_SINCE")
+  "$REVIEW_ARM_REPO" "$REVIEW_ARM_ROWS" "$REVIEW_ARM_SINCE")
 
 # Ledger arm — see ledger_scan() above for the path, parse and status rules.
 #
@@ -537,7 +584,7 @@ REVIEW_ARM_STATUS=$(review_arm_status \
 # and LEDGER_STATUS is what lets a reader tell it apart from a parse failure.
 LEDGER_STATUS=$(ledger_scan "$ART_ROOT" "$WORK/reviewed.tsv")
 LEDGER_STRAYS=$(find "$ART_ROOT" -mindepth 3 -maxdepth 3 \
-                -path '*/skill-reviewer/LEDGER.md' 2>/dev/null)
+  -path '*/skill-reviewer/LEDGER.md' 2>/dev/null)
 
 # --------------------------------------------------------------------------
 # Artifact arm.
@@ -545,18 +592,18 @@ LEDGER_STRAYS=$(find "$ART_ROOT" -mindepth 3 -maxdepth 3 \
 # One root, laid out as <repo>/<area>/<file>, keyed on the git remote name so
 # every worktree of a repo lands in the same place.
 # --------------------------------------------------------------------------
-find "$ART_ROOT" -mindepth 3 -maxdepth 3 -type f 2>/dev/null > "$WORK/artifact-files.txt"
-ART_N=$(wc -l < "$WORK/artifact-files.txt" | tr -d ' ')
+find "$ART_ROOT" -mindepth 3 -maxdepth 3 -type f 2>/dev/null >"$WORK/artifact-files.txt"
+ART_N=$(wc -l <"$WORK/artifact-files.txt" | tr -d ' ')
 # `skill-reviewer` sits at this depth too, holding the ledger, but it is not a
 # repo — counting it inflates the figure the header prints.
 REPO_N=$(find "$ART_ROOT" -mindepth 1 -maxdepth 1 -type d ! -name skill-reviewer \
-         2>/dev/null | wc -l | tr -d ' ')
+  2>/dev/null | wc -l | tr -d ' ')
 
 # <repo>/<area>/<file>, so the area for the owner map is the second-to-last
 # component. No deduplication: with one root per remote there are no copies to
 # collapse, and two repos that happen to name a report the same way really are
 # two artifacts.
-awk -F/ '{ print $(NF-1) "/" $NF }' "$WORK/artifact-files.txt" > "$WORK/artifact-keys.txt"
+awk -F/ '{ print $(NF-1) "/" $NF }' "$WORK/artifact-files.txt" >"$WORK/artifact-keys.txt"
 
 # area/filename -> skill, or a pipe-joined candidate set when the filename does
 # not settle it. An ambiguous artifact is reported as a set and counted for
@@ -599,12 +646,12 @@ awk -F/ '
     else owner = "?unmapped-area";
     dated = (file ~ /^[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]-/) ? "dated" : "raw";
     print owner "\t" area "/" file "\t" dated;
-  }' "$WORK/artifact-keys.txt" > "$WORK/artifact-owned.tsv"
+  }' "$WORK/artifact-keys.txt" >"$WORK/artifact-owned.tsv"
 
-grep -v '|' "$WORK/artifact-owned.tsv" | grep -v '^?' \
-  | awk -F'\t' '{ n[$1]++; if ($3 == "dated") r[$1]++ }
+grep -v '|' "$WORK/artifact-owned.tsv" | grep -v '^?' |
+  awk -F'\t' '{ n[$1]++; if ($3 == "dated") r[$1]++ }
                 END { for (k in n) print k "\t" n[k] "\t" (r[k]+0) }' \
-  > "$WORK/artifact-tally.tsv"
+    >"$WORK/artifact-tally.tsv"
 
 # --------------------------------------------------------------------------
 # Canonical rows. Both output modes format this and nothing else.
@@ -696,16 +743,16 @@ awk -F'\t' '
   rev="$WORK/reviewed.tsv" revgit="$WORK/reviewed-git.tsv" \
   "$WORK/direct-tally.tsv" "$WORK/artifact-tally.tsv" "$WORK/changed.tsv" \
   "$WORK/composition.txt" "$TESTIMONY" "$WORK/reviewed.tsv" "$WORK/reviewed-git.tsv" \
-  "$WORK/units.txt" \
-  | sort -k3,3nr -k5,5nr -k1,1 > "$WORK/rows.tsv"
+  "$WORK/units.txt" |
+  sort -k3,3nr -k5,5nr -k1,1 >"$WORK/rows.tsv"
 
 if [ "$MODE" = json ]; then
   jq -R -s --arg root "$ART_ROOT" --arg tx "$TRANSCRIPTS" --arg ls "$LEDGER_STATUS" \
-     --arg ras "$REVIEW_ARM_STATUS" \
-     --argjson cs "$(printf \
-        '{"scanned":%d,"unreadable":%d,"truncated":%d,"grep_errors":%d}' \
-        "$CORPUS_SCANNED" "$CORPUS_N_UNREADABLE" "$CORPUS_N_TRUNCATED" \
-        "$CORPUS_GREP_ERR")" '
+    --arg ras "$REVIEW_ARM_STATUS" \
+    --argjson cs "$(printf \
+      '{"scanned":%d,"unreadable":%d,"truncated":%d,"grep_errors":%d}' \
+      "$CORPUS_SCANNED" "$CORPUS_N_UNREADABLE" "$CORPUS_N_TRUNCATED" \
+      "$CORPUS_GREP_ERR")" '
     { artifact_root: $root, transcripts: $tx, ledger_status: $ls,
       review_arm_status: $ras, corpus_status: $cs,
       units: (split("\n") | map(select(length > 0) | split("\t") | {
@@ -725,7 +772,7 @@ if [ "$MODE" = json ]; then
         last_reviewed:     (if .[13] == "-" then null else .[13] end),
         reviewed_anywhere: (if .[14] == "-" then null else .[14] end),
         reviewed_host:     (if .[15] == "-" then null else .[15] end),
-        reviewed_runs:     (if .[16] == "-" then null else (.[16] | tonumber) end) })) }' < "$WORK/rows.tsv"
+        reviewed_runs:     (if .[16] == "-" then null else (.[16] | tonumber) end) })) }' <"$WORK/rows.tsv"
   exit 0
 fi
 
@@ -756,8 +803,10 @@ if [ "$((DAMAGED_N + CORPUS_GREP_ERR))" -gt 0 ]; then
   echo "#   $CORPUS_N_UNREADABLE unreadable, $CORPUS_N_TRUNCATED truncated,\
  $CORPUS_GREP_ERR grep error(s). A truncated file still greps and still slurps."
   # Capped: a badly damaged archive would otherwise bury the table it warns about.
-  { sed 's#^#  unreadable  #' "$CORPUS_UNREADABLE"
-    sed 's#^#  truncated   #' "$CORPUS_TRUNCATED"; } | head -5
+  {
+    sed 's#^#  unreadable  #' "$CORPUS_UNREADABLE"
+    sed 's#^#  truncated   #' "$CORPUS_TRUNCATED"
+  } | head -5
   [ "$DAMAGED_N" -gt 5 ] && echo "  … and $((DAMAGED_N - 5)) more"
 fi
 

@@ -6,5 +6,5 @@ windows:
       layout: b76b,170x68,0,0{108x68,0,0,30,61x68,109,0,32}
       panes:
         - nvim
-        - 
+        -
   - server: docker compose pull; make up

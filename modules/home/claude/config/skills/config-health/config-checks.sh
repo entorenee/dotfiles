@@ -75,7 +75,8 @@ check_dead_allows() {
     <(jq -r ".permissions.allow[] | $head_expr" "$SETTINGS" | sort -u) \
     <(jq -r ".permissions.deny[]  | $head_expr" "$SETTINGS" | sort -u))
   if [[ -n "$heads" ]]; then
-    local c; c=$(printf '%s\n' "$heads" | grep -c . )
+    local c
+    c=$(printf '%s\n' "$heads" | grep -c .)
     emit REVIEW dead-allow "$c command head(s) appear on both lists (e.g. $(printf '%s' "$heads" | head -3 | tr '\n' ' ')) — expected for broad-allow + targeted-deny, but confirm each narrowing is intended"
   fi
 
@@ -92,8 +93,8 @@ check_hooks() {
     emit REVIEW hooks "settings.json is unreadable (see the symlink finding above), so hook registration could not be read — reporting every hook as unregistered would name the wrong fix. Restore settings.json first, then re-run."
     return
   fi
-  registered=$(jq -r '.hooks | to_entries[] | .value[] | .hooks[]?.command // empty' "$SETTINGS" 2>/dev/null \
-               | sed 's|.*/||' | sort -u)
+  registered=$(jq -r '.hooks | to_entries[] | .value[] | .hooks[]?.command // empty' "$SETTINGS" 2>/dev/null |
+    sed 's|.*/||' | sort -u)
   on_disk=$([[ -d "$CFG/hooks" ]] && find "$CFG/hooks" -maxdepth 1 -name '*.sh' -exec basename {} \; | sort -u)
 
   # An empty $on_disk almost always means CFG is wrong, not that every hook was
@@ -128,8 +129,8 @@ check_hooks() {
     fi
   done <<<"$on_disk"
 
-  [[ -z "$missing_reg$orphan" && $nonexec -eq 0 ]] \
-    && emit OK hooks "all $(printf '%s\n' "$on_disk" | grep -c .) hook scripts registered and executable"
+  [[ -z "$missing_reg$orphan" && $nonexec -eq 0 ]] &&
+    emit OK hooks "all $(printf '%s\n' "$on_disk" | grep -c .) hook scripts registered and executable"
 }
 
 # --- Check 4: skill inventory drift -------------------------------------------
@@ -145,9 +146,11 @@ check_skill_inventory() {
 
   # A unit is a skills/ dir holding a SKILL.md, or a commands/*.md — not a bare
   # directory listing, which picks up stray empty dirs and reports them broken.
-  units=$( { find "$CFG/skills" -mindepth 2 -maxdepth 2 -name SKILL.md 2>/dev/null \
-               | sed "s#^$CFG/skills/##; s#/SKILL.md\$##"
-             ls -1 "$CFG/commands" 2>/dev/null | sed 's/\.md$//'; } | sort -u )
+  units=$({
+    find "$CFG/skills" -mindepth 2 -maxdepth 2 -name SKILL.md 2>/dev/null |
+      sed "s#^$CFG/skills/##; s#/SKILL.md\$##"
+    ls -1 "$CFG/commands" 2>/dev/null | sed 's/\.md$//'
+  } | sort -u)
 
   # A unit git does not track is invisible to flake eval, so default.nix never
   # generates its Skill(<name>) rule and it prompts on first use while looking
@@ -161,8 +164,10 @@ check_skill_inventory() {
     while read -r u; do
       [[ -z "$u" ]] && continue
       local f
-      if   [[ -f "$CFG/skills/$u/SKILL.md" ]]; then f="modules/home/claude/config/skills/$u/SKILL.md"
-      elif [[ -f "$CFG/commands/$u.md"     ]]; then f="modules/home/claude/config/commands/$u.md"
+      if [[ -f "$CFG/skills/$u/SKILL.md" ]]; then
+        f="modules/home/claude/config/skills/$u/SKILL.md"
+      elif [[ -f "$CFG/commands/$u.md" ]]; then
+        f="modules/home/claude/config/commands/$u.md"
       else continue; fi
       git -C "$REPO" ls-files --error-unmatch -- "$f" >/dev/null 2>&1 && continue
       untracked="$untracked $u"
@@ -208,8 +213,8 @@ check_skill_inventory() {
     emit REVIEW skill-inventory "$n of $(printf '%s\n' "$units" | grep -c .) units have no ledger row on this machine (e.g. $(printf '%s' "$unreviewed" | head -4 | tr '\n' ' ')) — expected while the cadence is young, and a unit reviewed on another host has no row here either; run /system-review, which reads the shared record, to see which have crossed their threshold"
   fi
 
-  [[ -z "$untracked$orphans" ]] \
-    && emit OK skill-inventory "all units tracked; every ledger row names a live unit"
+  [[ -z "$untracked$orphans" ]] &&
+    emit OK skill-inventory "all units tracked; every ledger row names a live unit"
 }
 
 check_symlink

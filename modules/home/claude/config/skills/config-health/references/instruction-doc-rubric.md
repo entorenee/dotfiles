@@ -27,6 +27,7 @@ bannered is therefore worse than one where neither is.
 ## The classes
 
 ### 1 — competing thresholds on the same event
+
 Two rules govern one event and set different bars. Neither is narrower, neither carves an
 exception, and both are satisfiable in isolation — so there are two defensible readings and
 nothing adjudicates. This is the most common class and the easiest to miss, because each
@@ -35,10 +36,11 @@ rule is locally correct.
 The mechanism is almost always the same: **a fact stated correctly for the subset the
 author was looking at, then restated as universal from a different vantage.** Look for a
 claim quantified over "every" or "all" and check it against the document's own exceptions
-elsewhere. Opposed *speech acts* on one event are the other shape — one rule obliging you
+elsewhere. Opposed _speech acts_ on one event are the other shape — one rule obliging you
 to ask, another obliging silence until asked.
 
 ### 3 — adjacent sentences that undo each other
+
 The unit is not the bullet, it is **adjacent sentences in one section**, each true of a
 different layer or moment, never reconciled. Distinguish this from Class 1: here the
 sentences are about the same subject and cannot both be true, rather than setting two bars.
@@ -51,6 +53,7 @@ that made it correct is dropped on the second telling, and the second telling is
 reader hits first.
 
 ### 8 — an absolute whose guarantee the same document voids earlier
+
 A rule presented as a hard boundary, where the same document elsewhere documents the
 conditions under which it does not hold. Often literally true as written and still
 misleading, because it is the reader's summary of the trust model and it omits the
@@ -58,19 +61,22 @@ exceptions. Check every "no X can bypass this" and "always" against the document
 failure-mode sections.
 
 ### 12 — an exception added to one rule of a pair
-Two rules cover the same obligation — one to *do* the thing, one to *report* it. An
+
+Two rules cover the same obligation — one to _do_ the thing, one to _report_ it. An
 exception gets added to the do-rule and not to the report-rule, so there is no authorized
 way to close out the excepted case. The overlap itself is fine; the asymmetry is the
 defect. Look for a documented exemption and then ask what the reporting rule says about
 the exempted case.
 
 ### 13 — rationale naming an entity the document elsewhere excludes
+
 The constraint is right and its stated test is the wrong subject — the named example does
 not actually exercise it. Costly because a reader auditing against the rationale tests the
 wrong property. Check each "because <entity> needs …" against what the document says
 <entity> actually is.
 
 ### 11 — dangling cross-reference
+
 "Refer to X for Y" where X contains no Y. **Cut from the script**: word-level matching
 passes it, because the individual words of a topic all occur somewhere in a long document,
 and the target name may ambiguously refer to more than one file. Cheap for a reader,
@@ -79,6 +85,7 @@ and note when the target's name is ambiguous in context — that ambiguity is pa
 finding.
 
 ### 4e — the referent exists, the claimed behavior does not
+
 Right name, right file, right registration, **false verb**. Invisible to every existence
 check, which is why `doc-coherence.sh`'s `doc-referent` passing says nothing about it. Also
 cut from the script: the only mechanical proxy is grepping the named script for a keyword
@@ -92,7 +99,8 @@ Note the shape it shares with the class below: both are claims about behavior, a
 is what text cannot check.
 
 ### 6 — stale justification: the rule survives, its stated mechanism is provably false
-The rule's advice is still right and its cited history is real, but the *reason* it gives is
+
+The rule's advice is still right and its cited history is real, but the _reason_ it gives is
 false against the current config. This is the highest-value class in the whole taxonomy for
 one specific reason: **when the same document also instructs the reader to verify claims
 against that config, obeying one rule discredits the other.** A document that trains its
@@ -102,6 +110,7 @@ Tractable only where the justification names a config the reader can open — sa
 allow/deny lists, a documented default. Check those; do not attempt it generally.
 
 ### X — the two documents contradicting each other
+
 Read the pair together. The instances are thin but real, and most apparent overlap is
 genuine layering rather than drift — so the bar is that a session following one document
 attempts something the other categorically bans, or omits a default the other requires.
@@ -117,7 +126,7 @@ pass does not re-derive them.
 ## Two classes that are not yours to decide
 
 **Conflict with the harness's own instructions.** Where the harness's built-in guidance and
-a document set different bars for the same judgment, only the *silent* case is a defect —
+a document set different bars for the same judgment, only the _silent_ case is a defect —
 if the document states why it overrides the default, that is adjudication, not conflict.
 Deciding this needs the harness's own instruction text as an input, which nothing here has.
 **Record the class as uncovered; do not fake it.** A guessed answer is worse than the

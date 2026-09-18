@@ -8,7 +8,7 @@ description: Use when investigating a metric-grounded regression — a measured 
 ## Overview
 
 A disciplined deep-dive for **metric-grounded regressions** — something measurably got worse
-(latency, error rate, throughput, saturation) and you want evidence-ranked hypotheses for *why*,
+(latency, error rate, throughput, saturation) and you want evidence-ranked hypotheses for _why_,
 with each claim traceable to a concrete artifact (a metric value, a commit, a deploy, an error ID,
 a code path). The deliverable is a research report that tells you **where to look next**, not a fix.
 
@@ -27,7 +27,7 @@ grounding step with its evidence-based exit, and causal-mechanism synthesis.
 - A pointer to a regressing metric or dashboard
 - An alert, incident, or error spike used as the seed
 
-A general *prompt* is fine ("the app got slow lately"). What's required is that **observable data
+A general _prompt_ is fine ("the app got slow lately"). What's required is that **observable data
 exists to ground the investigation** — the skill goes and finds it (Phase 2). If it can't, it exits.
 
 ## When NOT to Use
@@ -122,7 +122,7 @@ different cause than a regression **present across all versions**.
 Run the base's skeptic pass (§5) on each candidate before ranking: is this causal or coincidental?
 Could the evidence be explained another way (a deploy that aligns in time but only touched CSS)?
 Survivors are ranked High / Medium / Low with reasoning; refuted candidates move to "Considered &
-ruled out" with *why*. Ranking never precedes this pass.
+ruled out" with _why_. Ranking never precedes this pass.
 
 ## Phase 6 — Report + optional tickets
 

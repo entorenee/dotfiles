@@ -21,7 +21,7 @@ When settings need to diverge by identity, **do not gate on a profile string** �
 
 - **Structured types** (e.g., `homebrew.brews`, `homebrew.onActivation`): `mkDefault` works as expected. Lists concatenate; submodule fields merge individually.
 - **Freeform JSON types**: Wrapping the entire attrset with `lib.mkDefault` makes it a single opaque value. A higher-priority definition replaces it entirely instead of deep-merging. For these options, omit `mkDefault` on the attrset and only apply it to individual leaf values that need to be overridable.
-  - That leaf case genuinely works, including *nested* inside a freeform option — priority filtering runs per attribute path, before the type's merge. `programs.ssh.settings."github.com".IdentityFile` relies on this (see "Identity roles live in `roles/`"). Wholesale-replacement is the desired behavior there, not a hazard.
+  - That leaf case genuinely works, including _nested_ inside a freeform option — priority filtering runs per attribute path, before the type's merge. `programs.ssh.settings."github.com".IdentityFile` relies on this (see "Identity roles live in `roles/`"). Wholesale-replacement is the desired behavior there, not a hazard.
 
 ## Key Components
 
@@ -101,14 +101,14 @@ When settings need to diverge by identity, **do not gate on a profile string** �
 
 ### Adding a home-manager module
 
-`modules/home/<tool>/` defines *how* a tool is configured and says nothing about who wants it. A module is not live until a role imports it — add it to exactly one of `roles/home/{minimal,base,cli,gui}.nix`, which stack (`gui` → `cli` → `base` → `minimal`). **Which hosts a tier reaches — corrected 2026-08-21, this said "every current machine takes `gui`":** the three desktops take `gui`, `hub` takes `cli` (`hosts/nixos/hub/default.nix:7`), and `uptime` takes `minimal` (`hosts/nixos/uptime/default.nix:9`). So a module added to `gui` reaches the desktops only. Pick the *lowest* tier that is honest: `minimal` is the floor, and the host that actually binds it is **`uptime`** — a 512MB Zero 2W with no `~/dotfiles` checkout, so nothing there may assume memory headroom or a local checkout. The no-network clause is kept as deliberate conservatism for a future headless host, **not** because `airgap` requires it: `airgap` has no home-manager at all (`hosts/nixos/airgap/default.nix` declares no `username` and no `homeImports`), so it never evaluates `minimal.nix`. The old wording cited it anyway, which sent anyone auditing this tier to test the wrong property. See `CONVENTIONS.md` for the per-tier table and the "compose downward, don't subtract" rule. The `personal*` files in the same directory are *identity* roles, not tiers — they don't stack, and a module belongs there only if one job wants it rather than a class of machine (see "Identity roles live in `roles/`" below).
+`modules/home/<tool>/` defines _how_ a tool is configured and says nothing about who wants it. A module is not live until a role imports it — add it to exactly one of `roles/home/{minimal,base,cli,gui}.nix`, which stack (`gui` → `cli` → `base` → `minimal`). **Which hosts a tier reaches — corrected 2026-08-21, this said "every current machine takes `gui`":** the three desktops take `gui`, `hub` takes `cli` (`hosts/nixos/hub/default.nix:7`), and `uptime` takes `minimal` (`hosts/nixos/uptime/default.nix:9`). So a module added to `gui` reaches the desktops only. Pick the _lowest_ tier that is honest: `minimal` is the floor, and the host that actually binds it is **`uptime`** — a 512MB Zero 2W with no `~/dotfiles` checkout, so nothing there may assume memory headroom or a local checkout. The no-network clause is kept as deliberate conservatism for a future headless host, **not** because `airgap` requires it: `airgap` has no home-manager at all (`hosts/nixos/airgap/default.nix` declares no `username` and no `homeImports`), so it never evaluates `minimal.nix`. The old wording cited it anyway, which sent anyone auditing this tier to test the wrong property. See `CONVENTIONS.md` for the per-tier table and the "compose downward, don't subtract" rule. The `personal*` files in the same directory are _identity_ roles, not tiers — they don't stack, and a module belongs there only if one job wants it rather than a class of machine (see "Identity roles live in `roles/`" below).
 
 Divergence follows a three-way rule:
 
-| Kind | Mechanism |
-| --- | --- |
-| Platform truth | `pkgs.stdenv.isDarwin` / `isLinux` |
-| Capability | a `my.*` option in `modules/options.nix` |
+| Kind                        | Mechanism                                                                                                                                                  |
+| --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Platform truth              | `pkgs.stdenv.isDarwin` / `isLinux`                                                                                                                         |
+| Capability                  | a `my.*` option in `modules/options.nix`                                                                                                                   |
 | Identity (work vs personal) | an import — the `personal*` role files in `roles/` (work: files directly under `hosts/darwin/fw-skyler/`), named in a host's `homeImports`/`darwinImports` |
 
 Do **not** reach for `pkgs.stdenv.isLinux` to mean "has a GUI" — that only reads correctly while the sole Linux host happens to be a desktop. Use `config.my.gui`.
@@ -121,7 +121,7 @@ Package-level overrides (pin a version, patch a `.desktop` file, override a buil
 
 ### Never make a private, auth-requiring repo a flake input
 
-**Stock Nix fetches every locked flake input eagerly, before it knows which outputs actually use them.** So an input whose fetch needs credentials — a `git+ssh://` private repo — makes *every* host authenticate just to evaluate, including hosts that never reference it. Gating the consumer behind `lib.mkIf`, a `my.*` option, or a role import does not help; the fetch happens before any of that is reached.
+**Stock Nix fetches every locked flake input eagerly, before it knows which outputs actually use them.** So an input whose fetch needs credentials — a `git+ssh://` private repo — makes _every_ host authenticate just to evaluate, including hosts that never reference it. Gating the consumer behind `lib.mkIf`, a `my.*` option, or a role import does not help; the fetch happens before any of that is reached.
 
 This is easy to miss on the desktops, which run Determinate Nix with lazy trees and therefore skip unused inputs. The Pi hosts run stock Nix and do not. It is what made `make hub-switch` fail on `private-assets` — a font repo `hub` never reads, since `modules/home/fonts` is only imported by `roles/home/gui.nix` and `hub` takes `cli.nix`.
 
@@ -133,30 +133,30 @@ The tradeoff is that `nix flake update` no longer manages the pin. Worth it whil
 
 There is no `profile` argument and no `users/`. An identity is just **another role file**, sitting flat in `roles/` next to the stacking tier roles, and a host names it directly:
 
-| File | Sets |
-| --- | --- |
-| `roles/home/personal.nix` | home-manager options: the portable personal subset — gh-dash config, syncthing, identity-only module imports safe on any machine doing that job, headless or not |
-| `roles/home/personal-desktop.nix` | the GUI-desktop add-on to the above — keepassxc, orca-slicer, `go`/`hugo` |
-| `roles/home/personal-claude.nix` | `programs.claude-code` additions, imported by `personal.nix` |
-| `roles/darwin/personal.nix` | nix-darwin options: Homebrew casks, and the Dock |
+| File                              | Sets                                                                                                                                                             |
+| --------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `roles/home/personal.nix`         | home-manager options: the portable personal subset — gh-dash config, syncthing, identity-only module imports safe on any machine doing that job, headless or not |
+| `roles/home/personal-desktop.nix` | the GUI-desktop add-on to the above — keepassxc, orca-slicer, `go`/`hugo`                                                                                        |
+| `roles/home/personal-claude.nix`  | `programs.claude-code` additions, imported by `personal.nix`                                                                                                     |
+| `roles/darwin/personal.nix`       | nix-darwin options: Homebrew casks, and the Dock                                                                                                                 |
 
 **Taps, brews, and launch agents are not identity-scoped.** Taps and brews live in `modules/darwin/homebrew/default.nix:16,24`; launch agents in `modules/darwin/launch-agents/default.nix:5`. Both are imported unconditionally, so the row above covers only `casks` and the Dock. Reorganizations relocate options without anyone editing the table that describes them, so treat a table row crediting a file as a claim to re-check rather than as documentation.
 
 Two module systems, so two directories and two lists: a home-manager module cannot set `homebrew.casks`, which is why `roles/darwin/` exists alongside `roles/home/` and a host splits its imports into `homeImports` and `darwinImports`.
 
-**Identity role files sit flat beside the tier roles, not in a subdirectory of their own.** `roles/home/` holds `minimal.nix`/`base.nix`/`cli.nix`/`gui.nix` *and* the `personal*` files side by side; the `personal-` filename prefix is the grouping. This is deliberate — nesting them would reintroduce the very layer that was removed.
+**Identity role files sit flat beside the tier roles, not in a subdirectory of their own.** `roles/home/` holds `minimal.nix`/`base.nix`/`cli.nix`/`gui.nix` _and_ the `personal*` files side by side; the `personal-` filename prefix is the grouping. This is deliberate — nesting them would reintroduce the very layer that was removed.
 
 **A host states one ordered `homeImports` list, and nothing gets spliced onto it.** `hosts/{darwin,home}/<name>` states `{username, system, homeImports, darwinImports ? [], overlays ? []}`. There is no `user` path field, no `user + "/home.nix"` filename contract, and no separate `extraHomeImports`: `lib/darwin.nix` and `lib/home.nix` read the lists and pass them through verbatim (`system/darwin.nix` puts `homeImports` on `home-manager.users.<username>.imports` and splices `darwinImports` into the nix-darwin module list). Because the tier role is no longer hardcoded in `flake.nix`, a host names its own: `lyra-silvertongue`, `fw-skyler`, and `hester-prynne` each open their `homeImports` with `roles/home/gui.nix` and then add what else they want.
 
 **`work` has only one machine, so it has no `roles/` file at all — it lives directly on its host.** `hosts/darwin/fw-skyler/` holds `home.nix`/`darwin.nix`/`claude.nix`/`gh-dash.yml`/the work Yubikey public key, and the host's own `default.nix` names `./home.nix` in `homeImports` and `./darwin.nix` in `darwinImports`. A `roles/` file only earns its keep once two or more hosts share it — `personal` does (the personal Mac and the Linux desktop), so it lives in `roles/`.
 
-**A module that only one identity wants is imported from that identity's role file (or its GUI-only `personal-desktop.nix`, see below), not from a tier role.** `keepassxc` and `orca-slicer` work this way; putting them in `roles/home/gui.nix` would mean gating them back off. Tier roles carry what a *class of machine* wants; identity roles carry what a *job* wants.
+**A module that only one identity wants is imported from that identity's role file (or its GUI-only `personal-desktop.nix`, see below), not from a tier role.** `keepassxc` and `orca-slicer` work this way; putting them in `roles/home/gui.nix` would mean gating them back off. Tier roles carry what a _class of machine_ wants; identity roles carry what a _job_ wants.
 
 **Split an identity role into a portable base plus opt-in add-ons once it needs to reach a headless host.** `roles/home/personal.nix` is the portable subset (personal-claude.nix, gh-dash, syncthing) — safe for a future headless personal Pi. The GUI-desktop-only pieces (keepassxc, orca-slicer, `go`/`hugo`) live in `roles/home/personal-desktop.nix` instead, and a host opts into it by naming that file in its own `homeImports`. Both current personal hosts (`lyra-silvertongue`, `hester-prynne`) do; a future headless personal Pi would take `personal.nix` without it. Don't fold `personal-desktop.nix` back into `personal.nix` — that's exactly the coupling this split removes.
 
 Most options merge, so a role file **adds** to a module rather than replacing it — `home.packages` and `homebrew.casks` are `listOf` (concatenate), `launchd.user.agents` is an attrset of submodules (merges).
 
-**When a list won't concatenate, use base-default + host-replacement.** Freeform `types.anything` options (`programs.ssh.settings` is the one in this repo) *throw* on two list definitions rather than concatenating, so a role (or host) cannot append. Don't respond by moving the whole value into the role/host files — state the common case in the module as a `lib.mkDefault` and let the one that needs something else replace it:
+**When a list won't concatenate, use base-default + host-replacement.** Freeform `types.anything` options (`programs.ssh.settings` is the one in this repo) _throw_ on two list definitions rather than concatenating, so a role (or host) cannot append. Don't respond by moving the whole value into the role/host files — state the common case in the module as a `lib.mkDefault` and let the one that needs something else replace it:
 
 ```nix
 # modules/home/ssh/default.nix — what most machines need
@@ -182,11 +182,11 @@ Role/host ordering in merged lists is not stable — `roles/` and `hosts/` defin
 
 macOS keeps three separate names, and only one of them is what `hostname` returns:
 
-| Name | Read with | Role |
-| --- | --- | --- |
-| `ComputerName` | `scutil --get ComputerName` | The friendly name in System Settings and AirDrop |
-| `LocalHostName` | `scutil --get LocalHostName` | The Bonjour `.local` name |
-| `HostName` | `scutil --get HostName` | Sets `kern.hostname` — **this is what `hostname` reports** |
+| Name            | Read with                    | Role                                                       |
+| --------------- | ---------------------------- | ---------------------------------------------------------- |
+| `ComputerName`  | `scutil --get ComputerName`  | The friendly name in System Settings and AirDrop           |
+| `LocalHostName` | `scutil --get LocalHostName` | The Bonjour `.local` name                                  |
+| `HostName`      | `scutil --get HostName`      | Sets `kern.hostname` — **this is what `hostname` reports** |
 
 **When `HostName` is unset, configd derives `kern.hostname` from the network** — DHCP option 12 or reverse DNS of the current lease — and only falls back to `LocalHostName` if the network offers nothing. So a router or VPN can silently rename the machine out from under `make rebuild`, whose `host="$(hostname -s)"` then names a flake attribute that does not exist:
 
@@ -222,19 +222,19 @@ On macOS 26, Launchpad no longer exists as a separate app; it is an Apps pane in
 
 ## Formatting and Linting
 
-| Task | Command |
-| --- | --- |
-| Format the tree in place | `make fmt` (or `nix fmt`, which is alejandra alone) |
-| Check formatting, write nothing | `make fmt-check` |
-| Lint Nix sources and workflows | `make lint` |
-| Both, as CI runs them | `make check` |
-| Install the pre-commit hook | `make hooks` — once per clone |
+| Task                            | Command                                             |
+| ------------------------------- | --------------------------------------------------- |
+| Format the tree in place        | `make fmt` (or `nix fmt`, which is alejandra alone) |
+| Check formatting, write nothing | `make fmt-check`                                    |
+| Lint Nix sources and workflows  | `make lint`                                         |
+| Both, as CI runs them           | `make check`                                        |
+| Install the pre-commit hook     | `make hooks` — once per clone                       |
 
 `make lint` needs `nix develop`; `make fmt`/`fmt-check` work from a plain shell on any host that has rebuilt.
 
 ### The tooling reaches PATH two ways, on purpose
 
-The six formatters (`alejandra`, `yamlfmt`, `shfmt`, `stylua`, `taplo`, `prettier`) are in `modules/home/formatters` and `modules/home/yamlfmt`, imported by `roles/home/base.nix` — so conform.nvim can format on save in *any* checkout, not just this one. They are also in the flake `devShell`, because CI has no home-manager to inherit them from. The three linters (`statix`, `deadnix`, `actionlint`) are devShell-only: they are useful in this repo and nowhere else.
+The six formatters (`alejandra`, `yamlfmt`, `shfmt`, `stylua`, `taplo`, `prettier`) are in `modules/home/formatters` and `modules/home/yamlfmt`, imported by `roles/home/base.nix` — so conform.nvim can format on save in _any_ checkout, not just this one. They are also in the flake `devShell`, because CI has no home-manager to inherit them from. The three linters (`statix`, `deadnix`, `actionlint`) are devShell-only: they are useful in this repo and nowhere else. `actionlint` in particular looks like it belongs on the global `PATH` — nvim lints workflows in every repo, surely — but it does not: `linters_by_ft` in `modules/home/nvim/config/lua/plugins/editor.lua` has entries for typescript, javascript, make, html, json and sql and **none for yaml or workflows**, so nvim never invokes it anywhere. Check that table before promoting it.
 
 **These used to come from `mason-tool-installer`** (`modules/home/nvim/config/lua/plugins/lsp.lua`), which fetches them per-machine outside Nix, so versions drifted between hosts and neither a hook nor CI could rely on them. Mason still lists them; that list is now redundant for these six and should be trimmed when the nvim config is next touched.
 
@@ -250,11 +250,11 @@ A project-first wrapper was built for this and then removed: it only ever covere
 
 ### Config files, and why each exists
 
-| File | Consumer | Why it is needed |
-| --- | --- | --- |
-| `.editorconfig` | shfmt | shfmt defaults to **tabs**; the repo's scripts are 2-space. It reads editorconfig natively only when invoked without `-i`/`-bn`/`-ci`/`-sr`/`-kp`, which is how both `make fmt` and conform.nvim call it. The indent sits at `[*]` because the nine scripts in `modules/home/bins/bin/` and `.githooks/pre-commit` have no extension — any narrower glob misses all ten and shfmt silently tabs them. |
-| `.stylua.toml` | stylua | The nvim config is tab-indented and stylua defaults to spaces. stylua does **not** read `.editorconfig`, so the setting has to be restated. |
-| `statix.toml` | statix | Disables two rules — see below. |
+| File            | Consumer | Why it is needed                                                                                                                                                                                                                                                                                                                                                                                      |
+| --------------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `.editorconfig` | shfmt    | shfmt defaults to **tabs**; the repo's scripts are 2-space. It reads editorconfig natively only when invoked without `-i`/`-bn`/`-ci`/`-sr`/`-kp`, which is how both `make fmt` and conform.nvim call it. The indent sits at `[*]` because the nine scripts in `modules/home/bins/bin/` and `.githooks/pre-commit` have no extension — any narrower glob misses all ten and shfmt silently tabs them. |
+| `.stylua.toml`  | stylua   | The nvim config is tab-indented and stylua defaults to spaces. stylua does **not** read `.editorconfig`, so the setting has to be restated.                                                                                                                                                                                                                                                           |
+| `statix.toml`   | statix   | Disables two rules — see below.                                                                                                                                                                                                                                                                                                                                                                       |
 
 `prettier` covers markdown only. Every tracked `.json` here is written by the application that owns it — Karabiner, OrcaSlicer, Obsidian — so reformatting them would churn the next time any of those saves. `shellcheck` is not wired in yet: four of the scripts in `modules/home/bins/bin/` are zsh, which shellcheck refuses outright (`SC1071`), so it needs an exclusion mechanism and a severity floor of its own.
 
@@ -270,12 +270,12 @@ It checks the **worktree** copy of each staged file, not the staged blob. The tw
 
 Three `nixosConfigurations` live in `hosts/nixos/`, all `aarch64-linux`: `hub` (the always-on Pi 4, general building hub), `airgap` (the airgapped Yubikey Pi Zero 2W), and `uptime` (the uptime-kuma Pi Zero 2W). Each is a **directory** — `default.nix` states the host, `configuration.nix` is that machine's own NixOS module. `hosts/nixos/` contains nothing else; the two things every Pi shares moved to their taxonomy layers: `roles/nixos/base.nix` (policy — imported by all three) and `modules/nixos/gpg-yubikey.nix` (mechanism — imported by `hub` and `airgap` only).
 
-| Task | Command | Run from |
-| --- | --- | --- |
-| Build the airgap Zero image | `make airgap-image` | hub |
-| Build the uptime image | `make uptime-image` | hub |
-| Deploy to the uptime Zero | `make uptime-switch` (override `UPTIME_HOST`) | hub |
-| Rebuild the hub itself | `make hub-switch` | hub |
+| Task                        | Command                                       | Run from |
+| --------------------------- | --------------------------------------------- | -------- |
+| Build the airgap Zero image | `make airgap-image`                           | hub      |
+| Build the uptime image      | `make uptime-image`                           | hub      |
+| Deploy to the uptime Zero   | `make uptime-switch` (override `UPTIME_HOST`) | hub      |
+| Rebuild the hub itself      | `make hub-switch`                             | hub      |
 
 ### A Pi host states the same kind of attrset the Macs do
 
@@ -283,15 +283,15 @@ Three `nixosConfigurations` live in `hosts/nixos/`, all `aarch64-linux`: `hub` (
 
 Home-manager status per Pi — a decided question, not a pending one:
 
-| Host | home-manager | Notes |
-| --- | --- | --- |
-| `hub` | yes, user `skyler` | `homeImports = [roles/home/cli.nix]` — `cli`, not `gui`: headless board with a real login |
-| `airgap` | no, deliberately and permanently | an air-gapped single-purpose Yubikey appliance; `environment.systemPackages` in `roles/nixos/base.nix` covers everything it needs |
-| `uptime` | yes, user `uptime` | `homeImports = [roles/home/minimal.nix]` — `minimal`, not `cli`: 512MB Zero 2W whose job is uptime-kuma. The home-manager exists so SSHing in to read logs is not hostile, not so the box can develop anything |
+| Host     | home-manager                     | Notes                                                                                                                                                                                                          |
+| -------- | -------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `hub`    | yes, user `skyler`               | `homeImports = [roles/home/cli.nix]` — `cli`, not `gui`: headless board with a real login                                                                                                                      |
+| `airgap` | no, deliberately and permanently | an air-gapped single-purpose Yubikey appliance; `environment.systemPackages` in `roles/nixos/base.nix` covers everything it needs                                                                              |
+| `uptime` | yes, user `uptime`               | `homeImports = [roles/home/minimal.nix]` — `minimal`, not `cli`: 512MB Zero 2W whose job is uptime-kuma. The home-manager exists so SSHing in to read logs is not hostile, not so the box can develop anything |
 
 `uptime`'s home-manager user is the `users.users.uptime` SSH-administration account from its `configuration.nix`; uptime-kuma itself runs under the upstream module's `DynamicUser` and has no home. Note that `roles/home/minimal.nix` and `roles/nixos/base.nix` both bring in `neovim` — verified to be the same store path, so it is not paid for twice.
 
-**A host that omits `username` gets no `nixpkgs.overlays` and no `nixpkgs.config.allowUnfree` either.** `lib/nixos.nix` sets both *inside* the `username != null` branch. That is intentional, not an oversight — it is what `airgap` has always evaluated to, and hoisting them out would silently change its closure.
+**A host that omits `username` gets no `nixpkgs.overlays` and no `nixpkgs.config.allowUnfree` either.** `lib/nixos.nix` sets both _inside_ the `username != null` branch. That is intentional, not an oversight — it is what `airgap` has always evaluated to, and hoisting them out would silently change its closure.
 
 ### Never import nixos-hardware into an sd-image host
 
@@ -305,7 +305,7 @@ Enabling `uboot` papers over it; dropping `nixos-hardware` is the actual fix, an
 
 ### A Pi Zero cannot rebuild itself
 
-A Zero 2W has 512MB of RAM. *Evaluating* a NixOS closure peaks well above that before any compilation starts, so an on-device `nixos-rebuild` means swapping onto the SD card for a very long time. Deploy instead: `make uptime-switch` runs on the hub, which evaluates and builds natively for aarch64 and pushes only the resulting closure. The Zero just activates it. The dotfiles clone on the Zero is for reading and editing config, not for rebuilding.
+A Zero 2W has 512MB of RAM. _Evaluating_ a NixOS closure peaks well above that before any compilation starts, so an on-device `nixos-rebuild` means swapping onto the SD card for a very long time. Deploy instead: `make uptime-switch` runs on the hub, which evaluates and builds natively for aarch64 and pushes only the resulting closure. The Zero just activates it. The dotfiles clone on the Zero is for reading and editing config, not for rebuilding.
 
 ### Secrets on the uptime host
 
@@ -324,15 +324,15 @@ The Claude Code configuration is Nix-managed in `modules/home/claude/`. The glob
 
 ### How to make changes
 
-| Change             | Where to edit                                                                       | Then run                                   |
-| ------------------ | ----------------------------------------------------------------------------------- | ------------------------------------------ |
-| Add MCP server     | `hosts/darwin/fw-skyler/claude.nix` or `roles/home/personal-claude.nix`                 | `make rebuild`                             |
-| Add hook           | Create script in `modules/home/claude/config/hooks/`, add to `default.nix` settings   | Rebuild                                    |
-| Add skill          | Add to `modules/home/claude/config/skills/`                                           | Stage it (the user's action — Claude is denied `git add`), then rebuild — see Permissions below |
-| Add agent          | Add to `modules/home/claude/config/agents/`                                           | Rebuild                                    |
-| Change plugin      | Edit `enabledPlugins` in `modules/home/claude/default.nix`                            | Rebuild                                    |
-| Change permissions | Edit `permissions` in `modules/home/claude/default.nix` (base), `hosts/darwin/fw-skyler/claude.nix` (work), or `roles/home/personal-claude.nix` (personal) | Rebuild |
-| Change setting     | Edit `modules/home/claude/default.nix` (base), `hosts/darwin/fw-skyler/claude.nix` (work), or `roles/home/personal-claude.nix` (personal) | Rebuild |
+| Change             | Where to edit                                                                                                                                              | Then run                                                                                        |
+| ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| Add MCP server     | `hosts/darwin/fw-skyler/claude.nix` or `roles/home/personal-claude.nix`                                                                                    | `make rebuild`                                                                                  |
+| Add hook           | Create script in `modules/home/claude/config/hooks/`, add to `default.nix` settings                                                                        | Rebuild                                                                                         |
+| Add skill          | Add to `modules/home/claude/config/skills/`                                                                                                                | Stage it (the user's action — Claude is denied `git add`), then rebuild — see Permissions below |
+| Add agent          | Add to `modules/home/claude/config/agents/`                                                                                                                | Rebuild                                                                                         |
+| Change plugin      | Edit `enabledPlugins` in `modules/home/claude/default.nix`                                                                                                 | Rebuild                                                                                         |
+| Change permissions | Edit `permissions` in `modules/home/claude/default.nix` (base), `hosts/darwin/fw-skyler/claude.nix` (work), or `roles/home/personal-claude.nix` (personal) | Rebuild                                                                                         |
+| Change setting     | Edit `modules/home/claude/default.nix` (base), `hosts/darwin/fw-skyler/claude.nix` (work), or `roles/home/personal-claude.nix` (personal)                  | Rebuild                                                                                         |
 
 ### Deployment Layout
 
@@ -346,7 +346,7 @@ The `*Dir` options and the path form of `skills` deploy with `recursive = true` 
 
 ### Migrating a directory off `mkOutOfStoreSymlink`
 
-**Delete the old live symlinks by hand before the first rebuild after such a change.** Switching a directory from `mkOutOfStoreSymlink` to a store-backed per-file layout — what commit `cd210a1` did for `agents/`, `commands/`, `hooks/`, and `skills/` — does not retire the symlink the previous generation already placed in `~`. That link resolves *through* the store and back into the working tree:
+**Delete the old live symlinks by hand before the first rebuild after such a change.** Switching a directory from `mkOutOfStoreSymlink` to a store-backed per-file layout — what commit `cd210a1` did for `agents/`, `commands/`, `hooks/`, and `skills/` — does not retire the symlink the previous generation already placed in `~`. That link resolves _through_ the store and back into the working tree:
 
 ```
 ~/.claude/agents
@@ -355,14 +355,14 @@ The `*Dir` options and the path form of `skills` deploy with `recursive = true` 
   -> ~/dotfiles/modules/home/claude/config/agents    # ...whose target is the repo
 ```
 
-home-manager then creates each new per-file entry *through* that chain, so `ln -s … ~/.claude/agents/foo.md` lands in `~/dotfiles/…` instead. The tracked source is moved aside to `foo.md.hm-backup` and replaced by a store symlink, and `git status` reports the whole tree as typechanged (` T`). Restoring from git alone does not hold — the next rebuild repeats it, because the chain is what is broken, not the files. The `.hm-backup` files are a symptom, never the cause.
+home-manager then creates each new per-file entry _through_ that chain, so `ln -s … ~/.claude/agents/foo.md` lands in `~/dotfiles/…` instead. The tracked source is moved aside to `foo.md.hm-backup` and replaced by a store symlink, and `git status` reports the whole tree as typechanged (` T`). Restoring from git alone does not hold — the next rebuild repeats it, because the chain is what is broken, not the files. The `.hm-backup` files are a symptom, never the cause.
 
 Home-manager will not clear the stale links itself. It retires orphans by diffing against the previous generation it holds a pointer to, and under nix-darwin those pointers diverge (verified 2026-08-11: the gcroot, the home-manager profile, and the live files each named a different generation), so the old `.claude/agents` entry is never seen as an orphan.
 
 Fix in this order; the order is load-bearing:
 
 1. `rm ~/.claude/agents ~/.claude/commands ~/.claude/hooks ~/.claude/skills/*` — every one is a symlink, so flagless `rm` suffices. Do **not** use `rm -rf`, and never add a trailing slash: `rm -rf ~/.claude/agents/` deletes the repo directory the link resolves to. Flagless `rm` also avoids `Bash(rm -rf *)` in `permissions.deny`, which refuses the `-rf` form when run through Claude Code.
-2. `git checkout -- modules/home/claude/config/`, then delete the `*.hm-backup` files — before rebuilding. A rebuild while the sources are still symlinks copies the *symlinks* into the new store path rather than the content, stacking another layer of indirection each time.
+2. `git checkout -- modules/home/claude/config/`, then delete the `*.hm-backup` files — before rebuilding. A rebuild while the sources are still symlinks copies the _symlinks_ into the new store path rather than the content, stacking another layer of indirection each time.
 3. Quit all sessions, then `make rebuild`.
 
 Verify with:
@@ -379,19 +379,19 @@ It must print nothing, `~/.claude/{agents,commands,hooks,skills}` must be real d
 
 `make rebuild` refuses to run when it detects a live session, listing each one so you know what to quit. `make claude-sessions` shows the same list on its own. Override with `make rebuild FORCE=1` when you accept the loss.
 
-**Do not detect sessions with `pgrep -x claude` — it matches nothing, and a gate built on it fails silently.** The package is a Nix binary wrapper: `bin/claude` is a compiled stub that `execve`s `.claude-wrapped` in place, so the surviving process's `comm` reads `.claude-wrapped` and never `claude`. `-x` matches `comm`, so it always comes back empty. argv[0] *is* still `claude`, which is why `pgrep -af claude` lists the session and makes the failure look like something else. Verified on hester-prynne with `/bin/pgrep` (absolute path, so no shell rewriting involved): `pgrep -x claude` exited 1 while `ps -o comm=` on the live PID printed `.claude-wrapped`.
+**Do not detect sessions with `pgrep -x claude` — it matches nothing, and a gate built on it fails silently.** The package is a Nix binary wrapper: `bin/claude` is a compiled stub that `execve`s `.claude-wrapped` in place, so the surviving process's `comm` reads `.claude-wrapped` and never `claude`. `-x` matches `comm`, so it always comes back empty. argv[0] _is_ still `claude`, which is why `pgrep -af claude` lists the session and makes the failure look like something else. Verified on hester-prynne with `/bin/pgrep` (absolute path, so no shell rewriting involved): `pgrep -x claude` exited 1 while `ps -o comm=` on the live PID printed `.claude-wrapped`.
 
 `pgrep` excludes only itself, never its ancestors, so running the rebuild from a separate terminal or tmux window changes nothing.
 
-`make rebuild` uses the `CLAUDE_PIDS` variable in the `Makefile` instead, matching either name on the basename (macOS `ps` reports `comm` as a full path). It is deliberately `ps`/`awk` only: `procps` is not declared anywhere in this config, and a missing `pgrep` made the old gate fail *open* — `pgrep … 2>/dev/null` swallows "command not found" and the `&&` short-circuits to "no sessions running."
+`make rebuild` uses the `CLAUDE_PIDS` variable in the `Makefile` instead, matching either name on the basename (macOS `ps` reports `comm` as a full path). It is deliberately `ps`/`awk` only: `procps` is not declared anywhere in this config, and a missing `pgrep` made the old gate fail _open_ — `pgrep … 2>/dev/null` swallows "command not found" and the `&&` short-circuits to "no sessions running."
 
-The home-manager `claude-code` module deploys settings.json as a symlink to a store file installed `-Dm444` (`modules/programs/claude-code/default.nix`), so it is read-only. When a rebuild swaps that symlink to a new generation with different content, a *running* Claude Code process notices the change a few minutes later and tries to write the file back; it cannot write the read-only target in place, so it unlinks first and the write never lands. The symlink is simply gone, and with it every permission rule — so everything starts prompting, silently.
+The home-manager `claude-code` module deploys settings.json as a symlink to a store file installed `-Dm444` (`modules/programs/claude-code/default.nix`), so it is read-only. When a rebuild swaps that symlink to a new generation with different content, a _running_ Claude Code process notices the change a few minutes later and tries to write the file back; it cannot write the read-only target in place, so it unlinks first and the write never lands. The symlink is simply gone, and with it every permission rule — so everything starts prompting, silently.
 
-Verified 2026-07-28 on claude-code 2.1.220, five trials: three rebuilds with a session running all lost the file within ~5 minutes; a rebuild with no session running kept it; and manually relinking to the *same* store target (no content change) survived 21 minutes. So the trigger is a content change observed by a live process, not the rebuild alone.
+Verified 2026-07-28 on claude-code 2.1.220, five trials: three rebuilds with a session running all lost the file within ~5 minutes; a rebuild with no session running kept it; and manually relinking to the _same_ store target (no content change) survived 21 minutes. So the trigger is a content change observed by a live process, not the rebuild alone.
 
 **To recover: quit all sessions and re-run `make rebuild`.** Then confirm with `jq '.permissions.allow | length' ~/.claude/settings.json` — the failure mode is a missing file, not a malformed one, so any successful `jq` read means it is back.
 
-Do not try to reconstruct the symlink from the home-manager profile paths. Under nix-darwin they diverge: verified 2026-07-28, `~/.local/state/nix/profiles/home-manager/home-files/` had no `.claude/settings.json` at all, `~/.local/state/home-manager/gcroots/current-home/` pointed at a stale generation, and the live symlink pointed at a third — because home-manager runs as a nix-darwin module, so the authoritative `home-manager-files` derivation is referenced from the system generation rather than the home-manager profile. If you must relink by hand, take the target from `readlink ~/.claude/settings.json` *before* it disappears.
+Do not try to reconstruct the symlink from the home-manager profile paths. Under nix-darwin they diverge: verified 2026-07-28, `~/.local/state/nix/profiles/home-manager/home-files/` had no `.claude/settings.json` at all, `~/.local/state/home-manager/gcroots/current-home/` pointed at a stale generation, and the live symlink pointed at a third — because home-manager runs as a nix-darwin module, so the authoritative `home-manager-files` derivation is referenced from the system generation rather than the home-manager profile. If you must relink by hand, take the target from `readlink ~/.claude/settings.json` _before_ it disappears.
 
 ### A repo's `settings.local.json` silently overrides the Nix config
 
@@ -399,7 +399,7 @@ Do not try to reconstruct the symlink from the home-manager profile paths. Under
 
 This had the sandbox fully disabled in this repo — for long enough that its absence read as a Claude Code bug — while `sandbox.enabled = true` was correctly deployed in `settings.json`. The symptom is that sandbox settings look right and nothing enforces: no proxy env vars, `curl` reaching non-allowlisted hosts, `denyRead` paths readable.
 
-**Check `.claude/settings.local.json` before concluding a settings-level feature is broken.** The file is gitignored, so this is per-machine state — fixing it in one checkout fixes nothing elsewhere. Note also that a failed sandbox startup degrades to *no sandbox* with only a warning; `sandbox.failIfUnavailable = true` makes that a hard failure instead.
+**Check `.claude/settings.local.json` before concluding a settings-level feature is broken.** The file is gitignored, so this is per-machine state — fixing it in one checkout fixes nothing elsewhere. Note also that a failed sandbox startup degrades to _no sandbox_ with only a warning; `sandbox.failIfUnavailable = true` makes that a hard failure instead.
 
 ### Settings Merge Behavior
 
@@ -415,11 +415,11 @@ MCP servers are declared in `roles/home/personal-claude.nix` or `hosts/darwin/fw
 
 Nix-declared servers do **not** appear in `~/.claude.json`; that file holds only servers added by hand. A server present in both registers twice, under two different tool prefixes, and checking only `~/.claude.json` will not reveal it.
 
-**OAuth splits into three cases. The line that decides Nix-declarability is the client *secret*, not whether the client is pre-registered** — two of the three are declarable.
+**OAuth splits into three cases. The line that decides Nix-declarability is the client _secret_, not whether the client is pre-registered** — two of the three are declarable.
 
-*Dynamic registration* (expo, sentry, posthog, vercel): declare in `claude.nix` as a bare `{type, url}`, rebuild, then authenticate in-session with `/mcp`. No credential appears in the source.
+_Dynamic registration_ (expo, sentry, posthog, vercel): declare in `claude.nix` as a bare `{type, url}`, rebuild, then authenticate in-session with `/mcp`. No credential appears in the source.
 
-*A pre-registered public client* (Slack): **also Nix-declarable.** Slack rejects dynamic registration — `/mcp` reports *"does not support dynamic client registration"* — so the entry names the client itself:
+_A pre-registered public client_ (Slack): **also Nix-declarable.** Slack rejects dynamic registration — `/mcp` reports _"does not support dynamic client registration"_ — so the entry names the client itself:
 
 ```nix
 slack = {
@@ -432,11 +432,11 @@ slack = {
 };
 ```
 
-This survives because `programs.claude-code.mcpServers` is `attrsOf jsonFormat.type` and `lib.hm.mcp.addType` only ever *adds* a `type` field — it never filters — so an unknown `oauth` key reaches the generated `.mcp.json` untouched, in the same shape the official `slackapi/slack-mcp-plugin` ships. Both values are public and identical for every user; being a PKCE client, there is no secret to place.
+This survives because `programs.claude-code.mcpServers` is `attrsOf jsonFormat.type` and `lib.hm.mcp.addType` only ever _adds_ a `type` field — it never filters — so an unknown `oauth` key reaches the generated `.mcp.json` untouched, in the same shape the official `slackapi/slack-mcp-plugin` ships. Both values are public and identical for every user; being a PKCE client, there is no secret to place.
 
 The prerequisite is not a credential but an approval: a workspace admin must enable MCP integration, and **until they do, the rebuild still succeeds and only `/mcp` fails** — so do not read a clean rebuild as a working connector.
 
-*A pre-registered confidential client* (Asana): **cannot be Nix-declared** — the secret is what has no channel, not the pre-registration. The plugin path carries a `client_id` but nowhere to put a `client_secret`, so authentication fails with *"Client authentication failed. Check that client_id and client_secret match your registered app."* Setting `MCP_CLIENT_SECRET` in the environment does not reach it either. Only `claude mcp add` stores the secret, and it registers a server of its own as a side effect, so it cannot be paired with a Nix declaration. Asana therefore lives entirely outside Nix:
+_A pre-registered confidential client_ (Asana): **cannot be Nix-declared** — the secret is what has no channel, not the pre-registration. The plugin path carries a `client_id` but nowhere to put a `client_secret`, so authentication fails with _"Client authentication failed. Check that client_id and client_secret match your registered app."_ Setting `MCP_CLIENT_SECRET` in the environment does not reach it either. Only `claude mcp add` stores the secret, and it registers a server of its own as a side effect, so it cannot be paired with a Nix declaration. Asana therefore lives entirely outside Nix:
 
 ```bash
 claude mcp add --scope user --transport http \
@@ -457,10 +457,10 @@ Its tools are `mcp__asana__*`, unprefixed, which is what the two `permissions.al
 
 Claude Code permissions live in `modules/home/claude/default.nix` (base) with additions in `roles/home/personal-claude.nix` or `hosts/darwin/fw-skyler/claude.nix`. Three coordinated layers:
 
-| Layer | Field | Behavior |
-| --- | --- | --- |
-| Allow | `permissions.allow` | Glob patterns auto-approve matching tool calls |
-| Deny | `permissions.deny` | Always wins over allow — use for defense in depth |
+| Layer   | Field                                                                  | Behavior                                           |
+| ------- | ---------------------------------------------------------------------- | -------------------------------------------------- |
+| Allow   | `permissions.allow`                                                    | Glob patterns auto-approve matching tool calls     |
+| Deny    | `permissions.deny`                                                     | Always wins over allow — use for defense in depth  |
 | Sandbox | `sandbox.network.allowedDomains`, `sandbox.filesystem.allowRead/Write` | Hard boundary that no per-call approval can bypass |
 
 #### Pattern syntax
@@ -494,10 +494,10 @@ Custom skills (in `modules/home/claude/config/skills/`) and custom slash command
 
 **Do not add a `Skill(<name>)` entry by hand — it is derived.** `default.nix` builds `skillNames` from `readDir ./config/skills` plus the `.md` files in `./config/commands`, and maps each to `Skill(<name>)` onto `permissions.allow`. A hand-written entry is a duplicate on arrival. Two things are still required:
 
-- **The new file or directory must be git-tracked — and staging it is the user's action, not Claude's.** `skillNames` reads the *flake source*, and flakes only see git-tracked files, so an untracked skill directory is invisible to eval: no permission entry is generated and it prompts on first use. Verified 2026-08-10: `Skill(comment-review)` was absent from the derived allowlist until the directory was staged, then appeared immediately. Claude asks for the staging and stops; `git add` is banned by the global `CLAUDE.md` and hard-blocked by `Bash(git add*)` in `permissions.deny`, so an instruction to run it cannot be followed.
+- **The new file or directory must be git-tracked — and staging it is the user's action, not Claude's.** `skillNames` reads the _flake source_, and flakes only see git-tracked files, so an untracked skill directory is invisible to eval: no permission entry is generated and it prompts on first use. Verified 2026-08-10: `Skill(comment-review)` was absent from the derived allowlist until the directory was staged, then appeared immediately. Claude asks for the staging and stops; `git add` is banned by the global `CLAUDE.md` and hard-blocked by `Bash(git add*)` in `permissions.deny`, so an instruction to run it cannot be followed.
 - **Rebuild.** The names are read at eval time, so a new skill needs a rebuild to register (and to be symlinked).
 
-Plugin-distributed skills *are* namespaced (e.g., `superpowers:executing-plans`, `pr-review-toolkit:review-pr`), so a single glob per plugin namespace (`Skill(superpowers:*)`) trusts the entire plugin's skill set in one entry.
+Plugin-distributed skills _are_ namespaced (e.g., `superpowers:executing-plans`, `pr-review-toolkit:review-pr`), so a single glob per plugin namespace (`Skill(superpowers:*)`) trusts the entire plugin's skill set in one entry.
 
 #### Built-in auto-allows
 
@@ -516,14 +516,14 @@ correction is recorded rather than silently swapped because the wrong version wa
   `modules/home/gh/default.nix`, not in the deployed `~/.config/gh/config.yml`.
 - `permissions.deny` blocks `Bash(gh api *-f *)` **and** `Bash(gh api *-X POST*)`, and deny
   always wins. The prescribed command was refused at the moment of use.
-- It said to use `gh api` *instead of* `gh pr create`, when `Bash(gh pr create *--draft*)`
+- It said to use `gh api` _instead of_ `gh pr create`, when `Bash(gh pr create *--draft*)`
   is the one permitted PR-creation form.
 
 **What actually works:**
 
-| Task | Command |
-|---|---|
-| Create a PR | `gh pr create --draft --title "..." --body "..."` — `--draft` is required by the allow pattern, and matches the global `CLAUDE.md` default |
+| Task            | Command                                                                                                                                                           |
+| --------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Create a PR     | `gh pr create --draft --title "..." --body "..."` — `--draft` is required by the allow pattern, and matches the global `CLAUDE.md` default                        |
 | Create an issue | **Nothing.** `Bash(gh issue create*)` is denied and every `gh api` write form is denied. Draft the title and body, then hand the command over for the user to run |
 
 Read the body from a file (`--body-file`) rather than inlining a long one — a multi-line
@@ -548,12 +548,12 @@ Read the body from a file (`--body-file`) rather than inlining a long one — a 
 
 This repo is used across multiple machines. Use the right persistence layer:
 
-| What to store | Where | Why |
-| --- | --- | --- |
-| Project patterns, tool conventions, CLI gotchas | `CLAUDE.md` (this file) | Travels with the repo; available on every machine |
-| User preferences, role, feedback on Claude behavior | Local memory (`~/.claude/projects/.../memory/`) | Personal to the user/machine; not repo-specific |
+| What to store                                       | Where                                           | Why                                               |
+| --------------------------------------------------- | ----------------------------------------------- | ------------------------------------------------- |
+| Project patterns, tool conventions, CLI gotchas     | `CLAUDE.md` (this file)                         | Travels with the repo; available on every machine |
+| User preferences, role, feedback on Claude behavior | Local memory (`~/.claude/projects/.../memory/`) | Personal to the user/machine; not repo-specific   |
 
-**Rule of thumb:** If another Claude session on a different machine would need this info to work effectively in this repo, it belongs in `CLAUDE.md`. If it's about *how the user wants Claude to behave generally*, it belongs in local memory.
+**Rule of thumb:** If another Claude session on a different machine would need this info to work effectively in this repo, it belongs in `CLAUDE.md`. If it's about _how the user wants Claude to behave generally_, it belongs in local memory.
 
 ## Configuration Principles
 
@@ -584,4 +584,3 @@ This repo is used across multiple machines. Use the right persistence layer:
 - **Cross-host testing:** A change to a shared module reaches every host that imports it — check the affected hosts, not just this machine
 - **Documentation:** Update memory files when patterns change
 - **Backup:** Configurations are version controlled but consider additional backups for sensitive data
-

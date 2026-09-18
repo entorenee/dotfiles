@@ -9,5 +9,5 @@ windows:
       # synchronize: after
       panes:
         - nvim
-        - 
+        -
   - server: npm run dev

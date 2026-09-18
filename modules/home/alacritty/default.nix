@@ -1,4 +1,8 @@
-{ lib, pkgs, ... }:
+{
+  lib,
+  pkgs,
+  ...
+}:
 lib.mkIf pkgs.stdenv.isLinux {
   programs.alacritty = {
     enable = true;

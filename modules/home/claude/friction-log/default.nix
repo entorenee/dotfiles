@@ -1,7 +1,4 @@
-{
-  config,
-  ...
-}: let
+{config, ...}: let
   # Absolute, not `~/…`: a JSON settings value is literal and would not expand.
   frictionRoot = "${config.home.homeDirectory}/claude-friction";
 in {

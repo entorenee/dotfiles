@@ -7,7 +7,7 @@ description: Use when proactively mining product/session analytics (PostHog, Amp
 
 ## Overview
 
-A **proactive, analytics-first** dig for where users get stuck when *nothing has been reported as broken*.
+A **proactive, analytics-first** dig for where users get stuck when _nothing has been reported as broken_.
 There is no metric regression to anchor on — you go find the friction: funnels bleeding users
 step-to-step, drop-offs concentrated in a platform or app version, and analytics events that are
 defined in code but silent (or newly zero) in the analytics tool. The deliverable is a research
@@ -35,7 +35,7 @@ opens PRs. The base carries the doctrine; this file only adds what is analytics-
   (error-tracker hygiene).
 - A known bug needing a fix → `investigate` / `superpowers:systematic-debugging`.
 
-The distinction: this skill starts from *no established signal* and mines analytics to find one.
+The distinction: this skill starts from _no established signal_ and mines analytics to find one.
 `regression-analysis` starts from a signal that already got worse.
 
 ## Workflow
@@ -89,23 +89,23 @@ Cross-reference **code instrumentation** against **received events**:
 
 ## Monitoring Plan (required output)
 
-For **every actionable finding**, specify how to confirm resolution *after a fix ships*:
+For **every actionable finding**, specify how to confirm resolution _after a fix ships_:
 
-| Field | What to specify |
-|---|---|
-| Metric / event | The exact event or funnel-step conversion to watch |
-| Expected direction & threshold | e.g. "step-3 conversion rises from 42% toward ≥ 60%" |
-| Segment | Which slice to watch — **especially app version** (the fixed release onward) |
-| Watch window | A suggested duration (e.g. "2 weeks post-release, or until N sessions") |
+| Field                          | What to specify                                                              |
+| ------------------------------ | ---------------------------------------------------------------------------- |
+| Metric / event                 | The exact event or funnel-step conversion to watch                           |
+| Expected direction & threshold | e.g. "step-3 conversion rises from 42% toward ≥ 60%"                         |
+| Segment                        | Which slice to watch — **especially app version** (the fixed release onward) |
+| Watch window                   | A suggested duration (e.g. "2 weeks post-release, or until N sessions")      |
 
-The monitoring plan is not optional garnish — it is what makes a finding *closeable*. It rides into
+The monitoring plan is not optional garnish — it is what makes a finding _closeable_. It rides into
 the ticket body (below).
 
 ## Terminal Prompts
 
 1. **Present findings** — evidence-based vs. hypothesis, quarantined per the base (never interleaved).
 2. **Pre-select ticket-worthy findings.** Criteria: `evidence-based` **and** material user impact
-   **and** actionable. Hypotheses are offered **only** as clearly-labeled *investigation* tickets
+   **and** actionable. Hypotheses are offered **only** as clearly-labeled _investigation_ tickets
    (e.g. "confirm whether `upload_started` is instrumented on Android") — never as work orders.
 3. **Prompt the user about the pre-selected set** — confirm which to file. Create nothing external
    without explicit confirmation.

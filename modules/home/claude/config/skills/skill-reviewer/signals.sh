@@ -25,17 +25,23 @@ set -uo pipefail
 
 MODE=table
 case "${1:-}" in
-  --json)    MODE=json ;;
-  --denials) MODE=denials ;;
-  --verify)  MODE=verify ;;
-  --rollup)  MODE=rollup ;;
-  --aging)   MODE=aging ;;
-  --hooks)   MODE=hooks ;;
-  # DATE is optional: handing it over by eye was the last manual step in the
-  # sweep, and the answer is already written down in PREDICTIONS.md.
-  --since)   MODE=since; SINCE="${2:-}" ;;
-  "")        MODE=table ;;
-  *) echo "unknown option: $1" >&2; exit 2 ;;
+--json) MODE=json ;;
+--denials) MODE=denials ;;
+--verify) MODE=verify ;;
+--rollup) MODE=rollup ;;
+--aging) MODE=aging ;;
+--hooks) MODE=hooks ;;
+# DATE is optional: handing it over by eye was the last manual step in the
+# sweep, and the answer is already written down in PREDICTIONS.md.
+--since)
+  MODE=since
+  SINCE="${2:-}"
+  ;;
+"") MODE=table ;;
+*)
+  echo "unknown option: $1" >&2
+  exit 2
+  ;;
 esac
 SINCE="${SINCE:-}"
 
@@ -62,13 +68,19 @@ fi
 TRANSCRIPTS="${SKILL_TRANSCRIPT_DIR:-$HOME/.claude/projects}"
 HERE="$(cd "$(dirname "$0")" && pwd)"
 FILTER="$HERE/signals.jq"
-[ -f "$FILTER" ] || { echo "missing signals.jq beside $0" >&2; exit 2; }
+[ -f "$FILTER" ] || {
+  echo "missing signals.jq beside $0" >&2
+  exit 2
+}
 
 # --aging reads the friction log, not the transcripts. Handled before the scan
 # below so it costs nothing.
 if [ "$MODE" = aging ]; then
   ROOT="${MY_CLAUDE_FRICTION_ROOT:?unset — run 'make rebuild', then start a new session}"
-  [ -d "$ROOT/entries" ] || { echo "no entries dir at $ROOT" >&2; exit 1; }
+  [ -d "$ROOT/entries" ] || {
+    echo "no entries dir at $ROOT" >&2
+    exit 1
+  }
 
   # Portable epoch-from-YYYY-MM-DD: BSD date needs -j -f, GNU date needs -d.
   #
@@ -79,8 +91,8 @@ if [ "$MODE" = aging ]; then
   # two entries both dated 2026-08-19 reported ages 6 and 5 in the same run,
   # purely from their position in the loop.
   epoch() {
-    date -j -f '%Y-%m-%d %H:%M:%S' "$1 00:00:00" +%s 2>/dev/null \
-      || date -d "$1 00:00:00" +%s 2>/dev/null
+    date -j -f '%Y-%m-%d %H:%M:%S' "$1 00:00:00" +%s 2>/dev/null ||
+      date -d "$1 00:00:00" +%s 2>/dev/null
   }
   NOW=$(epoch "$(date +%Y-%m-%d)")
 
@@ -94,7 +106,8 @@ if [ "$MODE" = aging ]; then
       b=$(basename "$f")
       d=$(echo "$b" | sed -n 's/^F[0-9]*-\([0-9-]\{10\}\)-.*/\1/p')
       [ -n "$d" ] || continue
-      e=$(epoch "$d"); [ -n "$e" ] || continue
+      e=$(epoch "$d")
+      [ -n "$e" ] || continue
       st=$(awk '/^\*\*Status:\*\*/{sub(/^\*\*Status:\*\*[ ]*/,""); print; exit}' "$f")
       cl=$(awk '/^\*\*Class:\*\*/{sub(/^\*\*Class:\*\*[ ]*/,""); print; exit}' "$f")
       # Pre-migration entries have no Class line. Report them rather than
@@ -102,7 +115,7 @@ if [ "$MODE" = aging ]; then
       [ -n "$cl" ] || cl="MISSING"
       [ "$cl" = "open" ] || [ "$cl" = "MISSING" ] || continue
       ti=$(awk '/^# /{sub(/^# F[0-9]+ — /,""); print; exit}' "$f")
-      printf '%s\t%s\t%s\t%s\t%s\n' "$(( (NOW - e) / 86400 ))" \
+      printf '%s\t%s\t%s\t%s\t%s\n' "$(((NOW - e) / 86400))" \
         "${b%%-*}" "${st:-?}" "$cl" "$(echo "$ti" | cut -c1-52)"
     done | sort -rn
   } | column -t -s "$(printf '\t')"
@@ -137,9 +150,9 @@ ROWS="$WORK/rows.json"
 # Top-level transcripts only. A subagent sidechain has no human at the gate, so
 # it can carry no correction signal; `isSidechain` filtering inside the jq is
 # belt-and-braces for resumed sessions that inline one.
-find "$TRANSCRIPTS" -name '*.jsonl' -not -path '*/subagents/*' -print0 2>/dev/null \
-  | xargs -0 -I{} sh -c 'jq -s -f "$0" "$1" 2>/dev/null' "$FILTER" {} \
-  | jq -s 'map(select(.typed > 0))' > "$ROWS"
+find "$TRANSCRIPTS" -name '*.jsonl' -not -path '*/subagents/*' -print0 2>/dev/null |
+  xargs -0 -I{} sh -c 'jq -s -f "$0" "$1" 2>/dev/null' "$FILTER" {} |
+  jq -s 'map(select(.typed > 0))' >"$ROWS"
 
 N=$(jq 'length' "$ROWS")
 if [ "$N" -eq 0 ]; then
@@ -186,15 +199,15 @@ buckets() {
 }
 
 case "$MODE" in
-  json) cat "$ROWS" ;;
+json) cat "$ROWS" ;;
 
-  since)
-    # Scores a prediction in rollups/PREDICTIONS.md. Emits the per-turn rework
-    # rate, plus the two gaming-check arms, for sessions on/after DATE.
-    #
-    # NO BAND IS APPLIED HERE. The bands live in PREDICTIONS.md next to the
-    # baseline they were derived from — same reason --aging applies no threshold.
-    jq -r --arg since "$SINCE" '
+since)
+  # Scores a prediction in rollups/PREDICTIONS.md. Emits the per-turn rework
+  # rate, plus the two gaming-check arms, for sessions on/after DATE.
+  #
+  # NO BAND IS APPLIED HERE. The bands live in PREDICTIONS.md next to the
+  # baseline they were derived from — same reason --aging applies no threshold.
+  jq -r --arg since "$SINCE" '
       map(select(.date >= $since))
       | {sessions: length,
          typed: (map(.typed)|add // 0),
@@ -208,7 +221,7 @@ case "$MODE" in
         "rework turns:\(.rework)",
         "REWORK RATE: \(.rate)%",
         "interrupts:  \(.interrupts)   lexical: \(.lexical)   (gaming check)"' "$ROWS"
-    cat <<'EOF'
+  cat <<'EOF'
 
 # Compare REWORK RATE against the band in $MY_CLAUDE_FRICTION_ROOT/rollups/PREDICTIONS.md.
 # If `typed turns` is below the prediction's review threshold, the answer is
@@ -216,25 +229,25 @@ case "$MODE" in
 # If rework falls while interrupts and lexical hold steady or rise, suspect the
 # metric before banking the result: re-editing less is the cheap way to game it.
 EOF
-    ;;
+  ;;
 
-  denials)
-    # Denials paired with the command that drew them. `toolDenialKind` is
-    # structural; permission-audit's text-matching misses 21 of 57 rule denials.
-    #
-    # Classify on `full`, display `shape`. The sandbox marker sits past 60 chars
-    # in a real denial ("ls in '<long path>' was blocked."), so testing the
-    # truncated string files it as hook-deny — which inverts the remedy: the
-    # footer would say "never allowlist" when no allow rule could help at all.
-    #
-    # Sidechains are INCLUDED here, unlike the session table. A subagent blocked
-    # by a permission rule has no human at the gate — so it is not a friction
-    # signal — but it is still a rule that needs fixing, which is what this mode
-    # is for. 8 of 57 rule denials are sidechain-only and would be invisible
-    # otherwise.
-    find "$TRANSCRIPTS" -name '*.jsonl' -print0 2>/dev/null \
-      | xargs -0 cat 2>/dev/null \
-      | jq -rs '
+denials)
+  # Denials paired with the command that drew them. `toolDenialKind` is
+  # structural; permission-audit's text-matching misses 21 of 57 rule denials.
+  #
+  # Classify on `full`, display `shape`. The sandbox marker sits past 60 chars
+  # in a real denial ("ls in '<long path>' was blocked."), so testing the
+  # truncated string files it as hook-deny — which inverts the remedy: the
+  # footer would say "never allowlist" when no allow rule could help at all.
+  #
+  # Sidechains are INCLUDED here, unlike the session table. A subagent blocked
+  # by a permission rule has no human at the gate — so it is not a friction
+  # signal — but it is still a rule that needs fixing, which is what this mode
+  # is for. 8 of 57 rule denials are sidechain-only and would be invisible
+  # otherwise.
+  find "$TRANSCRIPTS" -name '*.jsonl' -print0 2>/dev/null |
+    xargs -0 cat 2>/dev/null |
+    jq -rs '
           map(select(.type=="user" and .toolDenialKind != null))
           | map({kind: .toolDenialKind,
                  full: ((.message.content // [])
@@ -252,7 +265,7 @@ EOF
           | group_by(.src)[]
           | "\(.[0].src)  (\(length))",
             (group_by(.shape) | sort_by(-length) | .[0:8][] | "    \(length)x  \(.[0].shape)")'
-    cat <<'EOF'
+  cat <<'EOF'
 
 # allowlist-gap  candidate for a narrow permissions.allow rule. Check it against
 #                permissions.deny first — deny wins, so a contradictory allow is
@@ -267,27 +280,27 @@ EOF
 # user-rejected  you turned it down. Not a permission problem; read the next
 #                command in that session to see what satisfied you instead.
 EOF
-    ;;
+  ;;
 
-  hooks)
-    # Hook liveness. A warn-only hook has no other observable: it changes no
-    # permission decision and records no denial, so "did it ever fire" is
-    # otherwise unanswerable — which is F16's shape, a capability that is
-    # documented but silently inert.
-    #
-    # WHAT AN ABSENT ROW MEANS. A hook appears here only for calls where it
-    # WROTE TO STDOUT. A hook that passes silently produces no attachment at
-    # all, so exec-form-guard and pnpm-guard are invisible on the calls they
-    # allow; their interventions are denials and belong to --denials instead.
-    # For a warn-only guard the two coincide: an attachment IS a firing. Read a
-    # missing row as "never produced output", never as "never ran".
-    #
-    # Fields come from `attachment` on a `hook_success` row — command, exitCode,
-    # durationMs, and the entry timestamp. All four are present on every such
-    # row in the archive, so none of this is inferred from message text.
-    find "$TRANSCRIPTS" -name '*.jsonl' -print0 2>/dev/null \
-      | xargs -0 cat 2>/dev/null \
-      | jq -rs '
+hooks)
+  # Hook liveness. A warn-only hook has no other observable: it changes no
+  # permission decision and records no denial, so "did it ever fire" is
+  # otherwise unanswerable — which is F16's shape, a capability that is
+  # documented but silently inert.
+  #
+  # WHAT AN ABSENT ROW MEANS. A hook appears here only for calls where it
+  # WROTE TO STDOUT. A hook that passes silently produces no attachment at
+  # all, so exec-form-guard and pnpm-guard are invisible on the calls they
+  # allow; their interventions are denials and belong to --denials instead.
+  # For a warn-only guard the two coincide: an attachment IS a firing. Read a
+  # missing row as "never produced output", never as "never ran".
+  #
+  # Fields come from `attachment` on a `hook_success` row — command, exitCode,
+  # durationMs, and the entry timestamp. All four are present on every such
+  # row in the archive, so none of this is inferred from message text.
+  find "$TRANSCRIPTS" -name '*.jsonl' -print0 2>/dev/null |
+    xargs -0 cat 2>/dev/null |
+    jq -rs '
           def med: sort | if length == 0 then 0 else .[(length / 2 | floor)] end;
           [.[] | select(.type=="attachment" and .attachment.type=="hook_success"
                         and (.attachment.command // "") != "")]
@@ -301,7 +314,7 @@ EOF
           | sort_by(-.fired)
           | "HOOK                      FIRED  ERR  MED_MS  MAX_MS  LAST",
             (.[] | "\(.cmd | .[0:24] | . + (" " * (24 - length)))  \(.fired | tostring | (" " * (5 - length)) + .)  \(.errors | tostring | (" " * (3 - length)) + .)  \(.med_ms | tostring | (" " * (6 - length)) + .)  \(.max_ms | tostring | (" " * (6 - length)) + .)  \(.last)")'
-    cat <<'EOF'
+  cat <<'EOF'
 
 # FIRED   calls where the hook wrote to stdout. For a warn-only guard that is
 #         its firing count; for a deny-guard see --denials instead.
@@ -313,97 +326,104 @@ EOF
 #         date that predates it means the hook went quiet, which for a guard
 #         wired to a live rule is a defect, not a success.
 EOF
-    ;;
+  ;;
 
-  verify)
-    # Re-derive the aggregate with an independent one-liner over the same files,
-    # AT THE SAME MOMENT. A hardcoded expected value would be wrong: the archive
-    # is live and append-only — `user-rejected` read 33 and then 34 within one
-    # session, because a rejection landed while it was being measured.
-    IND=$(find "$TRANSCRIPTS" -name '*.jsonl' -not -path '*/subagents/*' -print0 2>/dev/null \
-      | xargs -0 cat 2>/dev/null \
-      | jq -rs '[.[]|select(.type=="user" and .isSidechain != true)] as $u
+verify)
+  # Re-derive the aggregate with an independent one-liner over the same files,
+  # AT THE SAME MOMENT. A hardcoded expected value would be wrong: the archive
+  # is live and append-only — `user-rejected` read 33 and then 34 within one
+  # session, because a rejection landed while it was being measured.
+  IND=$(find "$TRANSCRIPTS" -name '*.jsonl' -not -path '*/subagents/*' -print0 2>/dev/null |
+    xargs -0 cat 2>/dev/null |
+    jq -rs '[.[]|select(.type=="user" and .isSidechain != true)] as $u
                 | "\($u|map(select(.promptSource=="typed"))|length) \($u|map(select(.interruptedMessageId!=null))|length) \($u|map(select(.toolDenialKind=="permission-rule"))|length) \($u|map(select(.toolDenialKind=="user-rejected"))|length)"')
-    set -- $IND
-    ok=0
-    printf '%-14s %10s %10s   %s\n' FIELD SCANNER INDEPENDENT RESULT
-    check() {
-      if [ "$2" = "$3" ]; then printf '%-14s %10s %10s   ok\n' "$1" "$2" "$3"
-      else printf '%-14s %10s %10s   MISMATCH\n' "$1" "$2" "$3"; ok=1; fi
-    }
-    check typed      "$TYPED"  "$1"
-    check interrupts "$INTR"   "$2"
-    check rule       "$D_RULE" "$3"
-    check user-rej   "$D_USER" "$4"
-    echo
-    [ "$ok" -eq 0 ] && echo "PASS — scanner agrees with independent derivation" \
-                    || echo "FAIL — scanner disagrees; do not trust its output"
-    exit "$ok"
-    ;;
+  set -- $IND
+  ok=0
+  printf '%-14s %10s %10s   %s\n' FIELD SCANNER INDEPENDENT RESULT
+  check() {
+    if [ "$2" = "$3" ]; then
+      printf '%-14s %10s %10s   ok\n' "$1" "$2" "$3"
+    else
+      printf '%-14s %10s %10s   MISMATCH\n' "$1" "$2" "$3"
+      ok=1
+    fi
+  }
+  check typed "$TYPED" "$1"
+  check interrupts "$INTR" "$2"
+  check rule "$D_RULE" "$3"
+  check user-rej "$D_USER" "$4"
+  echo
+  [ "$ok" -eq 0 ] && echo "PASS — scanner agrees with independent derivation" ||
+    echo "FAIL — scanner disagrees; do not trust its output"
+  exit "$ok"
+  ;;
 
-  rollup)
-    ROOT="${MY_CLAUDE_FRICTION_ROOT:?unset — run 'make rebuild', then start a new session}"
-    [ -d "$ROOT/.git" ] || { echo "not a git repo: $ROOT" >&2; exit 1; }
-    # Instruction-corpus size. Proxy for F2 (comment verbosity), which was logged
-    # unmeasurable. Growth with no new rules is bloat; it costs context every run.
-    CFG="${SKILL_CONFIG_DIR:-$HOME/dotfiles/modules/home/claude/config}"
-    CORPUS=$(find "$CFG" -name '*.md' -exec cat {} + 2>/dev/null | wc -l | tr -d ' ')
-    mkdir -p "$ROOT/rollups"
-    STAMP=$(agg '[.[].date]|max')
-    OUT="$ROOT/rollups/${STAMP:0:7}-$(hostname -s).md"
-    [ -f "$OUT" ] || {
-      echo "# Signal rollup — ${STAMP:0:7} — $(hostname -s)"
-      echo
-      echo "Counts only; no transcript content. Re-derivable with \`signals.sh\`"
-      echo "for as long as the transcripts live (\`cleanupPeriodDays\`)."
-      echo
-      echo "\`eligible\` = sessions with >= 3 typed turns; \`deep\` = of those, how many"
-      echo "reached a rework chain of depth >= 3. **Score movement on deep/eligible**,"
-      echo "not on deep/sessions: a depth-3 chain cannot occur in a shorter session, so"
-      echo "including those only measures how many short sessions the month happened to"
-      echo "contain. Rate also rises with session length, so compare within a bucket too."
-      echo
-      echo "\`corpus\` = total lines of instruction .md under claude/config. Rising with no"
-      echo "new rules is prose bloat — it costs context on every run. See F2."
-      echo
-      echo "| through | sessions | eligible | deep | rate | typed | interrupts | rule | user-rej | automode | max chain | lexical | corpus |"
-      echo "|---|---|---|---|---|---|---|---|---|---|---|---|---|"
-    } > "$OUT"
-    printf '| %s | %s | %s | %s | %s%% | %s | %s | %s | %s | %s | %s | %s | %s |\n' \
-      "$STAMP" "$N" "$ELIG" "$DEEP" "$RATE" "$TYPED" "$INTR" "$D_RULE" "$D_USER" "$D_AUTO" "$CHMAX" "$LEX" "$CORPUS" >> "$OUT"
-    echo "$OUT"
-    echo "git-sync commits and pushes this within ~300s. Do not run git here."
-    ;;
-
-  table)
-    echo "# transcripts : $TRANSCRIPTS"
-    echo "# sessions    : $N with at least one human turn"
+rollup)
+  ROOT="${MY_CLAUDE_FRICTION_ROOT:?unset — run 'make rebuild', then start a new session}"
+  [ -d "$ROOT/.git" ] || {
+    echo "not a git repo: $ROOT" >&2
+    exit 1
+  }
+  # Instruction-corpus size. Proxy for F2 (comment verbosity), which was logged
+  # unmeasurable. Growth with no new rules is bloat; it costs context every run.
+  CFG="${SKILL_CONFIG_DIR:-$HOME/dotfiles/modules/home/claude/config}"
+  CORPUS=$(find "$CFG" -name '*.md' -exec cat {} + 2>/dev/null | wc -l | tr -d ' ')
+  mkdir -p "$ROOT/rollups"
+  STAMP=$(agg '[.[].date]|max')
+  OUT="$ROOT/rollups/${STAMP:0:7}-$(hostname -s).md"
+  [ -f "$OUT" ] || {
+    echo "# Signal rollup — ${STAMP:0:7} — $(hostname -s)"
     echo
-    {
-      printf 'DATE\tPROJECT\tBRANCH\tMODE\tTYPED\tINTR\tRULE\tUSER\tAUTO\tCHAIN\tLEX\n'
-      jq -r '.[]|select(.interrupts>0 or .denials.rule>0 or .denials.user>0 or .max_chain>=3)
+    echo "Counts only; no transcript content. Re-derivable with \`signals.sh\`"
+    echo "for as long as the transcripts live (\`cleanupPeriodDays\`)."
+    echo
+    echo "\`eligible\` = sessions with >= 3 typed turns; \`deep\` = of those, how many"
+    echo "reached a rework chain of depth >= 3. **Score movement on deep/eligible**,"
+    echo "not on deep/sessions: a depth-3 chain cannot occur in a shorter session, so"
+    echo "including those only measures how many short sessions the month happened to"
+    echo "contain. Rate also rises with session length, so compare within a bucket too."
+    echo
+    echo "\`corpus\` = total lines of instruction .md under claude/config. Rising with no"
+    echo "new rules is prose bloat — it costs context on every run. See F2."
+    echo
+    echo "| through | sessions | eligible | deep | rate | typed | interrupts | rule | user-rej | automode | max chain | lexical | corpus |"
+    echo "|---|---|---|---|---|---|---|---|---|---|---|---|---|"
+  } >"$OUT"
+  printf '| %s | %s | %s | %s | %s%% | %s | %s | %s | %s | %s | %s | %s | %s |\n' \
+    "$STAMP" "$N" "$ELIG" "$DEEP" "$RATE" "$TYPED" "$INTR" "$D_RULE" "$D_USER" "$D_AUTO" "$CHMAX" "$LEX" "$CORPUS" >>"$OUT"
+  echo "$OUT"
+  echo "git-sync commits and pushes this within ~300s. Do not run git here."
+  ;;
+
+table)
+  echo "# transcripts : $TRANSCRIPTS"
+  echo "# sessions    : $N with at least one human turn"
+  echo
+  {
+    printf 'DATE\tPROJECT\tBRANCH\tMODE\tTYPED\tINTR\tRULE\tUSER\tAUTO\tCHAIN\tLEX\n'
+    jq -r '.[]|select(.interrupts>0 or .denials.rule>0 or .denials.user>0 or .max_chain>=3)
              | [.date, (.project//"-"), (.branch//"-"|.[0:24]), (.mode//"-"),
                 .typed, .interrupts, .denials.rule, .denials.user,
-                .denials.automode, .max_chain, .lexical] | @tsv' "$ROWS" \
-        | sort -r
-    } | column -t -s "$(printf '\t')"
-    echo
-    echo "# Rows shown: sessions with an interruption, a denial, or a chain >= 3."
-    echo "# Quiet sessions are counted in the totals below but not listed."
-    echo
-    printf '# TOTALS  typed=%s  interrupts=%s  rule=%s  user-rejected=%s  automode=%s\n' \
-      "$TYPED" "$INTR" "$D_RULE" "$D_USER" "$D_AUTO"
-    printf '#         chains>=3=%s (all sessions)  max_chain=%s  lexical=%s\n' "$CH3" "$CHMAX" "$LEX"
-    echo
-    printf '# HEADLINE  %s/%s eligible sessions have a chain >= 3  (%s%%)\n' "$DEEP" "$ELIG" "$RATE"
-    echo   '#           Eligible = >= 3 typed turns. Score movement on THIS, not on'
-    echo   '#           the all-sessions figure, and check the buckets below too.'
-    echo
-    {
-      printf 'TURNS\tSESSIONS\tCHAIN>=3\tRATE\n'
-      buckets
-    } | column -t -s "$(printf '\t')" | sed 's/^/#   /'
-    cat <<'EOF'
+                .denials.automode, .max_chain, .lexical] | @tsv' "$ROWS" |
+      sort -r
+  } | column -t -s "$(printf '\t')"
+  echo
+  echo "# Rows shown: sessions with an interruption, a denial, or a chain >= 3."
+  echo "# Quiet sessions are counted in the totals below but not listed."
+  echo
+  printf '# TOTALS  typed=%s  interrupts=%s  rule=%s  user-rejected=%s  automode=%s\n' \
+    "$TYPED" "$INTR" "$D_RULE" "$D_USER" "$D_AUTO"
+  printf '#         chains>=3=%s (all sessions)  max_chain=%s  lexical=%s\n' "$CH3" "$CHMAX" "$LEX"
+  echo
+  printf '# HEADLINE  %s/%s eligible sessions have a chain >= 3  (%s%%)\n' "$DEEP" "$ELIG" "$RATE"
+  echo '#           Eligible = >= 3 typed turns. Score movement on THIS, not on'
+  echo '#           the all-sessions figure, and check the buckets below too.'
+  echo
+  {
+    printf 'TURNS\tSESSIONS\tCHAIN>=3\tRATE\n'
+    buckets
+  } | column -t -s "$(printf '\t')" | sed 's/^/#   /'
+  cat <<'EOF'
 
 # COLUMNS
 #   TYPED  human-typed turns (promptSource=="typed"). The denominator. Every
@@ -430,5 +450,5 @@ EOF
 #   * Sessions predating the archive, or older than `cleanupPeriodDays`.
 #   * Every number is therefore a FLOOR, never a measurement of the whole.
 EOF
-    ;;
+  ;;
 esac

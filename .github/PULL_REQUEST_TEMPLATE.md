@@ -8,7 +8,6 @@
 
 ## Implementation Notes
 
-
 ## To Do
 
 - [ ] Update docs as needed

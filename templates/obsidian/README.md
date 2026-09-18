@@ -17,12 +17,12 @@ Obsidian handles plugins by git cloning the installed plugins into `.obsidian/pl
 
 Plugins and themes will need to be manually installed in each Obsidian vault due to the aforementioned constraints. As an optional step, plugins which store their settings in `data.json` files can have the sample values listed here copied or symlinked into the vault after plugin installation. The following are community solutions which I use regularly:
 
-* **Theme:** Tokyo Night
-* **Data Aggregation:** Dataview
-* **Daily/Weekly/Monthly Notes:** Periodic Notes
-* **Note encryption with GPG:** gpgCrypt
-* **Notes about Books I'm reading or want to read:** Obsidian Book Search Plugin
-* **Recipe Management with different views and scaling:** Recipe View
+- **Theme:** Tokyo Night
+- **Data Aggregation:** Dataview
+- **Daily/Weekly/Monthly Notes:** Periodic Notes
+- **Note encryption with GPG:** gpgCrypt
+- **Notes about Books I'm reading or want to read:** Obsidian Book Search Plugin
+- **Recipe Management with different views and scaling:** Recipe View
 
 ## Vault Structure
 

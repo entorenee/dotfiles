@@ -148,4 +148,3 @@ vim.api.nvim_create_autocmd("FileType", {
 - **Language files:** `lua/plugins/languages/[name].lua`
 - **Import registry:** `lua/plugins/languages/init.lua`
 - **Main configs:** `lua/plugins/lsp.lua`, `lua/plugins/editor.lua`, `lua/plugins/ui.lua`
-

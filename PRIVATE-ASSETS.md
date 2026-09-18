@@ -11,7 +11,7 @@ explicit `rev`. It is deliberately **not** a flake input.
 
 Stock Nix fetches every locked flake input eagerly, before it knows which
 outputs use them. As an input, a `git+ssh://` private repo therefore forced
-every host to authenticate to GitHub just to *evaluate* — including the
+every host to authenticate to GitHub just to _evaluate_ — including the
 headless Pi hosts (`hub`, `uptime`, `airgap`), which take `roles/home/cli.nix`
 or `minimal.nix`, never import the fonts module, and have no Yubikey plugged in
 to authenticate with. That is what made `make hub-switch` fail without a
@@ -36,7 +36,7 @@ nix eval --offline --raw --expr 'builtins.fetchGit {
 
 Authentication is needed only on a cold cache — the first evaluation on a new
 machine, or after `~/.cache/nix/gitv3` is cleared. `nix-collect-garbage` does
-*not* trigger it, since that cache lives outside the store. This is the same
+_not_ trigger it, since that cache lives outside the store. This is the same
 fetcher and cache the flake input used, so nothing about how often a GUI host
 authenticates has changed.
 
