@@ -39,6 +39,12 @@ read-only — never write `settings.json` or similar directly. Point me at the N
   `3` rewrites and lets Claude Code prompt; `1` and `2` pass the command through untouched, so
   `permissions.deny` handles it natively. `Bash(rtk proxy*)` is denied — arbitrary-command
   escape hatch.
+- **A rewrite can silently drop a flag `rtk` does not know, and still exit 0.** `find …
+  -newermt <date>` printed `rtk find: unknown flag '-newermt', ignored` to **stderr**, ran to
+  completion, and returned the **unfiltered** set — so a filter that was never applied reads as
+  a filter that matched everything. Verified 2026-09-17 against `~/.claude/projects`. Filter
+  inside the data instead (on a JSON `.timestamp`, say), or grep stderr for `unknown flag`
+  before trusting a narrowed result; the exit status is 0 either way.
 - **Before proposing any new `Bash(...)` allow rule, run `rtk rewrite "<cmd>"` first.** Exit 0
   or 3 means the existing `Bash(rtk *)` entry already covers it and the new rule is dead weight
   on arrival. Only exit 1 — no rtk equivalent — is a genuine gap. This one check eliminated 7 of
