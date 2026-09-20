@@ -262,9 +262,17 @@ A project-first wrapper was built for this and then removed: it only ever covere
 
 ### The hook checks formatting only
 
-`.githooks/pre-commit` runs the six formatters over the files in the commit and nothing else. `statix`/`deadnix`/`actionlint` are whole-tree and devShell-only, so they live in `make lint` instead — a hook that needed `nix develop` to pass would just get bypassed. No CI workflow runs them yet; `make lint` is the only thing that does.
+`.githooks/pre-commit` runs the six formatters over the files in the commit and nothing else. `statix`/`deadnix`/`actionlint` are whole-tree and devShell-only, so they live in `make lint` instead — a hook that needed `nix develop` to pass would just get bypassed.
 
 It checks the **worktree** copy of each staged file, not the staged blob. The two differ only when a file is partially staged. It is POSIX `sh` with no arrays: hooks inherit whatever PATH the invoking shell had, and on macOS that can still be bash 3.2. Bypass with `git commit --no-verify`.
+
+### CI runs `make check`, and evaluates the Pi hosts only
+
+`.github/workflows/check.yml` has two jobs. `check` runs `nix develop --command make check`, which is the only place `statix`/`deadnix`/`actionlint` run outside a dev shell. `eval` builds no closure — it takes the `toplevel.drvPath` of `hub`, `airgap` and `uptime`.
+
+**It does not validate `fw-skyler`, `lyra-silvertongue` or `hester-prynne`, and must not be described as validating every host.** All three take `roles/home/gui.nix` → `modules/home/fonts`, whose `builtins.fetchGit` against the private assets repo is forced during evaluation and needs SSH credentials no runner has. Closing that gap means putting a read-only deploy key in Actions secrets plus an `ssh-agent` step — a separate decision, deliberately not taken here.
+
+Note that `make fmt-check` derives its file lists from `git ls-files`, so a new untracked file is invisible to it. `actionlint` is the exception: it scans `.github/workflows/` on disk, so it lints a workflow before it is tracked.
 
 ## NixOS Pi Hosts
 

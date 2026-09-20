@@ -1,0 +1,37 @@
+name: check
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  check:
+    name: Format and lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: DeterminateSystems/nix-installer-action@v16
+      - run: nix develop --command make check
+
+  eval:
+    name: Evaluate NixOS hosts
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: DeterminateSystems/nix-installer-action@v16
+      # The three Pis only. fw-skyler, lyra-silvertongue and hester-prynne all
+      # take roles/home/gui.nix, which imports modules/home/fonts, whose
+      # builtins.fetchGit against the private assets repo is forced during
+      # evaluation and needs SSH credentials no runner has. So this job does
+      # NOT validate every host — closing that gap means a read-only deploy key
+      # as an Actions secret, which is a separate decision.
+      - name: nix eval each Pi host's toplevel drvPath
+        run: |
+          for host in hub airgap uptime; do
+            echo "::group::$host"
+            nix eval --raw ".#nixosConfigurations.$host.config.system.build.toplevel.drvPath"
+            echo
+            echo "::endgroup::"
+          done
