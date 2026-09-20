@@ -64,7 +64,9 @@ check() {
 }
 
 check nix alejandra --check -- '*.nix'
-check yaml yamlfmt -lint -quiet -- '*.yml' '*.yaml'
+# -conf, because yamlfmt's config lives in a home-manager module rather than at
+# the repo root and is otherwise only found via ~/.config. Match the Makefile.
+check yaml yamlfmt -lint -quiet -conf modules/home/yamlfmt/config/.yamlfmt -- '*.yml' '*.yaml'
 # The zsh scripts in modules/home/bins/bin are excluded: shfmt parses
 # sh/bash/mksh/bats and hard-errors on zsh. Keep in step with SH_FILES.
 check shell shfmt -l -- '*.sh' 'modules/home/bins/bin/*' '.githooks/*' \

@@ -114,13 +114,19 @@ SH_FILES := $(shell git ls-files '*.sh' 'modules/home/bins/bin/*' '.githooks/*' 
 	':!modules/home/bins/bin/dot-update' \
 	':!modules/home/bins/bin/update-all')
 
+# yamlfmt's own lookup ends at ~/.config/yamlfmt/.yamlfmt, which exists only
+# where home-manager deployed it — so unnamed, CI formats at yamlfmt's defaults
+# (blank lines stripped, folded scalars unfolded) and disagrees with every
+# developer machine. Name the repo's copy rather than duplicating it at the root.
+YAMLFMT_CONF := modules/home/yamlfmt/config/.yamlfmt
+
 # Recipes are silenced because each file list runs to seventy-odd paths.
 
 ## Format every tracked file in place
 fmt:
 	$(call require_tools,$(FMT_TOOLS))
 	@alejandra --quiet $(NIX_FILES)
-	@yamlfmt $(YAML_FILES)
+	@yamlfmt -conf $(YAMLFMT_CONF) $(YAML_FILES)
 	@shfmt -w $(SH_FILES)
 	@stylua $(LUA_FILES)
 	@taplo fmt $(TOML_FILES)
@@ -130,7 +136,7 @@ fmt:
 fmt-check:
 	$(call require_tools,$(FMT_TOOLS))
 	@alejandra --check $(NIX_FILES)
-	@yamlfmt -lint $(YAML_FILES)
+	@yamlfmt -lint -conf $(YAMLFMT_CONF) $(YAML_FILES)
 	@shfmt -d $(SH_FILES)
 	@stylua --check $(LUA_FILES)
 	@taplo fmt --check $(TOML_FILES)
