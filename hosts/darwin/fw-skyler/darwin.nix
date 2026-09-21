@@ -3,10 +3,9 @@
   # "Pin every Darwin host's hostname" section of CLAUDE.md.
   networking.hostName = "fw-skyler";
 
-
   homebrew = {
     brews = [
-      "hookdeck/hookdeck/hookdeck"
+      "hookdeck"
       "mysql"
       "vercel-cli"
     ];
