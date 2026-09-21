@@ -38,7 +38,7 @@ CONFIG_DIR="${SKILL_CONFIG_DIR:-$HOME/dotfiles/modules/home/claude/config}"
 TRANSCRIPTS="${SKILL_TRANSCRIPT_DIR:-$HOME/.claude/projects}"
 # Guarded, not defaulted: a wrong root finds nothing and reports every
 # report-writing skill as unused.
-ART_ROOT="${SKILL_ARTIFACT_ROOT:-${MY_CLAUDE_ARTIFACTS_ROOT:?unset — run 'make rebuild', then start a new session}}"
+ART_ROOT="${SKILL_ARTIFACT_ROOT:-${MY_AGENT_ARTIFACTS_ROOT:?unset — run 'make rebuild', then start a new session}}"
 # Checkout first: at runtime $0 is a /nix/store symlink, so a correction
 # appended to testimony.txt stays inert there until the next rebuild.
 TESTIMONY="$CONFIG_DIR/skills/skill-reviewer/testimony.txt"

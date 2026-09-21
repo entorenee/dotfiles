@@ -5,7 +5,7 @@
   ...
 }: let
   # Absolute, not `~/…`: a JSON settings value is literal and would not expand.
-  artifactsRoot = "${config.xdg.dataHome}/claude/artifacts";
+  artifactsRoot = "${config.xdg.dataHome}/agents/artifacts";
 
   # `~/…`, not absolute: a leading `/` in a permission pattern is project-relative.
   artifactsGlob = "~${lib.removePrefix config.home.homeDirectory artifactsRoot}/**";
@@ -135,7 +135,7 @@ in {
         # The sandbox proxy binds 127.0.0.1 only; Node 18+ tries IPv6 first and
         # fails before falling back.
         NODE_OPTIONS = "--dns-result-order=ipv4first";
-        MY_CLAUDE_ARTIFACTS_ROOT = artifactsRoot;
+        MY_AGENT_ARTIFACTS_ROOT = artifactsRoot;
       };
       sandbox.enabled = true;
       # Without this a sandbox that fails to start degrades to no sandbox at all
@@ -446,7 +446,7 @@ in {
 
   # Duplicated from settings.env deliberately: this copy is what lets the skill
   # scripts resolve the root when run outside a Claude session.
-  home.sessionVariables.MY_CLAUDE_ARTIFACTS_ROOT = artifactsRoot;
+  home.sessionVariables.MY_AGENT_ARTIFACTS_ROOT = artifactsRoot;
 
   programs.zsh.shellAliases = {
     claude-yolo = "claude --dangerously-skip-permissions";
@@ -479,7 +479,7 @@ in {
         }
       ];
       EnvironmentVariables = {
-        MY_CLAUDE_ARTIFACTS_ROOT = artifactsRoot;
+        MY_AGENT_ARTIFACTS_ROOT = artifactsRoot;
         PATH = sweepDuePath;
       };
       StandardErrorPath = sweepDueLog;
@@ -495,7 +495,7 @@ in {
       Type = "oneshot";
       ExecStart = "${pkgs.bash}/bin/bash ${sweepDueScript}";
       Environment = [
-        "MY_CLAUDE_ARTIFACTS_ROOT=${artifactsRoot}"
+        "MY_AGENT_ARTIFACTS_ROOT=${artifactsRoot}"
         "PATH=${sweepDuePath}"
         # A user unit does not inherit the session bus from the login shell, and
         # without it the timer fires, the script runs, and no banner appears.

@@ -136,12 +136,12 @@ product documentation — live outside the repo in `$ARTIFACTS/<area>/`. Resolve
 session:
 
 ```bash
-ARTIFACTS="${MY_CLAUDE_ARTIFACTS_ROOT:?run 'make rebuild', then start a new session}/$(basename -s .git \
+ARTIFACTS="${MY_AGENT_ARTIFACTS_ROOT:?run 'make rebuild', then start a new session}/$(basename -s .git \
   "$(git remote get-url origin 2>/dev/null || git rev-parse --show-toplevel)")"
 mkdir -p "$ARTIFACTS/<area>"
 ```
 
-`MY_CLAUDE_ARTIFACTS_ROOT` is injected by `modules/home/claude/default.nix` — never hardcode the
+`MY_AGENT_ARTIFACTS_ROOT` is injected by `modules/home/claude/default.nix` — never hardcode the
 path here or in a skill. The `:?` is deliberate: an unset root should stop you, not quietly
 write to `/<repo>/<area>/`. Keying on the **remote name** is what makes this worktree-proof —
 every worktree resolves to the same directory, so an artifact written on a feature branch is

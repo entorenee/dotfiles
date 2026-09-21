@@ -35,7 +35,7 @@ Consumers invoke it, then follow it.
 ## Where a register instance lives
 
 ```bash
-ARTIFACTS="${MY_CLAUDE_ARTIFACTS_ROOT:?run 'make rebuild', then start a new session}/$(basename -s .git \
+ARTIFACTS="${MY_AGENT_ARTIFACTS_ROOT:?run 'make rebuild', then start a new session}/$(basename -s .git \
   "$(git remote get-url origin 2>/dev/null || git rev-parse --show-toplevel)")"
 BRANCH="$(git rev-parse --abbrev-ref HEAD | tr '/' '-')"
 REGISTER="$ARTIFACTS/registers/$BRANCH.md"

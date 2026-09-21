@@ -87,7 +87,7 @@ Accept in priority order:
 ### Artifacts root and branch register
 
 ```bash
-ARTIFACTS="${MY_CLAUDE_ARTIFACTS_ROOT:?run 'make rebuild', then start a new session}/$(basename -s .git \
+ARTIFACTS="${MY_AGENT_ARTIFACTS_ROOT:?run 'make rebuild', then start a new session}/$(basename -s .git \
   "$(git remote get-url origin 2>/dev/null || git rev-parse --show-toplevel)")"
 REGISTER="$ARTIFACTS/registers/$(git rev-parse --abbrev-ref HEAD | tr '/' '-').md"
 cat "$REGISTER" 2>/dev/null

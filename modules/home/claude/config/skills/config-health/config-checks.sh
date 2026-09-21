@@ -27,13 +27,13 @@ CLAUDE_JSON="${CLAUDE_JSON:-$HOME/.claude.json}"
 # nothing on its own, so neither half of a plugin check may be read off it.
 PLUGINS="${PLUGINS:-$HOME/.claude/plugins}"
 # The root, not `$ARTIFACTS` — that name means the repo-keyed
-# `$MY_CLAUDE_ARTIFACTS_ROOT/<repo>` everywhere else, and the review ledger sits
+# `$MY_AGENT_ARTIFACTS_ROOT/<repo>` everywhere else, and the review ledger sits
 # above the repo layout. Named as `inventory.sh` names it, since both read it.
 #
 # Left empty rather than defaulted when unset: this script never hard-fails, so
 # check_skill_inventory reports the gap as REVIEW rather than guessing a path
 # and announcing a missing ledger that may well exist elsewhere.
-ART_ROOT="${ART_ROOT:-${MY_CLAUDE_ARTIFACTS_ROOT:-}}"
+ART_ROOT="${ART_ROOT:-${MY_AGENT_ARTIFACTS_ROOT:-}}"
 
 emit() { printf '%s\t%s\t%s\n' "$1" "$2" "$3"; }
 
@@ -183,7 +183,7 @@ check_skill_inventory() {
   fi
 
   if [[ -z "$ART_ROOT" ]]; then
-    emit REVIEW skill-inventory "MY_CLAUDE_ARTIFACTS_ROOT is unset, so the review ledger cannot be located — run 'make rebuild', then start a new session. Ledger checks skipped."
+    emit REVIEW skill-inventory "MY_AGENT_ARTIFACTS_ROOT is unset, so the review ledger cannot be located — run 'make rebuild', then start a new session. Ledger checks skipped."
     [[ -z "$untracked" ]] && emit OK skill-inventory "tracking verified for $(printf '%s\n' "$units" | grep -c .) unit(s)"
     return
   fi
@@ -549,7 +549,7 @@ if [ "$MODE" = selftest ]; then
     "is untracked"
   invcheck "an unset ART_ROOT skips the ledger and still reports tracking" \
     "FAIL:skill-inventory,FAIL:skill-inventory,REVIEW:skill-inventory," \
-    "$T/inv-git" "$T/inv-cfg" "" "MY_CLAUDE_ARTIFACTS_ROOT is unset"
+    "$T/inv-git" "$T/inv-cfg" "" "MY_AGENT_ARTIFACTS_ROOT is unset"
   invcheck "a ledger row naming no live unit is drift" \
     "REVIEW:skill-inventory,FAIL:skill-inventory,REVIEW:skill-inventory," \
     "$T/inv-nongit" "$T/inv-cfg" "$T/led-orphan" "ledger has a row for 'gone'"

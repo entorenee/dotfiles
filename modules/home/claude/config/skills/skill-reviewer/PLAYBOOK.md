@@ -286,7 +286,7 @@ F8 invent dates that look exactly like real ones.
 Proposed, and deliberately small:
 
 1. **Unpin the ledger from the repo key.** Store it at
-   `$MY_CLAUDE_ARTIFACTS_ROOT/skill-reviewer/LEDGER.md` — one level above the
+   `$MY_AGENT_ARTIFACTS_ROOT/skill-reviewer/LEDGER.md` — one level above the
    per-repo layout — so fragmentation is unrepresentable rather than merely
    avoided. Keep a depth-3 scan solely to *warn* about strays left behind.
    Merging the halves instead would preserve the category error and leave N
