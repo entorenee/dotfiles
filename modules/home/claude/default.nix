@@ -148,10 +148,12 @@ in {
         "objects.githubusercontent.com"
         "asanausercontent.com"
       ];
-      # Identity roles allow the whole gh config dir; this re-blocks the one
-      # file an OAuth token could land in. denyRead wins over allowRead.
+      # ~/.config/gh/hosts.yml is deliberately NOT denied: gh reads it to build
+      # its root command, so denying it stops gh starting at all. On Darwin it
+      # holds no secret — git_protocol and a username; the token lives in the
+      # keychain, denied via ~/Library/Keychains. gh writes `oauth_token` here
+      # when there is no keychain, so verify before trusting this on Linux.
       sandbox.filesystem.denyRead = [
-        "~/.config/gh/hosts.yml"
         # The age identity decrypts every secret this machine is sent, so it
         # outranks any single credential the entries around it protect. The
         # decrypted keys need no entry: agenix writes them to a runtime dir
@@ -185,9 +187,10 @@ in {
         # still blocks gh writes.
         "gh *"
         # The rtk-rewrite hook turns `gh ...` into `rtk gh ...` before the
-        # sandbox decision, so `gh *` alone never matches and gh ends up
-        # sandboxed — where denyRead on hosts.yml stops it from even starting
-        # ("failed to create root command"). Both forms have to be listed.
+        # sandbox decision, so `gh *` alone never matches. Both forms have to be
+        # listed. Neither spares a chained, piped, redirected, or env-prefixed
+        # gh — the pattern matches the WHOLE command, so `cd x && gh ...` runs
+        # sandboxed and works only because hosts.yml is readable there.
         "rtk gh *"
         # Nix needs the daemon socket, which the sandbox blocks. Read-only
         # evaluation only: builds, rebuilds, and `nix run`/`develop`/`shell`/
