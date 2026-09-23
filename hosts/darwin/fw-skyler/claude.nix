@@ -20,15 +20,25 @@
         "mcp__plugin_claude-code-home-manager_vercel__get_agent_run*"
         "mcp__plugin_claude-code-home-manager_vercel__get_deployment*"
         "mcp__plugin_claude-code-home-manager_vercel__get_domain_*"
-        "mcp__plugin_claude-code-home-manager_vercel__get_project*"
+        # get_project is enumerated rather than globbed: get_project_env returns
+        # environment variable values and get_project_token returns an access
+        # token, both of which a get_project* glob would allow. Re-globbing this
+        # family silently re-admits them.
+        "mcp__plugin_claude-code-home-manager_vercel__get_project"
+        "mcp__plugin_claude-code-home-manager_vercel__get_project_check"
+        "mcp__plugin_claude-code-home-manager_vercel__get_project_trace"
         "mcp__plugin_claude-code-home-manager_vercel__get_purchase_*"
         "mcp__plugin_claude-code-home-manager_vercel__get_runtime_*"
         "mcp__plugin_claude-code-home-manager_vercel__get_toolbar_*"
-        "mcp__plugin_claude-code-home-manager_vercel__get_web_*"
+        "mcp__plugin_claude-code-home-manager_vercel__get_webhook*"
         "mcp__plugin_claude-code-home-manager_vercel__list_*"
         "mcp__plugin_claude-code-home-manager_vercel__search_*"
-        "mcp__plugin_claude-code-home-manager_vercel__check_*"
+        "mcp__plugin_claude-code-home-manager_vercel__get_check*"
         "mcp__plugin_claude-code-home-manager_vercel__web_fetch_*"
+        # granola exposes only read tools; there is no mutating sibling to exclude.
+        "mcp__plugin_claude-code-home-manager_granola__get_*"
+        "mcp__plugin_claude-code-home-manager_granola__list_*"
+        "mcp__plugin_claude-code-home-manager_granola__query_*"
         "mcp__plugin_claude-code-home-manager_sentry__find_*"
         "mcp__plugin_claude-code-home-manager_sentry__get_*"
         "mcp__plugin_claude-code-home-manager_sentry__search_*"
