@@ -28,6 +28,19 @@ read-only — never write `settings.json` or similar directly. Point me at the N
   What prompts is a segment matching nothing: `rm -f`/`rm -rf`, `touch`, `npm pack`, an unpinned
   `pnpm dlx <pkg>`, or a relative `node_modules/.bin/<bin>` path. Split those into their own
   call; don't reflexively unbundle a chain that would have run fine.
+- **`sandbox.excludedCommands` matches the WHOLE command — unlike `permissions.allow`, which
+  matches per segment.** So `nix eval …` runs unsandboxed but `cd X && nix eval …`,
+  `nix eval … | tail -40`, `nix eval … > f`, and `ENV=v nix eval …` all run *sandboxed* and
+  fail on the daemon socket or a cache write. A trailing `2>&1` is fine. Run an excluded
+  command bare, and reach the target with an **absolute path** — not `cd`. Splitting the `cd`
+  into its own call does not work: the harness resets the working directory to the project root
+  after every call (it says so — `Shell cwd was reset to …`), so the `cd` never carries over.
+  Measured 2026-09-23; this contradicts the tool description's "working directory persists
+  between calls", and the measurement is what held. Limit output with the command's own flags
+  (`--apply`, `--json`, `--jq`, `--limit`) rather than a pipe, and let the harness truncate
+  instead of `| tail -N`. Applies to every entry in the
+  list — `nix eval`, `npm view`, `pnpm outdated`, `gh`. Source of truth for the list: the
+  `sandbox.excludedCommands` block in `modules/home/claude/default.nix`.
 - **Diagnose a prompt; never guess at it.** `cd` has been wrongly blamed for this before and the
   wrong fix stuck for weeks. A correct diagnosis needs both halves: check each segment against
   `permissions.allow`/`permissions.deny` in `~/.claude/settings.json`, **and** run
@@ -232,6 +245,10 @@ remote.
 - Do NOT post comments on GitHub PRs. Surface feedback in chat for me to post.
 - Do NOT create PRs unless told to; when asked, default to `--draft`.
 - Do NOT advance to the next phase of a multi-phase plan until I confirm the previous one.
+- **When a command is blocked — by `permissions.deny`, a hook, or the sandbox — never stop at
+  the block.** Hand over the exact command prefixed with `! ` so it runs in-session, say in one
+  line which layer blocked it, and continue with everything else the task allows. Reporting a
+  block without a runnable handover is an incomplete answer.
 
 ## Git Worktree Workflow
 
