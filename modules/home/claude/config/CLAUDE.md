@@ -65,9 +65,14 @@ read-only — never write `settings.json` or similar directly. Point me at the N
   or 3 means the existing `Bash(rtk *)` entry already covers it and the new rule is dead weight
   on arrival. Only exit 1 — no rtk equivalent — is a genuine gap. This one check eliminated 7 of
   10 proposed patterns in a single audit.
-- **Never `node -e`, `python -c`, or similar to inspect files or config.** Arbitrary code
-  execution can't be allowlisted — it is the escape hatch the `pnpm exec node`/`sh` denies exist
-  to block — so it prompts every time. Read files with the Read tool.
+- **Never `node -e`, `python -c`, or similar to inspect files or config.** These are
+  `permissions.ask` rules, so they prompt **even in auto mode**, and an ask rule is
+  subcommand-anchored — it still matches behind a `cd … &&`, an env prefix, or inside `$( )`.
+  Read files with the Read tool; it is cheaper and does not prompt. This is an ergonomic rule,
+  **not** a security boundary: `sh -c`, `perl -e`, and `printf > f && python3 f` run the same
+  arbitrary code and are deliberately left uncovered, because a boundary drawn around
+  interpreter spellings cannot exist. The docs say so outright — a deny or ask rule "covers the
+  invocation Claude usually produces and isn't a security boundary around the program."
 - **Invoke project binaries through an allowlisted form**, not a relative path: `pnpm exec
   eslint …`, `npx eslint …`, `pnpm exec tsc …`, never `../node_modules/.bin/eslint …`.
 - **Scratch files go in the session scratchpad or `$TMPDIR`, not bare `/tmp`.** Use the

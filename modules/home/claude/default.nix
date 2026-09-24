@@ -443,6 +443,33 @@ in {
         # (per global CLAUDE.md) — so confirm per-use rather than deny outright.
         # Catches reviewer/assignee edits too, which is the desired gate.
         "Bash(gh pr edit*)"
+        # Interpreter one-liners used as a file-inspection shortcut — the Read
+        # tool is cheaper, so confirm per-use rather than reaching for these by
+        # reflex. An ask rule prompts even in auto mode, and is
+        # subcommand-anchored: it fires inside `&&` chains, `$( )`, subshells
+        # and loop bodies, and past a leading env assignment, while a quoted
+        # *argument* (`grep -rn "python3 -c" .`) is not a subcommand and does
+        # not match. That is why this belongs here and not in a regex PreToolUse
+        # hook, which cannot tell an argument from a subcommand and denied
+        # exactly that grep. `rtk rewrite` exits 1 on every form below — no
+        # equivalent, passed through unchanged — so hooks/rtk-rewrite.sh leaves
+        # them in a shape these patterns still match; re-check that after
+        # changing this list, since a rewritten command matches `Bash(rtk *)`
+        # in allow instead.
+        # Not a security boundary: per code.claude.com/docs/en/permissions such
+        # a rule "covers the invocation Claude usually produces and isn't a
+        # security boundary around the program." `sh -c`, `perl -e` and
+        # `printf > f && python3 f` stay uncovered on purpose — widening to
+        # catch them chases a boundary that cannot exist.
+        "Bash(python -c *)"
+        "Bash(python3 -c *)"
+        # A glob, not a regex: `.` is literal and `*` is the wildcard, so this
+        # is the `python3.12 -c …` spelling.
+        "Bash(python3.* -c *)"
+        "Bash(node -e *)"
+        "Bash(node --eval *)"
+        "Bash(node -p *)"
+        "Bash(node --print *)"
       ];
     };
   };
