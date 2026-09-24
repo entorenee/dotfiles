@@ -31,10 +31,16 @@ read-only — never write `settings.json` or similar directly. Point me at the N
   `rm -f`/`rm -fr`/`rm -rf`/`rm -r` match `permissions.deny` and are
   **refused outright** — splitting the chain does not help, and the only route is flagless
   `rm` or handing the command over as `! rm -rf <path>`.
-- **`sandbox.excludedCommands` matches the WHOLE command — unlike `permissions.allow`, which
-  matches per segment.** So `nix eval …` runs unsandboxed but `cd X && nix eval …`,
+- **`sandbox.excludedCommands` spares only a BARE invocation — unlike `permissions.allow`,
+  which matches per segment.** So `nix eval …` runs unsandboxed but `cd X && nix eval …`,
   `nix eval … | tail -40`, `nix eval … > f`, and `ENV=v nix eval …` all run *sandboxed* and
-  fail on the daemon socket or a cache write. A trailing `2>&1` is fine. Run an excluded
+  fail on the daemon socket or a cache write. A trailing `2>&1` is fine. **Do not reason out
+  which shapes a pattern spares: the rule is undocumented and is NOT whole-string globbing** —
+  `nix eval … | cat` is matched textually by the deployed `nix eval *` and still runs
+  sandboxed. Three mechanism models were proposed on 2026-09-23 and all three were falsified,
+  so test a new shape against the live config instead of predicting it; the measurements sit in
+  the note above `sandbox.excludedCommands` in `modules/home/claude/default.nix`, which is also
+  the source of truth for the list. Run an excluded
   command bare, and reach the target with an **absolute path** — not `cd`. Splitting the `cd`
   into its own call does not work: the harness resets the working directory to the project root
   after every call (it says so — `Shell cwd was reset to …`), so the `cd` never carries over.
@@ -42,8 +48,7 @@ read-only — never write `settings.json` or similar directly. Point me at the N
   between calls", and the measurement is what held. Limit output with the command's own flags
   (`--apply`, `--json`, `--jq`, `--limit`) rather than a pipe, and let the harness truncate
   instead of `| tail -N`. Applies to every entry in the
-  list — `nix eval`, `npm view`, `pnpm outdated`, `gh`. Source of truth for the list: the
-  `sandbox.excludedCommands` block in `modules/home/claude/default.nix`.
+  list — `nix eval`, `npm view`, `pnpm outdated`, `gh`.
 - **Diagnose a prompt; never guess at it.** `cd` has been wrongly blamed for this before and the
   wrong fix stuck for weeks. A correct diagnosis needs both halves: check each segment against
   `permissions.allow`/`permissions.deny` in `~/.claude/settings.json`, **and** run

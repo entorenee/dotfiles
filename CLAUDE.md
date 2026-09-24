@@ -483,8 +483,11 @@ correction is recorded rather than silently swapped because the wrong version wa
 Read the body from a file (`--body-file`) rather than inlining a long one — a multi-line
 `--body` string is where quoting breaks in a non-TTY shell.
 
-`sandbox.excludedCommands` matches the **whole** command, so `gh *` and `rtk gh *` spare only
-a bare invocation — a pipe, redirect, `&&`, or env prefix runs sandboxed instead. Sandboxed gh
+`sandbox.excludedCommands` spares only a **bare** invocation, so `gh *` and `rtk gh *` do not
+cover a pipe, redirect, `&&`, or env prefix — those run sandboxed instead. The matching rule is
+undocumented and is *not* whole-string globbing; see the note above the
+`sandbox.excludedCommands` block in `modules/home/claude/default.nix` before reasoning about
+which shapes a pattern covers. Sandboxed gh
 now *starts* (`~/.config/gh/hosts.yml` is deliberately not in `denyRead`), but anything
 touching the network still dies on the IPv6 proxy: `proxyconnect tcp: dial tcp [::1]`. So a
 non-bare gh is usable for local subcommands only — run network gh bare. Keep both patterns

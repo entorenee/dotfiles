@@ -163,6 +163,16 @@ in {
       sandbox.filesystem.allowRead = [artifactsRoot];
       sandbox.filesystem.allowWrite = [artifactsRoot];
 
+      # Only a BARE invocation is excluded. A pipe, a redirect, an env prefix,
+      # or a trailing `&& ...` each run sandboxed instead, whatever the pattern
+      # says; a plain `2>&1` is tolerated. Do not reason out which shapes a
+      # glob spares — the matching rule is undocumented and is NOT whole-string
+      # globbing. Measured 2026-09-23: `nix eval X | cat` IS matched textually
+      # by `nix eval *` below and still runs sandboxed, while `cd D && nix eval
+      # X` was spared only by an explicit `*nix eval *` — tried, then removed,
+      # because it bought that one shape and nothing else. Test a new shape
+      # against the live config; never infer it.
+      #
       # Registry-metadata reads run unsandboxed so they reuse the real ~/.npm
       # and pnpm caches.
       sandbox.excludedCommands = [
@@ -188,9 +198,10 @@ in {
         "gh *"
         # The rtk-rewrite hook turns `gh ...` into `rtk gh ...` before the
         # sandbox decision, so `gh *` alone never matches. Both forms have to be
-        # listed. Neither spares a chained, piped, redirected, or env-prefixed
-        # gh — the pattern matches the WHOLE command, so `cd x && gh ...` runs
-        # sandboxed and works only because hosts.yml is readable there.
+        # listed. Neither spares a non-bare gh (see the note above the list),
+        # which runs sandboxed and works only because hosts.yml is readable
+        # there — and then only for local subcommands, since anything touching
+        # the network still dies on the IPv6 proxy.
         "rtk gh *"
         # Nix needs the daemon socket, which the sandbox blocks. Read-only
         # evaluation only: builds, rebuilds, and `nix run`/`develop`/`shell`/
