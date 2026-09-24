@@ -442,6 +442,10 @@ in {
         # Editing my own PR's title/body is allowed "with explicit instruction"
         # (per global CLAUDE.md) — so confirm per-use rather than deny outright.
         # Catches reviewer/assignee edits too, which is the desired gate.
+        # Only reachable because `gh pr edit` is in rtk's `exclude_commands`
+        # (modules/home/rtk/config/config.toml). Drop it there and rtk rewrites
+        # this to `rtk gh pr edit …`, which this rule cannot match and
+        # `Bash(rtk *)` in allow can — the prompt then disappears silently.
         "Bash(gh pr edit*)"
         # Interpreter one-liners used as a file-inspection shortcut — the Read
         # tool is cheaper, so confirm per-use rather than reaching for these by
