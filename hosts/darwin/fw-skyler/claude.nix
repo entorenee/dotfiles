@@ -1,6 +1,27 @@
-{...}: {
+{config, ...}: {
   programs.claude-code = {
     settings = {
+      # claude.ai offers far more connectors than are wanted, so this admits the
+      # ones that are. It is NOT connector-scoped: populated, it admits only
+      # what it lists, and plugin-bundled and `claude mcp add` servers are
+      # checked against it too. Verified 2026-09-24 — trimmed to the Drive entry
+      # alone, /mcp showed 1 server and 262 tools vanished, including every
+      # plugin server that /mcp files under "Built-in MCPs (always available)".
+      # That heading is a grouping, not a policy exemption.
+      #
+      # Hence the Nix-declared set is generated rather than restated, and a host
+      # with no `mcpServers` must never inherit this: unset admits everything,
+      # an empty list admits nothing.
+      allowedMcpServers =
+        map (s: {serverUrl = s.url;})
+        (builtins.attrValues config.programs.claude-code.mcpServers)
+        ++ [
+          # Registered outside Nix: Asana is a confidential OAuth client and the
+          # secret has no channel through `mcpServers`.
+          {serverUrl = "https://mcp.asana.com/v2/mcp";}
+          # Google-hosted claude.ai connector, enabled at claude.ai not here.
+          {serverUrl = "https://drivemcp.googleapis.com/mcp/v1";}
+        ];
       permissions.allow = [
         # Read access for cross-project paths (worktrees, sibling packages)
         "Read(~/code/work/**)"
@@ -65,6 +86,19 @@
         "mcp__plugin_claude-code-home-manager_expo__add_library"
         # NOTE: posthog exposes only a generic `exec` tool — intentionally NOT
         # allowlisted (arbitrary query/command surface; should prompt each time)
+        # google drive. These fire only while the connector's URL is in the
+        # allowlist above; the two are edited together or not at all.
+        #
+        # 11 tools. The globs below match its 6 reads; the 5 mutating ones —
+        # copy_file, create_file, share_file, trash_file, update_file — share no
+        # prefix with any of them and so prompt per call. share_file grants
+        # another account access to a file. get_file_permissions only reads an
+        # ACL, which is what makes a bare `get_*` safe here.
+        "mcp__claude_ai_Google_Drive__get_*"
+        "mcp__claude_ai_Google_Drive__search_*"
+        "mcp__claude_ai_Google_Drive__list_*"
+        "mcp__claude_ai_Google_Drive__read_*"
+        "mcp__claude_ai_Google_Drive__download_*"
         # Docs for the MCP servers declared below. Explicit hosts, never
         # "*.example.com" — same rule as webFetchHosts in the base module.
         "WebFetch(domain:docs.sentry.io)"

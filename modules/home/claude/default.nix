@@ -130,7 +130,6 @@ in {
         "pr-review-toolkit@claude-plugins-official" = true;
       };
       env = {
-        ENABLE_CLAUDEAI_MCP_SERVERS = "false";
         DISABLE_AUTOUPDATER = "1";
         # The sandbox proxy binds 127.0.0.1 only; Node 18+ tries IPv6 first and
         # fails before falling back.
