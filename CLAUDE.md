@@ -202,7 +202,7 @@ Set it on the **host**, never in a `roles/` file — the name identifies one mac
 
 Leave `networking.computerName` alone unless you intend to rename the machine everywhere it is user-visible.
 
-The chicken-and-egg case — a machine whose `HostName` is unset cannot `make rebuild` to acquire the pin — is broken by hand, once:
+The chicken-and-egg case — a machine whose `HostName` is unset cannot `make rebuild` to acquire the pin — is broken by hand, once. `sudo` is in `permissions.deny`, so Claude cannot run this: it hands the command over prefixed with `! ` for you to run in-session.
 
 ```bash
 sudo scutil --set HostName <attr-name>
@@ -415,7 +415,7 @@ Claude Code permissions live in `modules/home/claude/default.nix` (base) with ad
 | --- | --- | --- |
 | Allow | `permissions.allow` | Glob patterns auto-approve matching tool calls |
 | Deny | `permissions.deny` | Always wins over allow — use for defense in depth |
-| Sandbox | `sandbox.network.allowedDomains`, `sandbox.filesystem.allowRead/Write` | Hard boundary that no per-call approval can bypass |
+| Sandbox | `sandbox.network.allowedDomains`, `sandbox.filesystem.allowRead/Write` | Hard boundary that no per-call approval can bypass — **when it is actually running.** A repo `settings.local.json` can disable it, and a failed startup degrades to no sandbox with only a warning (see above). |
 
 #### Pattern syntax
 
@@ -482,6 +482,13 @@ correction is recorded rather than silently swapped because the wrong version wa
 
 Read the body from a file (`--body-file`) rather than inlining a long one — a multi-line
 `--body` string is where quoting breaks in a non-TTY shell.
+
+`sandbox.excludedCommands` matches the **whole** command, so `gh *` and `rtk gh *` spare only
+a bare invocation — a pipe, redirect, `&&`, or env prefix runs sandboxed instead. Sandboxed gh
+now *starts* (`~/.config/gh/hosts.yml` is deliberately not in `denyRead`), but anything
+touching the network still dies on the IPv6 proxy: `proxyconnect tcp: dial tcp [::1]`. So a
+non-bare gh is usable for local subcommands only — run network gh bare. Keep both patterns
+listed; keep `hosts.yml` out of `denyRead`.
 
 ## Claude AI Memory Files
 

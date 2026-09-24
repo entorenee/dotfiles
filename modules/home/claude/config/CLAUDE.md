@@ -25,9 +25,12 @@ read-only — never write `settings.json` or similar directly. Point me at the N
 - **Chaining is fine; one unmatched segment is not.** `cd <path> && pnpm typecheck`,
   `pnpm … | tail -40`, `cmd > file`, and `mkdir -p … && cmd` all auto-approve as long as every
   segment is allowlisted or a read-only builtin (`head`, `tail`, `wc`, `grep`, `cd`, `echo`, …).
-  What prompts is a segment matching nothing: `rm -f`/`rm -rf`, `touch`, `npm pack`, an unpinned
+  What prompts is a segment matching nothing: `touch`, `npm pack`, an unpinned
   `pnpm dlx <pkg>`, or a relative `node_modules/.bin/<bin>` path. Split those into their own
-  call; don't reflexively unbundle a chain that would have run fine.
+  call; don't reflexively unbundle a chain that would have run fine. Distinct from that:
+  `rm -f`/`rm -fr`/`rm -rf`/`rm -r` match `permissions.deny` and are
+  **refused outright** — splitting the chain does not help, and the only route is flagless
+  `rm` or handing the command over as `! rm -rf <path>`.
 - **`sandbox.excludedCommands` matches the WHOLE command — unlike `permissions.allow`, which
   matches per segment.** So `nix eval …` runs unsandboxed but `cd X && nix eval …`,
   `nix eval … | tail -40`, `nix eval … > f`, and `ENV=v nix eval …` all run *sandboxed* and
@@ -212,6 +215,8 @@ remote.
 
 - **After code changes, run typecheck, lint, and tests, and report pass/fail per check** before
   claiming completion. Use the commands from Project Command Discovery — do not guess them.
+  This does not apply to small config edits, which Autonomy Boundaries governs; when it is
+  unclear which one an edit is, say which rule you applied and why.
 - **If a worktree is missing the binaries to verify** (broken symlink, uninstalled deps), say so
   explicitly and report what could not be run. Never silently skip verification and imply it
   passed.
