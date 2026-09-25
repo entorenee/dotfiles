@@ -26,18 +26,17 @@ return {
 		dependencies = { "williamboman/mason.nvim" },
 		config = function()
 			require("mason-tool-installer").setup({
+				-- Only what Nix does not already provide. The six formatters
+				-- conform.nvim names come from modules/home/formatters and
+				-- modules/home/yamlfmt, on PATH via roles/home/base.nix.
+				-- actionlint is absent for a different reason: editor.lua's
+				-- linters_by_ft has no yaml or workflow entry, so nvim never
+				-- invoked it. What is left is exactly that table's consumers.
 				ensure_installed = {
 					"eslint_d", -- ESLint daemon for fast linting
-					"prettier", -- Code formatter
-					"alejandra", -- Nix formatter
-					"yamlfmt", -- YAML formatter
-					"stylua", -- Lua formatter
-					"shfmt", -- Shell script formatter
 					"checkmake", -- Makefile linter
-					"actionlint", -- GitHub Actions linter
 					"htmlhint", -- HTML linter
 					"jsonlint", -- JSON linter
-					"taplo", -- TOML formatter
 					"sqlfluff", -- SQL formatter and linter
 				},
 				auto_update = false,
