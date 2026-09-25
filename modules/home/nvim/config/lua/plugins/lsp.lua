@@ -29,12 +29,13 @@ return {
 				-- Only what Nix does not already provide. The six formatters
 				-- conform.nvim names come from modules/home/formatters and
 				-- modules/home/yamlfmt, on PATH via roles/home/base.nix.
-				-- actionlint is absent for a different reason: editor.lua's
-				-- linters_by_ft has no yaml or workflow entry, so nvim never
-				-- invoked it. What is left is exactly that table's consumers.
+				-- actionlint stays: editor.lua reaches it through a
+				-- workflow-path branch that bypasses linters_by_ft, so nvim
+				-- needs it in every checkout, not just this repo's devShell.
 				ensure_installed = {
 					"eslint_d", -- ESLint daemon for fast linting
 					"checkmake", -- Makefile linter
+					"actionlint", -- GitHub Actions linter
 					"htmlhint", -- HTML linter
 					"jsonlint", -- JSON linter
 					"sqlfluff", -- SQL formatter and linter
