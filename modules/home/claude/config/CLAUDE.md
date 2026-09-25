@@ -25,9 +25,30 @@ read-only — never write `settings.json` or similar directly. Point me at the N
 - **Chaining is fine; one unmatched segment is not.** `cd <path> && pnpm typecheck`,
   `pnpm … | tail -40`, `cmd > file`, and `mkdir -p … && cmd` all auto-approve as long as every
   segment is allowlisted or a read-only builtin (`head`, `tail`, `wc`, `grep`, `cd`, `echo`, …).
-  What prompts is a segment matching nothing: `rm -f`/`rm -rf`, `touch`, `npm pack`, an unpinned
+  What prompts is a segment matching nothing: `touch`, `npm pack`, an unpinned
   `pnpm dlx <pkg>`, or a relative `node_modules/.bin/<bin>` path. Split those into their own
-  call; don't reflexively unbundle a chain that would have run fine.
+  call; don't reflexively unbundle a chain that would have run fine. Distinct from that:
+  `rm -f`/`rm -fr`/`rm -rf`/`rm -r` match `permissions.deny` and are
+  **refused outright** — splitting the chain does not help, and the only route is flagless
+  `rm` or handing the command over as `! rm -rf <path>`.
+- **`sandbox.excludedCommands` spares only a BARE invocation — unlike `permissions.allow`,
+  which matches per segment.** So `nix eval …` runs unsandboxed but `cd X && nix eval …`,
+  `nix eval … | tail -40`, `nix eval … > f`, and `ENV=v nix eval …` all run _sandboxed_ and
+  fail on the daemon socket or a cache write. A trailing `2>&1` is fine. **Do not reason out
+  which shapes a pattern spares: the rule is undocumented and is NOT whole-string globbing** —
+  `nix eval … | cat` is matched textually by the deployed `nix eval *` and still runs
+  sandboxed. Three mechanism models were proposed on 2026-09-23 and all three were falsified,
+  so test a new shape against the live config instead of predicting it; the measurements sit in
+  the note above `sandbox.excludedCommands` in `modules/home/claude/default.nix`, which is also
+  the source of truth for the list. Run an excluded
+  command bare, and reach the target with an **absolute path** — not `cd`. Splitting the `cd`
+  into its own call does not work: the harness resets the working directory to the project root
+  after every call (it says so — `Shell cwd was reset to …`), so the `cd` never carries over.
+  Measured 2026-09-23; this contradicts the tool description's "working directory persists
+  between calls", and the measurement is what held. Limit output with the command's own flags
+  (`--apply`, `--json`, `--jq`, `--limit`) rather than a pipe, and let the harness truncate
+  instead of `| tail -N`. Applies to every entry in the
+  list — `nix eval`, `npm view`, `pnpm outdated`, `gh`.
 - **Diagnose a prompt; never guess at it.** `cd` has been wrongly blamed for this before and the
   wrong fix stuck for weeks. A correct diagnosis needs both halves: check each segment against
   `permissions.allow`/`permissions.deny` in `~/.claude/settings.json`, **and** run
@@ -39,13 +60,24 @@ read-only — never write `settings.json` or similar directly. Point me at the N
   `3` rewrites and lets Claude Code prompt; `1` and `2` pass the command through untouched, so
   `permissions.deny` handles it natively. `Bash(rtk proxy*)` is denied — arbitrary-command
   escape hatch.
+- **A rewrite can silently drop a flag `rtk` does not know, and still exit 0.** `find …
+-newermt <date>` printed `rtk find: unknown flag '-newermt', ignored` to **stderr**, ran to
+  completion, and returned the **unfiltered** set — so a filter that was never applied reads as
+  a filter that matched everything. Verified 2026-09-17 against `~/.claude/projects`. Filter
+  inside the data instead (on a JSON `.timestamp`, say), or grep stderr for `unknown flag`
+  before trusting a narrowed result; the exit status is 0 either way.
 - **Before proposing any new `Bash(...)` allow rule, run `rtk rewrite "<cmd>"` first.** Exit 0
   or 3 means the existing `Bash(rtk *)` entry already covers it and the new rule is dead weight
   on arrival. Only exit 1 — no rtk equivalent — is a genuine gap. This one check eliminated 7 of
   10 proposed patterns in a single audit.
-- **Never `node -e`, `python -c`, or similar to inspect files or config.** Arbitrary code
-  execution can't be allowlisted — it is the escape hatch the `pnpm exec node`/`sh` denies exist
-  to block — so it prompts every time. Read files with the Read tool.
+- **Never `node -e`, `python -c`, or similar to inspect files or config.** These are
+  `permissions.ask` rules, so they prompt **even in auto mode**, and an ask rule is
+  subcommand-anchored — it still matches behind a `cd … &&`, an env prefix, or inside `$( )`.
+  Read files with the Read tool; it is cheaper and does not prompt. This is an ergonomic rule,
+  **not** a security boundary: `sh -c`, `perl -e`, and `printf > f && python3 f` run the same
+  arbitrary code and are deliberately left uncovered, because a boundary drawn around
+  interpreter spellings cannot exist. The docs say so outright — a deny or ask rule "covers the
+  invocation Claude usually produces and isn't a security boundary around the program."
 - **Invoke project binaries through an allowlisted form**, not a relative path: `pnpm exec
 eslint …`, `npx eslint …`, `pnpm exec tsc …`, never `../node_modules/.bin/eslint …`.
 - **Scratch files go in the session scratchpad or `$TMPDIR`, not bare `/tmp`.** Use the
@@ -130,12 +162,12 @@ product documentation — live outside the repo in `$ARTIFACTS/<area>/`. Resolve
 session:
 
 ```bash
-ARTIFACTS="${MY_CLAUDE_ARTIFACTS_ROOT:?run 'make rebuild', then start a new session}/$(basename -s .git \
+ARTIFACTS="${MY_AGENT_ARTIFACTS_ROOT:?run 'make rebuild', then start a new session}/$(basename -s .git \
   "$(git remote get-url origin 2>/dev/null || git rev-parse --show-toplevel)")"
 mkdir -p "$ARTIFACTS/<area>"
 ```
 
-`MY_CLAUDE_ARTIFACTS_ROOT` is injected by `modules/home/claude/default.nix` — never hardcode the
+`MY_AGENT_ARTIFACTS_ROOT` is injected by `modules/home/claude/default.nix` — never hardcode the
 path here or in a skill. The `:?` is deliberate: an unset root should stop you, not quietly
 write to `/<repo>/<area>/`. Keying on the **remote name** is what makes this worktree-proof —
 every worktree resolves to the same directory, so an artifact written on a feature branch is
@@ -193,6 +225,8 @@ remote.
 
 - **After code changes, run typecheck, lint, and tests, and report pass/fail per check** before
   claiming completion. Use the commands from Project Command Discovery — do not guess them.
+  This does not apply to small config edits, which Autonomy Boundaries governs; when it is
+  unclear which one an edit is, say which rule you applied and why.
 - **If a worktree is missing the binaries to verify** (broken symlink, uninstalled deps), say so
   explicitly and report what could not be run. Never silently skip verification and imply it
   passed.
@@ -226,6 +260,10 @@ remote.
 - Do NOT post comments on GitHub PRs. Surface feedback in chat for me to post.
 - Do NOT create PRs unless told to; when asked, default to `--draft`.
 - Do NOT advance to the next phase of a multi-phase plan until I confirm the previous one.
+- **When a command is blocked — by `permissions.deny`, a hook, or the sandbox — never stop at
+  the block.** Hand over the exact command prefixed with `! ` so it runs in-session, say in one
+  line which layer blocked it, and continue with everything else the task allows. Reporting a
+  block without a runnable handover is an incomplete answer.
 
 ## Git Worktree Workflow
 

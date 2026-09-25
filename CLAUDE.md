@@ -202,7 +202,7 @@ Set it on the **host**, never in a `roles/` file — the name identifies one mac
 
 Leave `networking.computerName` alone unless you intend to rename the machine everywhere it is user-visible.
 
-The chicken-and-egg case — a machine whose `HostName` is unset cannot `make rebuild` to acquire the pin — is broken by hand, once:
+The chicken-and-egg case — a machine whose `HostName` is unset cannot `make rebuild` to acquire the pin — is broken by hand, once. `sudo` is in `permissions.deny`, so Claude cannot run this: it hands the command over prefixed with `! ` for you to run in-session.
 
 ```bash
 sudo scutil --set HostName <attr-name>
@@ -348,7 +348,7 @@ The Claude Code configuration is Nix-managed in `modules/home/claude/`. The glob
 
 `agents/`, `commands/`, `hooks/`, `skills/`, and `CLAUDE.md` are deployed by the home-manager module's own options (`agentsDir`, `commandsDir`, `hooksDir`, `skills`, `context`) rather than hand-wired `home.file` entries. Only `statusline.sh`, which has no matching option, is still declared in `home.file`.
 
-Everything under `~/.claude` is therefore a symlink into the Nix store, and **every edit under `config/` needs a rebuild to take effect** — including hook scripts. The `*Dir` options have no `mkOutOfStoreSymlink` escape hatch, so they don't honor `my.dotfiles.mutable`; that's the accepted cost of the module being usable on a NixOS host with no `~/dotfiles` checkout.
+Every _file_ under `~/.claude` is a symlink into the Nix store — but the `agents/`, `commands/`, `hooks/`, and `skills/` subdirectories are real directories whose children are linked individually (see `recursive = true` below). Either way, **every edit under `config/` needs a rebuild to take effect** — including hook scripts. The `*Dir` options have no `mkOutOfStoreSymlink` escape hatch, so they don't honor `my.dotfiles.mutable`; that's the accepted cost of the module being usable on a NixOS host with no `~/dotfiles` checkout.
 
 The `*Dir` options and the path form of `skills` deploy with `recursive = true` — set inside the module's own `mkRecursiveDirAttrs`, not by anything this repo passes. That makes home-manager create `~/.claude/<subdir>` as a real directory and link each child individually, instead of pointing the whole subdirectory at one store path. Enumerating skills one-by-one used to be the workaround and is no longer needed. That per-file layout is also what makes the migration hazard below possible, so it is worth knowing which shape is deployed.
 
@@ -467,11 +467,11 @@ Its tools are `mcp__asana__*`, unprefixed, which is what the two `permissions.al
 
 Claude Code permissions live in `modules/home/claude/default.nix` (base) with additions in `roles/home/personal-claude.nix` or `hosts/darwin/fw-skyler/claude.nix`. Three coordinated layers:
 
-| Layer   | Field                                                                  | Behavior                                           |
-| ------- | ---------------------------------------------------------------------- | -------------------------------------------------- |
-| Allow   | `permissions.allow`                                                    | Glob patterns auto-approve matching tool calls     |
-| Deny    | `permissions.deny`                                                     | Always wins over allow — use for defense in depth  |
-| Sandbox | `sandbox.network.allowedDomains`, `sandbox.filesystem.allowRead/Write` | Hard boundary that no per-call approval can bypass |
+| Layer   | Field                                                                  | Behavior                                                                                                                                                                                                        |
+| ------- | ---------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Allow   | `permissions.allow`                                                    | Glob patterns auto-approve matching tool calls                                                                                                                                                                  |
+| Deny    | `permissions.deny`                                                     | Always wins over allow — use for defense in depth                                                                                                                                                               |
+| Sandbox | `sandbox.network.allowedDomains`, `sandbox.filesystem.allowRead/Write` | Hard boundary that no per-call approval can bypass — **when it is actually running.** A repo `settings.local.json` can disable it, and a failed startup degrades to no sandbox with only a warning (see above). |
 
 #### Pattern syntax
 
@@ -504,7 +504,7 @@ Custom skills (in `modules/home/claude/config/skills/`) and custom slash command
 
 **Do not add a `Skill(<name>)` entry by hand — it is derived.** `default.nix` builds `skillNames` from `readDir ./config/skills` plus the `.md` files in `./config/commands`, and maps each to `Skill(<name>)` onto `permissions.allow`. A hand-written entry is a duplicate on arrival. Two things are still required:
 
-- **The new file or directory must be git-tracked — and staging it is the user's action, not Claude's.** `skillNames` reads the _flake source_, and flakes only see git-tracked files, so an untracked skill directory is invisible to eval: no permission entry is generated and it prompts on first use. Verified 2026-08-10: `Skill(comment-review)` was absent from the derived allowlist until the directory was staged, then appeared immediately. Claude asks for the staging and stops; `git add` is banned by the global `CLAUDE.md` and hard-blocked by `Bash(git add*)` in `permissions.deny`, so an instruction to run it cannot be followed.
+- **The new file or directory must be git-tracked — and staging it is the user's action, not Claude's.** `skillNames` reads the _flake source_, and flakes only see git-tracked files, so an untracked skill directory is invisible to eval: no permission entry is generated and it prompts on first use. Verified 2026-08-10: `Skill(comment-review)` was absent from the derived allowlist until the directory was staged, then appeared immediately. `git add` is banned by the global `CLAUDE.md` and hard-blocked by `Bash(git add*)` in `permissions.deny`, so an instruction to run it cannot be followed: Claude asks for the staging, hands over `! git add <path>`, and continues with everything that does not depend on it.
 - **Rebuild.** The names are read at eval time, so a new skill needs a rebuild to register (and to be symlinked).
 
 Plugin-distributed skills _are_ namespaced (e.g., `superpowers:executing-plans`, `pr-review-toolkit:review-pr`), so a single glob per plugin namespace (`Skill(superpowers:*)`) trusts the entire plugin's skill set in one entry.
@@ -538,6 +538,16 @@ correction is recorded rather than silently swapped because the wrong version wa
 
 Read the body from a file (`--body-file`) rather than inlining a long one — a multi-line
 `--body` string is where quoting breaks in a non-TTY shell.
+
+`sandbox.excludedCommands` spares only a **bare** invocation, so `gh *` and `rtk gh *` do not
+cover a pipe, redirect, `&&`, or env prefix — those run sandboxed instead. The matching rule is
+undocumented and is _not_ whole-string globbing; see the note above the
+`sandbox.excludedCommands` block in `modules/home/claude/default.nix` before reasoning about
+which shapes a pattern covers. Sandboxed gh
+now _starts_ (`~/.config/gh/hosts.yml` is deliberately not in `denyRead`), but anything
+touching the network still dies on the IPv6 proxy: `proxyconnect tcp: dial tcp [::1]`. So a
+non-bare gh is usable for local subcommands only — run network gh bare. Keep both patterns
+listed; keep `hosts.yml` out of `denyRead`.
 
 ## Claude AI Memory Files
 

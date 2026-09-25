@@ -22,7 +22,7 @@ Runs the `pr-review-toolkit:review-pr` plugin as the base engine, then adds a ma
 
 2. **Run the base.** Invoke `pr-review-toolkit:review-pr`. Dispatch the applicable agents **in parallel** against the saved diff. Tell each agent explicitly: review the diff, and read repo files only for context on unchanged helpers.
 3. **Ground every finding in code (gate — BEFORE aggregating).** See below. Do not summarize a finding you have not personally verified.
-4. **Aggregate** using the output contract below, naming the SHA reviewed. If the head moved while the review was running, say so rather than silently reporting against a diff that has been superseded.
+4. **Aggregate** using the output contract below, naming the SHA reviewed. **Re-read the head before you report** — not only when it moved mid-run — and give the check status at that SHA. A review that silently describes a superseded diff is worse than no review.
 5. **Write the review to a file** at `$ARTIFACTS/reviews/YYYY-MM-DD-pr<n>-<slug>-review.md`, with `Reviewed at <HEAD_SHA>` in its header, and print the absolute path. Do this as part of the run, not on request — the file is what the second pass reads. A review that exists only in chat scrollback cannot be diffed against later, which forces the whole re-review to be driven by hand.
 
    **Put the re-review contract in the file's own header**, one line, immediately after the SHA:
@@ -43,6 +43,7 @@ The common case, and the one this workflow used to leave to the user: the review
    - **Superseded** — the code it described no longer exists in that form; say what replaced it.
 4. Review the new commits for **new** findings, numbering them after the existing ones.
 5. Update the file in place — refresh the SHA, mark resolved items, append new ones. **Never renumber, and never start a fresh file.** Item numbers are how the user refers to findings across sessions ("fix items 2 and 3"), so they have to survive the second pass.
+6. **Order a re-review table by item number, not severity, and keep resolved items in a separate list below the open ones.** The numbers are the referent once a pass has landed, so a severity sort scatters them; and a table that is going to be posted should not lead with items that are already fixed.
 
 ## The code-grounding gate
 
@@ -50,6 +51,7 @@ Agents overstate severity, misremember how a helper behaves, and assert root cau
 
 - **Changed files → verify against the diff hunk.** Quote the exact `+`/`-` line. If the working tree is not on the PR branch (normal when reviewing someone else's PR), the working-tree copy does NOT reflect the PR — use `gh pr diff`.
 - **Claims resting on unchanged code → read that file directly.** Logging/error-tracking wiring, a helper's return shape, a schema/type, framework validation behavior (e.g. does the event framework validate at emit?), an enum's allowed values. Never trust an agent's characterization of code it only described.
+- **Establish the change's production exposure before grading severity, and state it in the header.** Live, behind a flag that is off, dark-launched, or reachable only by an internal cohort decides what is a blocker and what is pre-launch cleanup. Verify it in the repo — flag defaults, rollout gates, and whether a server-side path bypasses a client flag — rather than assuming either way.
 - **Drop or mark what you can't ground.** Anything not tied to a specific line is dropped or explicitly labeled unverified/hypothesis.
 - **Correct the agent — and your own relayed claims.** Fix severity to match what is literally present. Separate **live bugs** (a real caller can trigger today) from **defensive/hardening** suggestions (no current caller can, but the boundary is loose). If grounding shows the framing was wrong even after you wrote it up, restate it precisely.
 
@@ -57,11 +59,12 @@ Agents overstate severity, misremember how a helper behaves, and assert root cau
 
 The full table is the review file (step 5). **Chat gets a rendering of it, and the rendering is where this contract is most often lost** — it is the surface the next request comes from.
 
-- **One consolidated findings table**, columns `# | Severity | Item | Location | Detail`, **sorted by descending severity** (🔴 Blocker → 🟡 Worth fixing → 🟢 Minor). Consolidate for information density but leave enough detail to act on.
+- **One consolidated findings table**, columns `# | Severity | Item | Location | Detail`, **sorted by descending severity** (🔴 Blocker → 🟡 Worth fixing → 🟢 Minor) — a re-review orders by item number instead, per the section above. Consolidate for information density but leave enough detail to act on.
 - **Every finding carries `file:line` in `Location` — in chat as well as in the file.** A bare filename is not a location. Collapsing a range of 🟢 rows into one line is fine; **never collapse a 🔴, and never drop `Detail` from the chat rendering.**
 - Follow the table with a short **"Verified sound (no action)"** line naming what was checked and cleared.
 - Note which findings are **code-verified** vs. which rest on **operational config / environment you cannot see from the repo** (deploy env vars, infra) — attribute those rather than asserting them.
 - Never label a finding **Critical/Blocker** without a quoted line from the actual code.
+- **When findings are going to the PR author, emit a paste-ready comment as a second file** at `$ARTIFACTS/reviews/YYYY-MM-DD-pr<n>-<slug>-pr-comment.md`: the same table, condensed to the items needing action, every row carrying `file:line` and enough context for a reader who has not seen the review. A prose write-up is too long to post — the table is the postable form.
 
 ## Behavior
 

@@ -91,22 +91,30 @@ as "leading tokens"). Match the whole command string instead.
 Blocker patterns, each confirmed against a real denial or an explicit CLAUDE.md
 rule — never add a speculative one:
 
-| Pattern                          | Why it blocks                                       |
-| -------------------------------- | --------------------------------------------------- |
-| `node_modules/\.bin/`            | Relative bin path matches no allow rule             |
-| `node -e`, `python3? -c`         | Arbitrary code execution; unallowlistable by design |
-| `(^\| )rm `                      | No allow rule; `rm -rf` additionally denied         |
-| `(^\| )touch `, `chmod `, `mv `  | Mutating, no allow rule                             |
-| `<<`                             | Heredoc — the body is opaque to the matcher         |
-| `^for `, `^while `               | Shell loop, not a matchable command                 |
-| `pnpm dlx`, `npx` (unpinned pkg) | Arbitrary package execution                         |
-| `npm pack`                       | Mutating, no allow rule                             |
+| Pattern                          | Why it blocks                                                                                                      |
+| -------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| `node_modules/\.bin/`            | Relative bin path matches no allow rule                                                                            |
+| `node -e`, `python3? -c`         | Arbitrary code execution; unallowlistable by design                                                                |
+| `(^\| )rm -[rf]`                 | Matches `permissions.deny` — refused, not prompted. Flagless `rm` is the sanctioned route, so do not count it here |
+| `(^\| )touch `                   | Mutating, no allow rule                                                                                            |
+| `<<`                             | Heredoc — the body is opaque to the matcher                                                                        |
+| `^for `, `^while `               | Shell loop, not a matchable command                                                                                |
+| `pnpm dlx`, `npx` (unpinned pkg) | Arbitrary package execution                                                                                        |
+| `npm pack`                       | Mutating, no allow rule                                                                                            |
 
 ```bash
-for p in 'node_modules/\.bin/' 'node -e' 'python3? -c' '(^| )rm ' '<<' '^for '; do
+for p in 'node_modules/\.bin/' 'node -e' 'python3? -c' '(^| )rm -[rf]' '<<' '^for '; do
   printf '%-26s %s\n' "$p" "$(grep -cE "$p" "$SCRATCH/auto.txt")"
 done
 ```
+
+**`chmod` and `mv` were on this table and are deliberately gone.** Both were
+listed as "mutating, no allow rule"; probed 2026-09-23, both **auto-approve with
+no prompt**, as do `rmdir` and BSD `sed -i ''`. Built-in auto-allows are
+considerably broader than the docs list, and have visibly broadened over time —
+so "no matching allow rule" does **not** imply "prompts". Never re-add a row here
+on that inference alone; the table's own rule is that every pattern is confirmed
+against a real denial or an explicit CLAUDE.md rule.
 
 ## Step 3 — Classify each finding by its actual fix
 
@@ -133,6 +141,9 @@ already structural.** `signals.sh --denials` (step 4) derives it from
 `sandbox-deny`, `user-rejected`. Hand classification is only for step 2's
 _inferred_ blockers, which by definition have no denial to read.
 
+**The bucket is structural; the attribution is not.** Which shape in a compound
+command actually caused the denial is still yours to establish — see step 4.
+
 ## Step 4 — Census the denials, then pair them with their replacements
 
 The census is already built. Do not re-derive it, and do not grep result text:
@@ -146,6 +157,39 @@ buckets, and prints the commonest command shapes per bucket with a footer
 saying what each bucket's remedy is. It includes subagent sidechains, which the
 session table excludes — a rule that blocks a subagent still needs fixing, and
 8 of the rule denials are sidechain-only.
+
+### Containment is not causation
+
+**A denial is recorded against the whole Bash call, so a shape in the census did
+not necessarily cause it.** The census reports command _shapes_, and one compound
+command blocked for a single segment contributes every other token in that string
+to the tally. Before calling any shape a gap, print the full commands behind it
+and name the segment that actually tripped a rule or a hook:
+
+```bash
+cd "$HOME/.claude/projects" && find . -name '*.jsonl' -print0 | xargs -0 cat 2>/dev/null \
+  | jq -rs --arg shape 'rmdir' 'map(select(.toolDenialKind != null))
+      | map(select((.toolUseResult|tostring) | test($shape)))
+      | .[] | "\(.timestamp[0:10])\t\(.toolDenialKind)\t\((.toolUseResult|tostring)[0:240])"'
+```
+
+Measured 2026-09-23 against four candidates that all looked like allowlist gaps:
+
+| Shape         | Recorded | Caused by that shape                                                        |
+| ------------- | -------- | --------------------------------------------------------------------------- |
+| `rmdir`       | 2        | **0** — every hit an `rm -f …; rmdir …` chain denied for the `rm -f`        |
+| `sed -i`      | 3        | **1** — the others carry `rm -f "$F.bak"` and a `python3 - <<'EOF'` heredoc |
+| `chmod`, `mv` | 15, 74   | **0** — bystanders in `rm -f` and `jq` chains                               |
+
+All four then auto-approved when probed. Rules built on those counts would have
+been dead on arrival _and_ would not have stopped the recorded friction, because
+the friction was a `rm -f` deny rule and a hook — the two step-3 buckets that
+must never be allowlisted. So this error routes straight into the misfiling that
+step 3 calls the main failure mode of this skill.
+
+This is the **inverse** of step 2's tokenizing trap, not a restatement of it:
+matching the whole string is still right for _finding_ candidates, and wrong for
+_attributing_ them.
 
 Then pair the interesting ones. The census reports shapes, not sequences, so
 this part is still yours to run — select structurally, never on text:

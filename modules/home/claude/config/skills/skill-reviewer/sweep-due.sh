@@ -114,7 +114,7 @@ with_timeout() { # $1 = seconds, rest = command
   return 0
 }
 
-# inventory.sh hard-fails when MY_CLAUDE_ARTIFACTS_ROOT is unset, which is the
+# inventory.sh hard-fails when MY_AGENT_ARTIFACTS_ROOT is unset, which is the
 # default for a launchd agent. Its failure and "the sweep has never run" both
 # produce no output, and they call for opposite responses — so separate them
 # here rather than notifying on a number that was never read.

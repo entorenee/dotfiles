@@ -62,7 +62,7 @@ After any short status output, return one JSON object with this shape:
 
 - **Read-only.** No `--upgrade`, no `install`, no writes to `package.json` or lockfile.
 - **Stay scoped.** Do not research migration paths or fetch CHANGELOGs — that is the migration-researcher's job. Just produce the plan.
-- **No `node -e`.** Read `package.json` fields with `npm pkg get <field>` or `jq` over the file. `node -e` is an arbitrary-code escape hatch and is not allowed by Bash permissions.
+- **No `node -e`.** Read `package.json` fields with `npm pkg get <field>` or `jq` over the file. Both return the field directly; `node -e` needs per-use confirmation and gets you the same string.
 - If the working directory has no `package.json`, return `{"error": "no package.json at <path>"}` and stop.
 - If `npm-check-updates` fails (e.g., network), fall back to `npm outdated --json` / `pnpm outdated --format json`. Note the fallback in `notes`.
 - Report tool errors with the verbatim stderr trimmed to the relevant lines — do not paraphrase.

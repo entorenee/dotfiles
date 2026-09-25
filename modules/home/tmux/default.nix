@@ -40,11 +40,11 @@
     };
   };
   # Substituted at build time rather than left as
-  # ${MY_CLAUDE_ARTIFACTS_ROOT} for tmux to expand.
+  # ${MY_AGENT_ARTIFACTS_ROOT} for tmux to expand.
   xdg.configFile."tmux/tmux.conf".text = lib.mkOrder 600 (
     builtins.replaceStrings
     ["@artifactsRoot@"]
-    [config.home.sessionVariables.MY_CLAUDE_ARTIFACTS_ROOT]
+    [config.home.sessionVariables.MY_AGENT_ARTIFACTS_ROOT]
     (builtins.readFile ./tmux.conf)
   );
 }

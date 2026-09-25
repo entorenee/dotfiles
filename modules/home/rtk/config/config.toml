@@ -1,15 +1,21 @@
 # rtk (Rust Token Killer) configuration.
 #
-# Managed by Nix — see modules/home/rtk/default.nix. This file is symlinked to
-# the rtk config location (macOS: ~/Library/Application Support/rtk/config.toml,
-# Linux: ~/.config/rtk/config.toml). Edits here apply live, no rebuild needed.
+# Managed by Nix — see modules/home/rtk/default.nix. It deploys via
+# `home.file.source`, so the rtk config location (macOS: ~/Library/Application
+# Support/rtk/config.toml, Linux: ~/.config/rtk/config.toml) is a read-only
+# /nix/store symlink and an edit here is inert until `make rebuild`. Test a
+# change with `rtk rewrite "<cmd>"` after the rebuild, never before: the
+# unchanged result beforehand reads exactly like the setting not working.
 #
 # Only the [hooks] section is set; every other section (tracking, display,
 # filters, tee, limits, …) falls back to rtk's built-in defaults.
 
 [hooks]
-# Commands the rtk-rewrite hook must NOT rewrite into `rtk <cmd>`. These are
-# read-only commands used during PR review where rtk's wrapping actively hurts:
+# Commands the rtk-rewrite hook must NOT rewrite into `rtk <cmd>`. An excluded
+# command makes `rtk rewrite` exit 1 and emit nothing, so the raw text is what
+# Claude Code matches its permission rules against. Entries are prefix-matched.
+#
+# Read-only commands where rtk's wrapping actively hurts the output:
 #
 #   gh run view  — rtk's wrapper errors `Run ID required` on the `--job <id>
 #                  --log` form (viewing a single job's log), so it can't be used
@@ -18,8 +24,17 @@
 #   gh api       — used to fetch raw file contents at a ref (base64 piped through
 #                  `base64 -d`); rtk's wrapping corrupts the clean output.
 #
-# Excluding these lets the bare command run, which matches the existing
+# Excluding those lets the bare command run, which matches the existing
 # `Bash(gh …*)` allowlist entries — so no `command gh` bypass and no permission
 # prompt. The write-verb deny rules in the Claude config still apply unchanged.
-exclude_commands = ["gh run view", "gh pr diff", "gh api"]
+#
+# `gh pr edit` is here for the opposite reason — to RESTORE a prompt, not remove
+# one. It is a `permissions.ask` rule, but rtk rewrote it to `rtk gh pr edit …`,
+# which that rule cannot match while `Bash(rtk *)` in allow can, so the edit ran
+# silently. Verified 2026-09-23: `gh pr edit --help` produced no prompt in auto
+# mode. Deny rules never had this problem — rtk exits 2 on them and passes them
+# through untouched; only the exit-3 ask path rewrites. So any command added to
+# `permissions.ask` has to be checked with `rtk rewrite "<cmd>"` and listed here
+# if it comes back rewritten.
+exclude_commands = ["gh run view", "gh pr diff", "gh api", "gh pr edit"]
 transparent_prefixes = []

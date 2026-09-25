@@ -53,7 +53,7 @@ ticket, issue, or doc, via the Asana MCP, `gh`, or WebFetch — before asking an
 **Read the branch register now, and fold anything live into this same ask:**
 
 ```bash
-ARTIFACTS="${MY_CLAUDE_ARTIFACTS_ROOT:?run 'make rebuild', then start a new session}/$(basename -s .git \
+ARTIFACTS="${MY_AGENT_ARTIFACTS_ROOT:?run 'make rebuild', then start a new session}/$(basename -s .git \
   "$(git remote get-url origin 2>/dev/null || git rev-parse --show-toplevel)")"
 cat "$ARTIFACTS/registers/$(git rev-parse --abbrev-ref HEAD | tr '/' '-').md" 2>/dev/null
 ```

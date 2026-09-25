@@ -5,7 +5,7 @@
   ...
 }: let
   # Absolute, not `~/…`: a JSON settings value is literal and would not expand.
-  artifactsRoot = "${config.xdg.dataHome}/claude/artifacts";
+  artifactsRoot = "${config.xdg.dataHome}/agents/artifacts";
 
   # `~/…`, not absolute: a leading `/` in a permission pattern is project-relative.
   artifactsGlob = "~${lib.removePrefix config.home.homeDirectory artifactsRoot}/**";
@@ -130,12 +130,11 @@ in {
         "pr-review-toolkit@claude-plugins-official" = true;
       };
       env = {
-        ENABLE_CLAUDEAI_MCP_SERVERS = "false";
         DISABLE_AUTOUPDATER = "1";
         # The sandbox proxy binds 127.0.0.1 only; Node 18+ tries IPv6 first and
         # fails before falling back.
         NODE_OPTIONS = "--dns-result-order=ipv4first";
-        MY_CLAUDE_ARTIFACTS_ROOT = artifactsRoot;
+        MY_AGENT_ARTIFACTS_ROOT = artifactsRoot;
       };
       sandbox.enabled = true;
       # Without this a sandbox that fails to start degrades to no sandbox at all
@@ -148,10 +147,12 @@ in {
         "objects.githubusercontent.com"
         "asanausercontent.com"
       ];
-      # Identity roles allow the whole gh config dir; this re-blocks the one
-      # file an OAuth token could land in. denyRead wins over allowRead.
+      # ~/.config/gh/hosts.yml is deliberately NOT denied: gh reads it to build
+      # its root command, so denying it stops gh starting at all. On Darwin it
+      # holds no secret — git_protocol and a username; the token lives in the
+      # keychain, denied via ~/Library/Keychains. gh writes `oauth_token` here
+      # when there is no keychain, so verify before trusting this on Linux.
       sandbox.filesystem.denyRead = [
-        "~/.config/gh/hosts.yml"
         # The age identity decrypts every secret this machine is sent, so it
         # outranks any single credential the entries around it protect. The
         # decrypted keys need no entry: agenix writes them to a runtime dir
@@ -161,6 +162,16 @@ in {
       sandbox.filesystem.allowRead = [artifactsRoot];
       sandbox.filesystem.allowWrite = [artifactsRoot];
 
+      # Only a BARE invocation is excluded. A pipe, a redirect, an env prefix,
+      # or a trailing `&& ...` each run sandboxed instead, whatever the pattern
+      # says; a plain `2>&1` is tolerated. Do not reason out which shapes a
+      # glob spares — the matching rule is undocumented and is NOT whole-string
+      # globbing. Measured 2026-09-23: `nix eval X | cat` IS matched textually
+      # by `nix eval *` below and still runs sandboxed, while `cd D && nix eval
+      # X` was spared only by an explicit `*nix eval *` — tried, then removed,
+      # because it bought that one shape and nothing else. Test a new shape
+      # against the live config; never infer it.
+      #
       # Registry-metadata reads run unsandboxed so they reuse the real ~/.npm
       # and pnpm caches.
       sandbox.excludedCommands = [
@@ -185,9 +196,11 @@ in {
         # still blocks gh writes.
         "gh *"
         # The rtk-rewrite hook turns `gh ...` into `rtk gh ...` before the
-        # sandbox decision, so `gh *` alone never matches and gh ends up
-        # sandboxed — where denyRead on hosts.yml stops it from even starting
-        # ("failed to create root command"). Both forms have to be listed.
+        # sandbox decision, so `gh *` alone never matches. Both forms have to be
+        # listed. Neither spares a non-bare gh (see the note above the list),
+        # which runs sandboxed and works only because hosts.yml is readable
+        # there — and then only for local subcommands, since anything touching
+        # the network still dies on the IPv6 proxy.
         "rtk gh *"
         # Nix needs the daemon socket, which the sandbox blocks. Read-only
         # evaluation only: builds, rebuilds, and `nix run`/`develop`/`shell`/
@@ -439,14 +452,45 @@ in {
         # Editing my own PR's title/body is allowed "with explicit instruction"
         # (per global CLAUDE.md) — so confirm per-use rather than deny outright.
         # Catches reviewer/assignee edits too, which is the desired gate.
+        # Only reachable because `gh pr edit` is in rtk's `exclude_commands`
+        # (modules/home/rtk/config/config.toml). Drop it there and rtk rewrites
+        # this to `rtk gh pr edit …`, which this rule cannot match and
+        # `Bash(rtk *)` in allow can — the prompt then disappears silently.
         "Bash(gh pr edit*)"
+        # Interpreter one-liners used as a file-inspection shortcut — the Read
+        # tool is cheaper, so confirm per-use rather than reaching for these by
+        # reflex. An ask rule prompts even in auto mode, and is
+        # subcommand-anchored: it fires inside `&&` chains, `$( )`, subshells
+        # and loop bodies, and past a leading env assignment, while a quoted
+        # *argument* (`grep -rn "python3 -c" .`) is not a subcommand and does
+        # not match. That is why this belongs here and not in a regex PreToolUse
+        # hook, which cannot tell an argument from a subcommand and denied
+        # exactly that grep. `rtk rewrite` exits 1 on every form below — no
+        # equivalent, passed through unchanged — so hooks/rtk-rewrite.sh leaves
+        # them in a shape these patterns still match; re-check that after
+        # changing this list, since a rewritten command matches `Bash(rtk *)`
+        # in allow instead.
+        # Not a security boundary: per code.claude.com/docs/en/permissions such
+        # a rule "covers the invocation Claude usually produces and isn't a
+        # security boundary around the program." `sh -c`, `perl -e` and
+        # `printf > f && python3 f` stay uncovered on purpose — widening to
+        # catch them chases a boundary that cannot exist.
+        "Bash(python -c *)"
+        "Bash(python3 -c *)"
+        # A glob, not a regex: `.` is literal and `*` is the wildcard, so this
+        # is the `python3.12 -c …` spelling.
+        "Bash(python3.* -c *)"
+        "Bash(node -e *)"
+        "Bash(node --eval *)"
+        "Bash(node -p *)"
+        "Bash(node --print *)"
       ];
     };
   };
 
   # Duplicated from settings.env deliberately: this copy is what lets the skill
   # scripts resolve the root when run outside a Claude session.
-  home.sessionVariables.MY_CLAUDE_ARTIFACTS_ROOT = artifactsRoot;
+  home.sessionVariables.MY_AGENT_ARTIFACTS_ROOT = artifactsRoot;
 
   programs.zsh.shellAliases = {
     claude-yolo = "claude --dangerously-skip-permissions";
@@ -479,7 +523,7 @@ in {
         }
       ];
       EnvironmentVariables = {
-        MY_CLAUDE_ARTIFACTS_ROOT = artifactsRoot;
+        MY_AGENT_ARTIFACTS_ROOT = artifactsRoot;
         PATH = sweepDuePath;
       };
       StandardErrorPath = sweepDueLog;
@@ -495,7 +539,7 @@ in {
       Type = "oneshot";
       ExecStart = "${pkgs.bash}/bin/bash ${sweepDueScript}";
       Environment = [
-        "MY_CLAUDE_ARTIFACTS_ROOT=${artifactsRoot}"
+        "MY_AGENT_ARTIFACTS_ROOT=${artifactsRoot}"
         "PATH=${sweepDuePath}"
         # A user unit does not inherit the session bus from the login shell, and
         # without it the timer fires, the script runs, and no banner appears.

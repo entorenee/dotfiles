@@ -5,7 +5,7 @@
 
   homebrew = {
     brews = [
-      "hookdeck/hookdeck/hookdeck"
+      "hookdeck"
       "mysql"
       "vercel-cli"
     ];

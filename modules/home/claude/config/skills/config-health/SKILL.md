@@ -85,9 +85,11 @@ bash "$HOME/.claude/skills/config-health/config-checks.sh"
 
 Output is `STATUS<TAB>CHECK<TAB>DETAIL`, where `STATUS` is `OK`, `FAIL`
 (provably broken), or `REVIEW` (needs human eyes — the script deliberately
-refuses to decide). Four checks: settings.json symlink integrity, allow rules
-neutralised by deny, hook registration + executability, and skill inventory
-drift.
+refuses to decide). Seven checks: settings.json symlink integrity, allow rules
+neutralised by deny, hook registration + executability, skill inventory drift,
+MCP rule / server reconciliation, enabled plugins against the runtime plugin
+registry, and this repo's `<plugin>:<name>` references against the installed
+plugin trees.
 
 **Comparing the `Skill()` allowlist against the skills directory is still
 deliberately absent**, because `modules/home/claude/default.nix` generates those
@@ -103,6 +105,14 @@ naming a unit that no longer exists. Whether a skill is _working_ is behavioural
 and belongs to `/system-review`, which owns the transcript arms and the run
 thresholds. Keeping that boundary is the same judgment as "When NOT to Use"
 below, applied to this skill's own growth.
+
+**Both plugin arms resolve against the runtime registry, never the plugin
+cache.** `enabled-plugins` reconciles `enabledPlugins` against
+`known_marketplaces.json` and `installed_plugins.json`; `plugin-refs` resolves
+each `<plugin>:<name>` this repo's prose names against the `installPath` that
+registry records. The cache keeps superseded versions of a plugin beside the
+installed one, so a reference resolved against the cache would resolve to a
+version that is not loaded, and the arm could never fail.
 
 **Run these inline. Do not dispatch a subagent for them.** They read a handful of
 small files; agent dispatch would cost more than it saves _and_ insert a
