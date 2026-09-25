@@ -99,18 +99,21 @@ endef
 # Tracked files only, matching what a flake can actually see. A bare '*.sh'
 # would miss the extensionless scripts, hence SH_FILES' three pathspecs.
 #
-# Both exclusions stop `make fmt` dying outright: zsh syntax shfmt cannot parse
-# is a hard error rather than a skip (update-all is the one that trips it today;
-# the other three excluded scripts parse clean under the bash fallback, and are
-# excluded anyway because formatting zsh by bash rules is a latent hazard), and
-# these lists are word-split, so the Obsidian vault — the only tracked markdown
-# with spaces in its filenames — cannot be passed at all. There is no .json
-# list for a related reason: Karabiner, OrcaSlicer and Obsidian rewrite theirs.
+# The shfmt exclusion stops `make fmt` dying outright: zsh syntax shfmt cannot
+# parse is a hard error rather than a skip (update-all is the one that trips it
+# today; the other three excluded scripts parse clean under the bash fallback,
+# and are excluded anyway because formatting zsh by bash rules is a latent
+# hazard). There is no .json list for an unrelated reason: Karabiner,
+# OrcaSlicer and Obsidian rewrite theirs.
+#
+# Markdown has no variable here on purpose. These lists are word-split, and
+# templates/obsidian/sample-vault/Templates/ holds nine filenames with spaces —
+# a make variable cannot carry those, so the markdown recipes pipe `git ls-files
+# -z` into `xargs -0` instead. Everything else is space-free and stays a list.
 NIX_FILES := $(shell git ls-files '*.nix')
 YAML_FILES := $(shell git ls-files '*.yml' '*.yaml')
 LUA_FILES := $(shell git ls-files '*.lua')
 TOML_FILES := $(shell git ls-files '*.toml')
-MD_FILES := $(shell git ls-files '*.md' ':!templates/obsidian/*')
 SH_FILES := $(shell git ls-files '*.sh' 'modules/home/bins/bin/*' '.githooks/*' \
 	':!modules/home/bins/bin/dot-apply' \
 	':!modules/home/bins/bin/dot-clean' \
@@ -133,7 +136,7 @@ fmt:
 	@shfmt -w $(SH_FILES)
 	@stylua $(LUA_FILES)
 	@taplo fmt $(TOML_FILES)
-	@prettier --write --log-level warn $(MD_FILES)
+	@git ls-files -z '*.md' | xargs -0 prettier --write --log-level warn
 
 ## Check formatting without writing (what CI and the pre-commit hook run)
 fmt-check:
@@ -143,7 +146,7 @@ fmt-check:
 	@shfmt -d $(SH_FILES)
 	@stylua --check $(LUA_FILES)
 	@taplo fmt --check $(TOML_FILES)
-	@prettier --check --log-level warn $(MD_FILES)
+	@git ls-files -z '*.md' | xargs -0 prettier --check --log-level warn
 
 ## Lint Nix sources and GitHub workflows (needs `nix develop`)
 lint:
