@@ -6,21 +6,28 @@ on:
   pull_request:
   workflow_dispatch:
 
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   check:
     name: Format and lint
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: DeterminateSystems/nix-installer-action@v16
+      - uses: actions/checkout@v7
+      - uses: DeterminateSystems/nix-installer-action@v23
       - run: nix develop --command make check
 
   eval:
     name: Evaluate NixOS hosts
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: DeterminateSystems/nix-installer-action@v16
+      - uses: actions/checkout@v7
+      - uses: DeterminateSystems/nix-installer-action@v23
       # The three Pis only. fw-skyler, lyra-silvertongue and hester-prynne all
       # take roles/home/gui.nix, which imports modules/home/fonts, whose
       # builtins.fetchGit against the private assets repo is forced during
