@@ -35,10 +35,17 @@ jobs:
       # NOT validate every host — closing that gap means a read-only deploy key
       # as an Actions secret, which is a separate decision.
       - name: nix eval each Pi host's toplevel drvPath
+        # The status is accumulated rather than left to `bash -e`, for two
+        # reasons: a bare eval would abort the loop before its ::endgroup::
+        # printed, leaving the failing host's log group open and swallowing
+        # everything after it; and evaluating all three reports every broken
+        # host in one run instead of only the first.
         run: |
+          rc=0
           for host in hub airgap uptime; do
             echo "::group::$host"
-            nix eval --raw ".#nixosConfigurations.$host.config.system.build.toplevel.drvPath"
+            nix eval --raw ".#nixosConfigurations.$host.config.system.build.toplevel.drvPath" || rc=1
             echo
             echo "::endgroup::"
           done
+          exit $rc
