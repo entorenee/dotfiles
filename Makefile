@@ -99,7 +99,10 @@ endef
 # Tracked files only, matching what a flake can actually see. A bare '*.sh'
 # would miss the extensionless scripts, hence SH_FILES' three pathspecs.
 #
-# Both exclusions stop `make fmt` dying outright: shfmt hard-errors on zsh, and
+# Both exclusions stop `make fmt` dying outright: zsh syntax shfmt cannot parse
+# is a hard error rather than a skip (update-all is the one that trips it today;
+# the other three excluded scripts parse clean under the bash fallback, and are
+# excluded anyway because formatting zsh by bash rules is a latent hazard), and
 # these lists are word-split, so the Obsidian vault — the only tracked markdown
 # with spaces in its filenames — cannot be passed at all. There is no .json
 # list for a related reason: Karabiner, OrcaSlicer and Obsidian rewrite theirs.
