@@ -6,8 +6,8 @@ config/iterm2/AppSupport
 modules/home/nvim/config/lazy-lock.json
 
 # Nix artifacts from testing build
-result/
-result-*/
+result
+result-*
 
 # AI Ignore
 .claude/settings.local.json
