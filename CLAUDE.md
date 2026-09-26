@@ -240,7 +240,9 @@ The six formatters (`alejandra`, `yamlfmt`, `shfmt`, `stylua`, `taplo`, `prettie
 
 ### A project's own `prettier` wins without anything doing the work
 
-The `prettier` in `modules/home/formatters` is the plain package, not a wrapper — **the tools that matter already resolve a project copy first**. conform.nvim sets `command = util.from_node_modules("prettier")`, which walks up the parent directories for the project's own binary and falls back to `PATH` only when there is none; nvim-lint resolves `eslint_d` the same way. So on save, a repo that pins prettier gets its pin, with no help from this config.
+The `prettier` in `modules/home/formatters` is the plain package, not a wrapper — **prettier already resolves a project copy first**. That is upstream behavior, not something configured here: conform.nvim's _bundled_ prettier formatter sets `command = util.from_node_modules("prettier")`, which searches upward from the buffer's own directory for a `node_modules/.bin/prettier` and falls back to `PATH` only when no ancestor has one. So on save, a repo that pins prettier gets its pin, with no help from this config.
+
+**`eslint_d` does not resolve the same way** — this paragraph used to say it did. nvim-lint stats `./node_modules/.bin/eslint_d` against nvim's **cwd** and otherwise falls straight back to `PATH`; there is no upward walk, so a file opened while cwd sits above or outside the package silently lints with the global copy. Neither plugin is vendored here, so `git grep from_node_modules` returns only this sentence — the checkable source is the pin in `modules/home/nvim/config/lazy-lock.json` (conform.nvim `016802d`, nvim-lint `3d55c8f`).
 
 That leaves the global copy doing one job: formatting files no project pins a prettier for — markdown, mostly, including this repo's. **In a shell, reach for `pnpm exec prettier`** rather than bare `prettier` inside a JS project; that is the standing rule for project binaries anyway, and it is what keeps a version-pinned project off the global copy.
 
