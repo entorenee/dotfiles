@@ -48,16 +48,26 @@ check() {
     return 0
   fi
 
+  # Split the file list on newlines only, so a path containing spaces — the
+  # Obsidian sample vault has nine — becomes one argument rather than several.
+  # POSIX sh has no arrays; restricting IFS and capturing into the positional
+  # parameters is what carries them safely. A filename containing a newline
+  # would still break this, but git quotes those in its output by default.
+  oldifs=$IFS
+  IFS='
+'
+  # shellcheck disable=SC2086
+  set -- $files
+  IFS=$oldifs
+
   # Output is captured and replayed only on failure. Otherwise every clean
   # commit prints alejandra's sponsor banner and taplo's INFO line.
   #
-  # Unquoted on purpose: both lists are word-split into arguments. That holds
-  # only while no pathspec below matches a path containing whitespace. Some do
-  # exist — the OrcaSlicer profiles and the Obsidian sample vault — and they are
-  # excluded at the call sites rather than quoted, because carrying spaces
-  # safely needs an array and this is POSIX sh.
+  # $flags is deliberately unquoted and splits on the restored default IFS;
+  # "$@" is quoted and does not. That ordering is the whole trick — reversing
+  # it would either glue the flags together or split the paths again.
   # shellcheck disable=SC2086
-  if ! out=$($tool $flags $files 2>&1); then
+  if ! out=$("$tool" $flags "$@" 2>&1); then
     status=1
     [ -n "$out" ] && printf '%s\n' "$out" >&2
   fi
@@ -68,16 +78,27 @@ check nix alejandra --check -- '*.nix'
 # the repo root and is otherwise only found via ~/.config. Match the Makefile.
 check yaml yamlfmt -lint -quiet -conf modules/home/yamlfmt/config/.yamlfmt -- '*.yml' '*.yaml'
 # The zsh scripts in modules/home/bins/bin are excluded: shfmt parses
-# sh/bash/mksh/bats and hard-errors on zsh. Keep in step with SH_FILES.
-check shell shfmt -l -- '*.sh' 'modules/home/bins/bin/*' '.githooks/*' \
+# sh/bash/mksh/bats, and zsh-specific syntax it cannot parse is a hard error
+# rather than a skip — update-all is the one that currently trips it. The other
+# three parse clean under shfmt's bash fallback; they are excluded anyway,
+# because formatting zsh by bash rules is a latent hazard. Keep in step with
+# SH_FILES.
+#
+# -d, not -l, to match the Makefile. Both exit 1 on the shfmt this config
+# installs, but -l's non-zero exit on a difference is a later addition than
+# -d's, and check() discards output on success — so a hook that resolved an
+# older shfmt from PATH would pass silently on unformatted shell. -d also
+# prints the diff rather than a bare filename.
+check shell shfmt -d -- '*.sh' 'modules/home/bins/bin/*' '.githooks/*' \
   ':!modules/home/bins/bin/dot-apply' ':!modules/home/bins/bin/dot-clean' \
   ':!modules/home/bins/bin/dot-update' ':!modules/home/bins/bin/update-all'
 check lua stylua --check -- '*.lua'
 check toml taplo fmt --check -- '*.toml'
-# Markdown only, minus the Obsidian sample vault (application-owned, and the
-# only tracked markdown with spaces in its filenames). Keep in step with
-# MD_FILES in the Makefile.
-check markdown prettier --check --log-level warn -- '*.md' ':!templates/obsidian/*'
+# All tracked markdown, the Obsidian sample vault included. Its nine
+# space-containing filenames are what check()'s IFS handling above exists for.
+# Keep in step with the markdown recipes in the Makefile, which reach the same
+# set via `git ls-files -z | xargs -0`.
+check markdown prettier --check --log-level warn -- '*.md'
 
 if [ "$status" -ne 0 ]; then
   printf '\npre-commit failed. Run `make fmt` and re-stage, or `make rebuild` /\n' >&2
