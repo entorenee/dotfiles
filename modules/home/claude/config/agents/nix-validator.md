@@ -53,7 +53,7 @@ Report which files changed and which hosts they affect:
 - `roles/nixos/base.nix` → affects all three Pis (every `configuration.nix` imports it)
 - `modules/nixos/gpg-yubikey.nix` → affects hub and airgap only — uptime does not import it
 - `lib/nixos.nix` → affects all three Pis
-- `default.nix`, `flake.nix`, `lib/home-manager-args.nix`, shared modules → affects all hosts
+- `flake.nix`, `lib/home-manager-args.nix`, shared modules → affects all hosts
 
 ### Step 2 — Nix Evaluation
 
@@ -115,7 +115,7 @@ Present results in this format:
 | --------------------- | ------- | ------------------------------------------------ |
 | fw-skyler             | Pass    | 3 packages would be updated                      |
 | lyra-silvertongue     | Pass    | 1 package would be updated                       |
-| hester-prynne         | Skipped | darwin-rebuild not available on this platform    |
+| hester-prynne         | Skipped | Linux-only closure — dry-run from that host      |
 | hub / airgap / uptime | N/A     | evaluation-only — aarch64, deployed from the hub |
 
 ### Issues Found

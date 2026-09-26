@@ -113,7 +113,7 @@ found between HEAD and $BASE_BRANCH — nothing to review." and stop. Run nothin
 
 Execute the full `code-hygiene` skill workflow:
 
-- Auto-fix artifacts (console.\*, debugger, commented-out code)
+- Auto-fix artifacts (`console.*`, debugger, commented-out code)
 - Auto-fix convention violations whose documented rule names its one replacement
 - Auto-add unit tests to existing suites
 - Collect findings (scope compliance, ambiguous convention violations, TODOs, test suggestions, observations)

@@ -106,8 +106,8 @@ The `dependency-scoper` agent's `withinMajor` output finds the highest version i
 
 Group the `withinMajor` inventory into commit-sized chunks, roughly:
 
-1. **Pure leaf utilities / SDKs** (AWS SDK, google-\*, axios, dayjs, ioredis, mysql2, svix, contentful, etc.) — lowest risk, can be a larger chunk.
-2. **Framework-adjacent runtime** (next+eslint-config-next, tRPC stack, TanStack, Radix, MUI, stream-\*) — one chunk per ecosystem.
+1. **Pure leaf utilities / SDKs** (AWS SDK, `google-*`, axios, dayjs, ioredis, mysql2, svix, contentful, etc.) — lowest risk, can be a larger chunk.
+2. **Framework-adjacent runtime** (next+eslint-config-next, tRPC stack, TanStack, Radix, MUI, `stream-*`) — one chunk per ecosystem.
 3. **Type packages** (`@types/*`) — separate chunk; these fracture the type graph (see below).
 4. **Test/build toolchain** (vite, @vitejs/plugin-react, vitest, coverage, eslint tooling) — separate chunk; regressions here mass-fail tests, not prod.
 5. **Anything the scoper flagged as coupled or transitively pinned** — its own chunk.

@@ -268,5 +268,5 @@ Present all findings that require engineer judgment. **Do not act on any of thes
 - **Comment review is diff-scoped and comment-only** — never relocate a comment
   into a project doc without approval, and never fix code a comment reveals as
   wrong; report it
-- **Skip logger files** for console.\* removal (path contains `logger`, `logging`, or `debug`)
+- **Skip logger files** for `console.*` removal (path contains `logger`, `logging`, or `debug`)
 - **Report what you did** — every auto-fix and auto-added test must appear in the report with file:line references

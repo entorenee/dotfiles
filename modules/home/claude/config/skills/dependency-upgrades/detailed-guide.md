@@ -62,9 +62,9 @@ Use the scoper's `coupled` field to identify packages that must be updated toget
 Packages that MUST be updated together:
 
 - **React Ecosystem**: React + React DOM + @types/react + @types/react-dom
-- **MUI Suite**: @mui/material + @mui/icons-material + @mui/x-\* packages
+- **MUI Suite**: @mui/material + @mui/icons-material + `@mui/x-*` packages
 - **Prisma**: @prisma/client + prisma CLI + @prisma/instrumentation
-- **TypeScript Tooling**: TypeScript + @typescript-eslint/\* packages
+- **TypeScript Tooling**: TypeScript + `@typescript-eslint/*` packages
 - **tRPC Stack**: @trpc/server + @trpc/client + @trpc/react-query + @trpc/next
 
 **Decision Framework**:

@@ -217,12 +217,18 @@ needed everywhere gets promoted deliberately; it doesn't start broad to be safe.
 ## Config drift is expected — audit for it, don't just avoid it going forward
 
 A module written before a convention existed does not retroactively follow it.
+Two worked examples, both since resolved — they are kept because the shape of
+the drift is the lesson, not because either file still reads that way.
 `modules/home/pkgs.nix`'s `linuxPkgs` list predated `my.gui` and was never
-revisited once that option existed; `roles/home/base.nix`'s autostart-suppression
-block predated `hosts/home/` having a real per-host file and carried a TODO
-saying so for several steps. Neither was sloppy when written — the convention it
-now violates didn't exist yet, and nothing forces a stale module to be rechecked
-unless something puts it back in view.
+revisited once that option existed; it has since been split into
+`modules/home/{minimal,cli,linux-gui}-pkgs.nix`, where the importing role is the
+GUI gate and only `pkgs.stdenv.isLinux` is checked in the module. And
+`roles/home/base.nix`'s autostart-suppression block predated `hosts/home/`
+having a real per-host file and carried a TODO saying so for several steps; it
+now lives at `hosts/home/hester-prynne/autostart-suppression.nix`. Neither was
+sloppy when written — the convention each came to violate didn't exist yet, and
+nothing forces a stale module to be rechecked unless something puts it back in
+view.
 
 So when a session's work newly exercises an old, previously-static module —
 especially by adding a new _kind_ of host rather than another instance of an
