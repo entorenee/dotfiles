@@ -30,10 +30,9 @@
       "claude"
       "docker-desktop"
       "elgato-control-center" # TODO find linux pkg
-      "firefox" # TODO: look into migrating to Home Manager
+      "firefox"
       "ghostty"
       "insomnia"
-      "jordanbaird-ice"
       "karabiner-elements"
       "obsidian"
       "rectangle"
