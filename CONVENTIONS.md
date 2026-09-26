@@ -202,11 +202,14 @@ play, since there's no separate `pkgs` left there to configure. Two shapes:
 
 - **Host-scoped**, the common case: a host's own file sets `overlays = [...]` and
   only that host gets it — `pnpm-pin.nix` (one work monorepo),
-  `protonmail-desktop.nix` (one Linux desktop's `.desktop` patch).
+  `protonmail-desktop.nix` (one Linux desktop's `.desktop` patch, applied to
+  the unstable package via `final.unstable`).
 - **Universal**: threaded as `baseOverlays` onto every host in `flake.nix`, for
   something every current _and planned_ host needs.
-  `claude-code-unstable.nix` qualifies because `programs.claude-code` reaches
-  every host through `roles/home/cli.nix`. The other is
+  `unstable.nix` qualifies because `programs.claude-code` reaches every host
+  through `roles/home/cli.nix`; it also exposes `pkgs.unstable`, so a package
+  wanted from unstable is named as `unstable.<pkg>` (or built on in a
+  host-scoped overlay) rather than earning an overlay of its own. The other is
   `agenix.overlays.default` — an overlay a flake input supplies rather than an
   `overlays/` file — universal because `pkgs.agenix` is how any secret gets
   edited.

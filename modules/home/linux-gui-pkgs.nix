@@ -19,6 +19,7 @@
     obsidian
     pinentry-gnome3
     protonmail-desktop
+    unstable.proton-vpn
     rpi-imager
     signal-desktop
     slack

@@ -74,14 +74,15 @@
     inherit (nixpkgs) lib;
 
     # Universal rather than a per-host opt-in like overlays/pnpm-pin.nix,
-    # because both serve a tier rather than named machines: claude-code-unstable
-    # backs `programs.claude-code` in the `claude` module, and
+    # because both serve a tier rather than named machines: overlays/unstable.nix
+    # backs `programs.claude-code` in the `claude` module (and exposes the lazy
+    # `pkgs.unstable` that host-scoped overlays build on), and
     # agenix.overlays.default supplies `pkgs.agenix` for editing and rekeying
     # secrets — both reached through roles/home/cli.nix. Host-scoping would mean
     # re-listing an overlay every time a host moved up a tier. Inert below that
     # tier: `uptime` takes minimal.nix, which imports neither.
     baseOverlays = [
-      (import ./overlays/claude-code-unstable.nix {inherit nixpkgs-unstable;})
+      (import ./overlays/unstable.nix {inherit nixpkgs-unstable;})
       agenix.overlays.default
     ];
 
