@@ -9,8 +9,9 @@ This document captures the established patterns for language-specific configurat
 ### Centralized vs Language-Specific
 
 - **Centralized (in main files):**
-  - Mason `ensure_installed` list (`lua/plugins/lsp.lua`)
-  - All formatters/linters by filetype (`lua/plugins/editor.lua`)
+  - LSP servers — Mason `ensure_installed` (`lua/plugins/lsp.lua`, mason-lspconfig)
+  - Editor-only formatters/linters — Mason `ensure_installed` (`lua/plugins/lsp.lua`, mason-tool-installer). **Not every formatter lives here** — see "Where a tool is installed" below.
+  - Which formatter/linter runs on which filetype (`lua/plugins/editor.lua`)
   - Base TreeSitter configuration (`lua/plugins/ui.lua`)
   - LSP server configurations (`lua/plugins/lsp.lua`)
 
@@ -19,6 +20,20 @@ This document captures the established patterns for language-specific configurat
   - Custom settings/options per language
   - Language-specific keymaps
   - Buffer-local autocmds
+
+### Where a tool is installed — Nix or Mason
+
+`lsp.lua` holds two separate `ensure_installed` lists, and a third install source sits outside nvim entirely:
+
+| Tool kind                                      | Installed by                 | Where                                                                                   |
+| ---------------------------------------------- | ---------------------------- | --------------------------------------------------------------------------------------- |
+| LSP servers                                    | Mason (mason-lspconfig)      | `lsp.lua` `ensure_installed`                                                            |
+| Formatters/linters the repo's own tooling runs | **Nix**                      | `modules/home/formatters/`, `modules/home/yamlfmt/` — on PATH via `roles/home/base.nix` |
+| Every other formatter/linter                   | Mason (mason-tool-installer) | `lsp.lua` `ensure_installed`                                                            |
+
+**The dividing line is whether `make fmt` or `make lint` runs it.** Those two go through the pre-commit hook and CI, neither of which has Mason — a Mason-only tool leaves the hook and CI unable to rely on it existing, and drifts in version between machines. So the six `make fmt` runs (`alejandra`, `prettier`, `shfmt`, `stylua`, `taplo`, `yamlfmt`) are Nix-declared and **must not** be added back to Mason.
+
+`actionlint` is in **both**, deliberately: `make lint` needs it in the devShell, and `editor.lua`'s autocmd calls `try_lint("actionlint")` on `.github/workflows/*.yml`, which needs it on `PATH` in every checkout. Dropping it from Mason on the grounds that `linters_by_ft` has no yaml entry has been tried and was wrong — that autocmd bypasses the table.
 
 ## Language File Pattern
 
@@ -106,9 +121,10 @@ return {}
 ### Adding New Language Support
 
 1. **Check existing tools:** See if formatters/linters are already configured in `editor.lua`
-2. **Add to Mason if needed:** Add new tools to `ensure_installed` in `lsp.lua`
-3. **Create language file:** Use the established pattern above
-4. **Import in init.lua:** Add to `languages/init.lua`
+2. **Install the tool where it belongs:** if `make fmt`/`make lint` will run it, declare it in `modules/home/formatters/` (Nix); otherwise add it to `ensure_installed` in `lsp.lua`. See "Where a tool is installed" above — do not reach for Mason by default.
+3. **Wire it to a filetype:** add it to `formatters_by_ft` or `linters_by_ft` in `editor.lua`
+4. **Create language file:** Use the established pattern above
+5. **Import in init.lua:** Add to `languages/init.lua`
 
 ### Common Patterns
 
@@ -148,4 +164,3 @@ vim.api.nvim_create_autocmd("FileType", {
 - **Language files:** `lua/plugins/languages/[name].lua`
 - **Import registry:** `lua/plugins/languages/init.lua`
 - **Main configs:** `lua/plugins/lsp.lua`, `lua/plugins/editor.lua`, `lua/plugins/ui.lua`
-

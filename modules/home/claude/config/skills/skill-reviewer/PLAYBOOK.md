@@ -1,6 +1,6 @@
 # skill-reviewer — failure playbook
 
-Companion to `SKILL.md`. That file says how the loop is *meant* to run; this one
+Companion to `SKILL.md`. That file says how the loop is _meant_ to run; this one
 says what happens when an input is missing, stale, reorganized, or corrupt — and
 what the next operator should do about it.
 
@@ -24,17 +24,17 @@ post-hardening run, makes it five of eight.
 Severity is about **silence**, not size. A loud wrong answer is a nuisance; a
 quiet plausible one is the thing this playbook is for.
 
-| # | Mode | Observed | Silent? |
-|---|---|---|---|
-| F1 | Ledger row with an off-convention date | `last_reviewed` retargets to an unrelated date on the same line | **yes** — exit 0, no stderr |
-| F2 | Ledger headers reorganized (`##` → `###`) | zero rows parsed; output identical to *no ledger* | **yes** |
-| F3 | Truncated transcript | aggregate deflates ~22%; session count unchanged | **yes** |
-| F4 | Unreadable transcript | whole session vanishes from the denominator | partly — grep warns, exit code unchecked |
-| F5 | Volume doubles | sub-linear; well inside budget | n/a — no failure |
-| F6 | Alert missed on run day | no record the alert fired, failed, or was due | **yes** |
-| F7 | Notifier blocks | script hangs with no timeout | no — but leaves no trace either |
-| F8 | A second repo grows a ledger | one ledger is read, the other discarded | **yes** |
-| F9 | A new arm's field is legitimately empty | the emptiness is reported as a defect, and the arm is overridden | **yes** |
+| #   | Mode                                      | Observed                                                         | Silent?                                  |
+| --- | ----------------------------------------- | ---------------------------------------------------------------- | ---------------------------------------- |
+| F1  | Ledger row with an off-convention date    | `last_reviewed` retargets to an unrelated date on the same line  | **yes** — exit 0, no stderr              |
+| F2  | Ledger headers reorganized (`##` → `###`) | zero rows parsed; output identical to _no ledger_                | **yes**                                  |
+| F3  | Truncated transcript                      | aggregate deflates ~22%; session count unchanged                 | **yes**                                  |
+| F4  | Unreadable transcript                     | whole session vanishes from the denominator                      | partly — grep warns, exit code unchecked |
+| F5  | Volume doubles                            | sub-linear; well inside budget                                   | n/a — no failure                         |
+| F6  | Alert missed on run day                   | no record the alert fired, failed, or was due                    | **yes**                                  |
+| F7  | Notifier blocks                           | script hangs with no timeout                                     | no — but leaves no trace either          |
+| F8  | A second repo grows a ledger              | one ledger is read, the other discarded                          | **yes**                                  |
+| F9  | A new arm's field is legitimately empty   | the emptiness is reported as a defect, and the arm is overridden | **yes**                                  |
 
 **F1, F2 and F8 are fixed** as of the ledger-arm change; their rows above record
 what was observed before it, which is what makes the fix testable. The ledger now
@@ -58,10 +58,10 @@ happens, on any host.
 same emitted-status treatment — see its section below.
 
 **Every mode in this playbook now fails loudly.** `inventory.sh --selftest` covers
-22 cases across all three arms. Note what that sentence does *not* cover: F9 was a
+22 cases across all three arms. Note what that sentence does _not_ cover: F9 was a
 correct computation read wrongly, so a green suite was never going to catch it.
 
-### F1 — a malformed date silently becomes a *different, plausible* date
+### F1 — a malformed date silently becomes a _different, plausible_ date
 
 The ledger parser scans a header line for the first date-shaped token. The live
 row convention allows a second date in a parenthetical:
@@ -75,7 +75,7 @@ a row whose review date was written `08/12/2026` reported `last_reviewed` as
 **2026-08-17** — five days newer, wrong field, entirely plausible. A second row
 in the same file dropped out silently.
 
-This is the worst mode in the set. The direction is adverse: a *newer* date
+This is the worst mode in the set. The direction is adverse: a _newer_ date
 suppresses the 45-day staleness arm, so the failure hides units that are overdue
 rather than surfacing ones that are not.
 
@@ -90,7 +90,7 @@ Rewriting headers to `###` yields `last_reviewed: null` for every unit — byte
 -identical output to "this machine has no ledger" and to "the ledger is empty".
 `inventory.sh`'s own footer already admits it conflates two of these states;
 the test shows there is a third, and it is the dangerous one, because the ledger
-*exists and is populated* while the sweep reports that it does not.
+_exists and is populated_ while the sweep reports that it does not.
 
 `/system-review` is instructed to say "this machine has no ledger" on a column of
 dashes. Under F2 that instruction makes it state something false.
@@ -101,10 +101,10 @@ dashes. Under F2 that instruction makes it state something false.
 
 Cutting one transcript to 55% of its length moved the mined totals:
 
-| | gate turns | corrections | sessions |
-|---|---|---|---|
-| clean | 58 | 8 | 6 |
-| truncated | 45 | 6 | **6** |
+|           | gate turns | corrections | sessions |
+| --------- | ---------- | ----------- | -------- |
+| clean     | 58         | 8           | 6        |
+| truncated | 45         | 6           | **6**    |
 
 A 22% drop in the denominator that Step 4 normalizes against, with the session
 count unchanged — so nothing in the output shape looks different.
@@ -121,7 +121,7 @@ that shape is tolerated. Truncation is the one that bites.
 - **Detection** — none today.
 - **Alert** — none.
 - **Fallback** — none.
-- **Catch before shipping** — `signals.sh --verify` re-derives the *structural*
+- **Catch before shipping** — `signals.sh --verify` re-derives the _structural_
   aggregate independently and would diverge. It is not run over this arm, and
   SKILL.md only requires it before quoting a structural number.
 
@@ -139,10 +139,10 @@ Louder than F3, and still not loud enough to stop a run.
 Timed against hardlinked corpora, one project directory per multiple:
 
 | files | wall clock |
-|---|---|
-| 100 | 1s |
-| 200 | 3s |
-| 400 | 4s |
+| ----- | ---------- |
+| 100   | 1s         |
+| 200   | 3s         |
+| 400   | 4s         |
 
 The live archive (404 files, ~574 MB) runs the same path in **7.6s**. Growth is
 sub-linear past the fixed git-history cost. Doubling — or quadrupling — keeps the
@@ -192,10 +192,10 @@ find "$ART_ROOT" -mindepth 3 -maxdepth 3 -path '*/skill-reviewer/LEDGER.md' | he
 `head -1` takes one file and discards every other. Tested with a ledger under
 each of two repo keys:
 
-| Unit | Truth | Reported |
-|---|---|---|
-| `fw-investigate` | reviewed 2026-08-26 | **absent entirely** |
-| `investigate` | reviewed 2026-08-25 | **2026-08-12** — 13 days stale |
+| Unit             | Truth               | Reported                       |
+| ---------------- | ------------------- | ------------------------------ |
+| `fw-investigate` | reviewed 2026-08-26 | **absent entirely**            |
+| `investigate`    | reviewed 2026-08-25 | **2026-08-12** — 13 days stale |
 
 Both directions are silent, and the winner is decided by directory order, not by
 date — so the same command can return different answers on different machines,
@@ -229,7 +229,7 @@ The review arm reads `Reviewed-on:` commit trailers. It shipped hours before the
 first sweep, so no commit carried one and `reviewed_anywhere` was null for all 25
 units — the only value it could possibly hold. The sweep reported that null as an
 instrument defect under Inert, then reached for `last_reviewed` — a field both
-`SKILL.md` and the command mark *"no arm measures from it"* — to talk two
+`SKILL.md` and the command mark _"no arm measures from it"_ — to talk two
 genuinely-due units back off the Due list, because the arm's answer felt wrong. In
 the same run it resolved `rollups/PREDICTIONS.md` against the skill directory
 instead of the friction repo and reported that no predictions existed, when three
@@ -258,18 +258,18 @@ requirement for any arm added later.
 
 Until the fix below lands, these are manual and belong to whoever runs the sweep.
 
-| Mode | Detect | Fallback |
-|---|---|---|
-| F1, F2, F8 | **Now automatic** — read `ledger_status`. Anything other than `parsed:<n>` or `absent` is a defect the sweep reports under Inert. Re-pin with `inventory.sh --selftest`. | Treat every `last_reviewed` as null, say the staleness arm cannot fire, and let the run-count arm carry the cadence alone — the documented behaviour for a machine with no ledger. For `split`, move the named file to the canonical path; nothing reads it where it sits. |
-| F3, F4 | Re-run the mining aggregate; compare `sessions` against the pre-filter's file count. Cross-check totals against `signals.sh --verify`. | Report counts as floors — which SKILL.md already requires — and do not score a prediction on a window containing an unexplained drop. |
-| F8 | `find "$ART_ROOT" -path '*/skill-reviewer/LEDGER.md'` — more than one line is the defect. | Run every review from the repo where the skills are maintained, so all rows land in one file. |
-| F6, F7 | Ask when the last `/system-review` ran. The absence of a notification is not evidence that none was due. | Run `sweep-due.sh --check` by hand; it is cheap, deterministic, and needs no GUI. |
-| F9 | **Now automatic** — read `review_arm_status`. `no-repo` is a defect; `no-trailers-since:<date>` is the expected state until the first review lands after that date, and must not be reported as one. | Staleness counts from `changed`, as documented for a never-reviewed unit. Never reach for `last_reviewed` to override an arm — it is context only, and a sweep that cites it to move a unit on or off the Due list is wrong. |
+| Mode       | Detect                                                                                                                                                                                               | Fallback                                                                                                                                                                                                                                                                   |
+| ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| F1, F2, F8 | **Now automatic** — read `ledger_status`. Anything other than `parsed:<n>` or `absent` is a defect the sweep reports under Inert. Re-pin with `inventory.sh --selftest`.                             | Treat every `last_reviewed` as null, say the staleness arm cannot fire, and let the run-count arm carry the cadence alone — the documented behaviour for a machine with no ledger. For `split`, move the named file to the canonical path; nothing reads it where it sits. |
+| F3, F4     | Re-run the mining aggregate; compare `sessions` against the pre-filter's file count. Cross-check totals against `signals.sh --verify`.                                                               | Report counts as floors — which SKILL.md already requires — and do not score a prediction on a window containing an unexplained drop.                                                                                                                                      |
+| F8         | `find "$ART_ROOT" -path '*/skill-reviewer/LEDGER.md'` — more than one line is the defect.                                                                                                            | Run every review from the repo where the skills are maintained, so all rows land in one file.                                                                                                                                                                              |
+| F6, F7     | Ask when the last `/system-review` ran. The absence of a notification is not evidence that none was due.                                                                                             | Run `sweep-due.sh --check` by hand; it is cheap, deterministic, and needs no GUI.                                                                                                                                                                                          |
+| F9         | **Now automatic** — read `review_arm_status`. `no-repo` is a defect; `no-trailers-since:<date>` is the expected state until the first review lands after that date, and must not be reported as one. | Staleness counts from `changed`, as documented for a never-reviewed unit. Never reach for `last_reviewed` to override an arm — it is context only, and a sweep that cites it to move a unit on or off the Due list is wrong.                                               |
 
 Across every mode, one rule carries the most weight and needs no code: **a number
 from this loop is not evidence for an edit until a second arm agrees with it.**
 SKILL.md already says every count is a floor and every edit cites a run. F1 is
-the case where that discipline is the *only* remaining defence.
+the case where that discipline is the _only_ remaining defence.
 
 ## The gap worth fixing first — done
 
@@ -288,7 +288,7 @@ Proposed, and deliberately small:
 1. **Unpin the ledger from the repo key.** Store it at
    `$MY_AGENT_ARTIFACTS_ROOT/skill-reviewer/LEDGER.md` — one level above the
    per-repo layout — so fragmentation is unrepresentable rather than merely
-   avoided. Keep a depth-3 scan solely to *warn* about strays left behind.
+   avoided. Keep a depth-3 scan solely to _warn_ about strays left behind.
    Merging the halves instead would preserve the category error and leave N
    files to keep consistent.
 2. **Anchor the date parse** to the token immediately following the em dash,
@@ -305,7 +305,7 @@ Proposed, and deliberately small:
    Precedent exists: `signals.sh --verify` and the prose guard's selftest, which
    passes 13/13.
 
-Deliberately *not* proposed: anything that makes the sweep slower. F5 shows the
+Deliberately _not_ proposed: anything that makes the sweep slower. F5 shows the
 budget is not the constraint, but a two-minute job is the only kind that survives
 being weekly, and that property is worth protecting.
 

@@ -7,4 +7,4 @@ windows:
       panes:
         - nvim
         - hugo serve
-        - 
+        -

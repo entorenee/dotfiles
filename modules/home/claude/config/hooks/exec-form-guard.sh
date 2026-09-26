@@ -85,7 +85,7 @@ if [ "${1:-}" = --selftest ]; then
       got=$(printf '%s' "$out" | jq -r '.hookSpecificOutput.permissionDecision // "malformed"' 2>/dev/null)
       reason=$(printf '%s' "$out" | jq -r '.hookSpecificOutput.permissionDecisionReason // empty' 2>/dev/null)
     fi
-    if [ "$got" = "$expect" ] && { [ -z "$want" ] || case "$reason" in *"$want"*) true ;; *) false ;; esac; }; then
+    if [ "$got" = "$expect" ] && { [ -z "$want" ] || case "$reason" in *"$want"*) true ;; *) false ;; esac } then
       pass=$((pass + 1))
       printf '  ok    %s\n' "$desc"
     else
@@ -96,19 +96,19 @@ if [ "${1:-}" = --selftest ]; then
   }
 
   echo "Executing a binary by its .bin path (deny):"
-  check "relative .bin path"          deny  "../node_modules/.bin/tsc --noEmit"           "pnpm exec tsc"
-  check "bare .bin path"              deny  "node_modules/.bin/jest --ci"                 "pnpm exec jest"
-  check ".bin path behind an env var" deny  "NODE_OPTIONS=--trace node_modules/.bin/jest" "pnpm exec jest"
-  check ".bin path after a cd"        deny  "cd app && node_modules/.bin/eslint src"      "pnpm exec eslint"
-  check "scoped binary name"          deny  "node_modules/.bin/@scope-cli build"          "pnpm exec @scope-cli"
+  check "relative .bin path" deny "../node_modules/.bin/tsc --noEmit" "pnpm exec tsc"
+  check "bare .bin path" deny "node_modules/.bin/jest --ci" "pnpm exec jest"
+  check ".bin path behind an env var" deny "NODE_OPTIONS=--trace node_modules/.bin/jest" "pnpm exec jest"
+  check ".bin path after a cd" deny "cd app && node_modules/.bin/eslint src" "pnpm exec eslint"
+  check "scoped binary name" deny "node_modules/.bin/@scope-cli build" "pnpm exec @scope-cli"
 
   echo "Reading about the path rather than running it (allow):"
-  check "listing the .bin directory"  allow "ls node_modules/.bin/"
-  check "grepping for a .bin path"    allow "grep -rn node_modules/.bin/tsc ."
-  check "quoted path behind a cd"     allow "cd app && grep -rn \"node_modules/.bin/tsc\" ."
+  check "listing the .bin directory" allow "ls node_modules/.bin/"
+  check "grepping for a .bin path" allow "grep -rn node_modules/.bin/tsc ."
+  check "quoted path behind a cd" allow "cd app && grep -rn \"node_modules/.bin/tsc\" ."
   check "single-quoted path in prose" allow "echo 'use node_modules/.bin/tsc'"
-  check "find naming the directory"   allow "find . -path \"*node_modules/.bin/tsc\""
-  check "the allowlisted form"        allow "pnpm exec tsc --noEmit"
+  check "find naming the directory" allow "find . -path \"*node_modules/.bin/tsc\""
+  check "the allowlisted form" allow "pnpm exec tsc --noEmit"
 
   printf '\n%s passed, %s failed\n' "$pass" "$fail"
   [ "$fail" -eq 0 ] || exit 1
@@ -130,9 +130,9 @@ if echo "$MASKED" | grep -qE "$BIN_RE"; then
   # first token is still checked: `grep -rn node_modules/.bin/tsc .` is a search.
   FIRST=$(echo "$CMD" | sed -E 's/^[[:space:]]*//' | head -1 | awk '{print $1}')
   case "$FIRST" in
-    grep | rg | egrep | fgrep | ls | find | fd | cat | head | tail | echo | printf | stat | readlink | wc)
-      exit 0
-      ;;
+  grep | rg | egrep | fgrep | ls | find | fd | cat | head | tail | echo | printf | stat | readlink | wc)
+    exit 0
+    ;;
   esac
 
   BIN=$(echo "$MASKED" | grep -oE "$BIN_RE" | head -1 | sed -E 's|.*/||')

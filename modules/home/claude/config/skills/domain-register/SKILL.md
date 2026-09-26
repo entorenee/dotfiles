@@ -27,7 +27,7 @@ Consumers invoke it, then follow it.
 - **Directly.** This is substrate. If a user asks for "a register," they want the
   entry point that produces one — `investigate` for a bug, `feature-plan` for a
   feature.
-- For a fact that *is* in the repository. A rule readable from the source is not a
+- For a fact that _is_ in the repository. A rule readable from the source is not a
   register row; cite the source and move on.
 - For session-level preferences or harness drift → `/reflect`.
 - For friction encountered while working → `friction-capture`.
@@ -59,19 +59,19 @@ an unannounced register is an invisible one.
 One line per rule. The rule is stated as a **claim about intended behavior**, not as a
 question and not as a task.
 
-| State | Written as | Behavior |
-|---|---|---|
-| **verified** | `verified: <path:line>` — or `verified: <person>, <date>` when a human answered | Proceed. The citation is mandatory; `verified` with nothing after it is an `assumed` row wearing the wrong label. |
-| **assumed** | `assumed` — optionally `assumed — <why this reading>` | Proceed, **and state it in the hand-back.** An assumption the reviewer never sees is indistinguishable from one nobody made. |
-| **blocked** | `blocked: <who can answer>` | **Stop.** Do not proceed on this rule. |
+| State        | Written as                                                                      | Behavior                                                                                                                     |
+| ------------ | ------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| **verified** | `verified: <path:line>` — or `verified: <person>, <date>` when a human answered | Proceed. The citation is mandatory; `verified` with nothing after it is an `assumed` row wearing the wrong label.            |
+| **assumed**  | `assumed` — optionally `assumed — <why this reading>`                           | Proceed, **and state it in the hand-back.** An assumption the reviewer never sees is indistinguishable from one nobody made. |
+| **blocked**  | `blocked: <who can answer>`                                                     | **Stop.** Do not proceed on this rule.                                                                                       |
 
 ```markdown
-| Rule | State |
-|---|---|
-| A supplied job outside the industry still counts toward the placement total | `blocked: the product owner` |
-| Orientation is the only class that still sends a synchronous email | `verified: mailers/orientation.rb:44` |
-| The legacy reference column is unique per carrier, not globally | `verified: user, 2026-08-20` |
-| Invoices are re-checked on edit, not only on create | `assumed — the create path is the only one with a hook, so this may be unintentional` |
+| Rule                                                                        | State                                                                                 |
+| --------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| A supplied job outside the industry still counts toward the placement total | `blocked: the product owner`                                                          |
+| Orientation is the only class that still sends a synchronous email          | `verified: mailers/orientation.rb:44`                                                 |
+| The legacy reference column is unique per carrier, not globally             | `verified: user, 2026-08-20`                                                          |
+| Invoices are re-checked on edit, not only on create                         | `assumed — the create path is the only one with a hook, so this may be unintentional` |
 ```
 
 ### `blocked` is the state that does work
@@ -115,12 +115,12 @@ still live until someone answered it, regardless of what the conversation rememb
 **At PR time — diff intent against outcome.** Walk every row and check it still holds
 against the code as built:
 
-| Found at PR time | Do |
-|---|---|
-| An `assumed` row that the implementation depends on | Surface it in the PR description. The reviewer is the last person who can catch it. |
-| A `blocked` row still blocked | The PR is not ready. Say so rather than shipping around it. |
-| A `verified` row whose citation no longer resolves | Re-verify. A moved line is not a wrong rule, but an unresolvable citation is not evidence. |
-| A rule the work relied on that is in no row | Add it, and note that the register missed it — that is the register's own failure mode. |
+| Found at PR time                                    | Do                                                                                         |
+| --------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| An `assumed` row that the implementation depends on | Surface it in the PR description. The reviewer is the last person who can catch it.        |
+| A `blocked` row still blocked                       | The PR is not ready. Say so rather than shipping around it.                                |
+| A `verified` row whose citation no longer resolves  | Re-verify. A moved line is not a wrong rule, but an unresolvable citation is not evidence. |
+| A rule the work relied on that is in no row         | Add it, and note that the register missed it — that is the register's own failure mode.    |
 
 ## The graduation drain
 
@@ -155,11 +155,11 @@ been asked cheaply.
 
 ## Quick reference
 
-| Step | Action |
-|---|---|
-| Locate | `$ARTIFACTS/registers/<branch>.md`, `/` → `-`; print the path when written |
-| States | `verified: <path:line>` proceeds · `assumed` proceeds **and is stated in the hand-back** · `blocked: <who>` **stops** |
-| Blocked | Post the rule as an answerable question, a named person, the fork, and what can proceed without it |
-| Resume | Read the register first; a `blocked` row is live until answered |
-| PR time | Diff every row against the code as built; surface `assumed` rows in the PR description |
-| Drain | A rule expressible as a test graduates out — delete the row, name the test |
+| Step    | Action                                                                                                                |
+| ------- | --------------------------------------------------------------------------------------------------------------------- |
+| Locate  | `$ARTIFACTS/registers/<branch>.md`, `/` → `-`; print the path when written                                            |
+| States  | `verified: <path:line>` proceeds · `assumed` proceeds **and is stated in the hand-back** · `blocked: <who>` **stops** |
+| Blocked | Post the rule as an answerable question, a named person, the fork, and what can proceed without it                    |
+| Resume  | Read the register first; a `blocked` row is live until answered                                                       |
+| PR time | Diff every row against the code as built; surface `assumed` rows in the PR description                                |
+| Drain   | A rule expressible as a test graduates out — delete the row, name the test                                            |

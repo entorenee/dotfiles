@@ -95,7 +95,7 @@ cat "$REGISTER" 2>/dev/null
 
 `domain-register` specifies that a register is read on resume and **diffed at PR
 time**, and this phase is the only place that diff can happen — a row is checked
-against the code *as built*, which does not exist until the review pass has read the
+against the code _as built_, which does not exist until the review pass has read the
 diff. Without it a register only ever accumulates rows, which is the failure it was
 built to prevent.
 
@@ -113,7 +113,7 @@ found between HEAD and $BASE_BRANCH — nothing to review." and stop. Run nothin
 
 Execute the full `code-hygiene` skill workflow:
 
-- Auto-fix artifacts (console.*, debugger, commented-out code)
+- Auto-fix artifacts (`console.*`, debugger, commented-out code)
 - Auto-fix convention violations whose documented rule names its one replacement
 - Auto-add unit tests to existing suites
 - Collect findings (scope compliance, ambiguous convention violations, TODOs, test suggestions, observations)
@@ -137,12 +137,12 @@ attribute those separately from pre-existing failures.
 
 This governs every verification run in this skill, here and in Phase 5.
 
-**A pipeline reports the status of its *last* command.** `cmd | tail -15` gives
+**A pipeline reports the status of its _last_ command.** `cmd | tail -15` gives
 you `tail`'s status, and `tail` succeeds whatever `cmd` did — so a failing check
 reads as exit 0. Same trap with `| head`, `| grep`, `| jq`, `| wc`. This has
 already put a ✅ in a report for a check that was failing, twice in one run.
 
-Run the command bare and read its status, then pipe a *separate* invocation for
+Run the command bare and read its status, then pipe a _separate_ invocation for
 readable output, or capture `${PIPESTATUS[0]}`. State the raw exit code you
 observed before writing any ✅.
 
@@ -173,8 +173,8 @@ exactly what single-file review misses:
 
 - **Cross-component render ordering.** When an effect closes/dismisses an overlay,
   modal, or branch in response to a prop or hook return that changed elsewhere,
-  trace what the render tree looks like *the frame after* the trigger flips but
-  *before* the effect runs. Look for a gap where neither branch's guard holds
+  trace what the render tree looks like _the frame after_ the trigger flips but
+  _before_ the effect runs. Look for a gap where neither branch's guard holds
   (blank/placeholder render) or where a child fully remounts (expensive re-init,
   re-fetch, re-attach). Prefer `useLayoutEffect` or a combined guard over
   `useEffect` for synchronous close.
@@ -188,13 +188,13 @@ exactly what single-file review misses:
   region carries a comment hedging about fragility/timing/races ("if QA reveals
   flicker…", "on slow devices…", "might need to bump this"), surface it verbatim
   as an Important issue. Do not adopt the comment's workaround as the fix.
-- **Comments are not evidence.** Label each load-bearing claim as *verified from
-  executable code* or *taken from a comment/docstring/JSDoc*. Docstrings in this
+- **Comments are not evidence.** Label each load-bearing claim as _verified from
+  executable code_ or _taken from a comment/docstring/JSDoc_. Docstrings in this
   repo have been demonstrated out of date. Never let prose be the sole support for
   a Critical or Important finding — when it is the only source, mark the finding
   **requirements-dependent** and name who could confirm it.
 - **A behavior that looks like a bug may be intended.** Before reporting two
-  surfaces as inconsistent, ask whether they answer *different questions*. Product
+  surfaces as inconsistent, ask whether they answer _different questions_. Product
   and compliance rules are frequently absent from the repo entirely, so a confident
   "divergence" or "should fail open" finding is exactly the kind domain knowledge
   overturns. State the assumption the finding rests on so it can be checked in one
@@ -210,7 +210,7 @@ Mechanical or unambiguous fixes where the correct answer is determined by the
 code, by `PROJECT_COMMANDS`, or by the diff itself: stray artifacts and dead code,
 lint-autofixable rules, formatting drift, type errors with a single obvious fix, a
 banned API swapped for its documented replacement, and unit tests added to an
-*existing* suite for a *pure* function the diff fully specifies. `code-hygiene`
+_existing_ suite for a _pure_ function the diff fully specifies. `code-hygiene`
 owns the artifact classes — do not re-enumerate them here.
 
 ### needs-human-judgment (surface; do NOT dispatch)
@@ -292,7 +292,7 @@ three checks in parallel again.
 **Hard limit: 3 attempts total.** After the 3rd failed attempt, stop. Carry the
 remaining failures into Phase 6 as items that still need the user.
 
-If a failure looks like a *test asserting wrong behavior* (the expectation is
+If a failure looks like a _test asserting wrong behavior_ (the expectation is
 wrong, not the code), do not auto-fix it — classify it as needs-human-judgment.
 Never "fix" tests by changing the assertion to match broken code.
 
@@ -319,36 +319,47 @@ The file's contents are the template below.
 # /pre-pr — Report
 
 ## Project commands used
+
 <paste the PROJECT_COMMANDS block>
 
 ## Code hygiene
+
 ### Auto-fixed
+
 - Removed `console.log` at `src/lib/api/client.ts:47`
 - Added 2 unit tests to `src/lib/hooks/__tests__/useAuth.test.ts`
 
 ## Auto-fixed by subagents (no action needed)
+
 - `<file>:<line>` — <what changed> (subagent <id>)
 
 ## Verification
+
 Every row names the command and the exit code you actually read. ⚠️ unverified is
 a valid row; a ✅ you did not observe is not.
+
 - typecheck: ✅ pass (`<cmd>`, exit 0) | ❌ <n> errors after <k> attempts | ⚠️ unverified — <why>
 - lint: ✅ pass (`<cmd>`, exit 0) | ❌ <n> errors after <k> attempts | ⚠️ unverified — <why>
 - test: ✅ <p>/<t> passing (`<cmd>`, exit 0) | ❌ <f> failing after <k> attempts | ⚠️ unverified — <why>
 
 New tests added this pass — each must state its falsification result:
+
 - `<test file>` — <n> tests, all <n> fail against pre-fix code ✅ | <n> pass pre-fix ⚠️ pins nothing
 
 ## Claims I could not verify
+
 Required section. If genuinely empty, write "None" — but check first: anything the
 sandbox blocks, any prod-only data, anything needing a device, and any conclusion
 resting on a comment rather than executable code belongs here.
+
 - <claim> — <why unverifiable here>
 
 ## Domain register
+
 Required section. Write "No register for this branch" if none exists — do not omit it,
 or a missing diff is indistinguishable from a missing register. When one exists, report
 every row against the code as built, using `domain-register`'s four outcomes:
+
 - `blocked` row still blocked — **the PR is not ready.** Say so rather than shipping
   around it, and repeat it in the chat summary; this is the one register finding that
   changes whether the branch should merge at all.
@@ -362,28 +373,35 @@ every row against the code as built, using `domain-register`'s four outcomes:
 ## Still needs you
 
 ### Fast path (skim — mechanical, no judgment)
+
 - Hygiene fixes, formatting, lint-driven edits. These have a clean track record.
 
 ### Floor path (read against the diff every time)
+
 Anything Critical, any verification row, any claim about what a new test proves,
 and any product, compliance, or safety behavior. **Do not let this shrink as the
 flow earns trust elsewhere** — the thinnest reviews are where errors have survived.
 
 #### Decisions / scope
+
 #### Unresolved verification failures (after 3 attempts)
+
 - <file>:<line> — <error message> — <why it is stuck>
+
 #### Code review items (human judgment)
+
 - Critical / Important / Minor
 
 ## Suggested next moves
+
 - 2–3 concrete next actions, ordered by impact.
 ```
 
 ## Hard rules
 
-- **Comments are not evidence.** Label each load-bearing claim as *verified from
-  executable code* (you read the statement that makes it true) or *taken from a
-  comment/docstring/JSDoc* (prose that may be stale). Docstrings in these repos
+- **Comments are not evidence.** Label each load-bearing claim as _verified from
+  executable code_ (you read the statement that makes it true) or _taken from a
+  comment/docstring/JSDoc_ (prose that may be stale). Docstrings in these repos
   have been demonstrated out of date, and this flow has been caught reasoning from
   one. Never let prose be the sole support for a Critical or Important finding —
   when it is the only source, mark the finding **requirements-dependent** and name
@@ -396,12 +414,12 @@ flow earns trust elsewhere** — the thinnest reviews are where errors have surv
 - **No PR creation** unless they explicitly ask after seeing the report.
 - **A destructive suggestion requires a signal you can actually read.** Before
   proposing any `git reset`, `git checkout --`, branch deletion, or force-push,
-  confirm the evidence is legible *in this environment*. Apply the **baseline
+  confirm the evidence is legible _in this environment_. Apply the **baseline
   test**: check the same signal against a known-good reference. If a commit you
-  *know* is the user's shows the same status as the one you are flagging, your
+  _know_ is the user's shows the same status as the one you are flagging, your
   signal is measuring the sandbox, not the commit.
   - Specifically: **GPG `E` means "cannot check", not "unsigned"** — and the
-    sandbox denies `~/.gnupg`, so `E` is the expected result for *every* commit
+    sandbox denies `~/.gnupg`, so `E` is the expected result for _every_ commit
     here. Signature status is never grounds for a provenance claim in this
     environment.
   - This rule exists because the flow once reported a nonexistent rogue commit and

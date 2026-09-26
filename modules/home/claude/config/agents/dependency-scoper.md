@@ -17,14 +17,17 @@ After any short status output, return one JSON object with this shape:
 {
   "packageManager": "npm | pnpm | yarn",
   "withinMajor": [
-    { "name": "vite", "current": "5.4.0", "wanted": "5.4.10", "type": "patch | minor" }
+    {
+      "name": "vite",
+      "current": "5.4.0",
+      "wanted": "5.4.10",
+      "type": "patch | minor"
+    }
   ],
   "deferredMajors": [
     { "name": "vite", "current": "5.4.0", "latest": "7.0.0", "majorJump": 2 }
   ],
-  "coupled": [
-    ["react", "react-dom", "@types/react", "@types/react-dom"]
-  ],
+  "coupled": [["react", "react-dom", "@types/react", "@types/react-dom"]],
   "notes": ["..."]
 }
 ```

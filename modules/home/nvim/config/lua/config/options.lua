@@ -5,7 +5,7 @@ local g = vim.g
 -- Leader keys
 g.mapleader = ";"
 g.maplocalleader = ";"
-g.python3_host_prog = '/opt/homebrew/bin/python3'
+g.python3_host_prog = "/opt/homebrew/bin/python3"
 
 -- Editor settings
 opt.tabstop = 2
@@ -19,11 +19,10 @@ opt.ruler = true
 opt.hlsearch = true
 opt.ignorecase = true
 opt.smartcase = true
-opt.backspace = { 'indent', 'eol', 'start' }
+opt.backspace = { "indent", "eol", "start" }
 opt.visualbell = true
-opt.wildignore:append({ '*.DS_Store', '*.d', '*.mlast', '*.cmi', '*.cmj', '*.cmt', '*reast', '*.ast' })
+opt.wildignore:append({ "*.DS_Store", "*.d", "*.mlast", "*.cmi", "*.cmj", "*.cmt", "*reast", "*.ast" })
 opt.clipboard = "unnamedplus"
 
 -- Auto-reload buffers when files change outside Neovim
 opt.autoread = true
-

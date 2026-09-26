@@ -31,7 +31,7 @@ happened here.
 
 - Whether one skill is working → `skill-reviewer`
 - The periodic sweep of what is due → `system-review`
-- Capturing *new* friction → `friction-capture`. This skill never creates an entry. If
+- Capturing _new_ friction → `friction-capture`. This skill never creates an entry. If
   rendering surfaces uncaptured friction, say so and invoke that. It may **correct** an
   existing entry, but only from a Step 4 drill-down that showed the entry itself to be
   wrong — never as a tidy-up pass.
@@ -61,7 +61,7 @@ never became executable, which is the normal state rather than an anomaly — 21
 of closed tickets, which is precisely the inflation the rule above forbids.
 
 **Length: layered, not compressed.** The subject is genuinely complex and the
-briefing has to carry *why* the obstacles are hard. Lead with the decision surface so
+briefing has to carry _why_ the obstacles are hard. Lead with the decision surface so
 a reader can stop there; put evidence below it for anyone checking. Do **not** apply
 a "just a few paragraphs" instruction — that strips the reasoning this exists to
 convey.
@@ -80,7 +80,7 @@ by number), so a duplicate makes every later reference to it ambiguous.
 
 This is the one failure mode multi-machine writing introduces, and it is silent by
 construction: two machines that both read the same highest number inside the 300s sync
-window write *differently-slugged* files, so the rebase at `git-sync:428` succeeds and
+window write _differently-slugged_ files, so the rebase at `git-sync:428` succeeds and
 git never reports a conflict. Nothing else in the system will ever mention it. Renumber
 the later entry — cheap, and `friction-capture` says the same.
 
@@ -90,14 +90,14 @@ the later entry — cheap, and `friction-capture` says the same.
   A skill that halts on a hardware prompt at step 1 is a skill that does not get run.
 - **`git-sync` already does it, every run.** The daemon is bidirectional, not push-only:
   `git fetch` at `git-sync:392`, `git merge --ff --ff-only` at `:418`, `git rebase` at `:428`,
-  and the script's own comment reads *"TODO make fetching/pushing optional"* — so fetching is
+  and the script's own comment reads _"TODO make fetching/pushing optional"_ — so fetching is
   not optional. `git-sync.syncEnabled` is `true` here, so the gate at `:119` passes and the
   fetch is reached on every run: every 300s and on every write. A manual pull duplicates the
   daemon, using a credential path the daemon does not need.
 
 It is also the one command in this step that cannot run in the default sandbox — inside it
-the pull fails with *"Please make sure you have the correct access rights and the repository
-exists"*, which names a revoked deploy key rather than the `~/.ssh` read-deny that is the
+the pull fails with _"Please make sure you have the correct access rights and the repository
+exists"_, which names a revoked deploy key rather than the `~/.ssh` read-deny that is the
 real cause. A reader would go audit GitHub.
 
 **So there is no case left for a pull here, including the multi-machine one.** If entries were
@@ -111,10 +111,10 @@ briefing loses credibility.
 Then **ask which mode**, before rendering anything — a rendered briefing cannot be
 un-sanitized, and mixing modes within one document is worse than either:
 
-| Mode | Use | Output |
-|---|---|---|
-| **Full detail** (default) | The user, the CTO, technical review — anyone who already has access to the log | `briefings/YYYY-MM-DD.md` |
-| **Sanitized by class** | The briefing is leaving that circle | `briefings/YYYY-MM-DD-sanitized.md` |
+| Mode                      | Use                                                                            | Output                              |
+| ------------------------- | ------------------------------------------------------------------------------ | ----------------------------------- |
+| **Full detail** (default) | The user, the CTO, technical review — anyone who already has access to the log | `briefings/YYYY-MM-DD.md`           |
+| **Sanitized by class**    | The briefing is leaving that circle                                            | `briefings/YYYY-MM-DD-sanitized.md` |
 
 Distinct filenames are deliberate: the two are different artifacts with different
 audiences, and one should never be mistaken for the other when handing a file over.
@@ -129,8 +129,8 @@ the business rule, the table, and the column. If an entry names it, the briefing
 it — a specific is not softened, abbreviated, or replaced by its class here. Dropping
 one is the behavior this default exists to prevent, not a courtesy.
 
-**Sanitized mode, when chosen:** render what *kind* of thing went wrong and drop the
-instance — *"a join key whose semantics were absent from the schema"*, never the key,
+**Sanitized mode, when chosen:** render what _kind_ of thing went wrong and drop the
+instance — _"a join key whose semantics were absent from the schema"_, never the key,
 the table, the customer, or the internal system. If an obstacle cannot be stated
 without its specifics, name the class and say the detail is in the log. Paths, files,
 commits, and skill names in the dotfiles repo stay in full; it is public. Watch the
@@ -162,20 +162,25 @@ knows whether they are holding the full picture:
 (Sanitized renders say so instead, and name what was generalised.)
 
 ## Where this stands
+
 Three to five sentences. What the effort is, what it has cost, what it has bought.
 Someone who reads only this should not be misled.
 
 ## Decision surface
+
 What needs a decision or awareness now, ranked by consequence. One row each:
 obstacle, what it costs, the adaptation, status.
 
 ## What changed since <date of previous briefing>
+
 Only genuine movement. If nothing moved, say that.
 
 ## Still open
+
 Ranked, each with what would close it.
 
 ## Evidence
+
 Per-item detail with citations. The reader may stop before this section.
 ```
 
@@ -194,8 +199,8 @@ they want pressed on.
 
 **Detail is produced on demand, never pre-emptively.** Pre-computing the evidence
 behind every entry is the context-heavy work this ordering avoids, and avoiding it is
-what makes a weekly cadence affordable. Detail is produced *against a document the user
-has already read*, for the entries they chose — so do not expand anything nobody asked
+what makes a weekly cadence affordable. Detail is produced _against a document the user
+has already read_, for the entries they chose — so do not expand anything nobody asked
 about.
 
 For each point the user presses, surface:
@@ -212,13 +217,13 @@ For each point the user presses, surface:
 **The halt is what sends the notification, so nothing needs to be called.** A
 `Notification` hook is already registered and fires on an idle prompt. Its body is the
 last assistant text block, whitespace-collapsed and truncated to **100 characters** —
-so the final line before halting *is* the banner. Lead with the artifact path and the
+so the final line before halting _is_ the banner. Lead with the artifact path and the
 ask; preamble is spent inside the only 100 characters the user sees.
 
 ## Step 5 — refine and reconcile
 
 Fold the drill-down results back in. **Plural files, deliberately:** a drill-down can
-show that an *entry* misstates something, not merely that the briefing summarized it
+show that an _entry_ misstates something, not merely that the briefing summarized it
 thinly. When it does, correct the entry too — and `friction-capture`'s rule governs
 how: **keep the correction visible rather than overwriting**, because the original
 error is usually the more useful record.
@@ -236,10 +241,10 @@ reintroduce one** — the path is the hand-off.
 
 ## Quick reference
 
-| Step | Action |
-|---|---|
-| 1 | Resolve `$MY_CLAUDE_FRICTION_ROOT`; **no git, no pull**; read all entries and the last briefing; **ask full detail or sanitized — default full** |
-| 2 | Group by theme, rank by consequence, roll up statuses |
-| 3 | Write `YYYY-MM-DD.md` (or `-sanitized.md`), state the mode in the document, decision surface first, evidence last; print the path |
-| 4 | **Stop.** Let the user read it, then ask what to drill into. Per point: evidence re-read, quotation in full, attribution. Final line before the halt is the notification — path and ask first, 100 chars |
-| 5 | Fold results back into the briefing *and* into `entries/` where an entry itself was wrong, correction visible; no git; print the path — the markdown **is** the deliverable, there is no export |
+| Step | Action                                                                                                                                                                                                   |
+| ---- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1    | Resolve `$MY_CLAUDE_FRICTION_ROOT`; **no git, no pull**; read all entries and the last briefing; **ask full detail or sanitized — default full**                                                         |
+| 2    | Group by theme, rank by consequence, roll up statuses                                                                                                                                                    |
+| 3    | Write `YYYY-MM-DD.md` (or `-sanitized.md`), state the mode in the document, decision surface first, evidence last; print the path                                                                        |
+| 4    | **Stop.** Let the user read it, then ask what to drill into. Per point: evidence re-read, quotation in full, attribution. Final line before the halt is the notification — path and ask first, 100 chars |
+| 5    | Fold results back into the briefing _and_ into `entries/` where an entry itself was wrong, correction visible; no git; print the path — the markdown **is** the deliverable, there is no export          |

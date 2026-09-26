@@ -36,10 +36,5 @@
 # through untouched; only the exit-3 ask path rewrites. So any command added to
 # `permissions.ask` has to be checked with `rtk rewrite "<cmd>"` and listed here
 # if it comes back rewritten.
-exclude_commands = [
-  "gh run view",
-  "gh pr diff",
-  "gh api",
-  "gh pr edit",
-]
+exclude_commands = ["gh run view", "gh pr diff", "gh api", "gh pr edit"]
 transparent_prefixes = []

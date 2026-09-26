@@ -15,10 +15,13 @@ vim.api.nvim_create_autocmd("FileType", {
 
 		-- Language-specific keymaps
 		local opts = { buffer = true, silent = true }
-		vim.keymap.set("n", "<leader>nf", function() run_nix_flake_command("check") end, opts)
-		vim.keymap.set("n", "<leader>nu", function() run_nix_flake_command("update") end, opts)
+		vim.keymap.set("n", "<leader>nf", function()
+			run_nix_flake_command("check")
+		end, opts)
+		vim.keymap.set("n", "<leader>nu", function()
+			run_nix_flake_command("update")
+		end, opts)
 	end,
 })
 
 return {}
-

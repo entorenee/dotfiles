@@ -1,0 +1,26 @@
+root = true
+
+# shfmt reads this file natively as long as it is invoked without -i/-bn/-ci/
+# -sr/-kp, which is both how `make fmt` calls it and how conform.nvim's built-in
+# shfmt formatter does. Without it shfmt defaults to tabs and would rewrite every
+# script here. stylua does NOT read editorconfig — see .stylua.toml.
+#
+# The indent is set at [*] rather than enumerated per glob because the nine
+# scripts in modules/home/bins/bin/ and .githooks/pre-commit have no extension:
+# any narrower rule misses all ten and shfmt silently tabs them.
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 2
+
+[*.lua]
+indent_style = tab
+
+[{Makefile,*.mk}]
+indent_style = tab
+
+[*.md]
+trim_trailing_whitespace = false

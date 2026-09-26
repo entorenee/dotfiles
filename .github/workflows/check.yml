@@ -1,0 +1,51 @@
+name: check
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: Format and lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: DeterminateSystems/nix-installer-action@v23
+      - run: nix develop --command make check
+
+  eval:
+    name: Evaluate NixOS hosts
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: DeterminateSystems/nix-installer-action@v23
+      # The three Pis only. fw-skyler, lyra-silvertongue and hester-prynne all
+      # take roles/home/gui.nix, which imports modules/home/fonts, whose
+      # builtins.fetchGit against the private assets repo is forced during
+      # evaluation and needs SSH credentials no runner has. So this job does
+      # NOT validate every host — closing that gap means a read-only deploy key
+      # as an Actions secret, which is a separate decision.
+      - name: nix eval each Pi host's toplevel drvPath
+        # The status is accumulated rather than left to `bash -e`, for two
+        # reasons: a bare eval would abort the loop before its ::endgroup::
+        # printed, leaving the failing host's log group open and swallowing
+        # everything after it; and evaluating all three reports every broken
+        # host in one run instead of only the first.
+        run: |
+          rc=0
+          for host in hub airgap uptime; do
+            echo "::group::$host"
+            nix eval --raw ".#nixosConfigurations.$host.config.system.build.toplevel.drvPath" || rc=1
+            echo
+            echo "::endgroup::"
+          done
+          exit $rc

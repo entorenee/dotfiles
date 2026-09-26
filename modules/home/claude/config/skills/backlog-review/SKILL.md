@@ -57,13 +57,13 @@ digraph backlog_review {
 
 Ask these together, before reading anything. Proceed on defaults for anything unanswered.
 
-| Ask | Default |
-|---|---|
-| Which project, milestone, or epic? | — |
+| Ask                                                                                         | Default                                        |
+| ------------------------------------------------------------------------------------------- | ---------------------------------------------- |
+| Which project, milestone, or epic?                                                          | —                                              |
 | Which lens — **feature** (do tickets match what shipped?) or **debt** (what is still real?) | infer from the project, say which you inferred |
-| Where does the report go — local markdown, a doc connector, a hosted page, a `.docx`? | local markdown |
-| Length budget for the report's **prose** | ~1,200 words, excluding the dispositions table |
-| Is the codebase checked out locally? Path? | assume not; degrade per **Portability** |
+| Where does the report go — local markdown, a doc connector, a hosted page, a `.docx`?       | local markdown                                 |
+| Length budget for the report's **prose**                                                    | ~1,200 words, excluding the dispositions table |
+| Is the codebase checked out locally? Path?                                                  | assume not; degrade per **Portability**        |
 
 **Do not ask whether the user also wants the backlog cleaned up.** Research is the mandate.
 Asking plants execution as an expectation before a single ticket has been read.
@@ -112,7 +112,7 @@ ledger.** Check it against the Phase 0 budget with `wc -w`.
 
 Resolve the artifact root and write there unless Phase 0 chose otherwise. **A backlog review's
 subject is a ticket project, not a repo**, so the base's bare snippet does not apply — key on the
-repo that *grounds* the review, and fall back to the session's own repo, never to the cwd:
+repo that _grounds_ the review, and fall back to the session's own repo, never to the cwd:
 
 ```bash
 REPO_DIR="${REVIEW_REPO:-$PWD}"   # REVIEW_REPO = the Phase 0 codebase path, if any
@@ -141,12 +141,12 @@ wants that, they will say so.
 
 Reached only when the user asks, in their own words, after reading the report.
 
-| Operation | Approval needed |
-|---|---|
-| **comment** | Proposed in the report; written only on request. Annotating a project is a visible change to shared team state |
-| **close / complete** | **Itemized** — the user sees every ticket by title and ID and approves that exact list |
-| **delete** | **Itemized**, same bar |
-| label, assign, due date, move section | Batch approval of an enumerated list |
+| Operation                             | Approval needed                                                                                                |
+| ------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| **comment**                           | Proposed in the report; written only on request. Annotating a project is a visible change to shared team state |
+| **close / complete**                  | **Itemized** — the user sees every ticket by title and ID and approves that exact list                         |
+| **delete**                            | **Itemized**, same bar                                                                                         |
+| label, assign, due date, move section | Batch approval of an enumerated list                                                                           |
 
 Three rules, applying to **close and delete alike**:
 
@@ -163,16 +163,16 @@ every ID with the recovery deadline; and reconcile per `references/audit-log.md`
 
 ## Rationalizations — captured from baseline runs
 
-| Excuse | Reality |
-|---|---|
-| "It's just a close, not a delete — that's reversible" | Close is the operation that gets used without asking. It needs the same enumerated list as delete |
-| "Comments are harmless, they're just annotations" | A baseline wrote 17 comments and reported "I closed 2 and deleted 0". Seventeen writes to shared team state, invisible in its own summary |
-| "They said go ahead" | Go ahead to *what*? Approval attaches to a list, not to a mood |
-| "If the milestone was abandoned, deleting is still my call" | Verbatim from a baseline that had just named the gap in its own evidence. It is not your call. It is a question |
-| "Nobody has touched it in two years" | Inactivity is a property of the ticket, not of the work. Yesterday's *TRPC JSON Errors* was untouched and live |
-| "The tracker is gone, so the evidence is unrecoverable" | Then it is Unverifiable. Dead links are why the eight N+1 tickets were nearly deleted — they cost 3,156 s/week |
-| "No code matches, so the premise is gone" | Only if the grep covered the whole system. Say which repo you searched |
-| "The user obviously wants this cleaned up" | The user asked for a review. A report is a complete answer |
+| Excuse                                                      | Reality                                                                                                                                   |
+| ----------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| "It's just a close, not a delete — that's reversible"       | Close is the operation that gets used without asking. It needs the same enumerated list as delete                                         |
+| "Comments are harmless, they're just annotations"           | A baseline wrote 17 comments and reported "I closed 2 and deleted 0". Seventeen writes to shared team state, invisible in its own summary |
+| "They said go ahead"                                        | Go ahead to _what_? Approval attaches to a list, not to a mood                                                                            |
+| "If the milestone was abandoned, deleting is still my call" | Verbatim from a baseline that had just named the gap in its own evidence. It is not your call. It is a question                           |
+| "Nobody has touched it in two years"                        | Inactivity is a property of the ticket, not of the work. Yesterday's _TRPC JSON Errors_ was untouched and live                            |
+| "The tracker is gone, so the evidence is unrecoverable"     | Then it is Unverifiable. Dead links are why the eight N+1 tickets were nearly deleted — they cost 3,156 s/week                            |
+| "No code matches, so the premise is gone"                   | Only if the grep covered the whole system. Say which repo you searched                                                                    |
+| "The user obviously wants this cleaned up"                  | The user asked for a review. A report is a complete answer                                                                                |
 
 ## Red flags — stop
 
@@ -198,12 +198,12 @@ every ID with the recovery deadline; and reconcile per `references/audit-log.md`
 
 ## Portability — with or without the codebase
 
-| Check | With local repo | Without |
-|---|---|---|
-| `file:line`, absence-grep | `grep` / `rg` | GitHub MCP code search, else **unavailable** |
-| Repo archived, last commit | `gh repo list`, `git log` | `gh` if authenticated, else unavailable |
-| Dependency versions | read the manifest | unavailable |
-| Telemetry | whichever MCP fills the role | same |
+| Check                      | With local repo              | Without                                      |
+| -------------------------- | ---------------------------- | -------------------------------------------- |
+| `file:line`, absence-grep  | `grep` / `rg`                | GitHub MCP code search, else **unavailable** |
+| Repo archived, last commit | `gh repo list`, `git log`    | `gh` if authenticated, else unavailable      |
+| Dependency versions        | read the manifest            | unavailable                                  |
+| Telemetry                  | whichever MCP fills the role | same                                         |
 
 A check that cannot run makes the ticket **Unverifiable**, which routes it to the report as a
 question. It never becomes a finding of obsolescence, and the report's coverage notes name every

@@ -200,4 +200,3 @@ Then reference it in your main flake:
 ```nix
 inputs.navi-cheatsheets.url = "github:yourusername/my-navi-cheatsheets";
 ```
-

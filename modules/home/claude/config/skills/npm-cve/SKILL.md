@@ -43,26 +43,26 @@ digraph cve_flow {
 
 ## Quick Reference
 
-| Rule | Detail |
-|------|--------|
-| **Detect first** | Look for `pnpm-lock.yaml`, `yarn.lock`, or `package-lock.json` before running any audit command |
-| **Capture JSON** | Always run audit with `--json` and save the output — needed for downstream parsing and reporting |
-| **Safe fixes only** | Apply minor/patch upgrades automatically; **never** run `npm audit fix --force` or `pnpm update --latest` without approval |
-| **Validate after fixes** | Zero TS errors, zero lint errors, all tests pass — after the safe-fix batch |
-| **Stop before majors** | Hard stop after safe fixes. Report remaining advisories + proposed major paths. Wait for explicit "go ahead". |
-| **Research before reporting** | For every remaining advisory, read changelogs/migration guides and produce a level-of-effort estimate before stopping |
-| **Never do** | Auto-apply majors, run `--force`, suppress advisories via overrides without user approval, delete the lockfile |
-| **Severity prioritization** | Surface critical/high in the report first; low/moderate listed but de-emphasized |
+| Rule                          | Detail                                                                                                                     |
+| ----------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| **Detect first**              | Look for `pnpm-lock.yaml`, `yarn.lock`, or `package-lock.json` before running any audit command                            |
+| **Capture JSON**              | Always run audit with `--json` and save the output — needed for downstream parsing and reporting                           |
+| **Safe fixes only**           | Apply minor/patch upgrades automatically; **never** run `npm audit fix --force` or `pnpm update --latest` without approval |
+| **Validate after fixes**      | Zero TS errors, zero lint errors, all tests pass — after the safe-fix batch                                                |
+| **Stop before majors**        | Hard stop after safe fixes. Report remaining advisories + proposed major paths. Wait for explicit "go ahead".              |
+| **Research before reporting** | For every remaining advisory, read changelogs/migration guides and produce a level-of-effort estimate before stopping      |
+| **Never do**                  | Auto-apply majors, run `--force`, suppress advisories via overrides without user approval, delete the lockfile             |
+| **Severity prioritization**   | Surface critical/high in the report first; low/moderate listed but de-emphasized                                           |
 
 ## Step-by-step
 
 ### 1. Detect package manager
 
-| Lockfile present | Use |
-|------------------|-----|
-| `pnpm-lock.yaml` | `pnpm` |
-| `yarn.lock` | `yarn` (note: `yarn audit` differs across v1 vs Berry) |
-| `package-lock.json` | `npm` |
+| Lockfile present    | Use                                                    |
+| ------------------- | ------------------------------------------------------ |
+| `pnpm-lock.yaml`    | `pnpm`                                                 |
+| `yarn.lock`         | `yarn` (note: `yarn audit` differs across v1 vs Berry) |
+| `package-lock.json` | `npm`                                                  |
 
 If multiple lockfiles exist, flag this to the user — it's a misconfiguration that should be resolved before remediation.
 
@@ -152,12 +152,12 @@ For each remaining advisory, gather:
 
 Estimate each remaining advisory (and each proposed major upgrade path) using this scale. Time estimates assume one engineer familiar with the codebase, including validation:
 
-| LoE | Time | Looks like |
-|-----|------|------------|
-| **XS** | < 30 min | Patch a leaf dep, no API changes, no call-site edits |
-| **S** | < 2 hrs | One major bump with codemod or trivial rename; < 10 call-site touches |
-| **M** | half-day to 1 day | One major across a coupled group (peers + types); manual edits across 10–50 call sites; predictable migration guide |
-| **L** | 1–3 days | Multi-package coordinated bump; behavior changes (not just API renames); 50+ call sites; new test coverage required |
+| LoE    | Time               | Looks like                                                                                                                              |
+| ------ | ------------------ | --------------------------------------------------------------------------------------------------------------------------------------- |
+| **XS** | < 30 min           | Patch a leaf dep, no API changes, no call-site edits                                                                                    |
+| **S**  | < 2 hrs            | One major bump with codemod or trivial rename; < 10 call-site touches                                                                   |
+| **M**  | half-day to 1 day  | One major across a coupled group (peers + types); manual edits across 10–50 call sites; predictable migration guide                     |
+| **L**  | 1–3 days           | Multi-package coordinated bump; behavior changes (not just API renames); 50+ call sites; new test coverage required                     |
 | **XL** | multi-day to weeks | Framework/runtime swap, API redesign required, tests need substantial rewrites, or no clean migration path (replacement or fork needed) |
 
 When in doubt, round up — surprise breakage is more expensive than a conservative estimate.
@@ -184,8 +184,8 @@ Stop here. Do not proceed to majors without explicit user approval. Use the repo
 
 ### Safe fixes applied ({count})
 
-| Package | From | To | Advisories cleared |
-|---------|------|----|--------------------|
+| Package | From  | To    | Advisories cleared         |
+| ------- | ----- | ----- | -------------------------- |
 | `{pkg}` | {old} | {new} | GHSA-xxxx-xxxx-xxxx (high) |
 
 Validation: tsc {pass/fail}, lint {pass/fail}, test {pass/fail}.
@@ -210,18 +210,18 @@ Engineer must run `{npm|pnpm} run build` to confirm.
 
 (condensed list, but still LoE-tagged)
 
-| Package | Advisory | Severity | Fix | LoE |
-|---------|----------|----------|-----|-----|
-| `{pkg}` | GHSA-... | moderate | major `{current}->{target}` | S |
+| Package | Advisory | Severity | Fix                         | LoE |
+| ------- | -------- | -------- | --------------------------- | --- |
+| `{pkg}` | GHSA-... | moderate | major `{current}->{target}` | S   |
 
 ### Proposed major upgrade paths
 
 Ordered by recommended sequencing (lowest LoE / highest advisory clearance first):
 
-| # | Package(s) | Bump | Advisories cleared | LoE | Risk | Notes |
-|---|-----------|------|--------------------|-----|------|-------|
-| 1 | `{pkg}` (+ peers) | {current}->{target} | {N} ({crit}/{high}) | M (~1 day) | medium | Codemod available; touches {N} files |
-| 2 | ... | | | | | |
+| #   | Package(s)        | Bump                | Advisories cleared  | LoE        | Risk   | Notes                                |
+| --- | ----------------- | ------------------- | ------------------- | ---------- | ------ | ------------------------------------ |
+| 1   | `{pkg}` (+ peers) | {current}->{target} | {N} ({crit}/{high}) | M (~1 day) | medium | Codemod available; touches {N} files |
+| 2   | ...               |                     |                     |            |        |                                      |
 
 ### No-fix-available advisories
 
@@ -284,13 +284,13 @@ Resolves {N} npm security advisories via safe (minor/patch) upgrades. No major v
 
 ## Severity delta
 
-| Severity | Before | After | Resolved |
-|----------|--------|-------|----------|
-| Critical | {N}    | {N}   | {N}      |
-| High     | {N}    | {N}   | {N}      |
-| Moderate | {N}    | {N}   | {N}      |
-| Low      | {N}    | {N}   | {N}      |
-| **Total**| **{N}**| **{N}**| **{N}** |
+| Severity  | Before  | After   | Resolved |
+| --------- | ------- | ------- | -------- |
+| Critical  | {N}     | {N}     | {N}      |
+| High      | {N}     | {N}     | {N}      |
+| Moderate  | {N}     | {N}     | {N}      |
+| Low       | {N}     | {N}     | {N}      |
+| **Total** | **{N}** | **{N}** | **{N}**  |
 
 ## Notable changes
 

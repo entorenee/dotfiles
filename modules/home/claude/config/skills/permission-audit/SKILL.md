@@ -21,13 +21,13 @@ history there is nothing to attribute. Use `fewer-permission-prompts` for that.
 Read this before making any claim about prompts. Getting it wrong produces
 confident, wrong diagnoses — which has already happened in this repo.
 
-| Event | Recorded? | Where |
-| --- | --- | --- |
-| Mode switch | Yes | `permission-mode` entry, `.permissionMode` |
-| Mode in effect on a user turn | Yes | `user` entry, `.permissionMode` |
-| Mode in effect on a **tool call** | **No** — must be carried forward | — |
-| Prompt shown and **approved** | **No — leaves no trace whatsoever** | — |
-| Denial of any kind | Yes | `user` entry, **`.toolDenialKind`** |
+| Event                             | Recorded?                           | Where                                      |
+| --------------------------------- | ----------------------------------- | ------------------------------------------ |
+| Mode switch                       | Yes                                 | `permission-mode` entry, `.permissionMode` |
+| Mode in effect on a user turn     | Yes                                 | `user` entry, `.permissionMode`            |
+| Mode in effect on a **tool call** | **No** — must be carried forward    | —                                          |
+| Prompt shown and **approved**     | **No — leaves no trace whatsoever** | —                                          |
+| Denial of any kind                | Yes                                 | `user` entry, **`.toolDenialKind`**        |
 
 The critical consequence: **you cannot count prompts you approved.** Any claim
 about how often something prompted is an inference from rule matching, never a
@@ -44,15 +44,15 @@ in both directions, and tempting enough that it needs refuting once. Measured
 text-matching finds 74 and **invents 18 more** that carry no `toolDenialKind`
 at all (transcript prose quoting the phrase). What it misses is not random:
 
-| Missed | Why the text match fails |
-| --- | --- |
-| 21 `permission-rule` | Hook denials read *"python -c is denied: …"* — no `has been denied` substring |
-| 4 `automode-blocked` | Reads *"was denied by the Claude Code auto…"* |
-| 1 `automode-unavailable` | Model-unavailable fallback, different wording entirely |
-| 1 `interrupted` | `[Request interrupted by user for tool use]` |
+| Missed                   | Why the text match fails                                                      |
+| ------------------------ | ----------------------------------------------------------------------------- |
+| 21 `permission-rule`     | Hook denials read _"python -c is denied: …"_ — no `has been denied` substring |
+| 4 `automode-blocked`     | Reads _"was denied by the Claude Code auto…"_                                 |
+| 1 `automode-unavailable` | Model-unavailable fallback, different wording entirely                        |
+| 1 `interrupted`          | `[Request interrupted by user for tool use]`                                  |
 
 Every hook denial is in the missed set, so the text match is blind to exactly
-the population that must *never* be allowlisted. That is the failure mode this
+the population that must _never_ be allowlisted. That is the failure mode this
 skill exists to prevent.
 
 ## Step 1 — Attribute modes
@@ -91,16 +91,16 @@ as "leading tokens"). Match the whole command string instead.
 Blocker patterns, each confirmed against a real denial or an explicit CLAUDE.md
 rule — never add a speculative one:
 
-| Pattern | Why it blocks |
-| --- | --- |
-| `node_modules/\.bin/` | Relative bin path matches no allow rule |
-| `node -e`, `python3? -c` | Arbitrary code execution; unallowlistable by design |
-| `(^\| )rm -[rf]` | Matches `permissions.deny` — refused, not prompted. Flagless `rm` is the sanctioned route, so do not count it here |
-| `(^\| )touch ` | Mutating, no allow rule |
-| `<<` | Heredoc — the body is opaque to the matcher |
-| `^for `, `^while ` | Shell loop, not a matchable command |
-| `pnpm dlx`, `npx` (unpinned pkg) | Arbitrary package execution |
-| `npm pack` | Mutating, no allow rule |
+| Pattern                          | Why it blocks                                                                                                      |
+| -------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| `node_modules/\.bin/`            | Relative bin path matches no allow rule                                                                            |
+| `node -e`, `python3? -c`         | Arbitrary code execution; unallowlistable by design                                                                |
+| `(^\| )rm -[rf]`                 | Matches `permissions.deny` — refused, not prompted. Flagless `rm` is the sanctioned route, so do not count it here |
+| `(^\| )touch `                   | Mutating, no allow rule                                                                                            |
+| `<<`                             | Heredoc — the body is opaque to the matcher                                                                        |
+| `^for `, `^while `               | Shell loop, not a matchable command                                                                                |
+| `pnpm dlx`, `npx` (unpinned pkg) | Arbitrary package execution                                                                                        |
+| `npm pack`                       | Mutating, no allow rule                                                                                            |
 
 ```bash
 for p in 'node_modules/\.bin/' 'node -e' 'python3? -c' '(^| )rm -[rf]' '<<' '^for '; do
@@ -126,7 +126,7 @@ opposite responses:
   `permissions.allow` pattern.
 - **Behaviour to correct.** A command that violates a documented rule and
   should never have been issued (`node -e` for file inspection, relative
-  `.bin/` paths). Fix: **do not allowlist it.** These prompt *correctly*. A high
+  `.bin/` paths). Fix: **do not allowlist it.** These prompt _correctly_. A high
   count here means auto mode suppressed the feedback that would have corrected
   the habit — the remedy is a CLAUDE.md rule or a hook, never a broader allow.
 - **Sandbox boundary.** No allow rule can bypass it. Changing it means editing
@@ -139,7 +139,7 @@ skill: it converts a behavioural problem into permanently loosened permissions.
 already structural.** `signals.sh --denials` (step 4) derives it from
 `.toolDenialKind` plus the denial text: `allowlist-gap`, `hook-deny`,
 `sandbox-deny`, `user-rejected`. Hand classification is only for step 2's
-*inferred* blockers, which by definition have no denial to read.
+_inferred_ blockers, which by definition have no denial to read.
 
 **The bucket is structural; the attribution is not.** Which shape in a compound
 command actually caused the denial is still yours to establish — see step 4.
@@ -161,7 +161,7 @@ session table excludes — a rule that blocks a subagent still needs fixing, and
 ### Containment is not causation
 
 **A denial is recorded against the whole Bash call, so a shape in the census did
-not necessarily cause it.** The census reports command *shapes*, and one compound
+not necessarily cause it.** The census reports command _shapes_, and one compound
 command blocked for a single segment contributes every other token in that string
 to the tally. Before calling any shape a gap, print the full commands behind it
 and name the segment that actually tripped a rule or a hook:
@@ -175,21 +175,21 @@ cd "$HOME/.claude/projects" && find . -name '*.jsonl' -print0 | xargs -0 cat 2>/
 
 Measured 2026-09-23 against four candidates that all looked like allowlist gaps:
 
-| Shape | Recorded | Caused by that shape |
-| --- | --- | --- |
-| `rmdir` | 2 | **0** — every hit an `rm -f …; rmdir …` chain denied for the `rm -f` |
-| `sed -i` | 3 | **1** — the others carry `rm -f "$F.bak"` and a `python3 - <<'EOF'` heredoc |
-| `chmod`, `mv` | 15, 74 | **0** — bystanders in `rm -f` and `jq` chains |
+| Shape         | Recorded | Caused by that shape                                                        |
+| ------------- | -------- | --------------------------------------------------------------------------- |
+| `rmdir`       | 2        | **0** — every hit an `rm -f …; rmdir …` chain denied for the `rm -f`        |
+| `sed -i`      | 3        | **1** — the others carry `rm -f "$F.bak"` and a `python3 - <<'EOF'` heredoc |
+| `chmod`, `mv` | 15, 74   | **0** — bystanders in `rm -f` and `jq` chains                               |
 
 All four then auto-approved when probed. Rules built on those counts would have
-been dead on arrival *and* would not have stopped the recorded friction, because
+been dead on arrival _and_ would not have stopped the recorded friction, because
 the friction was a `rm -f` deny rule and a hook — the two step-3 buckets that
 must never be allowlisted. So this error routes straight into the misfiling that
 step 3 calls the main failure mode of this skill.
 
 This is the **inverse** of step 2's tokenizing trap, not a restatement of it:
-matching the whole string is still right for *finding* candidates, and wrong for
-*attributing* them.
+matching the whole string is still right for _finding_ candidates, and wrong for
+_attributing_ them.
 
 Then pair the interesting ones. The census reports shapes, not sequences, so
 this part is still yours to run — select structurally, never on text:

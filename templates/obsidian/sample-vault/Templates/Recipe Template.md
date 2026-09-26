@@ -1,20 +1,24 @@
 ---
-cuisine: 
-mealType: 
+cuisine:
+mealType:
 recipeBox: toTry
-source: 
-rating: 
-recommendedBy: 
-prepTime: 
-cookTime: 
-totalTime: 
+source:
+rating:
+recommendedBy:
+prepTime:
+cookTime:
+totalTime:
 servings:
 ---
 
 ## Ingredients
-* 
+
+-
+
 ## Directions
-* 
+
+-
+
 ## Notes
 
 ## Nutrition

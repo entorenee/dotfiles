@@ -1,4 +1,4 @@
-.PHONY: help claude-sessions friction-remote
+.PHONY: help claude-sessions friction-remote fmt fmt-check lint check hooks
 
 # Hostname or IP of the uptime-kuma Pi Zero, used by uptime-switch.
 UPTIME_HOST ?= uptime
@@ -75,6 +75,94 @@ cleanup:
 	@if [ "$$(uname)" = "Darwin" ]; then \
 		sudo nix-collect-garbage --delete-older-than 7d; \
 	fi
+
+# --- Formatting and linting -------------------------------------------------
+
+# Two lists because the linters are devShell-only, while the formatters are also
+# on PATH via roles/home/base.nix. `nix develop` provides both.
+FMT_TOOLS = alejandra yamlfmt shfmt stylua taplo prettier
+LINT_TOOLS = statix deadnix actionlint
+
+# Fail once with the fix, rather than with a "command not found" per tool.
+define require_tools
+@missing=""; \
+for t in $(1); do \
+	command -v "$$t" >/dev/null 2>&1 || missing="$$missing $$t"; \
+done; \
+if [ -n "$$missing" ]; then \
+	echo "Missing tooling:$$missing"; \
+	echo "Run 'nix develop' for a shell with all of it, or 'make rebuild' for the formatters."; \
+	exit 1; \
+fi
+endef
+
+# Tracked files only, matching what a flake can actually see. A bare '*.sh'
+# would miss the extensionless scripts, hence SH_FILES' three pathspecs.
+#
+# The shfmt exclusion stops `make fmt` dying outright: zsh syntax shfmt cannot
+# parse is a hard error rather than a skip (update-all is the one that trips it
+# today; the other three excluded scripts parse clean under the bash fallback,
+# and are excluded anyway because formatting zsh by bash rules is a latent
+# hazard). There is no .json list for an unrelated reason: Karabiner,
+# OrcaSlicer and Obsidian rewrite theirs.
+#
+# Markdown has no variable here on purpose. These lists are word-split, and
+# templates/obsidian/sample-vault/Templates/ holds nine filenames with spaces —
+# a make variable cannot carry those, so the markdown recipes pipe `git ls-files
+# -z` into `xargs -0` instead. Everything else is space-free and stays a list.
+NIX_FILES := $(shell git ls-files '*.nix')
+YAML_FILES := $(shell git ls-files '*.yml' '*.yaml')
+LUA_FILES := $(shell git ls-files '*.lua')
+TOML_FILES := $(shell git ls-files '*.toml')
+SH_FILES := $(shell git ls-files '*.sh' 'modules/home/bins/bin/*' '.githooks/*' \
+	':!modules/home/bins/bin/dot-apply' \
+	':!modules/home/bins/bin/dot-clean' \
+	':!modules/home/bins/bin/dot-update' \
+	':!modules/home/bins/bin/update-all')
+
+# yamlfmt's own lookup ends at ~/.config/yamlfmt/.yamlfmt, which exists only
+# where home-manager deployed it — so unnamed, CI formats at yamlfmt's defaults
+# (blank lines stripped, folded scalars unfolded) and disagrees with every
+# developer machine. Name the repo's copy rather than duplicating it at the root.
+YAMLFMT_CONF := modules/home/yamlfmt/config/.yamlfmt
+
+# Recipes are silenced because each file list runs to seventy-odd paths.
+
+## Format every tracked file in place
+fmt:
+	$(call require_tools,$(FMT_TOOLS))
+	@alejandra --quiet $(NIX_FILES)
+	@yamlfmt -conf $(YAMLFMT_CONF) $(YAML_FILES)
+	@shfmt -w $(SH_FILES)
+	@stylua $(LUA_FILES)
+	@taplo fmt $(TOML_FILES)
+	@git ls-files -z '*.md' | xargs -0 prettier --write --log-level warn
+
+## Check formatting without writing (what CI and the pre-commit hook run)
+fmt-check:
+	$(call require_tools,$(FMT_TOOLS))
+	@alejandra --check $(NIX_FILES)
+	@yamlfmt -lint -conf $(YAMLFMT_CONF) $(YAML_FILES)
+	@shfmt -d $(SH_FILES)
+	@stylua --check $(LUA_FILES)
+	@taplo fmt --check $(TOML_FILES)
+	@git ls-files -z '*.md' | xargs -0 prettier --check --log-level warn
+
+## Lint Nix sources and GitHub workflows (needs `nix develop`)
+lint:
+	$(call require_tools,$(LINT_TOOLS))
+	@statix check .
+	@deadnix --fail $(NIX_FILES)
+	@# actionlint hard-errors rather than no-opping when there is nothing to lint.
+	@if [ -d .github/workflows ]; then actionlint; fi
+
+## Run every check CI runs
+check: fmt-check lint
+
+## Point git at .githooks so the pre-commit check runs (one-time, per clone)
+hooks:
+	git config core.hooksPath .githooks
+	@echo "core.hooksPath = .githooks — pre-commit will now check staged files."
 
 ## Build a flashable SD image for the airgapped Pi Zero (run on the hub)
 airgap-image:

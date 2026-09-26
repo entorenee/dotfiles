@@ -29,15 +29,19 @@ Return one markdown block with this exact structure:
 **Blast radius**: {N files} — {brief justification}
 
 ### Breaking changes (relevant to this codebase)
+
 - {item with brief code-pattern reference}
 
 ### Codemods / migration tools
+
 - {tool name + invocation, or "none published"}
 
 ### Coupled upgrades required
+
 - {package@version, or "none"}
 
 ### Verification steps after upgrade
+
 - {grep/check to confirm migration is complete}
 ```
 

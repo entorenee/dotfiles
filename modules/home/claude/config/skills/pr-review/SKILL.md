@@ -27,7 +27,7 @@ Runs the `pr-review-toolkit:review-pr` plugin as the base engine, then adds a ma
 
    **Put the re-review contract in the file's own header**, one line, immediately after the SHA:
 
-   > *Re-reviews update this file in place — refresh the SHA, mark resolved items, append new findings. Never renumber, never start a new file.*
+   > _Re-reviews update this file in place — refresh the SHA, mark resolved items, append new findings. Never renumber, never start a new file._
 
    A re-review is frequently requested in words that do not load this skill ("the PR has been updated"), and in that case the prior review file is the only instruction the run will see. The rule has to travel with the artifact, not only with the skill.
 

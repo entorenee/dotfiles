@@ -13,7 +13,7 @@ set -uo pipefail
 
 MODE=run
 case "${1:-}" in
-  --selftest) MODE=selftest ;;
+--selftest) MODE=selftest ;;
 esac
 
 SETTINGS="${SETTINGS:-$HOME/.claude/settings.json}"
@@ -87,7 +87,8 @@ check_dead_allows() {
     <(jq -r ".permissions.allow[] | $head_expr" "$SETTINGS" | sort -u) \
     <(jq -r ".permissions.deny[]  | $head_expr" "$SETTINGS" | sort -u))
   if [[ -n "$heads" ]]; then
-    local c; c=$(printf '%s\n' "$heads" | grep -c . )
+    local c
+    c=$(printf '%s\n' "$heads" | grep -c .)
     emit REVIEW dead-allow "$c command head(s) appear on both lists (e.g. $(printf '%s' "$heads" | head -3 | tr '\n' ' ')) — expected for broad-allow + targeted-deny, but confirm each narrowing is intended"
   fi
 
@@ -104,8 +105,8 @@ check_hooks() {
     emit REVIEW hooks "settings.json is unreadable (see the symlink finding above), so hook registration could not be read — reporting every hook as unregistered would name the wrong fix. Restore settings.json first, then re-run."
     return
   fi
-  registered=$(jq -r '.hooks | to_entries[] | .value[] | .hooks[]?.command // empty' "$SETTINGS" 2>/dev/null \
-               | sed 's|.*/||' | sort -u)
+  registered=$(jq -r '.hooks | to_entries[] | .value[] | .hooks[]?.command // empty' "$SETTINGS" 2>/dev/null |
+    sed 's|.*/||' | sort -u)
   on_disk=$([[ -d "$CFG/hooks" ]] && find "$CFG/hooks" -maxdepth 1 -name '*.sh' -exec basename {} \; | sort -u)
 
   # An empty $on_disk almost always means CFG is wrong, not that every hook was
@@ -140,8 +141,8 @@ check_hooks() {
     fi
   done <<<"$on_disk"
 
-  [[ -z "$missing_reg$orphan" && $nonexec -eq 0 ]] \
-    && emit OK hooks "all $(printf '%s\n' "$on_disk" | grep -c .) hook scripts registered and executable"
+  [[ -z "$missing_reg$orphan" && $nonexec -eq 0 ]] &&
+    emit OK hooks "all $(printf '%s\n' "$on_disk" | grep -c .) hook scripts registered and executable"
 }
 
 # --- Check 4: skill inventory drift -------------------------------------------
@@ -157,9 +158,11 @@ check_skill_inventory() {
 
   # A unit is a skills/ dir holding a SKILL.md, or a commands/*.md — not a bare
   # directory listing, which picks up stray empty dirs and reports them broken.
-  units=$( { find "$CFG/skills" -mindepth 2 -maxdepth 2 -name SKILL.md 2>/dev/null \
-               | sed "s#^$CFG/skills/##; s#/SKILL.md\$##"
-             ls -1 "$CFG/commands" 2>/dev/null | sed 's/\.md$//'; } | sort -u )
+  units=$({
+    find "$CFG/skills" -mindepth 2 -maxdepth 2 -name SKILL.md 2>/dev/null |
+      sed "s#^$CFG/skills/##; s#/SKILL.md\$##"
+    ls -1 "$CFG/commands" 2>/dev/null | sed 's/\.md$//'
+  } | sort -u)
 
   # A unit git does not track is invisible to flake eval, so default.nix never
   # generates its Skill(<name>) rule and it prompts on first use while looking
@@ -173,8 +176,10 @@ check_skill_inventory() {
     while read -r u; do
       [[ -z "$u" ]] && continue
       local f
-      if   [[ -f "$CFG/skills/$u/SKILL.md" ]]; then f="modules/home/claude/config/skills/$u/SKILL.md"
-      elif [[ -f "$CFG/commands/$u.md"     ]]; then f="modules/home/claude/config/commands/$u.md"
+      if [[ -f "$CFG/skills/$u/SKILL.md" ]]; then
+        f="modules/home/claude/config/skills/$u/SKILL.md"
+      elif [[ -f "$CFG/commands/$u.md" ]]; then
+        f="modules/home/claude/config/commands/$u.md"
       else continue; fi
       git -C "$REPO" ls-files --error-unmatch -- "$f" >/dev/null 2>&1 && continue
       untracked="$untracked $u"
@@ -220,8 +225,8 @@ check_skill_inventory() {
     emit REVIEW skill-inventory "$n of $(printf '%s\n' "$units" | grep -c .) units have no ledger row on this machine (e.g. $(printf '%s' "$unreviewed" | head -4 | tr '\n' ' ')) — expected while the cadence is young, and a unit reviewed on another host has no row here either; run /system-review, which reads the shared record, to see which have crossed their threshold"
   fi
 
-  [[ -z "$untracked$orphans" ]] \
-    && emit OK skill-inventory "all units tracked; every ledger row names a live unit"
+  [[ -z "$untracked$orphans" ]] &&
+    emit OK skill-inventory "all units tracked; every ledger row names a live unit"
 }
 
 # --- Check 5: MCP rule / server reconciliation --------------------------------
@@ -317,8 +322,8 @@ check_enabled_plugins() {
   # Same guard as check_hooks' empty-$on_disk case: an absent registry means
   # this check did not run. Without it, a machine whose registry has not been
   # written yet reports every enabled plugin as broken.
-  if ! jq -e . "$PLUGINS/known_marketplaces.json" >/dev/null 2>&1 \
-     || ! jq -e . "$PLUGINS/installed_plugins.json" >/dev/null 2>&1; then
+  if ! jq -e . "$PLUGINS/known_marketplaces.json" >/dev/null 2>&1 ||
+    ! jq -e . "$PLUGINS/installed_plugins.json" >/dev/null 2>&1; then
     emit REVIEW enabled-plugins "the plugin registry under $PLUGINS is missing or unreadable, so no enabled plugin could be resolved — skipped, not passed"
     return
   fi
@@ -329,7 +334,8 @@ check_enabled_plugins() {
 
   while read -r key; do
     [[ -z "$key" ]] && continue
-    plug=${key%@*}; mkt=${key##*@}
+    plug=${key%@*}
+    mkt=${key##*@}
     if ! grep -qxF "$mkt" <<<"$known"; then
       emit FAIL enabled-plugins "'$key' names marketplace '$mkt', which is absent from known_marketplaces.json — nothing can resolve '$plug'. Add the marketplace, or drop the entry from enabledPlugins."
       bad=1
@@ -340,8 +346,8 @@ check_enabled_plugins() {
     bad=1
   done <<<"$enabled"
 
-  [[ $bad -eq 0 ]] \
-    && emit OK enabled-plugins "all $(printf '%s\n' "$enabled" | grep -c .) enabled plugin(s) name a known marketplace and are installed"
+  [[ $bad -eq 0 ]] &&
+    emit OK enabled-plugins "all $(printf '%s\n' "$enabled" | grep -c .) enabled plugin(s) name a known marketplace and are installed"
 }
 
 # --- Check 7: plugin skill references written in this repo --------------------
@@ -387,9 +393,11 @@ check_plugin_skill_refs() {
 
   # A missing skills/, commands/ or agents/ directory is normal — superpowers
   # ships skills only, pr-review-toolkit commands and agents only.
-  docs=$( { find "$CFG/skills" -name '*.md' 2>/dev/null
-            find "$CFG/commands" "$CFG/agents" -maxdepth 1 -name '*.md' 2>/dev/null
-            [[ -f "$CFG/CLAUDE.md" ]] && printf '%s\n' "$CFG/CLAUDE.md"; } )
+  docs=$({
+    find "$CFG/skills" -name '*.md' 2>/dev/null
+    find "$CFG/commands" "$CFG/agents" -maxdepth 1 -name '*.md' 2>/dev/null
+    [[ -f "$CFG/CLAUDE.md" ]] && printf '%s\n' "$CFG/CLAUDE.md"
+  })
   refs=""
   while read -r f; do
     [[ -z "$f" ]] && continue
@@ -399,18 +407,19 @@ check_plugin_skill_refs() {
 
   while read -r r; do
     [[ -z "$r" ]] && continue
-    plug=${r%%:*}; name=${r#*:}
+    plug=${r%%:*}
+    name=${r#*:}
     [[ "$skipped" == *" $plug"* ]] && continue
     path=$(jq -r --arg p "$plug" '.plugins | to_entries[] | select(.key | startswith($p + "@")) | .value[0].installPath // empty' "$PLUGINS/installed_plugins.json" 2>/dev/null | head -1)
     [[ -f "$path/skills/$name/SKILL.md" ]] && continue
-    [[ -f "$path/commands/$name.md"     ]] && continue
-    [[ -f "$path/agents/$name.md"       ]] && continue
+    [[ -f "$path/commands/$name.md" ]] && continue
+    [[ -f "$path/agents/$name.md" ]] && continue
     emit FAIL plugin-refs "this repo's prose names '$r', but the installed tree at $path ships no skills/$name/SKILL.md, commands/$name.md or agents/$name.md — the reference loads nothing. Point it at a unit the installed version has."
     dead=1
   done <<<"$refs"
 
-  [[ $dead -eq 0 && -z "$skipped" ]] \
-    && emit OK plugin-refs "all $(printf '%s\n' "$refs" | grep -c .) plugin reference(s) in this repo resolve against the installed plugin trees"
+  [[ $dead -eq 0 && -z "$skipped" ]] &&
+    emit OK plugin-refs "all $(printf '%s\n' "$refs" | grep -c .) plugin reference(s) in this repo resolve against the installed plugin trees"
 }
 
 if [ "$MODE" = selftest ]; then
@@ -418,13 +427,21 @@ if [ "$MODE" = selftest ]; then
   # comment names as its reason for existing. `doc-coherence.sh` cut two checks
   # that could not reproduce their known instance; the same bar applies here, so
   # the job of this harness is to prove each check can still fail.
-  T="${TMPDIR:-/tmp}/config-health-selftest"; rm -rf "$T"; mkdir -p "$T"
+  T="${TMPDIR:-/tmp}/config-health-selftest"
+  rm -rf "$T"
+  mkdir -p "$T"
   RAW="$T/raw.tsv"
-  pass=0; fail=0
+  pass=0
+  fail=0
 
   verdict() { # $1 = label, $2 = expected, $3 = got
-    if [ "$3" = "$2" ]; then pass=$((pass+1)); printf '  ok    %s\n' "$1"
-    else fail=$((fail+1)); printf '  FAIL  %s — expected "%s", got "%s"\n' "$1" "$2" "$3"; fi
+    if [ "$3" = "$2" ]; then
+      pass=$((pass + 1))
+      printf '  ok    %s\n' "$1"
+    else
+      fail=$((fail + 1))
+      printf '  FAIL  %s — expected "%s", got "%s"\n' "$1" "$2" "$3"
+    fi
   }
 
   # Assertions land on the STATUS:CHECK enum, never on prose — a suite that
@@ -437,14 +454,18 @@ if [ "$MODE" = selftest ]; then
   # enum alone cannot tell them apart. This pins one phrase of the detail for
   # exactly those cases, and nothing more of it.
   detail_has() { # $1 = collapsed pairs, $2 = substring ("" = nothing to pin)
-    if [ -n "$2" ] && ! grep -qF "$2" "$RAW"; then printf '%s detail!~%s' "$1" "$2"
+    if [ -n "$2" ] && ! grep -qF "$2" "$RAW"; then
+      printf '%s detail!~%s' "$1" "$2"
     else printf '%s' "$1"; fi
   }
 
   # --- check_symlink ----------------------------------------------------------
   symcheck() { # $1 = label, $2 = expected, $3 = SETTINGS, $4 = detail substring
     local got
-    got=$( SETTINGS=$3; probe check_symlink "$RAW" )
+    got=$(
+      SETTINGS=$3
+      probe check_symlink "$RAW"
+    )
     verdict "$1" "$2" "$(detail_has "$got" "${4:-}")"
   }
 
@@ -466,7 +487,10 @@ if [ "$MODE" = selftest ]; then
   # --- check_dead_allows ------------------------------------------------------
   deadcheck() { # $1 = label, $2 = expected, $3 = SETTINGS, $4 = detail substring
     local got
-    got=$( SETTINGS=$3; probe check_dead_allows "$RAW" )
+    got=$(
+      SETTINGS=$3
+      probe check_dead_allows "$RAW"
+    )
     verdict "$1" "$2" "$(detail_has "$got" "${4:-}")"
   }
 
@@ -489,19 +513,28 @@ if [ "$MODE" = selftest ]; then
   # --- check_hooks ------------------------------------------------------------
   hookcheck() { # $1 = label, $2 = expected, $3 = SETTINGS, $4 = CFG, $5 = substring
     local got
-    got=$( SETTINGS=$3; CFG=$4; probe check_hooks "$RAW" )
+    got=$(
+      SETTINGS=$3
+      CFG=$4
+      probe check_hooks "$RAW"
+    )
     verdict "$1" "$2" "$(detail_has "$got" "${5:-}")"
   }
   reg() { # $1 = settings file, $2... = registered hook basenames
-    local f=$1 c sep="" cmds=""; shift
-    for c in "$@"; do cmds="$cmds$sep{\"type\":\"command\",\"command\":\"/h/$c\"}"; sep=","; done
+    local f=$1 c sep="" cmds=""
+    shift
+    for c in "$@"; do
+      cmds="$cmds$sep{\"type\":\"command\",\"command\":\"/h/$c\"}"
+      sep=","
+    done
     printf '{"hooks":{"PreToolUse":[{"matcher":"*","hooks":[%s]}]}}\n' "$cmds" >"$f"
   }
 
   mkdir -p "$T/hooks-unreg/hooks" "$T/hooks-orphan/hooks" \
-           "$T/hooks-nonexec/hooks" "$T/hooks-empty/hooks" "$T/hooks-ok/hooks"
+    "$T/hooks-nonexec/hooks" "$T/hooks-empty/hooks" "$T/hooks-ok/hooks"
   for d in hooks-unreg hooks-orphan hooks-nonexec hooks-ok; do
-    printf '#!/usr/bin/env bash\n' >"$T/$d/hooks/live.sh"; chmod 755 "$T/$d/hooks/live.sh"
+    printf '#!/usr/bin/env bash\n' >"$T/$d/hooks/live.sh"
+    chmod 755 "$T/$d/hooks/live.sh"
   done
   reg "$T/reg-none.json"
   reg "$T/reg-live.json" live.sh
@@ -524,13 +557,18 @@ if [ "$MODE" = selftest ]; then
   # --- check_skill_inventory --------------------------------------------------
   invcheck() { # $1 = label, $2 = expected, $3 = REPO, $4 = CFG, $5 = ART_ROOT, $6 = substring
     local got
-    got=$( REPO=$3; CFG=$4; ART_ROOT=$5; probe check_skill_inventory "$RAW" )
+    got=$(
+      REPO=$3
+      CFG=$4
+      ART_ROOT=$5
+      probe check_skill_inventory "$RAW"
+    )
     verdict "$1" "$2" "$(detail_has "$got" "${6:-}")"
   }
 
   mkdir -p "$T/inv-cfg/skills/alpha" "$T/inv-cfg/commands" "$T/inv-nongit" "$T/inv-git"
   printf '# alpha\n' >"$T/inv-cfg/skills/alpha/SKILL.md"
-  printf '# beta\n'  >"$T/inv-cfg/commands/beta.md"
+  printf '# beta\n' >"$T/inv-cfg/commands/beta.md"
   git -C "$T/inv-git" init -q >/dev/null 2>&1
   mkdir -p "$T/led-full/skill-reviewer" "$T/led-orphan/skill-reviewer"
   printf '## alpha — 2026-08-12\n\n## beta — 2026-08-13\n' >"$T/led-full/skill-reviewer/LEDGER.md"
@@ -557,17 +595,21 @@ if [ "$MODE" = selftest ]; then
   # --- check_mcp_rules --------------------------------------------------------
   mcpcheck() { # $1 = label, $2 = expected, $3 = SETTINGS, $4 = CLAUDE_JSON, $5 = substring
     local got
-    got=$( SETTINGS=$3; CLAUDE_JSON=$4; probe check_mcp_rules "$RAW" )
+    got=$(
+      SETTINGS=$3
+      CLAUDE_JSON=$4
+      probe check_mcp_rules "$RAW"
+    )
     verdict "$1" "$2" "$(detail_has "$got" "${5:-}")"
   }
 
-  printf '{"permissions":{"allow":["mcp__ghost__get_x"],"deny":[]}}\n'  >"$T/mcp-ghost.json"
-  printf '{"permissions":{"allow":["mcp__asana__get_x"],"deny":[]}}\n'  >"$T/mcp-asana.json"
+  printf '{"permissions":{"allow":["mcp__ghost__get_x"],"deny":[]}}\n' >"$T/mcp-ghost.json"
+  printf '{"permissions":{"allow":["mcp__asana__get_x"],"deny":[]}}\n' >"$T/mcp-asana.json"
   printf '{"permissions":{"allow":["mcp__plugin_claude-code-home-manager_expo__build_info"],"deny":[]}}\n' \
     >"$T/mcp-plugin.json"
   printf '{"permissions":{"allow":["Bash(ls *)"],"deny":[]}}\n' >"$T/mcp-norules.json"
-  printf '{"mcpServers":{}}\n'                >"$T/cj-empty.json"
-  printf '{"mcpServers":{"asana":{}}}\n'      >"$T/cj-user.json"
+  printf '{"mcpServers":{}}\n' >"$T/cj-empty.json"
+  printf '{"mcpServers":{"asana":{}}}\n' >"$T/cj-user.json"
   printf '{"mcpServers":{"asana":{}},"projects":{"/repo/a":{"mcpServers":{"asana":{}}}}}\n' >"$T/cj-both.json"
   printf '{"mcpServers":{},"projects":{"/repo/a":{"mcpServers":{"asana":{}}}}}\n' >"$T/cj-project.json"
 
@@ -600,7 +642,11 @@ if [ "$MODE" = selftest ]; then
   # --- check_enabled_plugins --------------------------------------------------
   plugincheck() { # $1 = label, $2 = expected, $3 = SETTINGS, $4 = PLUGINS, $5 = substring
     local got
-    got=$( SETTINGS=$3; PLUGINS=$4; probe check_enabled_plugins "$RAW" )
+    got=$(
+      SETTINGS=$3
+      PLUGINS=$4
+      probe check_enabled_plugins "$RAW"
+    )
     verdict "$1" "$2" "$(detail_has "$got" "${5:-}")"
   }
 
@@ -615,8 +661,8 @@ if [ "$MODE" = selftest ]; then
   # membership from non-emptiness.
   printf '{"version":2,"plugins":{"pr-review-toolkit@claude-plugins-official":[{"scope":"user","installPath":"%s/pi-sp/superpowers/6.3.0"}]}}\n' \
     "$T" >"$T/reg-noinstall/installed_plugins.json"
-  printf '{"enabledPlugins":{"superpowers@claude-plugins-official":true}}\n'  >"$T/plug-known.json"
-  printf '{"enabledPlugins":{"superpowers@superpowers-marketplace":true}}\n'  >"$T/plug-foreign.json"
+  printf '{"enabledPlugins":{"superpowers@claude-plugins-official":true}}\n' >"$T/plug-known.json"
+  printf '{"enabledPlugins":{"superpowers@superpowers-marketplace":true}}\n' >"$T/plug-foreign.json"
   printf '{"enabledPlugins":{}}\n' >"$T/plug-none.json"
 
   # The historical instance, from another host: the plugin was enabled under a
@@ -641,7 +687,12 @@ if [ "$MODE" = selftest ]; then
   # --- check_plugin_skill_refs ------------------------------------------------
   refcheck() { # $1 = label, $2 = expected, $3 = SETTINGS, $4 = PLUGINS, $5 = CFG, $6 = substring
     local got
-    got=$( SETTINGS=$3; PLUGINS=$4; CFG=$5; probe check_plugin_skill_refs "$RAW" )
+    got=$(
+      SETTINGS=$3
+      PLUGINS=$4
+      CFG=$5
+      probe check_plugin_skill_refs "$RAW"
+    )
     verdict "$1" "$2" "$(detail_has "$got" "${6:-}")"
   }
 
@@ -650,11 +701,11 @@ if [ "$MODE" = selftest ]; then
   # reading installPath would resolve 'superpowers:code-reviewer' here and the
   # dead-reference case below could never fail.
   mkdir -p "$T/pi-sp/superpowers/6.3.0/skills/systematic-debugging" \
-           "$T/pi-sp/superpowers/old/agents" \
-           "$T/pi-sp/pr-review-toolkit/1aa/commands"
+    "$T/pi-sp/superpowers/old/agents" \
+    "$T/pi-sp/pr-review-toolkit/1aa/commands"
   printf '# systematic debugging\n' >"$T/pi-sp/superpowers/6.3.0/skills/systematic-debugging/SKILL.md"
-  printf '# code reviewer\n'        >"$T/pi-sp/superpowers/old/agents/code-reviewer.md"
-  printf '# review pr\n'            >"$T/pi-sp/pr-review-toolkit/1aa/commands/review-pr.md"
+  printf '# code reviewer\n' >"$T/pi-sp/superpowers/old/agents/code-reviewer.md"
+  printf '# review pr\n' >"$T/pi-sp/pr-review-toolkit/1aa/commands/review-pr.md"
   mkdir -p "$T/reg-refs" "$T/reg-gone"
   printf '{"claude-plugins-official":{}}\n' >"$T/reg-refs/known_marketplaces.json"
   printf '{"version":2,"plugins":{"superpowers@claude-plugins-official":[{"installPath":"%s/pi-sp/superpowers/6.3.0"}],"pr-review-toolkit@claude-plugins-official":[{"installPath":"%s/pi-sp/pr-review-toolkit/1aa"}]}}\n' \
@@ -666,13 +717,13 @@ if [ "$MODE" = selftest ]; then
     >"$T/plug-two.json"
 
   mkdir -p "$T/refs-live/skills/pre-pr" "$T/refs-live/commands" \
-           "$T/refs-dead/skills/pre-pr"
+    "$T/refs-dead/skills/pre-pr"
   # A units-ship-differently fixture: the skill reference resolves under
   # skills/, the command reference under commands/, and the allowlist glob in
   # CLAUDE.md must not be read as a reference at all.
   printf 'Delegate to superpowers:systematic-debugging first.\n' >"$T/refs-live/skills/pre-pr/SKILL.md"
-  printf 'Then run pr-review-toolkit:review-pr.\n'               >"$T/refs-live/commands/go.md"
-  printf 'Skill(superpowers:*) trusts the whole namespace.\n'    >"$T/refs-live/CLAUDE.md"
+  printf 'Then run pr-review-toolkit:review-pr.\n' >"$T/refs-live/commands/go.md"
+  printf 'Skill(superpowers:*) trusts the whole namespace.\n' >"$T/refs-live/CLAUDE.md"
   # The historical instance: superpowers 6.3.0 removed this agent while
   # pre-pr/SKILL.md still named it.
   printf 'Hand the diff to superpowers:code-reviewer.\n' >"$T/refs-dead/skills/pre-pr/SKILL.md"

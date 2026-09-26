@@ -1,12 +1,15 @@
 ---
-date: 
-attendees: 
+date:
+attendees:
 tags:
 ---
+
 ## Agenda
-* 
+
+-
 
 ## Notes
-* 
+
+-
 
 ## Action Items

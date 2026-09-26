@@ -17,7 +17,7 @@ The scoper output drives risk categorization:
 - **High Risk**: Core frameworks (React, Next.js), database ORMs, authentication
 - **Critical Risk**: Packages with known breaking changes or complex migrations (typically `majorJump >= 2` entries in `deferredMajors`)
 
-**"Low risk" is per-package, not per-batch.** A within-major bump that is low-risk in isolation can still break the tree via a duplicate/split install or a transitive pin (see the SKILL "Within-Major Isn't Automatically Safe" section). This is why `withinMajor` ships in small validated chunks, not as one commit — the risk is emergent from *resolution*, not just API surface.
+**"Low risk" is per-package, not per-batch.** A within-major bump that is low-risk in isolation can still break the tree via a duplicate/split install or a transitive pin (see the SKILL "Within-Major Isn't Automatically Safe" section). This is why `withinMajor` ships in small validated chunks, not as one commit — the risk is emergent from _resolution_, not just API surface.
 
 Use the scoper's `coupled` field to identify packages that must be updated together, and verify peer dependency requirements with the manager's `ls` before attempting any update. After each chunk installs, confirm no unexpected **duplicate** copies appeared (`<pm> ls <pkg>`, `find node_modules -name <pkg> -type d`, or `node_modules/.pnpm/<pkg>@*` under pnpm) — duplicates of type packages and shared cores are the silent killers.
 
@@ -62,12 +62,13 @@ Use the scoper's `coupled` field to identify packages that must be updated toget
 Packages that MUST be updated together:
 
 - **React Ecosystem**: React + React DOM + @types/react + @types/react-dom
-- **MUI Suite**: @mui/material + @mui/icons-material + @mui/x-* packages
+- **MUI Suite**: @mui/material + @mui/icons-material + `@mui/x-*` packages
 - **Prisma**: @prisma/client + prisma CLI + @prisma/instrumentation
-- **TypeScript Tooling**: TypeScript + @typescript-eslint/* packages
+- **TypeScript Tooling**: TypeScript + `@typescript-eslint/*` packages
 - **tRPC Stack**: @trpc/server + @trpc/client + @trpc/react-query + @trpc/next
 
 **Decision Framework**:
+
 1. Can the packages work with different major versions? -> Update separately
 2. Do the packages share types or runtime dependencies? -> Update together
 3. Does the documentation explicitly state they must match? -> Update together
@@ -206,6 +207,7 @@ For upgrades spanning multiple sessions, create a progress tracking file.
 ### Phase {X}: {Phase Name} (PENDING)
 
 **Target Packages**:
+
 - {Package}: {current version} -> {target version}
 
 ## Next Actions
@@ -217,6 +219,7 @@ For upgrades spanning multiple sessions, create a progress tracking file.
 ### Update Protocol
 
 **Mandatory updates:**
+
 1. **End of each phase**: Status, validation results, issues, solutions, lessons learned
 2. **After issue resolution**: Root cause, solution, prevention strategies
 3. **Before engineer handoff**: Current state, next actions, blockers
@@ -250,6 +253,7 @@ After each phase, report:
 **Issue**: Package A requires Package B v2, but Package C requires Package B v3
 
 **Solutions** (order of preference):
+
 1. Align versions (upgrade/downgrade to compatible versions)
 2. Check for newer versions with aligned dependencies
 3. Use an override as last resort, in the file this manager reads (document the reason)

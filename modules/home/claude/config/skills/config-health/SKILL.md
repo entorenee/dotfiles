@@ -59,13 +59,13 @@ digraph config_health {
 
 `/insights` is a **built-in slash command, not a skill** — no tool can invoke it,
 and it leaves no report file on disk to read afterward. So it has to come from
-the user, and it has to come *first*.
+the user, and it has to come _first_.
 
 Open with `AskUserQuestion`:
 
 - **Include insights (recommended)** — ask the user to run `/insights` now and
   let its report land in the conversation. Then continue. Its session-level
-  friction counts (`user_rejected`, `wrong_approach`) are the only *behavioural*
+  friction counts (`user_rejected`, `wrong_approach`) are the only _behavioural_
   evidence in the whole report; without them, every finding is structural.
 - **Skip insights** — proceed without it. Record the omission in Coverage.
 
@@ -95,13 +95,13 @@ plugin trees.
 deliberately absent**, because `modules/home/claude/default.nix` generates those
 rules from the same `config/{skills,commands}` directories the check would have
 compared them against — there is nothing left to diverge. What the inventory
-check tests instead is the layer *underneath* that guarantee: a unit git does
+check tests instead is the layer _underneath_ that guarantee: a unit git does
 not track is not in the flake source at all, so the generator never sees it and
 silently emits no rule. The directory and the allowlist stay in perfect
 agreement about a skill that is effectively invisible.
 
 The inventory check is **structural only** — untracked units, and ledger rows
-naming a unit that no longer exists. Whether a skill is *working* is behavioural
+naming a unit that no longer exists. Whether a skill is _working_ is behavioural
 and belongs to `/system-review`, which owns the transcript arms and the run
 thresholds. Keeping that boundary is the same judgment as "When NOT to Use"
 below, applied to this skill's own growth.
@@ -115,7 +115,7 @@ installed one, so a reference resolved against the cache would resolve to a
 version that is not loaded, and the arm could never fail.
 
 **Run these inline. Do not dispatch a subagent for them.** They read a handful of
-small files; agent dispatch would cost more than it saves *and* insert a
+small files; agent dispatch would cost more than it saves _and_ insert a
 summarizing layer between you and ground truth — the exact failure mode that
 turns a verifiable fact into an overstated claim.
 
@@ -170,7 +170,7 @@ the deployment mechanism is irrelevant to whether a document contradicts itself.
 
 **The first line names the mode, and it decides what the rest means.** `CHECKOUT`
 means there is no deployed harness to compare against, so the policy check
-announces itself as *skipped, not passed*. Never report a checkout-mode run as a
+announces itself as _skipped, not passed_. Never report a checkout-mode run as a
 clean bill of health for the live-mode checks.
 
 **Then do the reading pass.** Seven of the fourteen documented failure classes are
@@ -245,10 +245,10 @@ and do not claim the scan was deduplicated if it re-scanned anyway.
 
 Dispatch both in a **single message** so they run concurrently.
 
-| Subagent | Model | Tools | Returns |
-|---|---|---|---|
-| Runs `permission-audit` | `sonnet` | `Bash, Read, Grep, Glob` | Raw findings: counts, example commands, denial→replacement pairs |
-| Runs `fewer-permission-prompts` | `sonnet` | `Bash, Read, Grep, Glob` | Candidate allow patterns with frequencies |
+| Subagent                        | Model    | Tools                    | Returns                                                          |
+| ------------------------------- | -------- | ------------------------ | ---------------------------------------------------------------- |
+| Runs `permission-audit`         | `sonnet` | `Bash, Read, Grep, Glob` | Raw findings: counts, example commands, denial→replacement pairs |
+| Runs `fewer-permission-prompts` | `sonnet` | `Bash, Read, Grep, Glob` | Candidate allow patterns with frequencies                        |
 
 **Why `sonnet`:** both steps are mechanical extraction over a large corpus —
 run committed `jq`/`grep`, tabulate, return examples. High volume, low judgment.
@@ -283,12 +283,12 @@ findings now arrive from several places rather than one:
 - **Behaviour to correct** — an operation that violates a documented rule and
   should never have been issued (`node -e` to read a file, relative
   `node_modules/.bin/` paths). Fix: **do not allowlist it.** These prompt
-  *correctly*. A high count means auto mode suppressed the feedback that would
+  _correctly_. A high count means auto mode suppressed the feedback that would
   have corrected the habit; the remedy is a CLAUDE.md rule or a hook.
 - **Config defect** — a Step 1 `FAIL`. Fix: repair the Nix config.
 - **Document defect** — a Step 1b `FAIL`, or a rubric finding. Fix: **a proposed
   wording, never an applied edit.** These are the findings most likely to be
-  misfiled as one of the buckets above, because a document defect often *looks*
+  misfiled as one of the buckets above, because a document defect often _looks_
   like a permission problem: a command the deny list blocks is a documentation
   bug when the document tells you to run it, and loosening the deny to match the
   prose is precisely the wrong repair.
@@ -301,15 +301,15 @@ whole config. This is why the ranking call never goes to a cheaper tier.
 Then tag each finding with its **evidence class**, and keep the classes visually
 separate in the report:
 
-| Class | Source | How to state it |
-|---|---|---|
-| **Fact** | Step 1 and Step 1b `FAIL` lines | Assert plainly. Verified off disk. |
-| **Inference** | permission-audit, fewer-permission-prompts | *Always* hedged. See below. |
-| **Behavioural** | `/insights`, denial→replacement pairs, `doc-unenforced` candidates | Points at a rule or hook, never at a permission. |
-| **Reading** | the instruction-doc rubric | Quote both sides. A contradiction asserted without both quotations is not a finding. |
+| Class           | Source                                                             | How to state it                                                                      |
+| --------------- | ------------------------------------------------------------------ | ------------------------------------------------------------------------------------ |
+| **Fact**        | Step 1 and Step 1b `FAIL` lines                                    | Assert plainly. Verified off disk.                                                   |
+| **Inference**   | permission-audit, fewer-permission-prompts                         | _Always_ hedged. See below.                                                          |
+| **Behavioural** | `/insights`, denial→replacement pairs, `doc-unenforced` candidates | Points at a rule or hook, never at a permission.                                     |
+| **Reading**     | the instruction-doc rubric                                         | Quote both sides. A contradiction asserted without both quotations is not a finding. |
 
 **The inference caveat is mandatory and non-negotiable.** An approved permission
-prompt leaves *no trace whatsoever* in the transcripts. You therefore cannot
+prompt leaves _no trace whatsoever_ in the transcripts. You therefore cannot
 count prompts you approved — every frequency claim from Steps 2–3 is inferred
 from rule matching, never measured. State this in the report body, not only in a
 footnote. Two prior sessions in this repo asserted a prompt cause with no

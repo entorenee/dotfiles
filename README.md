@@ -128,4 +128,4 @@ After copying the dotfiles, several pieces need to be manually set in Iterm's pr
 
 ## Optional App Templates
 
-Not all apps allow global configuration 😔. Template configuration for these apps are namespaced under the `templates/* folder. Depending on the use case, these can either be copied into the appropriate locations, or manually symlinked in certain cases. Specific instructions for each template live in their respective READMEs.
+Not all apps allow global configuration 😔. Template configuration for these apps are namespaced under the `templates/*` folder. Depending on the use case, these can either be copied into the appropriate locations, or manually symlinked in certain cases. Specific instructions for each template live in their respective READMEs.

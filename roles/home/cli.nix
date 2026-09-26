@@ -18,6 +18,5 @@
     ../../modules/home/tmuxinator
     ../../modules/home/typos
     ../../modules/home/worktrunk
-    ../../modules/home/yamlfmt
   ];
 }

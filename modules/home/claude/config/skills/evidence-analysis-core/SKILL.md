@@ -10,10 +10,10 @@ description: Shared investigative substrate for evidence-grounded, read-only ana
 > **This is an internal reference skill, not a runnable workflow.** It has no intake, no
 > entry point, and no user-facing trigger. It is loaded via the Skill tool **by** the leaf
 > skills — `analytics-friction-analysis`, `error-triage`, and `regression-analysis` — which
-> then *apply* the doctrine below to their own domain workflow. If a user request appears to
+> then _apply_ the doctrine below to their own domain workflow. If a user request appears to
 > land here directly, it was mis-routed: hand off to the appropriate leaf instead.
 
-The leaves differ by domain (which source role is primary, what a finding *is*, how intake
+The leaves differ by domain (which source role is primary, what a finding _is_, how intake
 works). What they **share** is method: how sources are discovered, what counts as evidence,
 how work is fanned out, how claims are stress-tested, how releases are accounted for, how the
 artifact is written, and how tickets are offered. That shared method lives here, in one place,
@@ -45,24 +45,24 @@ Everything else is read-only.
 
 > **Reading the codebase is allowed and encouraged.** Reading source, configs, git history, and
 > instrumentation is a read — do it freely to substantiate findings against real code. What is
-> forbidden is *writing* code, editing files (other than the artifact), staging/committing, or
+> forbidden is _writing_ code, editing files (other than the artifact), staging/committing, or
 > opening PRs. "Read-only" constrains mutations, not curiosity.
 
 ## §2 — Capability-role source discovery (nothing hardcoded)
 
 > **There is no hardcoded source list.** At runtime, enumerate the `mcp__*` tools present in the
 > session and bucket each server by the **capability role** it fills. Product names below are
-> *recognition examples only* — match by role, not by name. Swap Datadog for BetterStack or Linear
+> _recognition examples only_ — match by role, not by name. Swap Datadog for BetterStack or Linear
 > for Asana and the method is unchanged; install a new MCP tomorrow and it gets picked up with no
 > edit here.
 
-| Capability role | Example servers that fill it (not exhaustive) |
-|---|---|
-| Product / session analytics | PostHog, Amplitude |
-| Error tracking | Sentry, PostHog error tracking |
-| Metrics / telemetry | BetterStack, Datadog |
-| Ticketing (§8, opt-in) | Asana, Linear, Jira |
-| Change history | git (local — **always present**) |
+| Capability role             | Example servers that fill it (not exhaustive) |
+| --------------------------- | --------------------------------------------- |
+| Product / session analytics | PostHog, Amplitude                            |
+| Error tracking              | Sentry, PostHog error tracking                |
+| Metrics / telemetry         | BetterStack, Datadog                          |
+| Ticketing (§8, opt-in)      | Asana, Linear, Jira                           |
+| Change history              | git (local — **always present**)              |
 
 Report **covered vs. absent** roles in the artifact's Coverage section (§7). A role with no
 configured source is not a silent failure — it is a named blind spot. No silent gaps, ever.
@@ -118,7 +118,7 @@ really a logging change. A drop-off that is a tracking-plan edit, not a user beh
 Dispatch skeptic subagents for the non-obvious ones.
 
 - **Survivors** are ranked **High / Medium / Low**, with the reasoning that earned the tier.
-- **Refuted** findings move to a **"Considered & ruled out"** list, each with *why* it was ruled
+- **Refuted** findings move to a **"Considered & ruled out"** list, each with _why_ it was ruled
   out — so the same dead end is not re-walked next time.
 
 Ranking never happens before this pass. An unverified finding ranks Low at best (§3).
@@ -128,11 +128,11 @@ Ranking never happens before this pass. An unverified finding ranks Low at best 
 Segment findings by **app version / release** — it is a primary axis, not an afterthought.
 
 - **Discover the current released version(s)** — do not assume. Read app config, check the store
-  listing, or read the version distribution straight from the analytics tool. Identify *which*
+  listing, or read the version distribution straight from the analytics tool. Identify _which_
   package is the shipped app from the project's own `CLAUDE.md` or manifest rather than assuming
   a name; a monorepo usually documents that in a projects table.
 - **Discount** friction or errors that are concentrated in **old versions and absent from the
-  current one** — flag these as *"likely already fixed in `<version>`"* rather than ranking them as
+  current one** — flag these as _"likely already fixed in `<version>`"_ rather than ranking them as
   live problems. Conversely, a finding that is **new or rising in the current release** is more
   urgent, not less.
 - Distinguish "present across all versions" from "regressed at release X" — they imply different
@@ -171,7 +171,7 @@ items exist, omit it rather than padding it):
    user impact.
 3. **Hypotheses (quarantined)** — ideas worth recording, clearly separated from the above.
 4. **Considered & ruled out** — refuted candidates and why.
-5. **For engineering discussion** *(optional)* — items the data cannot resolve, framed as
+5. **For engineering discussion** _(optional)_ — items the data cannot resolve, framed as
    discussion prompts, never work orders. Two admission criteria, and an item must meet one:
    - **Ambiguous design** — the "correct" behavior is a judgment or policy call (enforcement
      policy, capture policy for expected errors, security-vs-UX messaging tradeoffs, which of
@@ -181,9 +181,10 @@ items exist, omit it rather than padding it):
      a QA/device test, server-side logs). Name the candidate categorizations and the cheapest
      probe that separates them.
 
-   Distinct from §3 hypotheses: a hypothesis is a candidate *explanation* awaiting evidence;
-   a discussion item is a *question* whose answer is a human decision or a categorization.
+   Distinct from §3 hypotheses: a hypothesis is a candidate _explanation_ awaiting evidence;
+   a discussion item is a _question_ whose answer is a human decision or a categorization.
    Don't file decision forks as hypotheses to dodge the tagging standard — route them here.
+
 6. **Coverage notes** — which roles were queried, which were absent, what could not be grounded.
 
 ## §8 — Optional ticketing flow
@@ -196,7 +197,7 @@ After findings are presented, **offer** tickets via the **discovered** ticketing
   but when several findings share a root cause, an owner, or a single investigation, combine them
   into one ticket with the findings as a checklist — common after cross-domain reconciliation (§10),
   where one defect explains several symptoms.
-- **Report what is *not* ticketed.** When only a subset is filed, state explicitly what was left out
+- **Report what is _not_ ticketed.** When only a subset is filed, state explicitly what was left out
   and why (deferred / owned-directly / watch-only) — a pared-down slate must never silently drop a
   finding.
 - Each ticket body carries the **evidence, links** (issue IDs, `file:line`, query, dashboards), and
@@ -216,15 +217,15 @@ After findings are presented, **offer** tickets via the **discovered** ticketing
 > parameter; a subagent dispatched without one inherits the main context's model, which for bulk
 > fan-out is usually more than the step needs.
 
-| Step | Model | Why |
-|---|---|---|
-| Pure enumeration — list instrumented events, pull an issue inventory, dump commits in a window | `haiku` | No judgment, just retrieval into the digest schema. Cheapest tier is sufficient. |
-| Per-source fan-out (§4) — run the heavy queries, classify each finding, return the digest | `sonnet` | Mechanical but requires the evidence-standard judgment (§3). High volume — this is where token spend concentrates, so it must not sit on the top tier. |
-| Synthesis, adversarial verification (§5), cross-domain reconciliation (§10) | `opus` | The load-bearing reasoning: does this evidence survive a skeptic, and what does it mean across sources? Keep this in the main context (already `opus`) or dispatch an `opus` skeptic. |
+| Step                                                                                           | Model    | Why                                                                                                                                                                                   |
+| ---------------------------------------------------------------------------------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Pure enumeration — list instrumented events, pull an issue inventory, dump commits in a window | `haiku`  | No judgment, just retrieval into the digest schema. Cheapest tier is sufficient.                                                                                                      |
+| Per-source fan-out (§4) — run the heavy queries, classify each finding, return the digest      | `sonnet` | Mechanical but requires the evidence-standard judgment (§3). High volume — this is where token spend concentrates, so it must not sit on the top tier.                                |
+| Synthesis, adversarial verification (§5), cross-domain reconciliation (§10)                    | `opus`   | The load-bearing reasoning: does this evidence survive a skeptic, and what does it mean across sources? Keep this in the main context (already `opus`) or dispatch an `opus` skeptic. |
 
 Two guards so tiering never silently degrades a finding:
 
-- **Never let a cheaper tier make the ranking call.** Enumeration and fan-out subagents *classify*
+- **Never let a cheaper tier make the ranking call.** Enumeration and fan-out subagents _classify_
   (`evidence-based` | `hypothesis`, `strength`) and return artifacts; they do **not** assign
   High/Medium/Low. Ranking happens only after the `opus` adversarial pass (§5).
 - **State the tiering in Coverage (§7).** One line noting which tier ran the fan-out — so a
@@ -235,7 +236,7 @@ Two guards so tiering never silently degrades a finding:
 > **Applies when more than one leaf's evidence is in play** — either a run that spans domains or the
 > `evidence-consolidation` aggregator merging separate reports. A single leaf reconciles only its own
 > evidence in §5; this section is how two evidence sets are merged into one ranking without
-> double-counting or letting a concern survive that a *sibling domain already refuted*.
+> double-counting or letting a concern survive that a _sibling domain already refuted_.
 
 Run this as an `opus` step (§9), in order:
 
@@ -243,7 +244,7 @@ Run this as an `opus` step (§9), in order:
    underlying cause — matched on `file:line`, issue ID, event/funnel name, or release — even if one
    report calls it "signup errors" and the other "onboarding drop-off." Merge them into one finding
    that carries **both** sources' evidence artifacts.
-2. **Cross-domain skeptic pass.** For every finding, ask whether the *other* domain's evidence
+2. **Cross-domain skeptic pass.** For every finding, ask whether the _other_ domain's evidence
    raises or lowers it — this is the step a single leaf structurally cannot do:
    - Error-tracker regression concentrated in an app version analytics shows is nearly unused →
      **downgrade / rule out** (already-fixed, per §6), even though the error data alone looked scary.

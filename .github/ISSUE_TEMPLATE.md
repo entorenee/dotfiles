@@ -6,7 +6,6 @@
 
 ## Implementation Notes
 
-
 ## Definition of Done
 
-- [ ] 
+- [ ]

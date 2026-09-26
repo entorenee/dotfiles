@@ -1,13 +1,19 @@
 ## Resources
-* Slack Channel
+
+- Slack Channel
 
 ## Core Members
+
 ### Engineering
-* 
+
+-
+
 ### Partners
-* 
+
+-
 
 ## Meeting Notes
+
 ```dataview
 TABLE date
 FROM #meeting AND #project/

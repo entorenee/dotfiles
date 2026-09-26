@@ -1,5 +1,5 @@
 ---
-tags: 
-author: 
+tags:
+author:
 source:
 ---

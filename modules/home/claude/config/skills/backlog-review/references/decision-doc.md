@@ -11,7 +11,7 @@ it is edited afterwards.
 
 A document that tells a reader which tickets the evidence settles, which it does not, and what
 question would settle the rest. It reports **readings**, not work orders. The column heading is
-`Reading`, not *Recommended action* — the difference is whether the reader is being informed or
+`Reading`, not _Recommended action_ — the difference is whether the reader is being informed or
 instructed.
 
 ## Shape
@@ -84,6 +84,6 @@ With the findings. The high-confidence duplicates and the verifiably-settled tic
 as facts about the backlog.
 
 **No offer to execute. No "want me to clean these up?". No pasteable command block.** Every
-baseline run of this workflow volunteered one unprompted — one closed with *"the destructive half
-is one command away whenever you say go"*, another supplied a ready `delete` command. The user
+baseline run of this workflow volunteered one unprompted — one closed with _"the destructive half
+is one command away whenever you say go"_, another supplied a ready `delete` command. The user
 asked for a review; a review is a complete answer.

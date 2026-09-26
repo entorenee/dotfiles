@@ -37,11 +37,17 @@ if [ "${1:-}" = --selftest ]; then
     [ -n "$base" ] && [ -d "$base" ] || continue
     TMP=$(mktemp -d "$base/sweep-due-XXXXXX" 2>/dev/null) && break
   done
-  [ -n "$TMP" ] || { echo "selftest: no writable temp directory" >&2; exit 1; }
+  [ -n "$TMP" ] || {
+    echo "selftest: no writable temp directory" >&2
+    exit 1
+  }
   trap 'rm -rf "$TMP"' EXIT
-  command -v jq >/dev/null 2>&1 || { echo "selftest: jq is required" >&2; exit 1; }
+  command -v jq >/dev/null 2>&1 || {
+    echo "selftest: jq is required" >&2
+    exit 1
+  }
 
-  day()  { date -v-"$1"d +%Y-%m-%d 2>/dev/null || date -d "$1 days ago" +%Y-%m-%d 2>/dev/null; }
+  day() { date -v-"$1"d +%Y-%m-%d 2>/dev/null || date -d "$1 days ago" +%Y-%m-%d 2>/dev/null; }
   line() { printf '%sT09:00:00\t%s\t%s' "$1" "$2" "$3"; }
 
   pass=0 fail=0
@@ -58,44 +64,54 @@ if [ "${1:-}" = --selftest ]; then
     home=$(mktemp -d "$TMP/case-XXXXXX")
     dir="$home/claude"
     mkdir -p "$dir"
-    [ -n "$1" ] && printf '%s\n' "$1" > "$dir/sweep-due.state"
-    [ -n "$2" ] && { mkdir -p "$home/artifacts/skill-reviewer"; printf '%s' "$2" > "$home/artifacts/skill-reviewer/sweep-due.ran"; }
-    XDG_STATE_HOME="$home" MY_AGENT_ARTIFACTS_ROOT="$home/artifacts" bash "$SELF" 2>/dev/null \
-      | jq -r '.systemMessage // empty' 2>/dev/null
+    [ -n "$1" ] && printf '%s\n' "$1" >"$dir/sweep-due.state"
+    [ -n "$2" ] && {
+      mkdir -p "$home/artifacts/skill-reviewer"
+      printf '%s' "$2" >"$home/artifacts/skill-reviewer/sweep-due.ran"
+    }
+    XDG_STATE_HOME="$home" MY_AGENT_ARTIFACTS_ROOT="$home/artifacts" bash "$SELF" 2>/dev/null |
+      jq -r '.systemMessage // empty' 2>/dev/null
   }
   check() { # desc, warn|silent, state, marker, [substring the message must hold]
     local desc="$1" expect="$2" want="${5:-}" out got
     out=$(run "$3" "$4")
     if [ -n "$out" ]; then got=warn; else got=silent; fi
-    if [ "$got" = "$expect" ] && { [ -z "$want" ] || case "$out" in *"$want"*) true ;; *) false ;; esac; }; then
-      pass=$((pass + 1)); printf '  ok    %s\n' "$desc"
+    if [ "$got" = "$expect" ] && { [ -z "$want" ] || case "$out" in *"$want"*) true ;; *) false ;; esac } then
+      pass=$((pass + 1))
+      printf '  ok    %s\n' "$desc"
     else
-      fail=$((fail + 1)); printf '  FAIL  %s (expected %s%s, got %s: %s)\n' \
+      fail=$((fail + 1))
+      printf '  FAIL  %s (expected %s%s, got %s: %s)\n' \
         "$desc" "$expect" "${want:+ containing \"$want\"}" "$got" "${out:-<silence>}"
     fi
   }
 
-  D7=$(day 7); D8=$(day 8); D6=$(day 6); D18=$(day 18); D20=$(day 20)
-  D2=$(day 2); TODAY=$(day 0)
+  D7=$(day 7)
+  D8=$(day 8)
+  D6=$(day 6)
+  D18=$(day 18)
+  D20=$(day 20)
+  D2=$(day 2)
+  TODAY=$(day 0)
   DUE7=$(line "$D7" DUE "11 days since the last /system-review ($D18)")
 
   echo "Verdict:"
-  check "DUE with no sweep since is announced"     warn   "$DUE7" ""
-  check "NOT-DUE stays silent"                     silent "$(line "$D2" NOT-DUE "2 days since the last /system-review ($D2)")" ""
-  check "no state file stays silent"               silent "" ""
+  check "DUE with no sweep since is announced" warn "$DUE7" ""
+  check "NOT-DUE stays silent" silent "$(line "$D2" NOT-DUE "2 days since the last /system-review ($D2)")" ""
+  check "no state file stays silent" silent "" ""
 
   echo "Marker retires a satisfied verdict:"
   check "a sweep run after the verdict retires it" silent "$DUE7" "$D6"
-  check "a sweep run the same day retires it"      silent "$DUE7" "$D7"
-  check "a sweep run before the verdict does not"  warn   "$DUE7" "$D8"
+  check "a sweep run the same day retires it" silent "$DUE7" "$D7"
+  check "a sweep run before the verdict does not" warn "$DUE7" "$D8"
 
   echo "Honesty about the verdict's age:"
-  check "the message dates the verdict it replays" warn   "$DUE7" "" "verdict from $D7"
+  check "the message dates the verdict it replays" warn "$DUE7" "" "verdict from $D7"
 
   echo "Staleness outranks the marker:"
   # A hand-run sweep says nothing about whether the scheduled agent still fires,
   # so it must not silence the branch that reports a dead one.
-  check "stale-agent warning ignores the marker"   warn \
+  check "stale-agent warning ignores the marker" warn \
     "$(line "$D20" DUE "31 days since the last /system-review ($(day 51))")" "$TODAY" "may not be firing"
 
   echo "Once a day:"
@@ -103,24 +119,29 @@ if [ "${1:-}" = --selftest ]; then
   # this case read the real marker, and the suite went from green to red the
   # moment a live sweep was recorded — a test that passes only on a machine
   # that has never run the thing under test.
-  H="$TMP/seen"; mkdir -p "$H/claude" "$H/artifacts"
-  printf '%s\n' "$DUE7" > "$H/claude/sweep-due.state"
+  H="$TMP/seen"
+  mkdir -p "$H/claude" "$H/artifacts"
+  printf '%s\n' "$DUE7" >"$H/claude/sweep-due.state"
   seen_run() { XDG_STATE_HOME="$H" MY_AGENT_ARTIFACTS_ROOT="$H/artifacts" \
     bash "$SELF" 2>/dev/null | jq -r '.systemMessage // empty'; }
   first=$(seen_run)
   second=$(seen_run)
   if [ -n "$first" ] && [ -z "$second" ]; then
-    pass=$((pass + 1)); printf '  ok    %s\n' "the second session the same day is silent"
+    pass=$((pass + 1))
+    printf '  ok    %s\n' "the second session the same day is silent"
   else
-    fail=$((fail + 1)); printf '  FAIL  %s (first=%s second=%s)\n' \
+    fail=$((fail + 1))
+    printf '  FAIL  %s (first=%s second=%s)\n' \
       "the second session the same day is silent" "${first:-<silence>}" "${second:-<silence>}"
   fi
 
   echo "Argument handling:"
   if bash "$SELF" --nonsense >/dev/null 2>&1; then
-    fail=$((fail + 1)); printf '  FAIL  %s\n' "an unknown flag is rejected, not silently ignored"
+    fail=$((fail + 1))
+    printf '  FAIL  %s\n' "an unknown flag is rejected, not silently ignored"
   else
-    pass=$((pass + 1)); printf '  ok    %s\n' "an unknown flag is rejected, not silently ignored"
+    pass=$((pass + 1))
+    printf '  ok    %s\n' "an unknown flag is rejected, not silently ignored"
   fi
 
   printf '\n%d passed, %d failed\n' "$pass" "$fail"
@@ -162,21 +183,22 @@ DAY=${WHEN%%T*}
 RAN_DAY=$(cat "${MY_AGENT_ARTIFACTS_ROOT:-${XDG_DATA_HOME:-$HOME/.local/share}/agents/artifacts}/skill-reviewer/sweep-due.ran" 2>/dev/null)
 
 epoch() {
-  date -j -f '%Y-%m-%d %H:%M:%S' "$1 00:00:00" +%s 2>/dev/null \
-    || date -d "$1 00:00:00" +%s 2>/dev/null
+  date -j -f '%Y-%m-%d %H:%M:%S' "$1 00:00:00" +%s 2>/dev/null ||
+    date -d "$1 00:00:00" +%s 2>/dev/null
 }
 
 TODAY=$(date +%Y-%m-%d)
-NOW=$(epoch "$TODAY"); THEN=$(epoch "$DAY")
+NOW=$(epoch "$TODAY")
+THEN=$(epoch "$DAY")
 AGE=0
-[ -n "$NOW" ] && [ -n "$THEN" ] && AGE=$(( (NOW - THEN) / 86400 ))
+[ -n "$NOW" ] && [ -n "$THEN" ] && AGE=$(((NOW - THEN) / 86400))
 
 # At most once a day. Ten sessions in an afternoon is ten identical reminders,
 # which is how a useful signal becomes one people learn to skip.
 [ "$(cat "$SEEN" 2>/dev/null)" = "$TODAY" ] && exit 0
 
 emit() {
-  mkdir -p "$STATE_DIR" 2>/dev/null && printf '%s' "$TODAY" > "$SEEN" 2>/dev/null
+  mkdir -p "$STATE_DIR" 2>/dev/null && printf '%s' "$TODAY" >"$SEEN" 2>/dev/null
   jq -n --arg m "$1" '{
     systemMessage: $m,
     hookSpecificOutput: {hookEventName: "SessionStart", additionalContext: $m}

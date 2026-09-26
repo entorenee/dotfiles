@@ -1,0 +1,108 @@
+#!/bin/sh
+# Format check over the files in this commit. Install with `make hooks`;
+# bypass with `git commit --no-verify`.
+#
+# Checks the worktree copy of each staged file rather than the staged blob.
+# The two differ only when a file is partially staged, which is not worth
+# materializing the index into a temp tree to catch.
+#
+# Formatting only. statix/deadnix/actionlint are whole-tree and devShell-only,
+# so they belong in `make lint` rather than in a hook that would then need
+# `nix develop` to pass.
+#
+# POSIX sh, no arrays: git hooks inherit whatever PATH the invoking shell had,
+# and on macOS that can still be bash 3.2.
+
+set -u
+
+status=0
+
+# Staged files that still exist on disk, one per line, for the pathspecs given.
+staged() {
+  git diff --cached --name-only --diff-filter=ACMR -- "$@" |
+    while IFS= read -r f; do
+      [ -f "$f" ] && printf '%s\n' "$f"
+    done
+}
+
+# check <label> <tool> <flag>... -- <pathspec>...
+check() {
+  label=$1
+  tool=$2
+  shift 2
+
+  flags=""
+  while [ "$1" != "--" ]; do
+    flags="$flags $1"
+    shift
+  done
+  shift
+
+  files=$(staged "$@")
+  [ -z "$files" ] && return 0
+
+  if ! command -v "$tool" >/dev/null 2>&1; then
+    printf 'pre-commit: %s is not installed, so the %s files in this commit went unchecked.\n' \
+      "$tool" "$label" >&2
+    status=1
+    return 0
+  fi
+
+  # Split the file list on newlines only, so a path containing spaces — the
+  # Obsidian sample vault has nine — becomes one argument rather than several.
+  # POSIX sh has no arrays; restricting IFS and capturing into the positional
+  # parameters is what carries them safely. A filename containing a newline
+  # would still break this, but git quotes those in its output by default.
+  oldifs=$IFS
+  IFS='
+'
+  # shellcheck disable=SC2086
+  set -- $files
+  IFS=$oldifs
+
+  # Output is captured and replayed only on failure. Otherwise every clean
+  # commit prints alejandra's sponsor banner and taplo's INFO line.
+  #
+  # $flags is deliberately unquoted and splits on the restored default IFS;
+  # "$@" is quoted and does not. That ordering is the whole trick — reversing
+  # it would either glue the flags together or split the paths again.
+  # shellcheck disable=SC2086
+  if ! out=$("$tool" $flags "$@" 2>&1); then
+    status=1
+    [ -n "$out" ] && printf '%s\n' "$out" >&2
+  fi
+}
+
+check nix alejandra --check -- '*.nix'
+# -conf, because yamlfmt's config lives in a home-manager module rather than at
+# the repo root and is otherwise only found via ~/.config. Match the Makefile.
+check yaml yamlfmt -lint -quiet -conf modules/home/yamlfmt/config/.yamlfmt -- '*.yml' '*.yaml'
+# The zsh scripts in modules/home/bins/bin are excluded: shfmt parses
+# sh/bash/mksh/bats, and zsh-specific syntax it cannot parse is a hard error
+# rather than a skip — update-all is the one that currently trips it. The other
+# three parse clean under shfmt's bash fallback; they are excluded anyway,
+# because formatting zsh by bash rules is a latent hazard. Keep in step with
+# SH_FILES.
+#
+# -d, not -l, to match the Makefile. Both exit 1 on the shfmt this config
+# installs, but -l's non-zero exit on a difference is a later addition than
+# -d's, and check() discards output on success — so a hook that resolved an
+# older shfmt from PATH would pass silently on unformatted shell. -d also
+# prints the diff rather than a bare filename.
+check shell shfmt -d -- '*.sh' 'modules/home/bins/bin/*' '.githooks/*' \
+  ':!modules/home/bins/bin/dot-apply' ':!modules/home/bins/bin/dot-clean' \
+  ':!modules/home/bins/bin/dot-update' ':!modules/home/bins/bin/update-all'
+check lua stylua --check -- '*.lua'
+check toml taplo fmt --check -- '*.toml'
+# All tracked markdown, the Obsidian sample vault included. Its nine
+# space-containing filenames are what check()'s IFS handling above exists for.
+# Keep in step with the markdown recipes in the Makefile, which reach the same
+# set via `git ls-files -z | xargs -0`.
+check markdown prettier --check --log-level warn -- '*.md'
+
+if [ "$status" -ne 0 ]; then
+  printf '\npre-commit failed. Run `make fmt` and re-stage, or `make rebuild` /\n' >&2
+  printf '`nix develop` if a formatter was reported missing.\n' >&2
+fi
+
+exit "$status"

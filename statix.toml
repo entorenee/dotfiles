@@ -1,0 +1,16 @@
+# Two rules are turned off because they argue with conventions this repo holds
+# deliberately. Everything else statix knows stays on.
+#
+# W10 empty_pattern wants `_:` wherever a module takes `{...}:` and binds
+# nothing. That is the standard home-manager/nix-darwin module head — it marks
+# the file as a module rather than a bare attrset — and every module here uses
+# it. Rewriting them all to `_:` would lose that signal to satisfy a lint.
+#
+# W20 repeated_keys wants sibling dotted paths collapsed into a nested set:
+# `permissions.allow` and `permissions.deny` become `permissions = {...}`. Those
+# two sit 130 lines apart in modules/home/claude/default.nix with the allowlist
+# between them, and nesting would bury both. Nix rejects a genuinely duplicated
+# key at eval, so nothing is lost by not checking for a shared prefix.
+disabled = ["empty_pattern", "repeated_keys"]
+
+ignore = [".direnv", "result", "result-*"]

@@ -1,4 +1,4 @@
-{ ... }: {
+{...}: {
   programs.zsh.shellAliases = {
     dc = "docker compose";
     dcu = "docker compose up -d";

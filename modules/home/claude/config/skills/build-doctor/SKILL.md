@@ -41,6 +41,7 @@ digraph build_doctor {
 Before forming any hypothesis, require all three:
 
 1. **Full build log.** Not a snippet — the full output from the failing command. If only an error message was provided, ask:
+
    > Can you paste the full build log? Snippets often hide the real cause (e.g., a module-not-found upstream of the surface error).
 
 2. **Package manager.** Check for `pnpm-lock.yaml`, `package-lock.json`, or `yarn.lock`. State which is in use.
@@ -79,6 +80,7 @@ Hypothesis 3: pnpm hoisting / .npmrc shamefully-hoist setting
 ```
 
 Then either:
+
 - Wait for user confirmation on the top hypothesis, OR
 - Proceed if it is overwhelmingly supported AND trivial to revert (e.g., a one-line version pin).
 
@@ -108,24 +110,29 @@ If verification still fails, return to Phase 2 and re-rank with the new evidence
 ## Build Doctor Report
 
 ### Root Cause
+
 <one paragraph explaining what was actually broken>
 
 ### Fix Applied
+
 - <files changed>
 - <one-line reason>
 
 ### Hypotheses Considered
+
 1. ✅ <winner> — <why it was right>
 2. ❌ <runner-up> — <why it was rejected>
 3. ❌ <third> — <why it was rejected>
 
 ### Verification
+
 - Build: ✅ / ❌
 - Typecheck: ✅ / ❌
 - Lint: ✅ / ❌
 - Tests: ✅ / ❌
 
 ### Prior Attempts on This Branch
+
 - <attempt>: <outcome>
 ```
 
