@@ -51,14 +51,23 @@ is usually admitting it is this kind.
 
 | Bucket             | Test                                                                                                                                           | Action                                                                              |
 | ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
-| **Keep**           | Anchored: a local constraint, a hard-won gotcha, a magic-value decode, or an actionable maintenance recipe. Something breaks if it is deleted. | Keep. Compress wording only. **Length is not a defect.**                            |
+| **Keep**           | Anchored: a local constraint, a hard-won gotcha, a magic-value decode, or an actionable maintenance recipe. Something breaks if it is deleted. | Keep — **only after the per-sentence test below.** Compress wording only.           |
 | **Cut**            | Detached, and the project docs already carry it.                                                                                               | Delete.                                                                             |
 | **Relocate**       | Detached, but the docs do _not_ carry it yet.                                                                                                  | Add it to the appropriate doc **first**, then delete inline. Never delete outright. |
 | **Negative space** | Documents a deliberate _absence_ — why something is NOT here, NOT set, NOT used.                                                               | **Keep.** There is no code to rediscover this from. Compress prose, never content.  |
 
+**"Anchored" is not a verdict you can reach by assertion.** Keep is the bucket
+that costs nothing to choose, so it is the one that gets chosen carelessly.
+Before keeping a multi-sentence comment, apply sub-rule 8 to **each sentence
+separately** and name the wrong edit it prevents. A block can pass the attachment
+test as a whole while most of its sentences pass nothing — that is the usual
+shape of a comment that reads as too long. "Length is not a defect" is a defence
+of sentences that survived the test, never a reason to skip it.
+
 **Relocate is the narrow case, not the default.** It applies only when a comment
-is _already_ detached. Anchored content stays inline however long it is. This is
-what keeps the pass from being information destruction.
+is _already_ detached. Anchored content that survives the sentence test stays
+inline however long it is. This is what keeps the pass from being information
+destruction.
 
 ## Sub-Rules
 
@@ -121,6 +130,15 @@ Establish what you are reviewing and how you will prove you changed nothing else
   comments on lines added or modified in the diff. Never touch pre-existing
   comments in this mode.
 
+**Take the baseline as a snapshot, not as a commit reference.** This skill is
+normally invoked mid-branch, on a tree that already carries uncommitted
+non-comment work. A commit-relative audit cannot isolate this pass there — it
+reports the surrounding work's code lines as failures, and the check has to be
+abandoned or hand-audited line by line. So before Phase 3, copy the files you are
+about to touch into a scratch directory and keep the path; Phase 4 diffs against
+that copy. Only when the tree is genuinely clean at the start is a commit
+reference equivalent.
+
 Read the project's own convention docs (`CLAUDE.md`, `CONTRIBUTING.md`,
 `CONVENTIONS.md`, `STYLE.md`, `docs/`). You need to know what they already carry
 before you can call anything a duplicate. **Do not delete a detached comment
@@ -146,13 +164,18 @@ Make the edits. Comments only.
 
 Prove it mechanically rather than by inspection.
 
-**Primary check — line-level diff audit (works everywhere).** Confirm every
-changed line is a comment or blank. For lines carrying a _trailing_ comment,
-strip the comment from both sides and confirm the remaining code is
+**Primary check — line-level diff audit against the Phase 1 snapshot.** Confirm
+every changed line is a comment or blank. For lines carrying a _trailing_
+comment, strip the comment from both sides and confirm the remaining code is
 byte-identical. Any genuinely changed line of code is a bug in the pass.
 
+Diff against the snapshot, not against a commit — the snapshot contains the
+surrounding uncommitted work exactly as it was, so the only differences left are
+this pass's. Substitute `git diff <base>..HEAD -U0 -- '<globs>'` for the first
+line only when the tree was clean when the pass started.
+
 ```bash
-git diff <base>..HEAD -U0 -- '<globs>' | awk '
+diff -r -U0 "$SNAP" <path> | awk '
 /^(\+\+\+|---|@@|diff |index |new file|deleted file)/ { next }
 /^[+-]/ { line = substr($0,2); gsub(/^[ \t]+/,"",line)
           if (line == "" || line ~ /^<comment-prefix>/) ok++
@@ -210,20 +233,10 @@ describe a check you did not actually run.
 
 ## Batching Large Passes
 
-For a whole-codebase pass, work in batches with a review stop between each.
-
-- **Batch by directory or architectural layer**, not by file count.
-- **Start with the layer whose comments describe the architecture** (config,
-  roles, module wiring, DI setup). That is where detached comments concentrate,
-  so it surfaces the most disagreement per line reviewed.
-- **Stop after the first batch and get the calls reviewed** before continuing.
-  Applying an uncalibrated standard to the whole tree is the main failure mode.
-- **Run the line audit against the pre-pass base commit each batch**, not against
-  the previous batch — it catches drift an intermediate batch would otherwise
-  mask, and costs nothing extra.
-- If the whole pass is one logical change, batches can be **review units rather
-  than commits** (amend into one commit). If so: verify and review _before_
-  folding each batch in, since an amend leaves no per-batch revert.
+For a whole-codebase pass, batch by directory or architectural layer and
+**stop after the first batch to get the calls reviewed** — applying an
+uncalibrated standard to the whole tree is the main failure mode. Audit every
+batch against the one Phase 1 snapshot, never against the previous batch.
 
 ## Expect to Find Wrong Comments
 
@@ -240,7 +253,8 @@ wrong comment is often the visible symptom of dead or misconfigured code.
 
 - **Never change behavior.** Comments only. Findings get reported, not fixed.
 - **Never delete detached content the docs do not already carry** — relocate it.
-- **Never trim an anchored explanation just because it is long.**
+- **Never trim an anchored explanation just because it is long** — but never
+  invoke that to skip the per-sentence test on the sentences inside it.
 - **Never touch negative-space warnings.**
 - **Verify cross-references before keeping or writing them.**
 - **In diff-scoped mode, never touch pre-existing comments.**
