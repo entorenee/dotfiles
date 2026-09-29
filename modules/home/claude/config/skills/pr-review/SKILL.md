@@ -43,7 +43,7 @@ The common case, and the one this workflow used to leave to the user: the review
    - **Superseded** — the code it described no longer exists in that form; say what replaced it.
 4. Review the new commits for **new** findings, numbering them after the existing ones.
 5. Update the file in place — refresh the SHA, mark resolved items, append new ones. **Never renumber, and never start a fresh file.** Item numbers are how the user refers to findings across sessions ("fix items 2 and 3"), so they have to survive the second pass.
-6. **Order a re-review table by item number, not severity, and keep resolved items in a separate list below the open ones.** The numbers are the referent once a pass has landed, so a severity sort scatters them; and a table that is going to be posted should not lead with items that are already fixed.
+6. **Keep resolved items in their own section, ahead of the open ones.** A second pass is a status report, and what got fixed is the answer to the question that was asked. Ordering is in the output contract.
 
 ## The code-grounding gate
 
@@ -59,12 +59,12 @@ Agents overstate severity, misremember how a helper behaves, and assert root cau
 
 The full table is the review file (step 5). **Chat gets a rendering of it, and the rendering is where this contract is most often lost** — it is the surface the next request comes from.
 
-- **One consolidated findings table**, columns `# | Severity | Item | Location | Detail`, **sorted by descending severity** (🔴 Blocker → 🟡 Worth fixing → 🟢 Minor) — a re-review orders by item number instead, per the section above. Consolidate for information density but leave enough detail to act on.
+- **One consolidated findings table**, columns `# | Severity | Item | Location | Detail`. **A first pass sorts by descending severity** (🔴 Blocker → 🟡 Worth fixing → 🟢 Minor); **a re-review sorts by ascending item number** — once a pass has landed the numbers are how findings get referred to, so a severity sort scatters them, and a "highest first" heading on a second pass is the tell that it happened. Consolidate for information density but leave enough detail to act on.
 - **Every finding carries `file:line` in `Location` — in chat as well as in the file.** A bare filename is not a location. Collapsing a range of 🟢 rows into one line is fine; **never collapse a 🔴, and never drop `Detail` from the chat rendering.**
 - Follow the table with a short **"Verified sound (no action)"** line naming what was checked and cleared.
 - Note which findings are **code-verified** vs. which rest on **operational config / environment you cannot see from the repo** (deploy env vars, infra) — attribute those rather than asserting them.
 - Never label a finding **Critical/Blocker** without a quoted line from the actual code.
-- **When findings are going to the PR author, emit a paste-ready comment as a second file** at `$ARTIFACTS/reviews/YYYY-MM-DD-pr<n>-<slug>-pr-comment.md`: the same table, condensed to the items needing action, every row carrying `file:line` and enough context for a reader who has not seen the review. A prose write-up is too long to post — the table is the postable form.
+- **When findings are going to the PR author, render the paste-ready comment in chat inside a fenced block.** That is the deliverable — a printed path is not something that can be pasted. The same table, condensed to the items needing action, **ranked most-important-first and numbered 1..n**, with a one-line map back to the review's numbers at the bottom; the renumbering applies to the comment only, and the review file's numbers never change. Every row carries `file:line` and enough context for a reader who has not seen the review. A prose write-up is too long to post — the table is the postable form. Write it to its own file only if asked: a second `pr<n>` artifact is one more thing step 0 has to disambiguate.
 
 ## Behavior
 
