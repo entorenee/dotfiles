@@ -3,6 +3,10 @@
   # "Pin every Darwin host's hostname" section of CLAUDE.md.
   networking.hostName = "fw-skyler";
 
+  # nixpkgs flags all of pnpm 10.x insecure. Must equal the version in
+  # overlays/pnpm-pin.nix.
+  nixpkgs.config.permittedInsecurePackages = ["pnpm-10.33.0"];
+
   homebrew = {
     brews = [
       "hookdeck"
