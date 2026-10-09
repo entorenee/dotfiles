@@ -11,6 +11,7 @@ in {
   # desktop goes in ./personal-desktop.nix instead.
   imports = [
     ./personal-claude.nix
+    ../../modules/home/beets
   ];
 
   # No ssh block: the personal Yubikey is the module's default identity.
