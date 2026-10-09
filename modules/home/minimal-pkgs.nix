@@ -17,6 +17,7 @@
       htop
       jq
       ripgrep
+      rsync
       tree
     ]
     # z-lua is a shell directory jumper — it belongs with the shell, not with

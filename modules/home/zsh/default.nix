@@ -15,6 +15,10 @@
       hubb = "ssh -t hub 'tmux new -As build'";
 
       tree = "tree -C -F -a -h --gitignore -I \".git\"";
+
+      # -rt, not -a: FAT/exFAT drives can't store owners or permissions.
+      # A trailing slash on the source copies its contents, not the directory.
+      syncdir = "rsync -rtv --progress";
     };
 
     initContent = ''
