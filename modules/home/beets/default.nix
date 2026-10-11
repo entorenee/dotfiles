@@ -18,7 +18,7 @@ in {
     enable = true;
 
     settings = {
-      directory = "~/Music";
+      directory = "~/Music/artists";
 
       # Since beets 2.4 the MusicBrainz autotagger is a plugin like any other,
       # so naming a plugin list without it turns tagging off.
