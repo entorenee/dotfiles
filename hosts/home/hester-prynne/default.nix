@@ -5,6 +5,7 @@
     ../../../roles/home/gui.nix
     ../../../roles/home/personal.nix
     ../../../roles/home/personal-desktop.nix
+    ../../../modules/home/abcde
     ../../../modules/home/mise
     ./autostart-suppression.nix
     ./secrets.nix
