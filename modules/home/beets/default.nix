@@ -34,10 +34,8 @@ in {
 
       import = {
         write = true;
-        # Copy, not move: originals stay put until the result has been checked.
-        # Pass `-m` on the command line to move instead.
-        copy = true;
-        move = false;
+        copy = false;
+        move = true;
         log = "~/.config/beets/import.log";
       };
 
