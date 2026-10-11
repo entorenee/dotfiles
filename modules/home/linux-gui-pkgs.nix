@@ -23,7 +23,7 @@
     rpi-imager
     signal-desktop
     slack
-    spotify
+    strawberry
     veracrypt
     zoom-us
   ]);
