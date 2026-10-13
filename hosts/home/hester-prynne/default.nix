@@ -12,5 +12,8 @@
   ];
   # protonmail-desktop (the nixpkgs package, not the Mac Homebrew cask) only
   # ever appears in this host's Linux-only package list.
-  overlays = [(import ../../../overlays/protonmail-desktop.nix)];
+  overlays = [
+    (import ../../../overlays/protonmail-desktop.nix)
+    (import ../../../overlays/strawberry.nix)
+  ];
 }
