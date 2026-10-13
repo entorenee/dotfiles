@@ -30,4 +30,7 @@ in {
   "friction-deploy-hester-prynne.age".publicKeys = [breakGlass hesterUser];
   "friction-deploy-fw-skyler.age".publicKeys = [breakGlass fwUser];
   "friction-deploy-lyra-silvertongue.age".publicKeys = [breakGlass lyraUser];
+
+  # Same token on every machine running beets (roles/home/personal.nix).
+  "beets-listenbrainz.age".publicKeys = [breakGlass hesterUser lyraUser];
 }

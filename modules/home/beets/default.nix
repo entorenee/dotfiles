@@ -1,4 +1,9 @@
-{...}: let
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}: let
   # Python body for an `inline` field: lowercases `expr`, drops apostrophes,
   # and collapses every run of anything but letters and digits into one
   # hyphen. Letters in any script survive ("beyoncé", "sigur-rós"), and none
@@ -20,6 +25,9 @@ in {
     settings = {
       directory = "~/Music/artists";
 
+      # The ListenBrainz token and username, decrypted by agenix below.
+      include = ["listenbrainz.yaml"];
+
       # Since beets 2.4 the MusicBrainz autotagger is a plugin like any other,
       # so naming a plugin list without it turns tagging off.
       plugins = [
@@ -30,6 +38,8 @@ in {
         "inline"
         "duplicates"
         "info"
+        "smartplaylist"
+        "listenbrainz" # `beet lbimport` pulls listen counts into the library
       ];
 
       import = {
@@ -68,6 +78,60 @@ in {
         comp = "various-artists/%if{$year,$year-}$album_slug/$disc_prefix$track-$title_slug";
         default = "$artist_slug/%if{$year,$year-}$album_slug/$disc_prefix$track-$title_slug";
       };
+
+      ## Plugin configuration
+      smartplaylist = {
+        auto = true;
+        playlist_dir = "~/Music/playlists";
+        playlists = [
+          {
+            name = "recently-added.m3u";
+            query = "added:-1m..";
+          }
+          {
+            # Negated, so tracks with no recorded listens (no field) match.
+            name = "underplayed.m3u";
+            query = "^listenbrainz_play_count:6..";
+          }
+        ];
+      };
     };
+  };
+
+  # YAML holding `listenbrainz: {username, token}`. The listenbrainz plugin
+  # reads both at load, so beets refuses to start until this decrypts.
+  age.secrets.beets-listenbrainz = {
+    file = ../../../secrets/beets-listenbrainz.age;
+    path = "${config.xdg.configHome}/beets/listenbrainz.yaml";
+    mode = "0400";
+  };
+
+  # Daily: pull ListenBrainz plays, then rebuild every playlist. splupdate runs
+  # unconditionally because `auto` only rewrites playlists a changed track
+  # matches, so a quiet day would never age anything out of recently-added.
+  # Linux only, since Strawberry is the only consumer and it only runs there.
+  systemd.user.services.beets-refresh = lib.mkIf pkgs.stdenv.isLinux {
+    Unit = {
+      Description = "Import ListenBrainz plays into beets and rebuild playlists";
+      # The token has to be decrypted before the listenbrainz plugin loads.
+      After = ["agenix.service"];
+    };
+    Service = {
+      Type = "oneshot";
+      ExecStart = toString (pkgs.writeShellScript "beets-refresh" ''
+        set -eu
+        ${lib.getExe' config.programs.beets.package "beet"} lbimport
+        ${lib.getExe' config.programs.beets.package "beet"} splupdate
+      '');
+    };
+  };
+
+  systemd.user.timers.beets-refresh = lib.mkIf pkgs.stdenv.isLinux {
+    Unit.Description = "Daily ListenBrainz import and playlist rebuild";
+    Timer = {
+      OnCalendar = "daily";
+      Persistent = true;
+    };
+    Install.WantedBy = ["timers.target"];
   };
 }
