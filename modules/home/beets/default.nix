@@ -15,6 +15,75 @@
     name = re.sub(r"['’]", "", name.lower())
     return re.sub(r"[\W_]+", "-", name).strip("-")
   '';
+
+  # `rockbox-scrobble [card]`: submits the player's playback.log to
+  # ListenBrainz, then moves it off the card into ~/.local/state. Each line is
+  # end-time:elapsed-ms:length-ms:path with no tags, so metadata comes from
+  # beets by path. The player's clock has no timezone and runs on local wall
+  # time, so its epochs are shifted back to real UTC.
+  rockboxScrobble = pkgs.writeShellApplication {
+    name = "rockbox-scrobble";
+    runtimeInputs = [config.programs.beets.package pkgs.coreutils pkgs.curl pkgs.gnugrep pkgs.jq pkgs.yq-go];
+    text = ''
+      card="''${1:-/media/$USER/H2}"
+      log="$card/.rockbox/playback.log"
+      library="$HOME/Music/artists"
+      archive="''${XDG_STATE_HOME:-$HOME/.local/state}/rockbox-scrobble"
+
+      if ! grep -qv '^#' "$log" 2>/dev/null; then
+        echo "rockbox-scrobble: no listens in $log"
+        exit 0
+      fi
+
+      listens="$(mktemp)"
+      trap 'rm -f "$listens"' EXIT
+
+      while IFS=: read -r ended elapsed length path; do
+        case "$ended" in "#"* | "") continue ;; esac
+        # ListenBrainz's rule: half the track, or four minutes.
+        if [ $((elapsed * 2)) -lt "$length" ] && [ "$elapsed" -lt 240000 ]; then
+          continue
+        fi
+
+        file="$library/''${path#*/music/}"
+        meta="$(beet ls -f $'$artist\t$title\t$album\t$mb_trackid\t$mb_albumid\t$mb_artistid\t$track' "path:$file")"
+        if [ -z "$meta" ]; then
+          echo "rockbox-scrobble: not in beets, skipped: $file" >&2
+          continue
+        fi
+
+        wall="$(date -u -d "@$ended" '+%F %T')"
+        started=$(($(date -d "$wall" +%s) - elapsed / 1000))
+
+        jq -nc --arg meta "$meta" --argjson at "$started" --argjson len "$length" '
+          ($meta | split("\t")) as [$artist, $title, $album, $recording, $release, $artistid, $track]
+          | {listened_at: $at, track_metadata: {
+              artist_name: $artist, track_name: $title, release_name: $album,
+              additional_info: ({
+                media_player: "Rockbox", submission_client: "rockbox-scrobble",
+                duration_ms: $len, tracknumber: $track,
+                recording_mbid: $recording, release_mbid: $release,
+                artist_mbids: [$artistid | select(. != "")]
+              } | with_entries(select(.value != "" and .value != [])))
+            }}' >>"$listens"
+      done <"$log"
+
+      token="$(yq '.listenbrainz.token' "${config.age.secrets.beets-listenbrainz.path}")"
+      # ListenBrainz caps a submission at 1000 listens.
+      jq -sc 'range(0; length; 1000) as $i | {listen_type: "import", payload: .[$i:$i + 1000]}' "$listens" |
+        while read -r batch; do
+          curl -fsS -o /dev/null \
+            -H @<(printf 'Authorization: Token %s\n' "$token") \
+            -H 'Content-Type: application/json' \
+            --data-binary "$batch" \
+            https://api.listenbrainz.org/1/submit-listens
+        done
+
+      echo "rockbox-scrobble: submitted $(wc -l <"$listens") listens"
+      mkdir -p "$archive"
+      mv "$log" "$archive/playback-$(date +%Y%m%d-%H%M%S).log"
+    '';
+  };
 in {
   # Music library manager: tags from MusicBrainz, then files tracks into
   # ~/Music by the path templates below. Every path component is kebab-case,
@@ -125,6 +194,42 @@ in {
       '');
     };
   };
+
+  # `rockbox-sync [card]`: copies the library to the player's card at /music
+  # and writes the smart playlists there with card-relative paths. Copy-only,
+  # so a track removed from beets stays on the card until deleted by hand.
+  # The playlists are named .m3u8 above because Rockbox decodes .m3u in a
+  # legacy codepage and .m3u8 as UTF-8, and slugs keep accented letters.
+  # beets writes the raw path bytes, so both extensions hold the same UTF-8 data.
+  # Listens are scrobbled first; a failed
+  # upload leaves the log on the card for next time rather than blocking the copy.
+  home.packages = lib.mkIf pkgs.stdenv.isLinux [
+    rockboxScrobble
+    (pkgs.writeShellApplication {
+      name = "rockbox-sync";
+      runtimeInputs = [config.programs.beets.package pkgs.rsync rockboxScrobble];
+      text = ''
+        card="''${1:-/media/$USER/H2}"
+        library="$HOME/Music/artists"
+
+        if [ ! -d "$card/.rockbox" ]; then
+          echo "rockbox-sync: no Rockbox install at $card" >&2
+          exit 1
+        fi
+
+        rockbox-scrobble "$card" ||
+          echo "rockbox-sync: scrobble failed; playback.log kept on the card" >&2
+
+        # FAT32 keeps no owners or modes, and stores mtimes to 2 seconds.
+        rsync -rt --modify-window=1 --info=progress2 "$library/" "$card/music/"
+
+        beet splupdate \
+          --playlist-dir "$card/playlists" \
+          --relative-to "$library" \
+          --prefix /music/
+      '';
+    })
+  ];
 
   systemd.user.timers.beets-refresh = lib.mkIf pkgs.stdenv.isLinux {
     Unit.Description = "Daily ListenBrainz import and playlist rebuild";
