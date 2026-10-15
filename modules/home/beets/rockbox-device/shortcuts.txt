@@ -1,0 +1,14 @@
+[shortcut]
+type: browse
+data: /<microSD0>/.rockbox/base.cfg
+name: 
+icon: -1
+talkclip: 
+
+[shortcut]
+type: browse
+data: /<microSD0>/.rockbox/eqs/Default.cfg
+name: 
+icon: -1
+talkclip: 
+
