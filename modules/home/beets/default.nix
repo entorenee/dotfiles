@@ -44,6 +44,7 @@ in {
         "info"
         "smartplaylist"
         "listenbrainz" # `beet lbimport` pulls listen counts into the library
+        "replaygain" # loudness tags Rockbox levels playback by
       ];
 
       import = {
@@ -60,6 +61,13 @@ in {
       art_filename = "cover";
       fetchart.auto = true;
       embedart.auto = true;
+
+      # nixpkgs puts ffmpeg on the beet wrapper's PATH for this plugin; the
+      # default gstreamer backend has no such wiring. `auto` tags on import.
+      replaygain = {
+        backend = "ffmpeg";
+        auto = true;
+      };
 
       # Python bodies the `inline` plugin exposes as $fields in path templates.
       # Slugs only shape file paths; the embedded tags keep the real names.
