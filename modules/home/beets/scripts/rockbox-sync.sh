@@ -2,35 +2,42 @@
 # `rockbox-sync [card]`: mirrors ~/Music/artists onto the player's card root,
 # copy-only, so a track removed here stays on the card until deleted by hand.
 # Playlists go through rockbox-playlists: generated ones are copied over,
-# hand-made ones merged both ways. The player's own settings are backed up
-# before ../rockbox/base.cfg and its EQ presets are pushed.
+# hand-made ones merged both ways. The player's own settings are copied into
+# the repo before ../rockbox/base.cfg and its EQ presets are pushed.
 #
 # Built by ../rockbox.nix with writeShellApplication, which adds
-# `set -euo pipefail` and sets ROCKBOX_CONFIG (the ../rockbox directory).
+# `set -euo pipefail` and sets ROCKBOX_CONFIG (the ../rockbox directory) and
+# ROCKBOX_BACKUP (../rockbox-device in the live checkout).
 
 card="${1:-/media/$USER/H2}"
-backups="${XDG_STATE_HOME:-$HOME/.local/state}/rockbox-sync/device"
 
 if [ ! -d "$card/.rockbox" ]; then
   echo "rockbox-sync: no Rockbox install at $card" >&2
   exit 1
 fi
 
-# The player rewrites config.cfg on every volume change, so it is backed up
-# here rather than in the repo, as a dated snapshot only when something
-# differs from the last one. `latest` points at the newest.
-snapshot="$(mktemp -d)"
-trap 'rm -rf "$snapshot"' EXIT
-rsync -rt --include='/*.cfg' --include='/*.txt' --include='/*.config' \
+# Backed up into the repo so `git diff` shows what changed on the player,
+# volume included. Only files edited on the player are kept; stock ones are
+# replaced by firmware updates, and the presets this script pushes are
+# already in the repo.
+pushed=()
+for preset in "$ROCKBOX_CONFIG"/eqs/*.cfg; do
+  pushed+=(--exclude="/eqs/${preset##*/}")
+done
+mkdir -p "$ROCKBOX_BACKUP"
+rsync -r --checksum --delete "${pushed[@]}" \
+  --include='/shortcuts.txt' --include='/playername.txt' --include='/tagnavi_user.config' \
   --include='/eqs/' --include='/eqs/*.cfg' --exclude='*' \
-  "$card/.rockbox/" "$snapshot/"
-mkdir -p "$backups"
-if ! diff -rq "$snapshot" "$backups/latest" >/dev/null 2>&1; then
-  dated="$(date +%Y-%m-%dT%H%M%S)"
-  mv "$snapshot" "$backups/$dated"
-  ln -sfn "$dated" "$backups/latest"
-  echo "rockbox-sync: backed up player settings to $backups/$dated"
+  "$card/.rockbox/" "$ROCKBOX_BACKUP/"
+
+# Rockbox saves settings to config.cfg.new and swaps it in at the next boot.
+# Whichever the player will load next is kept as config.cfg, so the swap
+# itself is not a diff.
+current="$card/.rockbox/config.cfg"
+if [ -f "$current.new" ]; then
+  current="$current.new"
 fi
+cp "$current" "$ROCKBOX_BACKUP/config.cfg"
 
 rockbox-scrobble "$card" ||
   echo "rockbox-sync: scrobble failed; playback.log kept on the card" >&2
