@@ -15,10 +15,22 @@
     name = re.sub(r"['’]", "", name.lower())
     return re.sub(r"[\W_]+", "-", name).strip("-")
   '';
+
+  # Written by beets-random rather than smartplaylist, so rockbox.nix is
+  # told its name to copy it to the card instead of merging it.
+  randomPlaylist = "Random.m3u8";
+
+  # See scripts/beets-random.sh.
+  beetsRandom = pkgs.writeShellApplication {
+    name = "beets-random";
+    runtimeInputs = [config.programs.beets.package pkgs.coreutils pkgs.gnused];
+    runtimeEnv.RANDOM_PLAYLIST = randomPlaylist;
+    text = builtins.readFile ./scripts/beets-random.sh;
+  };
 in {
   # The Rockbox player sync scripts: rockbox-sync, rockbox-scrobble and
   # rockbox-playlists.
-  imports = [./rockbox.nix];
+  imports = [(import ./rockbox.nix {inherit randomPlaylist;})];
 
   # Music library manager: tags from MusicBrainz, then files tracks into
   # ~/Music by the path templates below. Every path component is kebab-case,
@@ -45,7 +57,17 @@ in {
         "smartplaylist"
         "listenbrainz" # `beet lbimport` pulls listen counts into the library
         "replaygain" # loudness tags Rockbox levels playback by
+        "ftintitle" # "feat. X" into the title, so one artist stays one artist
+        "random" # `beet random`, behind the daily Random playlist
+        "badfiles" # `beet bad` checks files with flac before they reach the card
+        "mbsync" # `beet mbsync` re-pulls tags from MusicBrainz
+        "missing" # `beet missing` lists tracks absent from partial albums
+        "unimported" # `beet unimported` lists files beets doesn't track
+        "edit" # `beet edit` opens tags in $EDITOR
       ];
+
+      # Genre tags from MusicBrainz, for browsing by genre on the Rockbox.
+      musicbrainz.genres = true;
 
       import = {
         write = true;
@@ -108,6 +130,10 @@ in {
             name = "Underplayed.m3u8";
             query = "^listenbrainz_play_count:6..";
           }
+          {
+            name = "Unplayed.m3u8";
+            query = "^listenbrainz_play_count:1..";
+          }
         ];
       };
     };
@@ -121,9 +147,10 @@ in {
     mode = "0400";
   };
 
-  # Daily: pull ListenBrainz plays, then rebuild every playlist. splupdate runs
-  # unconditionally because `auto` only rewrites playlists a changed track
-  # matches, so a quiet day would never age anything out of Recently Added.
+  # Daily: pull ListenBrainz plays, then rebuild every playlist and draw a new
+  # Random one. splupdate runs unconditionally because `auto` only rewrites
+  # playlists a changed track matches, so a quiet day would never age
+  # anything out of Recently Added.
   # Linux only, since Strawberry is the only consumer and it only runs there.
   systemd.user.services.beets-refresh = lib.mkIf pkgs.stdenv.isLinux {
     Unit = {
@@ -137,6 +164,7 @@ in {
         set -eu
         ${lib.getExe' config.programs.beets.package "beet"} lbimport
         ${lib.getExe' config.programs.beets.package "beet"} splupdate
+        ${lib.getExe beetsRandom}
       '');
     };
   };

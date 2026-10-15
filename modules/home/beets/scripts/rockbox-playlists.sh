@@ -8,7 +8,7 @@
 #
 # Built by ../rockbox.nix with writeShellApplication, which adds
 # `set -euo pipefail` and sets ROCKBOX_GENERATED_PLAYLISTS (beets'
-# smartplaylist file names, one per line).
+# smartplaylist file names plus beets-random's, one per line).
 
 desktop="$1"
 card="$2"

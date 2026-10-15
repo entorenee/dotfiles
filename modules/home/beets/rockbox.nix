@@ -1,4 +1,4 @@
-{
+{randomPlaylist}: {
   config,
   lib,
   pkgs,
@@ -16,8 +16,9 @@
   rockboxPlaylists = pkgs.writeShellApplication {
     name = "rockbox-playlists";
     runtimeInputs = [pkgs.coreutils pkgs.diffutils pkgs.gawk pkgs.gnugrep pkgs.gnused];
-    runtimeEnv.ROCKBOX_GENERATED_PLAYLISTS =
-      lib.concatMapStringsSep "\n" (p: p.name) config.programs.beets.settings.smartplaylist.playlists;
+    runtimeEnv.ROCKBOX_GENERATED_PLAYLISTS = lib.concatStringsSep "\n" (
+      map (p: p.name) config.programs.beets.settings.smartplaylist.playlists ++ [randomPlaylist]
+    );
     text = builtins.readFile ./scripts/rockbox-playlists.sh;
   };
 
