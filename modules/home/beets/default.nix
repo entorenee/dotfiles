@@ -45,7 +45,7 @@
           continue
         fi
 
-        file="$library/''${path#*/music/}"
+        file="$library/''${path#*/artists/}"
         meta="$(beet ls -f $'$artist\t$title\t$album\t$mb_trackid\t$mb_albumid\t$mb_artistid\t$track' "path:$file")"
         if [ -z "$meta" ]; then
           echo "rockbox-scrobble: not in beets, skipped: $file" >&2
@@ -152,6 +152,9 @@ in {
       smartplaylist = {
         auto = true;
         playlist_dir = "~/Music/playlists";
+        # Entries read ../artists/…, which resolves both here and on the
+        # Rockbox card, since the card mirrors ~/Music.
+        relative_to = "~/Music/playlists";
         playlists = [
           {
             name = "Recently Added.m3u8";
@@ -195,14 +198,10 @@ in {
     };
   };
 
-  # `rockbox-sync [card]`: copies the library to the player's card at /music
-  # and writes the smart playlists there with card-relative paths. Copy-only,
-  # so a track removed from beets stays on the card until deleted by hand.
-  # The playlists are named .m3u8 above because Rockbox decodes .m3u in a
-  # legacy codepage and .m3u8 as UTF-8, and slugs keep accented letters.
-  # beets writes the raw path bytes, so both extensions hold the same UTF-8 data.
-  # Listens are scrobbled first; a failed
-  # upload leaves the log on the card for next time rather than blocking the copy.
+  # `rockbox-sync [card]`: mirrors ~/Music/artists and ~/Music/playlists onto
+  # the player's card root. Every playlist uses ../artists/… paths, so the same
+  # file works on both sides without rewriting. Copy-only, so a track or
+  # playlist removed here stays on the card until deleted by hand.
   home.packages = lib.mkIf pkgs.stdenv.isLinux [
     rockboxScrobble
     (pkgs.writeShellApplication {
@@ -210,7 +209,6 @@ in {
       runtimeInputs = [config.programs.beets.package pkgs.rsync rockboxScrobble];
       text = ''
         card="''${1:-/media/$USER/H2}"
-        library="$HOME/Music/artists"
 
         if [ ! -d "$card/.rockbox" ]; then
           echo "rockbox-sync: no Rockbox install at $card" >&2
@@ -220,13 +218,13 @@ in {
         rockbox-scrobble "$card" ||
           echo "rockbox-sync: scrobble failed; playback.log kept on the card" >&2
 
-        # FAT32 keeps no owners or modes, and stores mtimes to 2 seconds.
-        rsync -rt --modify-window=1 --info=progress2 "$library/" "$card/music/"
+        # The daily refresh may be a day stale; regenerate before copying.
+        beet splupdate
 
-        beet splupdate \
-          --playlist-dir "$card/playlists" \
-          --relative-to "$library" \
-          --prefix /music/
+        # No trailing slashes: each directory lands by name at the card root.
+        # FAT32 keeps no owners or modes, and stores mtimes to 2 seconds.
+        rsync -rt --modify-window=1 --info=progress2 \
+          "$HOME/Music/artists" "$HOME/Music/playlists" "$card/"
       '';
     })
   ];
