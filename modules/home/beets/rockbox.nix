@@ -24,7 +24,8 @@
   # See scripts/rockbox-sync.sh.
   rockboxSync = pkgs.writeShellApplication {
     name = "rockbox-sync";
-    runtimeInputs = [config.programs.beets.package pkgs.rsync rockboxScrobble rockboxPlaylists];
+    runtimeInputs = [config.programs.beets.package pkgs.coreutils pkgs.diffutils pkgs.rsync rockboxScrobble rockboxPlaylists];
+    runtimeEnv.ROCKBOX_CONFIG = "${./rockbox}";
     text = builtins.readFile ./scripts/rockbox-sync.sh;
   };
 in {
