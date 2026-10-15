@@ -154,12 +154,12 @@ in {
         playlist_dir = "~/Music/playlists";
         playlists = [
           {
-            name = "recently-added.m3u";
+            name = "Recently Added.m3u8";
             query = "added:-1m..";
           }
           {
             # Negated, so tracks with no recorded listens (no field) match.
-            name = "underplayed.m3u";
+            name = "Underplayed.m3u8";
             query = "^listenbrainz_play_count:6..";
           }
         ];
@@ -177,7 +177,7 @@ in {
 
   # Daily: pull ListenBrainz plays, then rebuild every playlist. splupdate runs
   # unconditionally because `auto` only rewrites playlists a changed track
-  # matches, so a quiet day would never age anything out of recently-added.
+  # matches, so a quiet day would never age anything out of Recently Added.
   # Linux only, since Strawberry is the only consumer and it only runs there.
   systemd.user.services.beets-refresh = lib.mkIf pkgs.stdenv.isLinux {
     Unit = {
