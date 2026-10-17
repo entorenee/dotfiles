@@ -1,4 +1,8 @@
-{config, ...}: {
+{
+  config,
+  pkgs,
+  ...
+}: {
   services.mpd = {
     enable = true;
     # ~/Music, not ~/Music/artists, so playlist entries read artists/…, the
@@ -16,7 +20,25 @@
     '';
   };
 
-  programs.rmpc.enable = true;
+  home.packages = with pkgs; [
+    ueberzugpp
+  ];
+
+  programs.rmpc = {
+    enable = true;
+    # Auto picks ueberzugpp's Wayland output, which aborts on compositors it
+    # has no config for (COSMIC). X11 needs Alacritty under XWayland.
+    config = ''
+      #![enable(implicit_some)]
+      #![enable(unwrap_newtypes)]
+      #![enable(unwrap_variant_newtypes)]
+      (
+          album_art: (
+              method: UeberzugX11,
+          ),
+      )
+    '';
+  };
 
   # Tell MPD to rescan after beets changes the library.
   programs.beets.settings.plugins = ["mpdupdate"];
