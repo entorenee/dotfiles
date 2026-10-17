@@ -7,6 +7,7 @@
     ../../../roles/home/personal-desktop.nix
     ../../../modules/home/abcde
     ../../../modules/home/mise
+    ../../../modules/home/mpd
     ./autostart-suppression.nix
     ./secrets.nix
   ];

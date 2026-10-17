@@ -151,7 +151,8 @@ in {
   # Random one. splupdate runs unconditionally because `auto` only rewrites
   # playlists a changed track matches, so a quiet day would never age
   # anything out of Recently Added.
-  # Linux only, since Strawberry is the only consumer and it only runs there.
+  # Linux only, since Strawberry and MPD are the only consumers and they only
+  # run there.
   systemd.user.services.beets-refresh = lib.mkIf pkgs.stdenv.isLinux {
     Unit = {
       Description = "Import ListenBrainz plays into beets and rebuild playlists";
