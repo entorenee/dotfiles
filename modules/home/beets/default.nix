@@ -18,7 +18,7 @@
 
   # Written by beets-random rather than smartplaylist, so rockbox.nix is
   # told its name to copy it to the card instead of merging it.
-  randomPlaylist = "Random.m3u8";
+  randomPlaylist = "Random.m3u";
 
   # See scripts/beets-random.sh.
   beetsRandom = pkgs.writeShellApplication {
@@ -55,6 +55,7 @@ in {
         "duplicates"
         "info"
         "smartplaylist"
+        "playlist" # keeps hand-made playlists' paths current as beets moves files
         "listenbrainz" # `beet lbimport` pulls listen counts into the library
         "replaygain" # loudness tags Rockbox levels playback by
         "ftintitle" # "feat. X" into the title, so one artist stays one artist
@@ -116,25 +117,34 @@ in {
       ## Plugin configuration
       smartplaylist = {
         auto = true;
+        # MPD's playlist directory: .m3u files whose entries read artists/…,
+        # relative to its music directory. rockbox-playlists rewrites them as
+        # ../artists/… in .m3u8 files for the card.
         playlist_dir = "~/Music/playlists";
-        # Entries read ../artists/…, which resolves both here and on the
-        # Rockbox card, since the card mirrors ~/Music.
-        relative_to = "~/Music/playlists";
+        relative_to = "~/Music";
         playlists = [
           {
-            name = "Recently Added.m3u8";
+            name = "Recently Added.m3u";
             query = "added:-1m..";
           }
           {
             # Negated, so tracks with no recorded listens (no field) match.
-            name = "Underplayed.m3u8";
+            name = "Underplayed.m3u";
             query = "^listenbrainz_play_count:6..";
           }
           {
-            name = "Unplayed.m3u8";
+            name = "Unplayed.m3u";
             query = "^listenbrainz_play_count:1..";
           }
         ];
+      };
+
+      # Rewrites entries in the hand-made playlists when beets moves or
+      # removes a track, so a re-tag doesn't leave them pointing at nothing.
+      playlist = {
+        auto = true;
+        playlist_dir = "~/Music/playlists";
+        relative_to = "~/Music";
       };
     };
   };

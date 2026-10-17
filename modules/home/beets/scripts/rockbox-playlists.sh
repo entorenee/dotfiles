@@ -1,14 +1,17 @@
 #!/usr/bin/env bash
 # `rockbox-playlists <desktop-dir> <card-dir>`: two-way sync of the playlist
-# folders. beets' generated playlists only go to the card. Hand-made ones are
+# folders. The desktop holds Foo.m3u with artists/… entries, as MPD reads and
+# writes them; the card holds Foo.m3u8 with ../artists/…. Everything below
+# works in the desktop form and converts at the card's edge. beets'
+# generated playlists only go to the card. Hand-made ones are
 # merged with diff3 against the result of the last sync, kept in
 # ~/.local/state, so an edit on either side survives and a conflict writes
 # neither side. Tracks the desktop dropped are confirmed first, because a
 # stale Strawberry "Save all" looks exactly like deliberate pruning.
 #
 # Built by ../rockbox.nix with writeShellApplication, which adds
-# `set -euo pipefail` and sets ROCKBOX_GENERATED_PLAYLISTS (beets'
-# smartplaylist file names plus beets-random's, one per line).
+# `set -euo pipefail` and sets ROCKBOX_GENERATED_PLAYLISTS (the desktop
+# names of beets' smartplaylists plus beets-random's, one per line).
 
 desktop="$1"
 card="$2"
@@ -27,10 +30,18 @@ trap 'rm -r "$tmp"' EXIT
 : >"$tmp/empty"
 changed=0
 
-# The device appends absolute, volume-prefixed lines (/<microSD0>/artists/…);
-# the desktop only reads ../artists/…. awk restores a final newline.
+# Card file $1 in desktop form. The device appends absolute, volume-prefixed
+# lines (/<microSD0>/artists/…) next to the ../artists/… ones written here,
+# and starts a playlist it creates with a UTF-8 BOM. awk restores a final
+# newline.
 normalize() {
-  sed -e 's/\r$//' -e 's#^/\(<[^>]*>/\)\?artists/#../artists/#' "$1" | awk 1
+  sed -e '1s/^\xef\xbb\xbf//' -e 's/\r$//' -e 's#^\.\./artists/#artists/#' \
+    -e 's#^/\(<[^>]*>/\)\?artists/#artists/#' "$1" | awk 1
+}
+
+# Desktop-form $1 in card form, into $tmp/out.
+to_card() {
+  sed 's#^artists/#../artists/#' "$1" >"$tmp/out"
 }
 
 # No entries: only #-comments or blank lines, as Save all writes for an
@@ -104,28 +115,31 @@ report() {
   missing "$tmp/result" "$2" >"$tmp/added"
   missing "$2" "$tmp/result" >"$tmp/removed"
   printf '%s: %s (+%s -%s)\n' "$1" "$3" "$(wc -l <"$tmp/added")" "$(wc -l <"$tmp/removed")"
-  sed 's#^\(\.\./artists/\)\?#  removed: #' "$tmp/removed"
+  sed 's#^\(artists/\)\?#  removed: #' "$tmp/removed"
 }
 
 # Writes $tmp/result to both sides and to base for playlist $1.
 apply() {
   cmp -s "$tmp/result" "$desktop/$1" || cp "$tmp/result" "$desktop/$1"
-  cmp -s "$tmp/result" "$card/$1" || cp "$tmp/result" "$card/$1"
+  to_card "$tmp/result"
+  cmp -s "$tmp/out" "$card/${1%.m3u}.m3u8" || cp "$tmp/out" "$card/${1%.m3u}.m3u8"
   cp "$tmp/result" "$state/base/$1"
-  rm -f "$state/conflicts/${1%.m3u8}.conflict.m3u8"
+  rm -f "$state/conflicts/${1%.m3u}.conflict.m3u"
 }
 
 # Keeps the marked-up $tmp/result for playlist $1 and writes neither side.
 conflict() {
-  local kept="$state/conflicts/${1%.m3u8}.conflict.m3u8"
+  local kept="$state/conflicts/${1%.m3u}.conflict.m3u"
   changed=1
   cp "$tmp/result" "$kept"
   echo "$1: conflict, neither side written; see $kept"
 }
 
 for g in "${generated[@]}"; do
-  if [ -f "$desktop/$g" ] && ! cmp -s "$desktop/$g" "$card/$g"; then
-    cp "$desktop/$g" "$card/$g"
+  [ -f "$desktop/$g" ] || continue
+  to_card "$desktop/$g"
+  if ! cmp -s "$tmp/out" "$card/${g%.m3u}.m3u8"; then
+    cp "$tmp/out" "$card/${g%.m3u}.m3u8"
     changed=1
     echo "$g: updated (generated)"
   fi
@@ -133,8 +147,12 @@ done
 
 shopt -s nullglob
 declare -A seen=()
-for f in "$desktop"/*.m3u8 "$card"/*.m3u8 "$state/base"/*.m3u8; do
+for f in "$desktop"/*.m3u "$state/base"/*.m3u; do
   seen["${f##*/}"]=1
+done
+for f in "$card"/*.m3u8; do
+  f="${f##*/}"
+  seen["${f%.m3u8}.m3u"]=1
 done
 for g in "${generated[@]}"; do
   unset "seen[$g]"
@@ -146,11 +164,12 @@ fi
 
 for n in "${names[@]}"; do
   d="$desktop/$n"
+  cf="$card/${n%.m3u}.m3u8"
   c="$tmp/card"
   b="$state/base/$n"
   rm -f "$c"
-  if [ -f "$card/$n" ]; then
-    normalize "$card/$n" >"$c"
+  if [ -f "$cf" ]; then
+    normalize "$cf" >"$c"
   fi
 
   empty=()
@@ -181,7 +200,7 @@ for n in "${names[@]}"; do
       missing "$tmp/dropped" "$tmp/kept" >"$tmp/gone"
       if [ -s "$tmp/gone" ]; then
         echo "$n: the desktop copy drops tracks the device still has:"
-        sed 's#^\.\./artists/#  #' "$tmp/gone"
+        sed 's#^artists/#  #' "$tmp/gone"
         printf 'Remove them on both sides? [y/N] '
         answer=""
         read -r answer || true
@@ -234,7 +253,7 @@ for n in "${names[@]}"; do
       apply "$n"
     elif cmp -s "$have" "$b"; then
       # Unchanged since the last sync, so the deletion stands.
-      if [ "$side" = desktop ]; then rm "$d"; else rm "$card/$n"; fi
+      if [ "$side" = desktop ]; then rm "$d"; else rm "$cf"; fi
       rm "$b"
       changed=1
       echo "$n: deleted (on $other)"
