@@ -1,8 +1,4 @@
-{
-  config,
-  pkgs,
-  ...
-}: {
+{config, ...}: {
   services.mpd = {
     enable = true;
     # ~/Music, not ~/Music/artists, so playlist entries read artists/…, the
@@ -17,26 +13,6 @@
         type "pipewire"
         name "PipeWire"
       }
-    '';
-  };
-
-  home.packages = with pkgs; [
-    ueberzugpp
-  ];
-
-  programs.rmpc = {
-    enable = true;
-    # Auto picks ueberzugpp's Wayland output, which aborts on compositors it
-    # has no config for (COSMIC). X11 needs Alacritty under XWayland.
-    config = ''
-      #![enable(implicit_some)]
-      #![enable(unwrap_newtypes)]
-      #![enable(unwrap_variant_newtypes)]
-      (
-          album_art: (
-              method: UeberzugX11,
-          ),
-      )
     '';
   };
 

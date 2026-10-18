@@ -8,6 +8,7 @@
     ../../../modules/home/abcde
     ../../../modules/home/mise
     ../../../modules/home/mpd
+    ../../../modules/home/rmpc
     ./autostart-suppression.nix
     ./secrets.nix
   ];
