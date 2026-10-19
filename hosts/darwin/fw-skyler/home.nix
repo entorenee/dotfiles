@@ -41,24 +41,6 @@ in {
     mode = "0400";
   };
 
-  # Server instance MPD; no media lives on this machine.
-  age.secrets.mpd-password = {
-    file = ../../../secrets/mpd-password.age;
-    path = "${config.home.homeDirectory}/.config/mpd/password";
-    mode = "0400";
-  };
-
-  # MPD_HOST outranks the config's address, and is set for rmpc alone so the
-  # password stays out of the shell environment. No port: rmpc appends
-  # MPD_PORT or 6600 to the host, so "host:6600" would become "host:6600:6600".
-  programs.rmpc.package = pkgs.writeShellApplication {
-    name = "rmpc";
-    runtimeEnv.MPD_PASSWORD_FILE = config.age.secrets.mpd-password.path;
-    text = ''
-      MPD_HOST="$(<"$MPD_PASSWORD_FILE")@192.168.1.168" exec ${lib.getExe pkgs.rmpc} "$@"
-    '';
-  };
-
   xdg.configFile."gh-dash/config.yml".source =
     lib.mkForce (config.lib.file.mkOutOfStoreSymlink ghDashConfig);
 }

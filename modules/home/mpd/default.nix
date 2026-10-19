@@ -29,9 +29,11 @@
   };
 
   # The bare token: mpdscribble substitutes the whole file as the password, so
-  # it can't share beets' YAML secret.
+  # it can't share beets' YAML secret. Explicit path because the module
+  # single-quotes it, and the default holds a literal ${XDG_RUNTIME_DIR}.
   age.secrets.listenbrainz-token = {
     file = ../../../secrets/listenbrainz-token.age;
+    path = "${config.xdg.configHome}/mpdscribble/listenbrainz-token";
     mode = "0400";
   };
 

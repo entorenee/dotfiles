@@ -7,6 +7,7 @@
     ../../../roles/home/gui.nix
     ../../../modules/home/mise
     ../../../modules/home/rmpc
+    ../../../modules/home/rmpc/nas.nix
     ./home.nix
   ];
   darwinImports = [./darwin.nix];

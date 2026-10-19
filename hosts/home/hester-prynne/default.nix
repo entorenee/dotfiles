@@ -10,6 +10,7 @@
     ../../../modules/home/mpd
     ../../../modules/home/pipewire-zeroconf
     ../../../modules/home/rmpc
+    ../../../modules/home/rmpc/nas.nix
     ./autostart-suppression.nix
     ./libreelec.nix
     ./secrets.nix
