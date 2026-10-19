@@ -37,5 +37,5 @@ in {
   "listenbrainz-token.age".publicKeys = [breakGlass hesterUser];
 
   # Access Home Server MPD instance
-  "mpd-password.age".publicKeys = [breakGlass fwUser];
+  "mpd-password.age".publicKeys = [breakGlass fwUser hesterUser];
 }
