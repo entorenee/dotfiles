@@ -73,7 +73,10 @@ read-only — never write `settings.json` or similar directly. Point me at the N
 - **Never `node -e`, `python -c`, or similar to inspect files or config.** These are
   `permissions.ask` rules, so they prompt **even in auto mode**, and an ask rule is
   subcommand-anchored — it still matches behind a `cd … &&`, an env prefix, or inside `$( )`.
-  Read files with the Read tool; it is cheaper and does not prompt. This is an ergonomic rule,
+  The target is interpreters, not shell reads: `cat`, `head`, `sed -n` and `grep` through Bash
+  are fine, as auto mode's own guidance says, and don't prompt. Where the two pull apart,
+  prefer the Read tool for a whole file or one you'll then Edit (Edit requires a prior Read),
+  and Bash for slices and searches across many files. This is an ergonomic rule,
   **not** a security boundary: `sh -c`, `perl -e`, and `printf > f && python3 f` run the same
   arbitrary code and are deliberately left uncovered, because a boundary drawn around
   interpreter spellings cannot exist. The docs say so outright — a deny or ask rule "covers the
@@ -239,12 +242,13 @@ remote.
   chunk onto an uncommitted one; that buries the review. Treat `MANUAL REVIEW CHECKPOINT` /
   `STOP here` markers as control flow, not narration. Do not invent extra stops between agreed
   boundaries, and do not run past them.
-- **Always use subagent-driven development when executing implementation plans.** Delegate
-  independent tasks via the Agent tool rather than working through steps inline. Non-negotiable,
-  same weight as the no-commit rule. Work inline only where a step has a direct dependency on a
-  prior one that a subagent cannot resolve.
-- **Fan out within a chunk, halt at its boundary.** Parallelism applies inside the current phase
-  only; it never licenses crossing into the next commit.
+- **Delegate when a task is both independent and substantial** — it reads widely, would flood
+  the main context, or runs long enough that parallelism saves real time. Work inline for
+  small, targeted edits, for edits whose citations need verifying as they're written, and when
+  a subagent would lack the permission or discovery context the task needs. A subagent
+  inherits neither: one dispatched to edit `~/claude-friction/entries/` had every Read denied
+  while the main session's succeeded. Within a chunk, fan out the qualifying tasks in
+  parallel; never cross a commit boundary.
 - **At that same hand-back stop, run two cheap pre-phase checks** — both piggyback on the pause,
   neither justifies an extra stop of its own:
   - **Compaction check:** note in one line whether compacting now would help more than
