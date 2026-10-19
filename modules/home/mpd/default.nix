@@ -18,4 +18,23 @@
 
   # Tell MPD to rescan after beets changes the library.
   programs.beets.settings.plugins = ["mpdupdate"];
+
+  # Submits MPD plays to ListenBrainz, so they reach beets' lbimport.
+  services.mpdscribble = {
+    enable = true;
+    endpoints.listenbrainz = {
+      username = "autumntwighlight";
+      passwordFile = config.age.secrets.listenbrainz-token.path;
+    };
+  };
+
+  # The bare token: mpdscribble substitutes the whole file as the password, so
+  # it can't share beets' YAML secret.
+  age.secrets.listenbrainz-token = {
+    file = ../../../secrets/listenbrainz-token.age;
+    mode = "0400";
+  };
+
+  # ExecStartPre reads the token, so it has to be decrypted first.
+  systemd.user.services.mpdscribble.Unit.After = ["agenix.service"];
 }
