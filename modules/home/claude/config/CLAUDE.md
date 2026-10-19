@@ -293,8 +293,10 @@ wt remove                                # remove current; deletes branch if mer
 Branch names must start with a conventional-commit prefix: `fix/`, `feat/`, `docs/`, `chore/`,
 `refactor/`, `test/`, `perf/`, `ci/`.
 
-- **All feature work, bug fixes, and implementation tasks use a worktree.** Create one
-  proactively without asking.
+- **All feature work, bug fixes, and implementation tasks use a worktree — and I create it.**
+  Never run `wt switch --create` yourself. Propose the branch name and hand me the exact
+  `wt switch --create <branch>` command, then wait for me to confirm the worktree path before
+  editing anything.
 - **Exception — the `dotfiles` repo does not use worktrees.** Work directly in `~/dotfiles`.
   Many of its home-manager modules deploy config via `config.lib.file.mkOutOfStoreSymlink`
   against a hardcoded `${config.home.homeDirectory}/dotfiles/...` path (see `modules/home/`
