@@ -44,6 +44,7 @@ in {
   # Server instance MPD; no media lives on this machine.
   age.secrets.mpd-password = {
     file = ../../../secrets/mpd-password.age;
+    path = "${config.home.homeDirectory}/.config/mpd/password";
     mode = "0400";
   };
 
