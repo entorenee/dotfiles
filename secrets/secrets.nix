@@ -33,4 +33,7 @@ in {
 
   # Same token on every machine running beets (roles/home/personal.nix).
   "beets-listenbrainz.age".publicKeys = [breakGlass hesterUser lyraUser];
+
+  # Access Home Server MPD instance
+  "mpd-password.age".publicKeys = [breakGlass fwUser];
 }

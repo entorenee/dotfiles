@@ -6,6 +6,7 @@
   homeImports = [
     ../../../roles/home/gui.nix
     ../../../modules/home/mise
+    ../../../modules/home/rmpc
     ./home.nix
   ];
   darwinImports = [./darwin.nix];

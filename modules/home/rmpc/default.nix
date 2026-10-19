@@ -1,12 +1,17 @@
-{pkgs, ...}: {
-  home.packages = with pkgs; [
-    ueberzugpp
-  ];
+{
+  lib,
+  pkgs,
+  ...
+}: let
+  albumArtMethod =
+    if pkgs.stdenv.isDarwin
+    then "Kitty"
+    else "UeberzugX11";
+in {
+  home.packages = lib.optionals pkgs.stdenv.isLinux [pkgs.ueberzugpp];
 
   programs.rmpc = {
     enable = true;
-    # Auto picks ueberzugpp's Wayland output, which aborts on compositors it
-    # has no config for (COSMIC). X11 needs Alacritty under XWayland.
     config = ''
       #![enable(implicit_some)]
       #![enable(unwrap_newtypes)]
@@ -14,7 +19,7 @@
       (
           theme: "tokyonight_night",
           album_art: (
-              method: UeberzugX11,
+              method: ${albumArtMethod},
           ),
           // The rmpc-docs catppuccin example's companion tabs, which give the queue an album art pane.
           tabs: [
