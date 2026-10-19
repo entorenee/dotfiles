@@ -7,7 +7,11 @@
     ../../../roles/home/personal-desktop.nix
     ../../../modules/home/abcde
     ../../../modules/home/mise
+    ../../../modules/home/mpd
+    ../../../modules/home/pipewire-zeroconf
+    ../../../modules/home/rmpc
     ./autostart-suppression.nix
+    ./libreelec.nix
     ./secrets.nix
   ];
   # protonmail-desktop (the nixpkgs package, not the Mac Homebrew cask) only

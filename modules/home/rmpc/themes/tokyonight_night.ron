@@ -1,0 +1,97 @@
+#![enable(implicit_some)]
+#![enable(unwrap_newtypes)]
+#![enable(unwrap_variant_newtypes)]
+// Adapted from the Catppuccin Macchiato theme in the rmpc docs, recoloured to Tokyo Night (night):
+// https://rmpc.mierak.dev/0.11.0/themes/catppuccin/
+// Copyright (c) 2025, rmpc-org. BSD 3-Clause License.
+(
+    default_album_art_path: None,
+    draw_borders: false,
+    show_song_table_header: false,
+    symbols: (song: "🎵", dir: "📁", playlist: "🎼", marker: "\u{e0b0}"),
+    layout: Split(
+        direction: Vertical,
+        panes: [
+            (
+                pane: Pane(Header),
+                size: "1",
+            ),
+            (
+                pane: Pane(Tabs),
+                size: "1",
+            ),
+            (
+                pane: Pane(TabContent),
+                size: "100%",
+            ),
+            (
+                pane: Pane(ProgressBar),
+                size: "1",
+            ),
+        ],
+    ),
+    progress_bar: (
+        symbols: ["", "", "⭘", " ", " "],
+        track_style: (bg: "#16161e"),
+        elapsed_style: (fg: "#bb9af7", bg: "#16161e"),
+        thumb_style: (fg: "#bb9af7", bg: "#16161e"),
+    ),
+    scrollbar: (
+        symbols: ["│", "█", "▲", "▼"],
+        track_style: (),
+        ends_style: (),
+        thumb_style: (fg: "#7aa2f7"),
+    ),
+    browser_column_widths: [20, 38, 42],
+    text_color: "#c0caf5",
+    background_color: "#1a1b26",
+    header_background_color: "#16161e",
+    modal_background_color: None,
+    modal_backdrop: false,
+    tab_bar: (active_style: (fg: "#15161e", bg: "#bb9af7", modifiers: "Bold"), inactive_style: ()),
+    borders_style: (fg: "#565f89"),
+    highlighted_item_style: (fg: "#bb9af7", modifiers: "Bold"),
+    current_item_style: (fg: "#15161e", bg: "#7aa2f7", modifiers: "Bold"),
+    highlight_border_style: (fg: "#7aa2f7"),
+    song_table_format: [
+        (
+            prop: (kind: Property(Artist), style: (fg: "#7aa2f7"), default: (kind: Text("Unknown"))),
+            width: "50%",
+            alignment: Right,
+        ),
+        (
+            prop: (kind: Text("-"), style: (fg: "#7aa2f7"), default: (kind: Text("Unknown"))),
+            width: "1",
+            alignment: Center,
+        ),
+        (
+            prop: (kind: Property(Title), style: (fg: "#7dcfff"), default: (kind: Text("Unknown"))),
+            width: "50%",
+        ),
+    ],
+    header: (
+        rows: [
+            (
+                left: [
+                    (kind: Text("["), style: (fg: "#7aa2f7", modifiers: "Bold")),
+                    (kind: Property(Status(State)), style: (fg: "#7aa2f7", modifiers: "Bold")),
+                    (kind: Text("]"), style: (fg: "#7aa2f7", modifiers: "Bold"))
+                ],
+                center: [
+                    (kind: Property(Song(Artist)), style: (fg: "#e0af68", modifiers: "Bold"),
+                        default: (kind: Text("Unknown"), style: (fg: "#e0af68", modifiers: "Bold"))
+                    ),
+                    (kind: Text(" - ")),
+                    (kind: Property(Song(Title)), style: (fg: "#7dcfff", modifiers: "Bold"),
+                        default: (kind: Text("No Song"), style: (fg: "#7dcfff", modifiers: "Bold"))
+                    )
+                ],
+                right: [
+                    (kind: Text("Vol: "), style: (fg: "#7aa2f7", modifiers: "Bold")),
+                    (kind: Property(Status(Volume)), style: (fg: "#7aa2f7", modifiers: "Bold")),
+                    (kind: Text("% "), style: (fg: "#7aa2f7", modifiers: "Bold"))
+                ]
+            )
+        ],
+    ),
+)
