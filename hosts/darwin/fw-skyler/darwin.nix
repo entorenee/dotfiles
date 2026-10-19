@@ -11,7 +11,6 @@
     brews = [
       "hookdeck"
       "mysql"
-      "vercel-cli"
     ];
 
     casks = [
@@ -24,6 +23,7 @@
       "loom"
       "surfshark"
       "tableplus"
+      "vercel"
     ];
   };
 
