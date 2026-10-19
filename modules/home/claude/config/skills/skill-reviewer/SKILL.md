@@ -192,16 +192,15 @@ The file-selection grep below is deliberately loose. It only pre-filters; `mine.
 ```bash
 D="$HOME/.claude/projects"
 M=<skill-base-dir>/mine.jq          # absolute path; cwd drifts between calls
-OUT="$TMPDIR/skillrev"; mkdir -p "$OUT"
 SKILL=investigate
+OUT="$TMPDIR/skillrev/$SKILL"; mkdir -p "$OUT"
 
 # Slash commands appear as <command-name>; Skill-tool calls as "skill":"<name>".
-grep -rl "\"skill\":\"$SKILL\"\|<command-name>/$SKILL<" "$D" > "$OUT/files.txt"
-
+grep -rl "\"skill\":\"$SKILL\"\|<command-name>/$SKILL<" "$D" |
 while read -r f; do
   jq -sR -f "$M" --arg skill "$SKILL" "$f" 2>/dev/null \
     | jq -c --arg p "$(basename "$(dirname "$f")")" '. + {project:$p}'
-done < "$OUT/files.txt" > "$OUT/$SKILL.jsonl"
+done > "$OUT/$SKILL.jsonl"
 
 # `// 0` on every `add` (the idiom mine.jq already uses internally): with no
 # matching sessions `add` is null, and `null|round` aborts the whole aggregate.
