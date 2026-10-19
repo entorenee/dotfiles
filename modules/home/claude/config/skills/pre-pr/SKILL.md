@@ -392,6 +392,11 @@ flow earns trust elsewhere** — the thinnest reviews are where errors have surv
 
 - Critical / Important / Minor
 
+Where you can, state in one line what each fix option changes about the failure the
+finding describes. An option you cannot connect to the failure is still listed, but
+marked _unverified_, not dropped. If no option clearly changes the failure, say so
+beside the severity, so the engineer can decide whether it is an accepted trade-off.
+
 ## Suggested next moves
 
 - 2–3 concrete next actions, ordered by impact.
@@ -399,13 +404,8 @@ flow earns trust elsewhere** — the thinnest reviews are where errors have surv
 
 ## Hard rules
 
-- **Comments are not evidence.** Label each load-bearing claim as _verified from
-  executable code_ (you read the statement that makes it true) or _taken from a
-  comment/docstring/JSDoc_ (prose that may be stale). Docstrings in these repos
-  have been demonstrated out of date, and this flow has been caught reasoning from
-  one. Never let prose be the sole support for a Critical or Important finding —
-  when it is the only source, mark the finding **requirements-dependent** and name
-  who could confirm it.
+- **Comments are not evidence** — the Step 2c rule binds your own claims too, not
+  only the reviewer's.
 - **Counts are re-derived, never relayed** — from command output, not a summary.
 - **Exit codes come from the command, not from a pipe.** An unobserved result is
   ⚠️ unverified, never a pass.
