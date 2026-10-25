@@ -10,7 +10,7 @@
     arduino-ide
     caffeine-ng
     calibre
-    freefilesync
+    unstable.freefilesync
     insomnia
     jellyfin-desktop
     libnotify # notify-send, for the claude-code Notification hook banner
