@@ -17,19 +17,18 @@ Generate stakeholder-friendly changelogs from pull request merges. Analyzes indi
 
 ## Workflow
 
-> **Model tiering.** This skill is mechanical — extract PRs, classify into fixed buckets, and rewrite
-> titles/descriptions into non-technical bullets against the style guide below. There is no
-> architectural judgment here. When a merge spans **many PRs** (roughly 8+), delegate the PR-analysis
-> pass (steps 1–2) to a subagent dispatched with `model: sonnet`, handing it the PR list and the
-> content/categorization rules; it returns the classified, rewritten items and keeps the per-PR `gh`
-> chatter out of the main context. For a handful of PRs, run inline — the subagent overhead isn't
-> worth it. Either way the work is Sonnet-appropriate; reserve the top tier for other skills.
-
 ### 1. PR Analysis
 
 1. **Receive PR link or branch range** from user
 2. **Extract individual PRs** included in the merge using `gh pr list` or `gh api`
 3. **Identify affected areas**: In monorepos, map changed file paths to projects. In single repos, identify affected modules/features.
+   - **Scope to what this release actually ships.** Some projects reach users through their own
+     channel and cadence — a mobile app released through the app stores ships separately from a
+     web deploy. Check the project's `CLAUDE.md` and memory for which projects release
+     separately. Leave those out of a deploy's notes, and when a PR touches both, include only
+     the part that ships with this release. Name the excluded PRs in one line under the notes so
+     they can be put back. A request for a separately-released project's own version range
+     inverts this: only that project's changes belong.
 4. **Analyze each PR**:
    - Extract title and description
    - Classify change type (feature, bug fix, enhancement, etc.)
@@ -49,7 +48,10 @@ Generate stakeholder-friendly changelogs from pull request merges. Analyzes indi
 - 1-2 lines maximum per item
 - Present tense, active voice
 
-**Exclude**:
+**Exclude whole items** whose effect never reaches production users: staging-only fixes, local
+development or seed tooling, CI changes.
+
+**Exclude from the wording**:
 
 - PR links
 - Technical implementation details
