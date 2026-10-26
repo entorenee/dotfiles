@@ -60,14 +60,22 @@ rebuild:
 update:
 	nix flake update --flake .
 
-## View previous generations of Nix configuration
+## View previous generations (nix-darwin system profile on Darwin, home-manager on Linux)
 generations:
-	nix run home-manager generations
+	@if [ "$$(uname)" = "Darwin" ]; then \
+		sudo darwin-rebuild --list-generations; \
+	else \
+		nix run home-manager -- generations; \
+	fi
 
-## Switch to a different generation
+## Switch to a different generation (nix-darwin system profile on Darwin, home-manager on Linux)
 switch-gen:
 	@read -p "Enter generation number: " gen; \
-	home-manager switch --switch-generation $$gen
+	if [ "$$(uname)" = "Darwin" ]; then \
+		sudo darwin-rebuild --switch-generation "$$gen"; \
+	else \
+		nix run home-manager -- switch --switch-generation "$$gen"; \
+	fi
 
 ## Cleanup generations older than 7 days (user + system profiles on Darwin)
 cleanup:
