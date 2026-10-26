@@ -81,13 +81,17 @@ return {
 		},
 	},
 
-	-- TreeSitter for syntax highlighting and parsing
+	-- TreeSitter for syntax highlighting and parsing. The `main` branch only
+	-- installs parsers and queries; highlighting and indent are switched on per
+	-- buffer below. It compiles parsers with the `tree-sitter` CLI, which
+	-- modules/home/nvim/default.nix puts on PATH, and does not support lazy-loading.
 	{
 		"nvim-treesitter/nvim-treesitter",
+		branch = "main",
+		lazy = false,
 		build = ":TSUpdate",
-		event = { "BufReadPre", "BufNewFile" },
-		opts = {
-			ensure_installed = {
+		config = function()
+			require("nvim-treesitter").install({
 				"lua",
 				"nix",
 				"html",
@@ -100,13 +104,18 @@ return {
 				"javascript",
 				"typescript",
 				"tsx",
-			},
-			highlight = {
-				enable = true,
-			},
-			indent = {
-				enable = true,
-			},
-		},
+			})
+
+			vim.api.nvim_create_autocmd("FileType", {
+				group = vim.api.nvim_create_augroup("treesitter_start", { clear = true }),
+				callback = function(args)
+					-- Fails when no parser is installed for the filetype's language,
+					-- which should leave the buffer on regex syntax rather than error.
+					if pcall(vim.treesitter.start, args.buf) then
+						vim.bo[args.buf].indentexpr = "v:lua.require'nvim-treesitter'.indentexpr()"
+					end
+				end,
+			})
+		end,
 	},
 }
