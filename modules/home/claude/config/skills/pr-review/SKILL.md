@@ -20,6 +20,8 @@ Runs the `pr-review-toolkit:review-pr` plugin as the base engine, then adds a ma
    HEAD_SHA=$(gh pr view <n> --json headRefOid -q .headRefOid)
    ```
 
+   Read files at the PR head with `gh api -H "Accept: application/vnd.github.raw" "repos/<owner>/<repo>/contents/<path>?ref=$HEAD_SHA"`, not `git fetch` — a fetch can need interactive auth the run cannot supply, and the `gh` read works either way.
+
 2. **Run the base.** Invoke `pr-review-toolkit:review-pr`. Dispatch the applicable agents **in parallel** against the saved diff. Tell each agent explicitly: review the diff, and read repo files only for context on unchanged helpers.
 3. **Ground every finding in code (gate — BEFORE aggregating).** See below. Do not summarize a finding you have not personally verified.
 4. **Aggregate** using the output contract below, naming the SHA reviewed. **Re-read the head before you report** — not only when it moved mid-run — and give the check status at that SHA. A review that silently describes a superseded diff is worse than no review.
@@ -61,7 +63,7 @@ The full table is the review file (step 5). **Chat gets a rendering of it, and t
 - **Every finding carries `file:line` in `Location` — in chat as well as in the file.** A bare filename is not a location. Collapsing a range of 🟢 rows into one line is fine; **never collapse a 🔴, and never drop `Detail` from the chat rendering.**
 - Follow the table with a short **"Verified sound (no action)"** line naming what was checked and cleared.
 - Note which findings are **code-verified** vs. which rest on **operational config / environment you cannot see from the repo** (deploy env vars, infra) — attribute those rather than asserting them.
-- Never label a finding **Critical/Blocker** without a quoted line from the actual code.
+- Never label a finding **Critical/Blocker** unless the quoted line is itself what makes it one. If the severity depends on a deploy or release fact the repo does not state (publish source, rollout, infra) — recalled or inferred — it is 🟡 "confirm", with that premise named.
 - **When findings are going to the PR author, render the paste-ready comment in chat inside a fenced block.** That is the deliverable — a printed path is not something that can be pasted. The same table, condensed to the items needing action, **ranked most-important-first and numbered 1..n**, with a one-line map back to the review's numbers at the bottom; the renumbering applies to the comment only, and the review file's numbers never change. Every row carries `file:line` and enough context for a reader who has not seen the review. A prose write-up is too long to post — the table is the postable form. Write it to its own file only if asked: a second `pr<n>` artifact is one more thing step 0 has to disambiguate.
 
 ## Behavior
