@@ -76,20 +76,15 @@ It owns reproduce-consistently, read-the-error, check-recent-changes, single-hyp
 discipline, tracing a bad value back to its origin, and instrumenting each boundary in a
 multi-component system. Everything below is additive to it.
 
-## 3. Two reproduction cases it does not cover
+## 3. A reproduction case it does not cover
 
 **Rule out your own environment before diagnosing the product.** Recorded runs have spent
 real effort on the wrong worktree, a stale generated client, an unpublished CMS entry, and
 a broken toolchain `expo-doctor` named immediately. Each produces a plausible false root
 cause. Confirm the branch and worktree, confirm generated artifacts are current, and
 confirm the failure reproduces somewhere other than this machine — or say plainly that it
-has only been seen locally.
-
-**For "it reverts on refresh" bugs, localize the layer first.** Did the value change in
-the datastore, or only in the response, cache, or serialization? Inspect the actual request
-payload against the response body: a request carrying only field A that comes back with
-field B changed points away from the client and toward server-side validation, an ORM
-layer, or a trigger.
+has only been seen locally. **The same goes for deployed configuration the repo does not
+contain** — an integration left disabled, a sync gone stale. Check it before tracing code.
 
 ## 4. Name the product rules the root cause assumes
 
@@ -184,14 +179,14 @@ Report which files changed. Do not stage or commit.
 
 ## Quick reference
 
-| Step | Gate                                                                                     |
-| ---- | ---------------------------------------------------------------------------------------- |
-| 1    | Slots filled; register read; **one** batched ask including any `blocked` row             |
-| 2    | `superpowers:systematic-debugging` invoked — unconditionally, not on judgment            |
-| 3    | Own environment ruled out, or "local only" stated; layer localized for revert-on-refresh |
-| 4    | Every product assumption a register row; a `blocked` row stopped the run                 |
-| 5    | Existing tests checked; a passing test over buggy code investigated, not trusted         |
-| 6    | **Root cause, fix, assumptions, scope posted — and stopped**                             |
-| 7    | `superpowers:test-driven-development` invoked; minimal, no scope creep                   |
-| 8    | Exit codes observed not inferred; one 3-attempt cap                                      |
-| 9    | Unscoped suite if shared code; named human for infrastructure                            |
+| Step | Gate                                                                             |
+| ---- | -------------------------------------------------------------------------------- |
+| 1    | Slots filled; register read; **one** batched ask including any `blocked` row     |
+| 2    | `superpowers:systematic-debugging` invoked — unconditionally, not on judgment    |
+| 3    | Own environment and deployed config ruled out, or "local only" stated            |
+| 4    | Every product assumption a register row; a `blocked` row stopped the run         |
+| 5    | Existing tests checked; a passing test over buggy code investigated, not trusted |
+| 6    | **Root cause, fix, assumptions, scope posted — and stopped**                     |
+| 7    | `superpowers:test-driven-development` invoked; minimal, no scope creep           |
+| 8    | Exit codes observed not inferred; one 3-attempt cap                              |
+| 9    | Unscoped suite if shared code; named human for infrastructure                    |
