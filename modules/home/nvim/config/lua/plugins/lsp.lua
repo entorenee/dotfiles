@@ -65,7 +65,6 @@ return {
 					"lua_ls", -- Lua
 					"nil_ls", -- Nix
 				},
-				automatic_installation = true,
 			})
 		end,
 	},
@@ -86,8 +85,11 @@ return {
 					config = vim.fn.expand("~/.config/typos/typos.toml"),
 					diagnosticSeverity = "Hint",
 				},
-				root_dir = vim.fs.root(0, { ".git" }),
+				root_markers = { ".git" },
 			})
+			-- typos-lsp comes from Nix (modules/home/typos), not Mason, so
+			-- mason-lspconfig's automatic_enable never starts it.
+			vim.lsp.enable("typos_lsp")
 
 			local capabilities = require("cmp_nvim_lsp").default_capabilities()
 
@@ -98,9 +100,6 @@ return {
 				vim.keymap.set("n", "K", vim.lsp.buf.hover, opts)
 				vim.keymap.set("n", "<leader>rn", vim.lsp.buf.rename, opts)
 				vim.keymap.set("n", "<leader>ca", vim.lsp.buf.code_action, opts)
-				vim.keymap.set("n", "gr", vim.lsp.buf.references, opts)
-				vim.keymap.set("n", "[d", vim.diagnostic.goto_prev, opts)
-				vim.keymap.set("n", "]d", vim.diagnostic.goto_next, opts)
 			end
 
 			-- Configure diagnostic display

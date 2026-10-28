@@ -5,7 +5,6 @@ local g = vim.g
 -- Leader keys
 g.mapleader = ";"
 g.maplocalleader = ";"
-g.python3_host_prog = "/opt/homebrew/bin/python3"
 
 -- Editor settings
 opt.tabstop = 2

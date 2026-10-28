@@ -8,18 +8,13 @@ return {
 			"hrsh7th/cmp-buffer",
 			"hrsh7th/cmp-path",
 			"hrsh7th/cmp-cmdline",
-			"hrsh7th/cmp-vsnip",
-			"hrsh7th/vim-vsnip",
 		},
 		config = function()
 			local cmp = require("cmp")
 
+			-- No `snippet.expand`: nvim-cmp defaults to the built-in vim.snippet,
+			-- which still expands LSP snippet completions (argument placeholders).
 			cmp.setup({
-				snippet = {
-					expand = function(args)
-						vim.fn["vsnip#anonymous"](args.body)
-					end,
-				},
 				mapping = cmp.mapping.preset.insert({
 					["<C-b>"] = cmp.mapping.scroll_docs(-4),
 					["<C-f>"] = cmp.mapping.scroll_docs(4),
@@ -29,7 +24,6 @@ return {
 				}),
 				sources = cmp.config.sources({
 					{ name = "nvim_lsp" },
-					{ name = "vsnip" },
 				}, {
 					{ name = "buffer" },
 				}),

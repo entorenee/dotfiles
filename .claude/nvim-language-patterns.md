@@ -99,11 +99,6 @@ return {}
 
     ```
 
-### graphql.lua
-
-- **Just contains:** `vim-graphql` plugin for syntax support
-- **No autocmds needed** - uses global defaults
-
 ## Global Defaults
 
 ### Tab Settings

@@ -1,8 +1,5 @@
 -- Editor enhancement plugins
 return {
-	-- Commentary
-	"tpope/vim-commentary",
-
 	-- Formatting with Mason tools
 	{
 		"stevearc/conform.nvim",
