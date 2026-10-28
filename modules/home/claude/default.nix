@@ -492,6 +492,12 @@ in {
   # scripts resolve the root when run outside a Claude session.
   home.sessionVariables.MY_AGENT_ARTIFACTS_ROOT = artifactsRoot;
 
+  # The nixpkgs wrapper (>= 2.1.308) defaults this to "system", which fails
+  # every API call on macOS with UNABLE_TO_GET_ISSUER_CERT_LOCALLY. Its
+  # --set-default yields to an inherited value. settings.env is untested here:
+  # it may be read after the cert store is chosen.
+  home.sessionVariables.CLAUDE_CODE_CERT_STORE = "bundled";
+
   programs.zsh.shellAliases = {
     claude-yolo = "claude --dangerously-skip-permissions";
   };
