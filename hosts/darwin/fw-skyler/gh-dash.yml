@@ -11,8 +11,8 @@ prSections:
       owner:JoinFreeWorld
       is:open
       draft:false
+      review-requested:@me
       -repo:JoinFreeWorld/skills
-      -reviewed-by:@me
       -author:@me
       -author:dependabot[bot]
   - title: Me
