@@ -7,14 +7,13 @@
   # MPD_HOST outranks the config's address, and is set for this command alone
   # so the password stays out of the shell environment. No port: rmpc appends
   # MPD_PORT or 6600, so "host:6600" would become "host:6600:6600".
-  mkWrapper = name:
-    pkgs.writeShellApplication {
-      inherit name;
-      runtimeEnv.MPD_PASSWORD_FILE = config.age.secrets.mpd-password.path;
-      text = ''
-        MPD_HOST="$(<"$MPD_PASSWORD_FILE")@192.168.1.168" exec ${lib.getExe pkgs.rmpc} "$@"
-      '';
-    };
+  wrapper = pkgs.writeShellApplication {
+    name = "rmpc";
+    runtimeEnv.MPD_PASSWORD_FILE = config.age.secrets.mpd-password.path;
+    text = ''
+      MPD_HOST="$(<"$MPD_PASSWORD_FILE")@192.168.1.168" exec ${lib.getExe pkgs.rmpc} "$@"
+    '';
+  };
 in {
   # The Homelab MPD. Explicit path because runtimeEnv single-quotes it, and
   # agenix's default holds shell to expand (${XDG_RUNTIME_DIR} on Linux,
@@ -25,8 +24,6 @@ in {
     mode = "0400";
   };
 
-  # With no local MPD, plain `rmpc` means the NAS; otherwise it keeps the
-  # local one and the NAS gets its own command.
-  programs.rmpc.package = lib.mkIf (!config.services.mpd.enable) (mkWrapper "rmpc");
-  home.packages = lib.optional config.services.mpd.enable (mkWrapper "rmpc-nas");
+  # No host runs a local MPD, so plain `rmpc` means the NAS.
+  programs.rmpc.package = wrapper;
 }

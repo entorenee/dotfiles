@@ -7,18 +7,14 @@
     ../../../roles/home/personal-desktop.nix
     ../../../modules/home/abcde
     ../../../modules/home/mise
-    ../../../modules/home/mpd
-    ../../../modules/home/pipewire-zeroconf
     ../../../modules/home/rmpc
     ../../../modules/home/rmpc/nas.nix
     ./autostart-suppression.nix
-    ./libreelec.nix
     ./secrets.nix
   ];
   # protonmail-desktop (the nixpkgs package, not the Mac Homebrew cask) only
   # ever appears in this host's Linux-only package list.
   overlays = [
     (import ../../../overlays/protonmail-desktop.nix)
-    (import ../../../overlays/strawberry.nix)
   ];
 }

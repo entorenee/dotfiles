@@ -7,7 +7,7 @@
 # merged with diff3 against the result of the last sync, kept in
 # ~/.local/state, so an edit on either side survives and a conflict writes
 # neither side. Tracks the desktop dropped are confirmed first, because a
-# stale Strawberry "Save all" looks exactly like deliberate pruning.
+# stale save from an MPD client looks exactly like deliberate pruning.
 #
 # Built by ../rockbox.nix with writeShellApplication, which adds
 # `set -euo pipefail` and sets ROCKBOX_GENERATED_PLAYLISTS (the desktop

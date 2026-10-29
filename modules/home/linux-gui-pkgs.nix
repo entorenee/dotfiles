@@ -23,7 +23,6 @@
     rpi-imager
     signal-desktop
     slack
-    strawberry
     veracrypt
     zoom-us
   ]);
