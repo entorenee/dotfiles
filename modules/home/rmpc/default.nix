@@ -37,6 +37,12 @@ in {
               (name: "Playlists", pane: Pane(Playlists)),
               (name: "Search", pane: Pane(Search)),
           ],
+          keybinds: (
+              navigation: {
+                  // Default 0-10 popup, minus like/dislike.
+                  "r": Rate(kind: Modal(like: false)),
+              },
+          ),
       )
     '';
   };
