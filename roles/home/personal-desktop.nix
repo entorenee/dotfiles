@@ -1,4 +1,8 @@
-{pkgs, ...}: {
+{
+  lib,
+  pkgs,
+  ...
+}: {
   # The personal role, GUI-desktop add-on. Split out of personal.nix so a
   # headless personal host can take the portable base without pulling these in.
   imports = [
@@ -6,8 +10,10 @@
     ../../modules/home/orca-slicer
   ];
 
-  home.packages = with pkgs; [
-    go
-    hugo
-  ];
+  home.packages = with pkgs;
+    [
+      go
+      hugo
+    ]
+    ++ lib.optionals stdenv.isLinux [unstable.euphonica];
 }
