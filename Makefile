@@ -74,7 +74,7 @@ switch-gen:
 	if [ "$$(uname)" = "Darwin" ]; then \
 		sudo darwin-rebuild --switch-generation "$$gen"; \
 	else \
-		nix run home-manager -- switch --switch-generation "$$gen"; \
+		"$$HOME/.local/state/nix/profiles/home-manager-$$gen-link/activate"; \
 	fi
 
 ## Cleanup generations older than 7 days (user + system profiles on Darwin)
