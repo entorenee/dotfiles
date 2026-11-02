@@ -27,6 +27,8 @@
     runtimeEnv.RANDOM_PLAYLIST = randomPlaylist;
     text = builtins.readFile ./scripts/beets-random.sh;
   };
+
+  hasNas = config.age.secrets ? mpd-password;
 in {
   # The Rockbox player sync scripts: rockbox-sync, rockbox-scrobble and
   # rockbox-playlists.
@@ -65,7 +67,20 @@ in {
         "missing" # `beet missing` lists tracks absent from partial albums
         "unimported" # `beet unimported` lists files beets doesn't track
         "edit" # `beet edit` opens tags in $EDITOR
+        "types" # typed fields below, so rating queries compare as numbers
+        (lib.mkIf hasNas "mpdrating") # plugins/mpdrating.py
       ];
+
+      # Local plugins, added to beetsplug's search path.
+      pluginpath = ["${./plugins}"];
+
+      # 0-10, shared with rmpc and Euphonica. Not mpdstats: it writes a float
+      # `rating`. The album field has its own name because Item.get falls
+      # back to album fields, which would leak album ratings into song queries.
+      types = {
+        rating = "int";
+        album_rating = "int";
+      };
 
       # Genre tags from MusicBrainz, for browsing by genre on the Rockbox.
       musicbrainz.genres = true;
@@ -146,6 +161,14 @@ in {
         playlist_dir = "~/Music/playlists";
         relative_to = "~/Music";
       };
+
+      # `beet mpdrating`: ratings between MPD stickers and beets.
+      mpdrating = lib.mkIf hasNas {
+        host = "192.168.1.168";
+        port = 6600;
+        password_file = config.age.secrets.mpd-password.path;
+        music_root = "~/Music";
+      };
     };
   };
 
@@ -171,11 +194,17 @@ in {
     };
     Service = {
       Type = "oneshot";
+      # A NAS outage fails the unit, but only after playlists still rebuild.
       ExecStart = toString (pkgs.writeShellScript "beets-refresh" ''
         set -eu
+        status=0
         ${lib.getExe' config.programs.beets.package "beet"} lbimport
+        ${lib.optionalString hasNas ''
+          ${lib.getExe' config.programs.beets.package "beet"} mpdrating || status=$?
+        ''}
         ${lib.getExe' config.programs.beets.package "beet"} splupdate
         ${lib.getExe beetsRandom}
+        exit "$status"
       '');
     };
   };
