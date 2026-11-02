@@ -15,5 +15,5 @@
       go
       hugo
     ]
-    ++ lib.optionals stdenv.isLinux [unstable.euphonica];
+    ++ lib.optionals stdenv.isLinux [euphonica];
 }

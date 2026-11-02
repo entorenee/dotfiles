@@ -16,5 +16,6 @@
   # ever appears in this host's Linux-only package list.
   overlays = [
     (import ../../../overlays/protonmail-desktop.nix)
+    (import ../../../overlays/euphonica.nix)
   ];
 }
