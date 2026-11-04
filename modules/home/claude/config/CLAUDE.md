@@ -131,6 +131,10 @@ eslint …`, `npx eslint …`, `pnpm exec tsc …`, never `../node_modules/.bin/
 - **Do not auto-run `@nix-validator` after a Nix edit.** For a small edit run a plain `nix eval`
   on the affected host attribute and report it — cheap and falsifiable. Reach for the full
   validator only at a commit boundary, and say you are doing it.
+- **Eval does not verify a built script.** An edit that adds or changes one
+  (`writeShellApplication`, `writeShellScriptBin`, anything with a build-time check such as
+  shellcheck) needs that derivation built alone: `nix build <flake>#…<script> --no-link`. That
+  is not a host rebuild, so Autonomy Boundaries does not forbid it.
 
 ## Project Command Discovery
 
