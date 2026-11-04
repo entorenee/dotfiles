@@ -27,7 +27,7 @@ If the session had no friction, say so and stop. Do not manufacture entries.
 Drop anything that fails these. For the first two, **run the check; do not rely on recall of what the files contain.**
 
 - **Already recorded.** Grep `CLAUDE.md`, the relevant module or code comments, and the plan doc if one exists. Duplicating creates two copies that drift.
-- **Already in memory.** Read `MEMORY.md` and open every file that looks adjacent. Prefer updating an existing file over adding a near-duplicate. Delete one this session proved wrong.
+- **Already in memory.** Read `MEMORY.md` and open every file that looks adjacent. Prefer updating an existing file over adding a near-duplicate. Delete one this session proved wrong. **If the session hit the problem anyway, that is not a skip: the memory failed to recall.** Check that its `description` names the symptom actually met, rewrite it if not, and count the hit toward Promotion.
 - **Conversation-scoped.** True only for this task, branch, or file. A fact that expires when the work merges is not memory.
 - **Re-derivable in one command.** If `git log` or a single grep answers it, skip it.
 
