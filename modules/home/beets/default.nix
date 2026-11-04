@@ -151,6 +151,16 @@ in {
             name = "Unplayed.m3u";
             query = "^listenbrainz_play_count:1..";
           }
+          {
+            name = "Top Rated Songs.m3u";
+            query = "rating:8..10";
+          }
+          {
+            # An item query, not album_query: that expands each album with
+            # the default artist-first sort, scrambling multi-artist albums.
+            name = "Top Rated Albums.m3u";
+            query = "album_rating:8..10 albumartist+ album+ disc+ track+";
+          }
         ];
       };
 
