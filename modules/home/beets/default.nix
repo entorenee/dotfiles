@@ -43,8 +43,8 @@ in {
     settings = {
       directory = "~/Music/artists";
 
-      # The ListenBrainz token and username, decrypted by agenix below.
-      include = ["listenbrainz.yaml"];
+      # ListenBrainz token and MusicBrainz login, decrypted by agenix below.
+      include = ["listenbrainz.yaml" "musicbrainz.yaml"];
 
       # Since beets 2.4 the MusicBrainz autotagger is a plugin like any other,
       # so naming a plugin list without it turns tagging off.
@@ -68,6 +68,7 @@ in {
         "unimported" # `beet unimported` lists files beets doesn't track
         "edit" # `beet edit` opens tags in $EDITOR
         "types" # typed fields below, so rating queries compare as numbers
+        "mbcollection" # mirrors the library into a MusicBrainz collection
         (lib.mkIf hasNas "mpdrating") # plugins/mpdrating.py
       ];
 
@@ -84,6 +85,15 @@ in {
 
       # Genre tags from MusicBrainz, for browsing by genre on the Rockbox.
       musicbrainz.genres = true;
+
+      # Every import is added to the collection; `beet mbupdate` adds the whole
+      # library. Never `remove`: it deletes whatever beets doesn't hold, which
+      # would include anything added by hand on the website.
+      mbcollection = {
+        auto = true;
+        collection = "b718334d-cab8-42b4-96c2-ef4027e23be5";
+        remove = false;
+      };
 
       import = {
         write = true;
@@ -198,6 +208,17 @@ in {
   age.secrets.beets-listenbrainz = {
     file = ../../../secrets/beets-listenbrainz.age;
     path = "${config.xdg.configHome}/beets/listenbrainz.yaml";
+    mode = "0400";
+  };
+
+  # YAML holding `musicbrainz: {user, pass}` for mbcollection. `pass` is a
+  # token from musicbrainz.org's Applications page, not the account password:
+  # logins moved to MetaBrainz. MusicBrainz drops digest auth in August 2027,
+  # and mbcollection has nothing else. beets skips a
+  # missing include with a warning, but an import then fails in mbcollection.
+  age.secrets.beets-musicbrainz = {
+    file = ../../../secrets/beets-musicbrainz.age;
+    path = "${config.xdg.configHome}/beets/musicbrainz.yaml";
     mode = "0400";
   };
 

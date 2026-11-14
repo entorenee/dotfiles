@@ -31,8 +31,10 @@ in {
   "friction-deploy-fw-skyler.age".publicKeys = [breakGlass fwUser];
   "friction-deploy-lyra-silvertongue.age".publicKeys = [breakGlass lyraUser];
 
-  # Same token on every machine running beets (roles/home/personal.nix).
-  "beets-listenbrainz.age".publicKeys = [breakGlass hesterUser lyraUser];
+  # beets runs only on hester-prynne (its homeImports).
+  "beets-listenbrainz.age".publicKeys = [breakGlass hesterUser];
+  # MusicBrainz username + Applications-page token for beets' mbcollection.
+  "beets-musicbrainz.age".publicKeys = [breakGlass hesterUser];
 
   # Access Home Server MPD instance
   "mpd-password.age".publicKeys = [breakGlass fwUser hesterUser];
