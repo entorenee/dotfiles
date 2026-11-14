@@ -6,6 +6,7 @@
     ../../../roles/home/personal.nix
     ../../../roles/home/personal-desktop.nix
     ../../../modules/home/abcde
+    ../../../modules/home/beets
     ../../../modules/home/mise
     ../../../modules/home/pipewire-pulse-tcp
     ../../../modules/home/music-collection
