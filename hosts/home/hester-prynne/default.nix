@@ -8,6 +8,7 @@
     ../../../modules/home/abcde
     ../../../modules/home/mise
     ../../../modules/home/pipewire-pulse-tcp
+    ../../../modules/home/music-collection
     ../../../modules/home/rmpc
     ../../../modules/home/rmpc/nas.nix
     ./autostart-suppression.nix

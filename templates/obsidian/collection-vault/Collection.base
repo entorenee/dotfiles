@@ -1,0 +1,75 @@
+filters:
+  and:
+    - file.inFolder("Releases")
+properties:
+  catno:
+    displayName: Cat. no.
+  source:
+    displayName: Got it from
+views:
+  - type: table
+    name: By artist
+    groupBy:
+      property: note.artist
+      direction: ASC
+    order:
+      - file.name
+      - year
+      - format
+      - source
+      - pressing
+      - condition
+  - type: table
+    name: Vinyl
+    filters:
+      and:
+        - 'format == "vinyl"'
+    groupBy:
+      property: note.artist
+      direction: ASC
+    order:
+      - file.name
+      - year
+      - source
+      - pressing
+      - label
+      - catno
+      - condition
+  - type: table
+    name: CD
+    filters:
+      and:
+        - 'format == "cd"'
+    groupBy:
+      property: note.artist
+      direction: ASC
+    order:
+      - file.name
+      - year
+      - source
+      - pressing
+      - label
+      - catno
+      - condition
+  - type: table
+    name: Digital
+    filters:
+      and:
+        - 'format == "digital"'
+    groupBy:
+      property: note.artist
+      direction: ASC
+    order:
+      - file.name
+      - year
+      - source
+      - acquired
+  - type: table
+    name: By source
+    groupBy:
+      property: note.source
+      direction: ASC
+    order:
+      - file.name
+      - format
+      - acquired

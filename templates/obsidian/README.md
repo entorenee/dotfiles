@@ -27,3 +27,13 @@ Plugins and themes will need to be manually installed in each Obsidian vault due
 ## Vault Structure
 
 Additionally, a sample starter vault including some Templates can be found in `sample-vault/`. The intention is to copy items from here as it proves helpful. This primarily serves as a snapshot of general folder structure for consistency between my various work and personal vaults.
+
+### Music collection vault
+
+`collection-vault/` is the seed content for the music collection vault (vinyl, CD, digital) at `~/Music/collection`. Its `.obsidian/` settings are not here: `modules/home/music-collection` declares them through home-manager's `programs.obsidian`, on `hester-prynne` only. After a rebuild creates the vault, copy the content in once with `cp -r templates/obsidian/collection-vault/. ~/Music/collection/`.
+
+- One note per release in `Releases/`, named `Artist - Album (Format)` so the quick switcher works as an artist or album lookup.
+- New notes come from `Templates/Release.md`. `format` is `vinyl`, `cd` or `digital`; the views in `Collection.base` filter on those exact values. `source` is where it came from (a shop, Bandcamp, a gift), and has a view of its own.
+- `mbid` is the MusicBrainz release ID. It's optional, but it identifies the exact pressing, which keeps the data portable to beets or a MusicBrainz collection later.
+- Property search also works without a base: `[artist:Radiohead]`, `[format:cd]`.
+- Syncthing must ignore `.obsidian`: every file in it is a symlink into the Nix store, which a phone can't follow. Configure the phone's copy by hand.
