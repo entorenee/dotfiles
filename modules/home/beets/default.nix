@@ -90,7 +90,18 @@ in {
         copy = false;
         move = true;
         log = "~/.config/beets/import.log";
+        # How the album is owned, which the matched release's `media` can't
+        # tell: CD, digital and vinyl editions share a tracklist, so the match
+        # is close to arbitrary. Imports are almost all abcde rips; override
+        # with `beet import --set owned_media=digital`. Not `format`, which
+        # beets already uses for the file type. set_fields runs after a
+        # re-import (`-L`) restores flexible fields, so a bare "cd" would
+        # overwrite them; %ifdef keeps an existing value.
+        set_fields.owned_media = "%ifdef{owned_media,$owned_media,cd}";
       };
+
+      # Break those near-ties towards the CD edition.
+      match.preferred.media = ["CD"];
 
       # The year of first release, not of whichever reissue matched.
       original_date = true;
