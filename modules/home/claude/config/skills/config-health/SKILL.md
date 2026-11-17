@@ -1,6 +1,6 @@
 ---
 name: config-health
-description: Use for a periodic health check of the Claude Code harness itself — settings.json symlink integrity, dead permission rules, hook registration, instruction-document coherence (CLAUDE.md contradicting itself, its neighbour, or the live config), plus the permission-audit and fewer-permission-prompts analyses merged into one classified report. Orchestrates config-level checks only; NOT for product-code health (dead-code-survey, npm-cve, error-triage).
+description: Use for a periodic health check of the Claude Code harness itself — settings.json symlink integrity, dead permission rules, hook registration, instruction-document coherence (CLAUDE.md contradicting itself, its neighbour, or the live config), plus the permission-audit and fewer-permission-prompts analyses merged into one classified report. Orchestrates config-level checks only; NOT for product-code health (dependency-upgrades, error-triage).
 ---
 
 # Config Health
@@ -36,8 +36,7 @@ commits.
   Not `update-config` — it writes `~/.claude/settings.json`, which this config
   deploys read-only from the Nix store, and a write there is either refused or
   lands in a project `settings.local.json` that silently outranks the module.
-- Product-code health (`dead-code-survey`, `npm-cve`, `dependency-upgrades`,
-  `error-triage`) — deliberately out of scope. Folding those in produces a
+- Product-code health (`dependency-upgrades`, `error-triage`) — deliberately out of scope. Folding those in produces a
   report nobody acts on.
 
 ## Workflow
@@ -253,7 +252,7 @@ Dispatch both in a **single message** so they run concurrently.
 **Why `sonnet`:** both steps are mechanical extraction over a large corpus —
 run committed `jq`/`grep`, tabulate, return examples. High volume, low judgment.
 This matches the tiering the rest of this config already uses (`investigate`'s
-verification runner, `npm-cve`'s researchers, all three custom agents). The
+verification runner, all three custom agents). The
 reasoning worth paying for is classification and ranking, and that stays in the
 main `opus` context in Step 4.
 

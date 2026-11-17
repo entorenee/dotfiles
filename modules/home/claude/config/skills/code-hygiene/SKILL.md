@@ -137,10 +137,20 @@ For each new export, look for a corresponding test file:
 
 **Step 4 — Falsify every test you add.**
 
-A new test is not done until it has failed. Before reporting any added test as coverage, run it against the pre-fix implementation — `git stash` the change, or import from `git show HEAD:<file>` — and confirm it **fails for the right reason**. Report that result alongside the pass:
+A new test is not done until it has failed _for the right reason_. The test file is new and untracked, so the baseline has to be produced by putting the pre-branch implementation under it — restore the implementation file from the merge base, run the test, then put the branch version back:
+
+```bash
+git show "$MERGE_BASE:<file>" > "<file>"   # baseline: pre-branch implementation
+<project test command, scoped to <test-file>>   # expect FAIL
+git checkout HEAD -- "<file>"               # restore, then re-run: expect PASS
+```
+
+Never do this with uncommitted changes in `<file>` — `git checkout HEAD --` would discard them. Commit first, or copy the file aside.
+
+For code that does not exist at the merge base there is no baseline to fail against. Falsify those by breaking the implementation instead — invert the condition, change the return value — confirm the test fails, then undo. Report both results alongside the pass:
 
 ```
-Added 3 tests to `src/lib/__tests__/useAuth.test.ts` — all 3 fail against HEAD, pass after ✅
+Added 3 tests to `src/lib/__tests__/useAuth.test.ts` — all 3 fail against the baseline, pass after ✅
 ```
 
 If a test passes both before and after, **it pins nothing.** Say so plainly rather than counting it as coverage; a test that passes for the wrong reason is worse than no test, because it reports the behavior as protected and stops anyone re-testing it.
@@ -218,7 +228,7 @@ Present all findings that require engineer judgment. **Do not act on any of thes
 - Removed `console.log` at `src/components/ProfileScreen.tsx:23`
 - Removed commented-out code block at `src/utils/format.ts:15-22`
 - Replaced `console.error` with `logError` at `src/lib/api/client.ts:112` — rule: `docs/CODE_CONVENTIONS.md:44` — typecheck clean after
-- Added 2 unit tests to `src/lib/hooks/__tests__/useAuth.test.ts` — both fail against HEAD, pass after ✅
+- Added 2 unit tests to `src/lib/hooks/__tests__/useAuth.test.ts` — both fail against the baseline, pass after ✅
 
 ### Needs Your Review
 
@@ -229,12 +239,12 @@ Present all findings that require engineer judgment. **Do not act on any of thes
 
 #### Convention Violations
 
-- `components/video/ScreenshareLandscapeView.tsx:88` — styled `<Pressable>` used as a button (`className` + `onPress`) — rule: `docs/CODE_CONVENTIONS.md:117` "never create styled Pressable buttons — use Button/FWButton"
-- `components/video/CallScreen.tsx:142` — hardcoded hex `color="#fff"` on icon — rule: `docs/CODE_CONVENTIONS.md:378` "no `text-[#...]`/color literals — use the matching token"
+- `src/components/Toolbar.tsx:88` — styled `<Pressable>` used as a button (`className` + `onPress`) — rule: `docs/CODE_CONVENTIONS.md:117` "never create styled Pressable buttons — use the shared Button component"
+- `src/components/Avatar.tsx:142` — hardcoded hex `color="#fff"` on icon — rule: `docs/CODE_CONVENTIONS.md:378` "no `text-[#...]`/color literals — use the matching token"
 
 #### TODO/FIXME Comments
 
-- `src/components/FWButton.tsx:42` — `// TODO: add haptic feedback` — remove or keep?
+- `src/components/Button.tsx:42` — `// TODO: add haptic feedback` — remove or keep?
 - `src/lib/api/client.ts:89` — `// FIXME: retry logic` — remove or keep?
 
 #### Comments
