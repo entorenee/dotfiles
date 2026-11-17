@@ -1,4 +1,13 @@
 {config, ...}: {
+  # Conflicts with project tooling
+  my.claude.excluded = [
+    "investigate"
+    "code-hygiene"
+    "dependency-upgrades"
+    "dependency-scoper"
+    "migration-researcher"
+  ];
+
   programs.claude-code = {
     settings = {
       # claude.ai offers far more connectors than are wanted, so this admits the

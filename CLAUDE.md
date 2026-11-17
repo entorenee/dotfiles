@@ -346,13 +346,27 @@ The Claude Code configuration is Nix-managed in `modules/home/claude/`. The glob
 | Change permissions | Edit `permissions` in `modules/home/claude/default.nix` (base), `hosts/darwin/fw-skyler/claude.nix` (work), or `roles/home/personal-claude.nix` (personal) | Rebuild                                                                                         |
 | Change setting     | Edit `modules/home/claude/default.nix` (base), `hosts/darwin/fw-skyler/claude.nix` (work), or `roles/home/personal-claude.nix` (personal)                  | Rebuild                                                                                         |
 
+### Graduating a skill to a project repo
+
+Skills are proven here first; once one moves into a repo as a project skill, the repo's copy is canonical.
+
+1. Prove it here across real sessions — `skill-reviewer/inventory.sh` shows the runs.
+2. Port it under the same name, following that repo's own layout and conventions for skills and agents.
+3. Strip what only works here: `MY_AGENT_ARTIFACTS_ROOT`/`$ARTIFACTS`, `claude-friction`, `domain-register`/`registers/`, and rules that lean on the global `CLAUDE.md` (rtk, sandbox, permission prompts).
+4. A dispatched agent needs an inline fallback if the repo also serves tools without subagents.
+5. Pass the repo's own checks, then a draft PR.
+6. After merge, add the name to `my.claude.excluded` on each host that works in that repo. Same-named skills resolve personal over project, so without this the personal copy silently wins.
+7. Back-ports run the other way: carry generic improvements here, never the repo's file paths or component names.
+
 ### Deployment Layout
 
-`agents/`, `commands/`, `hooks/`, `skills/`, and `CLAUDE.md` are deployed by the home-manager module's own options (`agentsDir`, `commandsDir`, `hooksDir`, `skills`, `context`) rather than hand-wired `home.file` entries. Only `statusline.sh`, which has no matching option, is still declared in `home.file`.
+`agents/`, `commands/`, `hooks/`, `skills/`, and `CLAUDE.md` are deployed by the home-manager module's own options (`agents`, `commandsDir`, `hooksDir`, `skills`, `context`) rather than hand-wired `home.file` entries. Only `statusline.sh`, which has no matching option, is still declared in `home.file`.
+
+`skills` and `agents` are passed as **attrsets built from `readDir`**, not as directory paths, so a host can drop entries: `my.claude.excluded` (declared in `modules/home/claude/excluded.nix`) removes named skills and agents along with their derived `Skill(<name>)` permission. A host lists the units a repo it works in ships as project skills — see "Graduating a skill to a project repo" above.
 
 Every _file_ under `~/.claude` is a symlink into the Nix store — but the `agents/`, `commands/`, `hooks/`, and `skills/` subdirectories are real directories whose children are linked individually (see `recursive = true` below). Either way, **every edit under `config/` needs a rebuild to take effect** — including hook scripts. The `*Dir` options have no `mkOutOfStoreSymlink` escape hatch, so they don't honor `my.dotfiles.mutable`; that's the accepted cost of the module being usable on a NixOS host with no `~/dotfiles` checkout.
 
-The `*Dir` options and the path form of `skills` deploy with `recursive = true` — set inside the module's own `mkRecursiveDirAttrs`, not by anything this repo passes. That makes home-manager create `~/.claude/<subdir>` as a real directory and link each child individually, instead of pointing the whole subdirectory at one store path. Enumerating skills one-by-one used to be the workaround and is no longer needed. That per-file layout is also what makes the migration hazard below possible, so it is worth knowing which shape is deployed.
+The `*Dir` options deploy with `recursive = true` — set inside the module's own `mkRecursiveDirAttrs`, not by anything this repo passes. That makes home-manager create `~/.claude/<subdir>` as a real directory and link each child individually, instead of pointing the whole subdirectory at one store path. The attrset forms land the same way: each skill is its own `recursive = true` entry at `~/.claude/skills/<name>`, and each agent a single-file link at `~/.claude/agents/<name>.md` (verified by eval of `home.file`, 2026-11-17). That per-file layout is also what makes the migration hazard below possible, so it is worth knowing which shape is deployed.
 
 **The MCP plugin does not land in `~/.claude/skills/`.** The pinned home-manager (`flake.lock` rev `d4fd2466`) builds it as a store directory named `claude-code-hm-plugin` and hands it to a wrapper script as `--plugin-dir`, unconditionally — so `~/.claude/skills/` holds exactly the repo's own skills and nothing else. Newer home-manager revisions add a "personal plugins" mode that installs to `~/.claude/skills/<plugin>` when claude-code is ≥ 2.1.157, and gate `recursive = true` on avoiding a collision with it; none of that code is in the pinned revision, so do not reason from it. Several home-manager sources coexist in `/nix/store` — confirm the one you are reading matches `flake.lock` before drawing conclusions from it.
 

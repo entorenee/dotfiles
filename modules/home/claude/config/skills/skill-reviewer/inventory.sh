@@ -421,7 +421,10 @@ read -r CORPUS_SCANNED CORPUS_N_UNREADABLE CORPUS_N_TRUNCATED \
 CORPUS_GREP_ERR=0
 
 # --------------------------------------------------------------------------
-# Direct arm. Emits: unit, file, top|sub, YYYY-MM-DD
+# Direct arm. Emits: unit, file, top|sub, YYYY-MM-DD, skill|cmd
+#
+# The last column names the arm. Only project_skills reads it: a name that never
+# arrived as a Skill call is a built-in command (/compact, /clear), not a skill.
 #
 # Both patterns are pinned to the record shape a real invocation produces,
 # because a session analysing skill usage writes the search strings into its own
@@ -442,7 +445,7 @@ grep -rH '"type":"assistant"' "$TRANSCRIPTS" 2>/dev/null |
       side = (m ~ /"isSidechain":[ ]*true/) ? "sub" : "top";
       d = "-"; if (match(m, /"timestamp":"[^"]+"/)) d = substr(m, RSTART+13, 10);
       while (match(m, /"skill":"[a-z0-9-]+"/)) {
-        print substr(m, RSTART+9, RLENGTH-10) "\t" f "\t" side "\t" d;
+        print substr(m, RSTART+9, RLENGTH-10) "\t" f "\t" side "\t" d "\tskill";
         m = substr(m, RSTART+RLENGTH);
       }
     }' >"$WORK/direct.tsv"
@@ -459,7 +462,7 @@ grep -rH '"content":"<command-message>' "$TRANSCRIPTS" 2>/dev/null |
       side = (m ~ /"isSidechain":[ ]*true/) ? "sub" : "top";
       d = "-"; if (match(m, /"timestamp":"[^"]+"/)) d = substr(m, RSTART+13, 10);
       while (match(m, /<command-name>\/[a-z0-9-]+<\/command-name>/)) {
-        print substr(m, RSTART+15, RLENGTH-30) "\t" f "\t" side "\t" d;
+        print substr(m, RSTART+15, RLENGTH-30) "\t" f "\t" side "\t" d "\tcmd";
         m = substr(m, RSTART+RLENGTH);
       }
     }' >>"$WORK/direct.tsv"
@@ -745,15 +748,35 @@ awk -F'\t' '
   "$WORK/units.txt" |
   sort -k3,3nr -k5,5nr -k1,1 >"$WORK/rows.tsv"
 
+# Skills invoked but not deployed from this repo — project skills (a repo's own
+# .claude/skills), bundled ones, and units since deleted. Without this the work
+# monorepo's skills are invisible here. Plugin skills never reach direct.tsv:
+# the direct arm's name pattern stops at the namespace colon. Top-level sessions
+# only, matching the units' SESS column.
+awk -F'\t' '
+  FNR == NR { unit[$1] = 1; next }
+  ($1 in unit) || $3 == "sub" { next }
+  { if ($5 == "skill") isskill[$1] = 1;
+    if (!(($1 SUBSEP $2) in seen)) { seen[$1, $2] = 1; sess[$1]++ }
+    if ($4 > last[$1]) last[$1] = $4 }
+  END { for (n in isskill) printf "%s\t%d\t%s\n", n, sess[n], last[n] }
+' "$WORK/units.txt" "$WORK/direct.tsv" |
+  sort -k2,2nr -k1,1 >"$WORK/project-skills.tsv"
+
 if [ "$MODE" = json ]; then
   jq -R -s --arg root "$ART_ROOT" --arg tx "$TRANSCRIPTS" --arg ls "$LEDGER_STATUS" \
     --arg ras "$REVIEW_ARM_STATUS" \
+    --rawfile ps "$WORK/project-skills.tsv" \
     --argjson cs "$(printf \
       '{"scanned":%d,"unreadable":%d,"truncated":%d,"grep_errors":%d}' \
       "$CORPUS_SCANNED" "$CORPUS_N_UNREADABLE" "$CORPUS_N_TRUNCATED" \
       "$CORPUS_GREP_ERR")" '
     { artifact_root: $root, transcripts: $tx, ledger_status: $ls,
       review_arm_status: $ras, corpus_status: $cs,
+      project_skills: ($ps | split("\n") | map(select(length > 0) | split("\t") | {
+        name:     .[0],
+        sessions: (.[1] | tonumber),
+        last_run: (if .[2] == "-" or .[2] == "" then null else .[2] end) })),
       units: (split("\n") | map(select(length > 0) | split("\t") | {
         unit:            .[0],
         invocations:     (.[1] | tonumber),

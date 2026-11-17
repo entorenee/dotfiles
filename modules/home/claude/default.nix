@@ -22,8 +22,20 @@
   # which live in the user profile.
   sweepDuePath = "${config.home.profileDirectory}/bin:/usr/bin:/bin:/usr/sbin:/sbin";
 
+  keep = name: !(builtins.elem name config.my.claude.excluded);
+
+  # Attrsets rather than the directory paths, so a host can drop entries.
+  # Dot-names: a session started inside config/ drops an untracked `.claude/`
+  # there, which a `path:` eval would otherwise deploy as a skill.
+  skillDirs =
+    builtins.filter (name: keep name && !lib.hasPrefix "." name)
+    (builtins.attrNames (builtins.readDir ./config/skills));
+  agentFiles = builtins.filter (f: keep (lib.removeSuffix ".md" f)) (builtins.attrNames
+    (lib.filterAttrs (name: type: type == "regular" && lib.hasSuffix ".md" name)
+      (builtins.readDir ./config/agents)));
+
   skillNames =
-    builtins.attrNames (builtins.readDir ./config/skills)
+    skillDirs
     ++ map (lib.removeSuffix ".md")
     (builtins.attrNames
       (lib.filterAttrs (_: type: type == "regular") (builtins.readDir ./config/commands)));
@@ -49,15 +61,19 @@
     "www.gh-dash.dev"
   ];
 in {
-  imports = [./friction-log];
+  imports = [./friction-log ./excluded.nix];
 
   programs.claude-code = {
     enable = true;
     context = ./config/CLAUDE.md;
-    agentsDir = ./config/agents;
+    agents = builtins.listToAttrs (map (f: {
+        name = lib.removeSuffix ".md" f;
+        value = ./config/agents + "/${f}";
+      })
+      agentFiles);
     commandsDir = ./config/commands;
     hooksDir = ./config/hooks;
-    skills = ./config/skills;
+    skills = lib.genAttrs skillDirs (name: ./config/skills + "/${name}");
     settings = {
       hooks.PreToolUse = [
         {
