@@ -619,7 +619,6 @@ awk -F/ '
     else if (area == "analytics")     owner = "analytics-friction-analysis";
     else if (area == "regressions")   owner = "regression-analysis";
     else if (area == "consolidated")  owner = "evidence-consolidation";
-    else if (area == "dead-code")     owner = "dead-code-survey";
     else if (area == "changelogs")    owner = "changelog-generation";
     else if (area == "config-health") owner = "config-health";
     # The ledger belongs to this reviewer, not to a run; counting it would have

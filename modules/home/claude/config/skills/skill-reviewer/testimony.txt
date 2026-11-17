@@ -38,18 +38,6 @@
 # silently wins on file order rather than on recency.
 
 regression-analysis 2026-08-17 run-at-least-once-leaving-no-record-in-any-machine-arm
-dead-code-survey 2026-08-12 run-composed-inside-regression-or-analytics-review
 error-triage 2026-08-12 run-composed-inside-regression-or-analytics-review
 evidence-consolidation 2026-08-12 run-composed-inside-regression-or-analytics-review
 skill-reviewer 2026-08-12 run-inline-against-pre-pr-autonomous-and-investigate
-
-# Adopted on 2026-08-19, superseding an `unadopted` line dated 2026-08-12. The
-# direct arm independently shows 1 session with a last run of 2026-08-18, so this
-# line is no longer what keeps the unit from reading as unused — it is here to
-# retire the earlier claim, which the VIA column would otherwise keep printing.
-npm-cve 2026-08-19 adopted-since-the-2026-08-12-unadopted-note-direct-arm-agrees
-
-# Named by the user on 2026-08-12 as not yet adopted: "I need to be better about
-# the asana review and the npm-cve skills." npm-cve has since been adopted, above.
-# Recorded so a sweep reports "unadopted, known" instead of asking again.
-asana-review 2026-08-12 unadopted-user-intends-to-adopt
