@@ -20,5 +20,13 @@ exclude_commands = [
   # Reads -v as its own --verbose (returns the matches) and -h as --help;
   # exit 0, clean stderr.
   "grep",
+  # Rewritten to `rtk prisma`, which calls a global `prisma` binary that isn't
+  # installed (prisma is a per-project dev dependency): "No such file or
+  # directory". Every spelling that rewrites is listed, since it is unverified
+  # whether a prefix matches before or after rtk strips `npx`/`pnpm exec`.
+  "prisma",
+  "npx prisma",
+  "pnpm exec prisma",
+  "pnpm prisma",
 ]
 transparent_prefixes = []
