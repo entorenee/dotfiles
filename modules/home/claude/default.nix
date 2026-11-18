@@ -274,10 +274,11 @@ in {
           "Bash(wt list*)"
           "Bash(wt --help*)"
           "Bash(wt --version*)"
-          # beads — reads and local-database writes only. `bd dolt push` is left
-          # out so it prompts: it writes refs/dolt/data on a shared remote. Also
-          # absent: `bd init` (writes repo files) and `bd delete`. rtk has no
-          # equivalent for any `bd` form (exit 1).
+          # beads — reads and local-database writes only. No `bd dolt push/pull`:
+          # both need ~/.ssh, which the sandbox denies, and the user runs them by
+          # hand so each Yubikey touch has a known cause. Also absent: `bd init`
+          # (writes repo files) and `bd delete`. rtk has no equivalent for any
+          # `bd` form (exit 1).
           "Bash(bd list*)"
           "Bash(bd show*)"
           "Bash(bd ready*)"
@@ -286,7 +287,6 @@ in {
           "Bash(bd update*)"
           "Bash(bd close*)"
           "Bash(bd dep*)"
-          "Bash(bd dolt pull*)"
           "Bash(bd version*)"
           # git read-only
           "Bash(git log*)"
