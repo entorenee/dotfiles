@@ -23,6 +23,7 @@ in {
       age # age-keygen, for generating the per-machine unlock identities
       agenix # from agenix.overlays.default in flake.nix, not nixpkgs
       bash # tmux theme needs a more recent version of bash
+      unstable.beads # `bd`; stable 26.05 lags (1.0.x) behind its Dolt-era releases
       caddy
       cargo # Nix LSP dependency
       git-lfs
