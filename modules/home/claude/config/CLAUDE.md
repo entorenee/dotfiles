@@ -279,7 +279,10 @@ remote.
 ## Beads trial (until 2026-12-16)
 
 - **Arms live in `$MY_AGENT_ARTIFACTS_ROOT/dotfiles/beads-trial/arms.tsv`**, never in issue
-  labels. At `wt switch --create` I state the arm; you append `repo<TAB>branch<TAB>arm<TAB>date`.
+  labels. Whenever you hand over a `wt switch --create` for `fw_monorepo`, state its arm: the
+  opposite of the last real row (`-` rows only gate). Every new branch counts, fixes included;
+  an existing branch never changes arm. Once I confirm the worktree, append
+  `repo<TAB>branch<TAB>arm<TAB>date`.
 - **Beads branch:** state lives in `bd`, not in progress ledgers or plan status blocks. Create
   the issue before the first product edit, read it (`bd ready`, `bd show`) on resume, and record
   decisions and progress with `bd update`. Name the issue ID when handing back a commit.
