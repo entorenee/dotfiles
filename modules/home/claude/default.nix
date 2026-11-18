@@ -137,6 +137,17 @@ in {
             }
           ];
         }
+        # Beads trial: primes beads-arm sessions, silent everywhere else. The
+        # script bounds bd at 3 s itself; this timeout caps the whole hook.
+        {
+          hooks = [
+            {
+              type = "command";
+              command = "~/.claude/hooks/beads-prime.sh";
+              timeout = 5;
+            }
+          ];
+        }
       ];
       enabledPlugins = {
         "typescript-lsp@claude-plugins-official" = true;

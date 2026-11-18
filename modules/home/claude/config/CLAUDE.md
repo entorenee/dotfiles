@@ -276,6 +276,21 @@ remote.
   line which layer blocked it, and continue with everything else the task allows. Reporting a
   block without a runnable handover is an incomplete answer.
 
+## Beads trial (until 2026-12-16)
+
+- **Arms live in `$MY_AGENT_ARTIFACTS_ROOT/dotfiles/beads-trial/arms.tsv`**, never in issue
+  labels. At `wt switch --create` I state the arm; you append `repo<TAB>branch<TAB>arm<TAB>date`.
+- **Beads branch:** state lives in `bd`, not in progress ledgers or plan status blocks. Create
+  the issue before the first product edit, read it (`bd ready`, `bd show`) on resume, and record
+  decisions and progress with `bd update`. Name the issue ID when handing back a commit.
+- **Control branch:** never touch the monorepo beads database; work as before.
+- **Friction from any session**, with the session ID in `-d`:
+  `BEADS_DIR="$HOME/dotfiles/.beads" bd create "<one line>" -l friction -d "session <id>"`.
+- **dotfiles sync is mine:** I run `bd dolt pull` at session start and `bd dolt push` at the end.
+  Remind me; never run either.
+- **Change freeze until the end date:** skill and `CLAUDE.md` edits only for breakage, each dated
+  in `trial-log.md`.
+
 ## Git Worktree Workflow
 
 I use **worktrunk** (`wt`) for all worktree management. **Never use raw `git worktree`
