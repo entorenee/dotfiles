@@ -4,6 +4,12 @@ filters:
 properties:
   catno:
     displayName: Cat. no.
+  condition:
+    displayName: Condition (media)
+  discogs:
+    displayName: Discogs
+  sleeve:
+    displayName: Sleeve
   source:
     displayName: Got it from
 views:
@@ -35,6 +41,9 @@ views:
       - label
       - catno
       - condition
+      - sleeve
+      - acquired
+      - discogs
   - type: table
     name: CD
     filters:

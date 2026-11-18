@@ -34,6 +34,7 @@ Additionally, a sample starter vault including some Templates can be found in `s
 
 - One note per release in `Releases/`, named `Artist - Album (Format)` so the quick switcher works as an artist or album lookup.
 - New notes come from `Templates/Release.md`. `format` is `vinyl`, `cd` or `digital`; the views in `Collection.base` filter on those exact values. `source` is where it came from (a shop, Bandcamp, a gift), and has a view of its own.
-- `mbid` is the MusicBrainz release ID. It's optional, but it identifies the exact pressing, which keeps the data portable to beets or a MusicBrainz collection later.
+- `mbid` is the MusicBrainz release ID and `discogs` the Discogs release URL. Either, both or neither may be set; each identifies the exact pressing, which keeps the data portable. CDs and digital albums are mirrored to a MusicBrainz collection by beets; vinyl is catalogued on Discogs instead, since MusicBrainz lacks most pressings.
+- `condition` is the media grade and `sleeve` the sleeve grade, Goldmine-style (`M`, `NM`, `VG+`, …), matching Discogs' two condition fields.
 - Property search also works without a base: `[artist:Radiohead]`, `[format:cd]`.
 - Syncthing must ignore `.obsidian`: every file in it is a symlink into the Nix store, which a phone can't follow. Configure the phone's copy by hand.
