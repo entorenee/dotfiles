@@ -6,6 +6,9 @@ config/iterm2/AppSupport
 result
 result-*
 
+# Python bytecode
+__pycache__/
+
 # AI Ignore
 .claude/settings.local.json
 **/docs/local/

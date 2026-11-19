@@ -35,6 +35,8 @@ in {
   "beets-listenbrainz.age".publicKeys = [breakGlass hesterUser];
   # MusicBrainz username + Applications-page token for beets' mbcollection.
   "beets-musicbrainz.age".publicKeys = [breakGlass hesterUser];
+  # Discogs personal access token for discogs-notes (Settings → Developers).
+  "discogs-token.age".publicKeys = [breakGlass hesterUser];
 
   # Access Home Server MPD instance
   "mpd-password.age".publicKeys = [breakGlass fwUser hesterUser];
