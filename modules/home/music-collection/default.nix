@@ -10,7 +10,7 @@
     name = "collection-notes";
     runtimeInputs = [config.programs.beets.package pkgs.python3];
     runtimeEnv = {
-      GENERATOR = ./scripts/beets-to-vault.py;
+      GENERATOR = "${./scripts/beets-to-vault.py}";
       RELEASES_DIR = "${config.home.homeDirectory}/${vault.target}/Releases";
     };
     text = builtins.readFile ./scripts/collection-notes.sh;
@@ -22,7 +22,7 @@
     name = "discogs-notes";
     runtimeInputs = [pkgs.python3];
     runtimeEnv = {
-      GENERATOR = ./scripts/discogs-to-vault.py;
+      GENERATOR = "${./scripts/discogs-to-vault.py}";
       RELEASES_DIR = "${config.home.homeDirectory}/${vault.target}/Releases";
       SNAPSHOT_DIR = "${config.home.homeDirectory}/Music/.discogs";
       DISCOGS_TOKEN_FILE = config.age.secrets.discogs-token.path;
