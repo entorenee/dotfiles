@@ -82,3 +82,17 @@ views:
       - file.name
       - format
       - acquired
+  - type: table
+    name: Needs review
+    filters:
+      or:
+        - acquired.isEmpty()
+        - source.isEmpty()
+    groupBy:
+      property: format
+      direction: ASC
+    order:
+      - file.name
+      - source
+      - condition
+      - acquired

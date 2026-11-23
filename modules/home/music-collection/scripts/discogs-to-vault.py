@@ -138,7 +138,6 @@ def normalize(item, ids):
         "catno": label.get("catno", ""),
         "condition": notes.get(ids.get("condition"), ""),
         "sleeve": notes.get(ids.get("sleeve"), ""),
-        "acquired": item["date_added"][:10],
         "notes": notes.get(ids.get("notes"), ""),
         "is_vinyl": any(f["name"] == "Vinyl" for f in b["formats"]),
         "tags": [],
@@ -152,7 +151,7 @@ def read_csv(path):
     if "release_id" not in cols:
         sys.exit(f"{path}: no release_id column; have: {', '.join(cols.values())}")
     wanted = ["artist", "title", "label", "catalog#", "format", "released",
-              "date added", "collection media condition",
+              "collection media condition",
               "collection sleeve condition", "collection notes"]
     missing = [w for w in wanted if w not in cols]
     if missing:
@@ -175,7 +174,6 @@ def normalize_csv(row):
         "catno": row["catalog#"],
         "condition": row["collection media condition"],
         "sleeve": row["collection sleeve condition"],
-        "acquired": row["date added"][:10],
         "notes": row["collection notes"],
         "is_vinyl": bool(CSV_VINYL.search(row["format"])),
         # No master lookup from a CSV, so this is the pressing's year.
@@ -234,7 +232,9 @@ def note(r):
         f'catno: {y(r["catno"])}',
         f'condition: {y(r["condition"])}',
         f'sleeve: {y(r["sleeve"])}',
-        f'acquired: {r["acquired"]}',
+        # Discogs' date_added is when it was catalogued, not bought; a blank
+        # date is what flags the note for review.
+        "acquired:",
         f'mbid: {r.get("mbid", "")}',
         "releasegroup:",
         f'discogs: https://www.discogs.com/release/{r["release_id"]}',

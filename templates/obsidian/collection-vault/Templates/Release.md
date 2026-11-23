@@ -9,7 +9,7 @@ label:
 catno:
 condition:
 sleeve:
-acquired: "{{date}}"
+acquired:
 mbid:
 releasegroup:
 discogs:
