@@ -29,8 +29,8 @@ views:
         - kind == "shop"
     order:
       - file.name
-      - location
       - address
+      - location
       - status
       - specialties
       - formula.purchases
