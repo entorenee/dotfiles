@@ -1,0 +1,60 @@
+filters:
+  and:
+    - file.inFolder("Stores")
+formulas:
+  purchases: file.backlinks.length
+properties:
+  formula.purchases:
+    displayName: Purchases
+  first_visit:
+    displayName: First visit
+views:
+  - type: table
+    name: All stores
+    order:
+      - file.name
+      - kind
+      - location
+      - status
+      - formula.purchases
+      - first_visit
+      - website
+    sort:
+      - property: formula.purchases
+        direction: DESC
+  - type: table
+    name: Shops
+    filters:
+      and:
+        - kind == "shop"
+    order:
+      - file.name
+      - location
+      - address
+      - status
+      - specialties
+      - formula.purchases
+      - first_visit
+  - type: table
+    name: Want to visit
+    filters:
+      and:
+        - kind == "shop"
+        - status == "open"
+        - first_visit.isEmpty()
+    order:
+      - file.name
+      - location
+      - address
+      - specialties
+  - type: table
+    name: Online
+    filters:
+      and:
+        - kind == "online"
+    order:
+      - file.name
+      - website
+      - discogs
+      - status
+      - formula.purchases
