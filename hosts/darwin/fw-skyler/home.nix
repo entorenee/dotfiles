@@ -15,6 +15,7 @@ in {
   home.packages = with pkgs; [
     cocoapods
     doctl
+    maestro
     mkcert
     ngrok
     ruby
