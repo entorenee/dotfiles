@@ -1,0 +1,93 @@
+filters:
+  and:
+    - file.inFolder("Wants")
+properties:
+  section:
+    displayName: Section
+  max_price:
+    displayName: Max
+  discogs_low:
+    displayName: Discogs low
+  for_sale:
+    displayName: For sale
+views:
+  - type: table
+    name: All
+    groupBy:
+      property: section
+      direction: ASC
+    order:
+      - file.name
+      - medium
+      - pressing
+      - max_price
+      - discogs_low
+      - for_sale
+    sort:
+      - property: artist
+        direction: ASC
+      - property: album
+        direction: ASC
+  - type: table
+    name: Vinyl
+    filters:
+      or:
+        - medium.contains("vinyl")
+        - medium.isEmpty()
+    groupBy:
+      property: section
+      direction: ASC
+    order:
+      - file.name
+      - medium
+      - pressing
+      - max_price
+      - discogs_low
+      - for_sale
+    sort:
+      - property: artist
+        direction: ASC
+      - property: album
+        direction: ASC
+  - type: table
+    name: CD
+    filters:
+      or:
+        - medium.contains("cd")
+        - medium.isEmpty()
+    groupBy:
+      property: section
+      direction: ASC
+    order:
+      - file.name
+      - medium
+      - pressing
+      - max_price
+      - discogs_low
+      - for_sale
+    sort:
+      - property: artist
+        direction: ASC
+      - property: album
+        direction: ASC
+  - type: table
+    name: Digital
+    filters:
+      or:
+        - medium.contains("digital")
+        - medium.isEmpty()
+    groupBy:
+      property: section
+      direction: ASC
+    order:
+      - file.name
+      - medium
+      - pressing
+      - max_price
+      - discogs_low
+      - for_sale
+    sort:
+      - property: artist
+        direction: ASC
+      - property: album
+        direction: ASC

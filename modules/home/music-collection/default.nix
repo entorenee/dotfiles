@@ -57,7 +57,7 @@ in {
       settings = {
         app = {
           newFileLocation = "folder";
-          newFileFolderPath = "Releases";
+          newFileFolderPath = "Inbox";
           vimMode = true;
         };
         corePlugins = [
@@ -81,6 +81,13 @@ in {
             acquired = "date";
             first_visit = "date";
             price = "number";
+            # Wants/: `medium` is a list of vinyl|cd|digital, not `format`,
+            # because a property name has one type across the vault.
+            medium = "multitext";
+            max_price = "number";
+            discogs_low = "number";
+            for_sale = "number";
+            price_checked = "date";
           };
         };
       };
