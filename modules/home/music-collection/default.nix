@@ -74,6 +74,15 @@ in {
             settings.folder = "Templates";
           }
         ];
+        # Obsidian infers a property's type from its value, so one left blank
+        # in every note shows as Text.
+        extraFiles."types.json".text = builtins.toJSON {
+          types = {
+            acquired = "date";
+            first_visit = "date";
+            price = "number";
+          };
+        };
       };
     };
   };
