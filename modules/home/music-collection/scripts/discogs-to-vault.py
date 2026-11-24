@@ -191,6 +191,7 @@ def note(r):
         # Discogs' date_added is when it was catalogued, not bought; a blank
         # date is what flags the note for review.
         "acquired:",
+        "price:",
         f'mbid: {r.get("mbid", "")}',
         "releasegroup:",
         f'discogs: https://www.discogs.com/release/{r["release_id"]}',

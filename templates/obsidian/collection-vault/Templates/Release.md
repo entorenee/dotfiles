@@ -10,6 +10,7 @@ catno:
 condition:
 sleeve:
 acquired:
+price:
 mbid:
 releasegroup:
 discogs:

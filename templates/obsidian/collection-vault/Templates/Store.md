@@ -26,6 +26,7 @@ views:
       - format
       - condition
       - acquired
+      - price
     sort:
       - property: acquired
         direction: DESC

@@ -10,6 +10,8 @@ properties:
     displayName: Discogs
   sleeve:
     displayName: Sleeve
+  price:
+    displayName: Price
   source:
     displayName: Got it from
 views:
@@ -43,6 +45,7 @@ views:
       - condition
       - sleeve
       - acquired
+      - price
       - discogs
   - type: table
     name: CD
@@ -60,6 +63,7 @@ views:
       - label
       - catno
       - condition
+      - price
   - type: table
     name: Digital
     filters:
@@ -73,6 +77,7 @@ views:
       - year
       - source
       - acquired
+      - price
   - type: table
     name: By source
     groupBy:
@@ -82,6 +87,7 @@ views:
       - file.name
       - format
       - acquired
+      - price
   - type: table
     name: Needs review
     filters:

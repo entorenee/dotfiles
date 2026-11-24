@@ -59,6 +59,7 @@ for line in sys.stdin:
         "condition:",
         "sleeve:",
         "acquired:",
+        "price:",
         f'mbid: {r["mb_albumid"] if edition_match else ""}',
         f'releasegroup: {r["mb_releasegroupid"]}',
         "discogs:",
