@@ -40,4 +40,8 @@ in {
       pkgs.terminal-notifier # claude-code Notification hook banner
       pkgs.yubikey-manager
     ];
+
+  # This prevents failing builds in CIs which monitor every branch.
+  # The data itself lives in `refs/dolt/data` and is unaffected.
+  home.sessionVariables.DOLT_REMOTE_INFO_BRANCH = "";
 }
