@@ -539,6 +539,10 @@ in {
   # it may be read after the cert store is chosen.
   home.sessionVariables.CLAUDE_CODE_CERT_STORE = "bundled";
 
+  # typescript-lsp in enabledPlugins spawns this from PATH. Mason's copy does
+  # not count: it lives in ~/.local/share/nvim/mason/bin, which is nvim-only.
+  home.packages = [pkgs.typescript-language-server];
+
   programs.zsh.shellAliases = {
     claude-yolo = "claude --dangerously-skip-permissions";
   };
