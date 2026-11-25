@@ -186,7 +186,7 @@ snapshot() {
         | map({repo: .[0], branch: .[1], arm: .[2], date: .[3]})) as $rows
 
     | def armof:
-        (.start | strftime("%Y-%m-%d")) as $d
+        ((.branch_ts // .start) | strftime("%Y-%m-%d")) as $d
         | . as $s
         | [ $rows[] | select(.repo == $s.repo and .date <= $d) ] as $live
         | if ($live | length) == 0 then "unarmed"
@@ -255,6 +255,7 @@ if [ "$MODE" = selftest ]; then
   printf 'fx\tfeat/beads\tbeads\t2026-11-01\n' >>"$TRIAL/arms.tsv"
   printf 'fx\tfeat/control\tcontrol\t2026-11-01\n' >>"$TRIAL/arms.tsv"
   printf 'fx\tfeat/foreign\tbeads\t2026-11-01\n' >>"$TRIAL/arms.tsv"
+  printf 'fx\tfeat/scoped\tbeads\t2026-11-16\n' >>"$TRIAL/arms.tsv"
 
   # Record builders. $BR is the session's gitBranch ("" omits the field);
   # every record gets the next minute so ordering is explicit. N is bumped in
@@ -347,6 +348,20 @@ if [ "$MODE" = selftest ]; then
     edit /nonexistent/fx/src/b.ts
   } >"$T/projects/-fx/foreign.jsonl"
 
+  # scoped: starts on the default branch the day before its worktree (and arms
+  # row) exists, then moves onto it. The whole session is the branch's, and its
+  # arm is dated from when it joined the branch, not from session start.
+  SID=scoped DAY=2026-11-15T23 BR=develop N=0
+  {
+    human "scope the change"
+    human "that's wrong"
+    edit "$HOME/.claude/projects/-fx/memory/s.md"
+    DAY=2026-11-16T09 BR=feat/scoped
+    tool Bash '{"command":"bd create \"scoped\" -t task"}' s1
+    result s1 "✓ Created issue: fx-sco — scoped"
+    edit /nonexistent/fx/src/c.ts
+  } >"$T/projects/-fx/scoped.jsonl"
+
   # Gated repo, unlisted branch → control. Ungated repo → unarmed.
   SID=unlisted DAY=2026-11-14T10 BR=feat/unlisted N=0
   { human "hello"; } >"$T/projects/-fx/unlisted.jsonl"
@@ -379,10 +394,11 @@ if [ "$MODE" = selftest ]; then
   }
   B='.repos.fx.arms.beads'
   C='.repos.fx.arms.control'
-  check "beads: state edits (progress + memory, not product)" "$B.state_edits" 2
-  check "beads: corrections" "$B.corrections" 1
-  check "beads: own issue before first edit; foreign + decoy add 0" "$B.issue_before_first_edit" 1
-  check "beads: two branches listed" "$B.branches" 2
+  check "beads: state edits (progress + memory, not product)" "$B.state_edits" 3
+  check "beads: corrections, including scoping before the move" "$B.corrections" 2
+  check "beads: own issue before first edit; foreign + decoy add 0" "$B.issue_before_first_edit" 2
+  check "beads: three branches listed" "$B.branches" 3
+  check "beads: scoped session counts on the branch it moved to" "$B.sessions" 3
   check "control: state edits" "$C.state_edits" 4
   check "control: corrections (window excludes the August session)" "$C.corrections" 5
   check "control: pre-pr runs" "$C.prepr_runs" 1

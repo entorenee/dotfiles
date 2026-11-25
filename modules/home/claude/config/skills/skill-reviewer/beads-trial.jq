@@ -165,17 +165,25 @@ parse
         else . end)
       | .n ) as $prepr_corr
 
-  | ([ $t[] | select(.branch != null and .branch != "") | .branch ] | first? // null) as $branch
-  | ([ $t[] | select(.cwd != null) | .cwd ] | first? // null) as $cwd
+  # The session belongs to the branch it ends on: scoping happens on the
+  # default branch, then the session moves into the new worktree with /cd, so
+  # the first branch seen is the wrong one. Detached HEAD reports as "HEAD";
+  # neither it nor a missing branch can be assigned to an arm, so a session
+  # with no other branch goes to unattributed.
+  | ([ $t[] | select(.branch != null and .branch != "" and .branch != "HEAD") | .branch ]
+     | last? // null) as $branch
+  # Where the session joined that branch. Its arms row is dated the day the
+  # worktree was created, which can be after the session started.
+  | ([ $t[] | select($branch != null and .branch == $branch) ] | first? // null) as $entered
+  | ($entered.cwd // ([ $t[] | select(.cwd != null) | .cwd ] | first? // null)) as $cwd
   | ([ $t[] | .inv[] ]) as $allinv
 
   | { file: $file,
       session: ([ $recs[] | .sessionId | strings ] | first? // null),
       cwd: $cwd,
-      # Detached HEAD reports as "HEAD"; neither it nor a missing branch can be
-      # assigned to an arm, so both go to unattributed.
-      branch: (if $branch == "HEAD" then null else $branch end),
+      branch: $branch,
       start: ([ $t[] | .ts | numbers ] | min),
+      branch_ts: $entered.ts,
       state_edits: ([ $t[] | .edits[] | select(isstate) ] | length),
       handoff_runs: ([ $allinv[] | select(. == "handoff") ] | length),
       reflect_runs: ([ $allinv[] | select(. == "reflect") ] | length),
