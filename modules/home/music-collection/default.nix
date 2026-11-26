@@ -29,10 +29,25 @@
     };
     text = ''python3 -I "$GENERATOR" "$RELEASES_DIR" "$SNAPSHOT_DIR" "$@"'';
   };
-in {
-  home.packages = [collectionNotes discogsNotes];
 
-  # Discogs personal access token, read by discogs-notes.
+  # Add a Wants/ note for every Discogs wantlist item that lacks one. Dry-run
+  # by default; pass --write.
+  discogsWants = pkgs.writeShellApplication {
+    name = "discogs-wants";
+    runtimeInputs = [pkgs.python3];
+    runtimeEnv = {
+      GENERATOR = "${./scripts/discogs-to-vault.py}";
+      RELEASES_DIR = "${config.home.homeDirectory}/${vault.target}/Releases";
+      WANTS_DIR = "${config.home.homeDirectory}/${vault.target}/Wants";
+      SNAPSHOT_DIR = "${config.home.homeDirectory}/Music/.discogs";
+      DISCOGS_TOKEN_FILE = config.age.secrets.discogs-token.path;
+    };
+    text = ''python3 -I "$GENERATOR" "$RELEASES_DIR" "$SNAPSHOT_DIR" --wants "$WANTS_DIR" "$@"'';
+  };
+in {
+  home.packages = [collectionNotes discogsNotes discogsWants];
+
+  # Discogs personal access token, read by discogs-notes and discogs-wants.
   age.secrets.discogs-token = {
     file = ../../../secrets/discogs-token.age;
     path = "${config.xdg.configHome}/discogs/token";

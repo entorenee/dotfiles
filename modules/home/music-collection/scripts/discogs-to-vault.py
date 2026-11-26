@@ -3,6 +3,9 @@ Reads the collection with the token in $DISCOGS_TOKEN_FILE. Fills mbid when
 MusicBrainz links the pressing, unless --no-mb. Skips records that already
 have a note. Dry-run unless --write, which also saves the raw responses to
 <snapshot dir>/<date>.json.
+With --wants, writes one Wants/ note per Discogs wantlist item instead, skipping
+wants already noted, owned in Releases/, or deleted from Wants/ since an earlier
+run; --write saves <snapshot dir>/wants-<timestamp>.json.
 Usage: discogs-to-vault.py <Releases dir> <snapshot dir> [--write] [--no-mb]
        [--wants <Wants dir>]"""
 
@@ -22,6 +25,8 @@ MB = "https://musicbrainz.org/ws/2/url"
 UA = "collection-notes/1.0"
 BAD = re.compile(r'[\\/:*?"<>|#^\[\]]')
 RELEASE_ID = re.compile(r"/release/(\d+)")
+MASTER_ID = re.compile(r"/master/(\d+)")
+MEDIUM = {"Vinyl": "vinyl", "CD": "cd", "File": "digital"}
 # Discogs disambiguates same-named artists with a " (2)" suffix.
 DISAMBIG = re.compile(r" \(\d+\)$")
 
@@ -297,6 +302,181 @@ def run_collection(args):
           file=sys.stderr)
 
 
+def fetch_wants(user):
+    wants = []
+    url = f"{API}/users/{user}/wants?per_page=100"
+    while url:
+        page = get(url)
+        wants += page["wants"]
+        url = page["pagination"]["urls"].get("next")
+    return wants
+
+
+def normalize_want(item):
+    b = item["basic_information"]
+    label = b["labels"][0] if b.get("labels") else {}
+    medium = []
+    for f in b["formats"]:
+        m = MEDIUM.get(f["name"])
+        if m and m not in medium:
+            medium.append(m)
+    return {
+        "release_id": b["id"],
+        "master_id": b.get("master_id") or 0,
+        "artist": artist_name(b["artists"]),
+        "album": b["title"],
+        "year": b.get("year") or "",
+        "section": (b.get("genres") or [""])[0],
+        "medium": medium,
+        "pressing": pressing(b["formats"]),
+        "label": label.get("name", ""),
+        "catno": label.get("catno", ""),
+        "notes": item.get("notes") or "",
+        "formats": [f["name"] for f in b["formats"]],
+    }
+
+
+def want_note(w):
+    master = (f'https://www.discogs.com/master/{w["master_id"]}'
+              if w["master_id"] else "")
+    lines = [
+        "---",
+        f'artist: {y(w["artist"])}',
+        f'album: {y(w["album"])}',
+        f'year: {w["year"]}',
+        f'section: {y(w["section"])}',
+        f'medium: [{", ".join(w["medium"])}]',
+        f'pressing: {y(w["pressing"])}',
+        f'label: {y(w["label"])}',
+        f'catno: {y(w["catno"])}',
+        "max_price:",
+        f'discogs: https://www.discogs.com/release/{w["release_id"]}',
+        f"master: {master}",
+        "discogs_low:",
+        "for_sale:",
+        "price_checked:",
+        "---",
+        "",
+        "## Notes",
+        "",
+    ]
+    if w["notes"].strip():
+        lines += [w["notes"].strip(), ""]
+    return "\n".join(line.rstrip() for line in lines)
+
+
+def want_filename(w, suffix=""):
+    title = f'{w["artist"]} - {w["album"]}' if w["album"] else w["artist"]
+    name = BAD.sub("", f"{title} (Want{suffix})")
+    return re.sub(r"\s+", " ", name).strip() + ".md"
+
+
+def want_index(directory):
+    """Map release ID and master ID → want note path, from frontmatter links."""
+    by_release, by_master = {}, {}
+    for path in directory.glob("*.md"):
+        fm = frontmatter(path)
+        m = RELEASE_ID.search(fm.get("discogs", ""))
+        if m:
+            by_release[int(m.group(1))] = path
+        m = MASTER_ID.search(fm.get("master", ""))
+        if m:
+            by_master[int(m.group(1))] = path
+    return by_release, by_master
+
+
+def previous_imported(snap_dir):
+    snaps = sorted(snap_dir.glob("wants-*.json"))
+    if not snaps:
+        return set()
+    return set(json.loads(snaps[-1].read_text()).get("imported", []))
+
+
+def run_wants(args):
+    releases_dir, snap_dir, wants_dir = args.out_dir, args.snap_dir, args.wants
+    write = args.write
+    user = get(f"{API}/oauth/identity")["username"]
+    items = fetch_wants(user)
+    wants = [normalize_want(i) for i in items]
+    owned = vault_index(releases_dir)
+    by_release, by_master = want_index(wants_dir)
+    # A note with only a master link is an any-pressing want covering them all.
+    master_only = {mid for mid, p in by_master.items()
+                   if p not in by_release.values()}
+    before = previous_imported(snap_dir)
+
+    todo = []
+    skipped = n_owned = n_deleted = 0
+    for w in wants:
+        rid = w["release_id"]
+        if rid in by_release or w["master_id"] in master_only:
+            skipped += 1
+        elif rid in owned:
+            n_owned += 1
+            print(f"already owned, still on Discogs wantlist: {owned[rid].name}",
+                  file=sys.stderr)
+        elif rid in before:
+            n_deleted += 1
+            print("deleted in vault, still on Discogs wantlist: "
+                  + want_filename(w), file=sys.stderr)
+        else:
+            todo.append(w)
+
+    masters = {}
+    for w in todo:
+        mid = w["master_id"]
+        if mid and mid not in masters:
+            masters[mid] = get(f"{API}/masters/{mid}")
+        if mid and masters[mid].get("year"):
+            w["year"] = masters[mid]["year"]
+
+    made = collisions = 0
+    taken, created = set(), set()
+    for w in todo:
+        path = wants_dir / want_filename(w)
+        # Only a note linked to another pressing proves this is a second one.
+        if (path.exists() and path.name not in taken
+                and path not in by_release.values()):
+            collisions += 1
+            print(f"skipped, note exists without this discogs link: {path.name}",
+                  file=sys.stderr)
+            continue
+        if path.exists() or path.name in taken:
+            path = wants_dir / want_filename(
+                w, f", {w['catno'] or w['release_id']}")
+            if path.exists() or path.name in taken:
+                collisions += 1
+                print(f"skipped, name collision: {path.name}", file=sys.stderr)
+                continue
+        unmapped = [f for f in w["formats"] if f not in MEDIUM]
+        if unmapped:
+            print(f"no medium for format {', '.join(unmapped)}: {path.name}",
+                  file=sys.stderr)
+        taken.add(path.name)
+        created.add(w["release_id"])
+        made += 1
+        if write:
+            path.write_text(want_note(w))
+        else:
+            print(path.name)
+
+    # Written last: a run that dies partway must not advance the ledger.
+    if write:
+        on_wantlist = {w["release_id"] for w in wants}
+        imported = (before | set(by_release) | created) & on_wantlist
+        snap_dir.mkdir(parents=True, exist_ok=True)
+        stamp = datetime.datetime.now().strftime("%Y-%m-%dT%H%M%S")
+        snap = snap_dir / f"wants-{stamp}.json"
+        snap.write_text(json.dumps({"username": user, "wants": items,
+                                    "imported": sorted(imported)},
+                                   ensure_ascii=False, indent=1))
+        print(f"snapshot: {snap}", file=sys.stderr)
+
+    print(f"{'wrote' if write else 'would write'} {made}, skipped {skipped} existing,"
+          f" {n_owned} owned, {n_deleted} deleted in vault, {collisions} collisions",
+          file=sys.stderr)
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("out_dir", type=Path)
@@ -305,7 +485,10 @@ def main():
     ap.add_argument("--no-mb", action="store_true")
     ap.add_argument("--wants", type=Path, default=None)
     args = ap.parse_args()
-    run_collection(args)
+    if args.wants:
+        run_wants(args)
+    else:
+        run_collection(args)
 
 
 if __name__ == "__main__":
