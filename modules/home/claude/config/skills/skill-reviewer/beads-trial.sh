@@ -47,7 +47,7 @@ while [ $# -gt 0 ]; do
 done
 
 TRANSCRIPTS="${SKILL_TRANSCRIPT_DIR:-$HOME/.claude/projects}"
-CONFIG_DIR="${SKILL_CONFIG_DIR:-$HOME/dotfiles/modules/home/claude/config}"
+CONFIG_DIR="${SKILL_CONFIG_DIR:-$HOME/.local/state/dotfiles/active/modules/home/claude/config}"
 
 # --------------------------------------------------------------------------
 # Repo resolution. A transcript records the cwd, not the repo, and most

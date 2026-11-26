@@ -17,7 +17,7 @@ case "${1:-}" in
 esac
 
 SETTINGS="${SETTINGS:-$HOME/.claude/settings.json}"
-REPO="${REPO:-$HOME/dotfiles}"
+REPO="${REPO:-$HOME/.local/state/dotfiles/active}"
 # Overridable so --selftest can point each check at a fixture tree. Every one
 # defaults to the live path, so an unset environment behaves exactly as before.
 CFG="${CFG:-$REPO/modules/home/claude/config}"

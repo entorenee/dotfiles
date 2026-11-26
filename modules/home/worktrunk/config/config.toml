@@ -17,5 +17,5 @@ skip-shell-integration-prompt = true
 copy = "wt step copy-ignored"
 
 [post-switch]
-tmux = "$HOME/dotfiles/modules/home/worktrunk/hooks/tmux-switch.sh {{ branch | sanitize }} {{ worktree_path }}"
-pnpm-warm = "$HOME/dotfiles/modules/home/worktrunk/hooks/pnpm-warm.sh {{ worktree_path }}"
+tmux = "$HOME/.local/state/dotfiles/active/modules/home/worktrunk/hooks/tmux-switch.sh {{ branch | sanitize }} {{ worktree_path }}"
+pnpm-warm = "$HOME/.local/state/dotfiles/active/modules/home/worktrunk/hooks/pnpm-warm.sh {{ worktree_path }}"

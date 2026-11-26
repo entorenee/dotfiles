@@ -28,7 +28,7 @@
     runtimeInputs = [config.programs.beets.package pkgs.coreutils pkgs.rsync rockboxScrobble rockboxPlaylists];
     runtimeEnv = {
       ROCKBOX_CONFIG = "${./rockbox}";
-      ROCKBOX_BACKUP = "${config.home.homeDirectory}/dotfiles/modules/home/beets/rockbox-device";
+      ROCKBOX_BACKUP = "${config.home.homeDirectory}/dotfiles/main/modules/home/beets/rockbox-device";
     };
     text = builtins.readFile ./scripts/rockbox-sync.sh;
   };

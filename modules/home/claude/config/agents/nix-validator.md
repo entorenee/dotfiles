@@ -11,15 +11,15 @@ You validate Nix/home-manager configuration changes across all hosts. You run ev
 
 ## Context
 
-The dotfiles repo is at `~/dotfiles`, and `flake.nix` sits at its root.
+The dotfiles repo is at `~/.local/state/dotfiles/active`, and `flake.nix` sits at its root.
 
 **Hosts to validate** (flake outputs are keyed by hostname, not persona):
 
-| Host                                   | Dry-run command                                                                                                                |
-| -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
-| fw-skyler (work Mac)                   | `darwin-rebuild switch --flake ~/dotfiles#fw-skyler --dry-run`                                                                 |
-| lyra-silvertongue (personal Mac)       | `darwin-rebuild switch --flake ~/dotfiles#lyra-silvertongue --dry-run`                                                         |
-| hester-prynne (personal Linux desktop) | `nix run home-manager -- --extra-experimental-features 'nix-command flakes' switch --flake ~/dotfiles#hester-prynne --dry-run` |
+| Host                                   | Dry-run command                                                                                                                                    |
+| -------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| fw-skyler (work Mac)                   | `darwin-rebuild switch --flake ~/.local/state/dotfiles/active#fw-skyler --dry-run`                                                                 |
+| lyra-silvertongue (personal Mac)       | `darwin-rebuild switch --flake ~/.local/state/dotfiles/active#lyra-silvertongue --dry-run`                                                         |
+| hester-prynne (personal Linux desktop) | `nix run home-manager -- --extra-experimental-features 'nix-command flakes' switch --flake ~/.local/state/dotfiles/active#hester-prynne --dry-run` |
 
 **Important:** The macOS darwin-rebuild commands normally use `sudo`. For dry-run validation, attempt without `sudo` first. If it fails due to permissions, note it in the report — do not run `sudo` commands.
 
@@ -32,13 +32,13 @@ The dotfiles repo is at `~/dotfiles`, and `flake.nix` sits at its root.
 Determine what Nix files were modified. If invoked with context about specific files, use those. Otherwise:
 
 ```bash
-cd ~/dotfiles && git diff --name-only HEAD
+cd ~/.local/state/dotfiles/active && git diff --name-only HEAD
 ```
 
 If no uncommitted changes, check staged changes:
 
 ```bash
-cd ~/dotfiles && git diff --cached --name-only
+cd ~/.local/state/dotfiles/active && git diff --cached --name-only
 ```
 
 Report which files changed and which hosts they affect:
@@ -61,20 +61,20 @@ Run `nix eval` to catch syntax errors, infinite recursion, and type mismatches. 
 
 ```bash
 # Evaluate each host's configuration
-nix eval ~/dotfiles#darwinConfigurations.fw-skyler.system --no-write-lock-file 2>&1
-nix eval ~/dotfiles#darwinConfigurations.lyra-silvertongue.system --no-write-lock-file 2>&1
-nix eval ~/dotfiles#homeConfigurations.hester-prynne.activationPackage --no-write-lock-file 2>&1
+nix eval ~/.local/state/dotfiles/active#darwinConfigurations.fw-skyler.system --no-write-lock-file 2>&1
+nix eval ~/.local/state/dotfiles/active#darwinConfigurations.lyra-silvertongue.system --no-write-lock-file 2>&1
+nix eval ~/.local/state/dotfiles/active#homeConfigurations.hester-prynne.activationPackage --no-write-lock-file 2>&1
 
 # The Pi hosts — evaluation only, no dry-run rebuild (see Context)
-nix eval ~/dotfiles#nixosConfigurations.hub.config.system.build.toplevel.drvPath --no-write-lock-file 2>&1
-nix eval ~/dotfiles#nixosConfigurations.airgap.config.system.build.toplevel.drvPath --no-write-lock-file 2>&1
-nix eval ~/dotfiles#nixosConfigurations.uptime.config.system.build.toplevel.drvPath --no-write-lock-file 2>&1
+nix eval ~/.local/state/dotfiles/active#nixosConfigurations.hub.config.system.build.toplevel.drvPath --no-write-lock-file 2>&1
+nix eval ~/.local/state/dotfiles/active#nixosConfigurations.airgap.config.system.build.toplevel.drvPath --no-write-lock-file 2>&1
+nix eval ~/.local/state/dotfiles/active#nixosConfigurations.uptime.config.system.build.toplevel.drvPath --no-write-lock-file 2>&1
 ```
 
 If the exact flake output attributes differ, adapt by checking:
 
 ```bash
-nix flake show ~/dotfiles --no-write-lock-file 2>&1
+nix flake show ~/.local/state/dotfiles/active --no-write-lock-file 2>&1
 ```
 
 Run all evaluations and collect results. Do not stop at the first failure — validate all hosts.

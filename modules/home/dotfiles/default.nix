@@ -24,7 +24,7 @@ in {
     lib.hm.dag.entryBefore ["linkGeneration"] ''
       if [ ! -e ${lib.escapeShellArg pointer} ] && [ ! -L ${lib.escapeShellArg pointer} ]; then
         run mkdir -p ${lib.escapeShellArg (builtins.dirOf pointer)}
-        run ln -s ${lib.escapeShellArg "${config.home.homeDirectory}/dotfiles"} ${lib.escapeShellArg pointer}
+        run ln -s ${lib.escapeShellArg "${config.home.homeDirectory}/dotfiles/main"} ${lib.escapeShellArg pointer}
       fi
     ''
   );

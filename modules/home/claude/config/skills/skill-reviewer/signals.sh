@@ -366,7 +366,7 @@ rollup)
   }
   # Instruction-corpus size. Proxy for F2 (comment verbosity), which was logged
   # unmeasurable. Growth with no new rules is bloat; it costs context every run.
-  CFG="${SKILL_CONFIG_DIR:-$HOME/dotfiles/modules/home/claude/config}"
+  CFG="${SKILL_CONFIG_DIR:-$HOME/.local/state/dotfiles/active/modules/home/claude/config}"
   CORPUS=$(find "$CFG" -name '*.md' -exec cat {} + 2>/dev/null | wc -l | tr -d ' ')
   mkdir -p "$ROOT/rollups"
   STAMP=$(agg '[.[].date]|max')
