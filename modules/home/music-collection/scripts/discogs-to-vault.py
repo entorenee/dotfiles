@@ -5,7 +5,9 @@ have a note. Dry-run unless --write, which also saves the raw responses to
 <snapshot dir>/<date>.json.
 With --wants, writes one Wants/ note per Discogs wantlist item instead, skipping
 wants already noted, owned in Releases/, or deleted from Wants/ since an earlier
-run; --write saves <snapshot dir>/wants-<timestamp>.json.
+run. Then refreshes discogs_low/for_sale/price_checked on every Wants/ note with
+a release link (or, with a blank pressing, a master link); --write saves
+<snapshot dir>/wants-<timestamp>.json.
 Usage: discogs-to-vault.py <Releases dir> <snapshot dir> [--write] [--no-mb]
        [--wants <Wants dir>]"""
 
@@ -392,6 +394,72 @@ def previous_imported(snap_dir):
     return set(json.loads(snaps[-1].read_text()).get("imported", []))
 
 
+PRICE_KEYS = ("discogs_low", "for_sale", "price_checked")
+
+
+def price_for(fm):
+    """(discogs_low, for_sale) for a want, or None when it has nothing to price.
+    A blank pressing means any pressing, priced across the whole master."""
+    blank = fm.get("pressing", "") in ("", '""', "''")
+    release = RELEASE_ID.search(fm.get("discogs", ""))
+    master = MASTER_ID.search(fm.get("master", ""))
+    if not blank and release:
+        stats = get(f"{API}/marketplace/stats/{release.group(1)}")
+        low = (stats.get("lowest_price") or {}).get("value")
+    elif blank and master:
+        stats = get(f"{API}/masters/{master.group(1)}")
+        low = stats.get("lowest_price")
+    else:
+        return None
+    if low is None:
+        return "", "0"
+    return f"{low:.2f}", str(stats.get("num_for_sale") or 0)
+
+
+def set_keys(text, values):
+    """Set `key: value` lines in the first frontmatter block, inserting missing
+    keys before its closing `---`. Every other byte is left alone."""
+    lines = text.splitlines(keepends=True)
+    if not lines or lines[0].rstrip("\r\n") != "---":
+        return text
+    end = next((i for i in range(1, len(lines))
+                if lines[i].rstrip("\r\n") == "---"), None)
+    if end is None:
+        return text
+    eol = lines[0][3:] or "\n"
+    missing = dict(values)
+    for i in range(1, end):
+        key = lines[i].partition(":")[0]
+        if key in missing:
+            body = lines[i].rstrip("\r\n")
+            ending = lines[i][len(body):]
+            lines[i] = f"{key}: {missing.pop(key)}".rstrip() + ending
+    lines[end:end] = [f"{k}: {v}".rstrip() + eol for k, v in missing.items()]
+    return "".join(lines)
+
+
+def refresh_prices(wants_dir, write):
+    today = datetime.date.today().isoformat()
+    refreshed = 0
+    for path in sorted(wants_dir.glob("*.md")):
+        fm = frontmatter(path)
+        price = price_for(fm)
+        if price is None:
+            continue
+        refreshed += 1
+        low, n = price
+        text = path.read_text()
+        new = set_keys(text, dict(zip(PRICE_KEYS, (low, n, today))))
+        if new == text:
+            continue
+        if write:
+            path.write_text(new)
+        else:
+            print(f'price {path.name}: {fm.get("discogs_low", "")} → {low},'
+                  f' {fm.get("for_sale", "")} → {n}')
+    return refreshed
+
+
 def run_wants(args):
     releases_dir, snap_dir, wants_dir = args.out_dir, args.snap_dir, args.wants
     write = args.write
@@ -460,6 +528,8 @@ def run_wants(args):
         else:
             print(path.name)
 
+    refreshed = refresh_prices(wants_dir, write)
+
     # Written last: a run that dies partway must not advance the ledger.
     if write:
         on_wantlist = {w["release_id"] for w in wants}
@@ -473,8 +543,8 @@ def run_wants(args):
         print(f"snapshot: {snap}", file=sys.stderr)
 
     print(f"{'wrote' if write else 'would write'} {made}, skipped {skipped} existing,"
-          f" {n_owned} owned, {n_deleted} deleted in vault, {collisions} collisions",
-          file=sys.stderr)
+          f" {n_owned} owned, {n_deleted} deleted in vault, {collisions} collisions,"
+          f" {refreshed} prices refreshed", file=sys.stderr)
 
 
 def main():
