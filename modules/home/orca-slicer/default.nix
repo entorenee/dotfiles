@@ -4,7 +4,6 @@
   pkgs,
   ...
 }: let
-  orcaConfigPath = "${config.home.homeDirectory}/dotfiles/modules/home/orca-slicer/config";
   # nixpkgs bumped GLEW 2.2.0 → 2.3.1 and added -DGLEW_EGL=ON. The EGL-aware
   # GLEW dispatches through EGL on Wayland and calls glGetString(GL_VERSION)
   # before wxGLCanvas has made its context current, causing every glewInit()
@@ -35,5 +34,5 @@ in {
   home.packages = lib.mkIf pkgs.stdenv.isLinux [orca-slicer-wrapped];
 
   xdg.configFile."OrcaSlicer/user".source =
-    config.lib.file.mkOutOfStoreSymlink orcaConfigPath;
+    config.lib.dotfiles.link ./config;
 }

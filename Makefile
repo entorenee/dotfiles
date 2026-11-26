@@ -48,6 +48,8 @@ rebuild:
 		echo "Quit them and retry, or override with: make rebuild FORCE=1"; \
 		exit 1; \
 	fi
+	@pointer="$${XDG_STATE_HOME:-$$HOME/.local/state}/dotfiles/active"; \
+	mkdir -p "$$(dirname "$$pointer")" && ln -sfn "$(CURDIR)" "$$pointer"
 	@host="$$(hostname -s)"; \
 	if [ "$$(uname)" = "Darwin" ]; then \
 		sudo darwin-rebuild switch --flake ".#$$host"; \
