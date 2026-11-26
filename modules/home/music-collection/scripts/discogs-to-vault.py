@@ -3,7 +3,8 @@ Reads the collection with the token in $DISCOGS_TOKEN_FILE. Fills mbid when
 MusicBrainz links the pressing, unless --no-mb. Skips records that already
 have a note. Dry-run unless --write, which also saves the raw responses to
 <snapshot dir>/<date>.json.
-Usage: discogs-to-vault.py <Releases dir> <snapshot dir> [--write] [--no-mb]"""
+Usage: discogs-to-vault.py <Releases dir> <snapshot dir> [--write] [--no-mb]
+       [--wants <Wants dir>]"""
 
 import argparse
 import datetime
@@ -23,14 +24,6 @@ BAD = re.compile(r'[\\/:*?"<>|#^\[\]]')
 RELEASE_ID = re.compile(r"/release/(\d+)")
 # Discogs disambiguates same-named artists with a " (2)" suffix.
 DISAMBIG = re.compile(r" \(\d+\)$")
-
-ap = argparse.ArgumentParser()
-ap.add_argument("out_dir", type=Path)
-ap.add_argument("snap_dir", type=Path)
-ap.add_argument("--write", action="store_true")
-ap.add_argument("--no-mb", action="store_true")
-args = ap.parse_args()
-out_dir, snap_dir, write = args.out_dir, args.snap_dir, args.write
 
 
 def y(v):
@@ -158,20 +151,28 @@ def mb_releases(release_id, retried=False):
     return sorted({r["release"]["id"] for r in rels if "release" in r})
 
 
-def vault_index():
+def frontmatter(path):
+    """Raw `key: value` strings between the first two `---` lines."""
+    lines = path.read_text().splitlines()
+    fm = {}
+    if not lines or lines[0] != "---":
+        return fm
+    for line in lines[1:]:
+        if line == "---":
+            break
+        key, sep, value = line.partition(":")
+        if sep and key not in fm:
+            fm[key] = value.strip()
+    return fm
+
+
+def vault_index(directory):
     """Map Discogs release ID → note path, read from each note's frontmatter."""
     index = {}
-    for path in out_dir.glob("*.md"):
-        lines = path.read_text().splitlines()
-        if not lines or lines[0] != "---":
-            continue
-        for line in lines[1:]:
-            if line == "---":
-                break
-            if line.startswith("discogs:"):
-                m = RELEASE_ID.search(line)
-                if m:
-                    index[int(m.group(1))] = path
+    for path in directory.glob("*.md"):
+        m = RELEASE_ID.search(frontmatter(path).get("discogs", ""))
+        if m:
+            index[int(m.group(1))] = path
     return index
 
 
@@ -210,85 +211,102 @@ def filename(r, suffix=""):
     return re.sub(r"\s+", " ", name).strip() + ".md"
 
 
-user, fields, items = fetch()
-ids = field_ids(fields)
-records = [normalize(i, ids) for i in items]
-index = vault_index()
+def run_collection(args):
+    out_dir, snap_dir, write = args.out_dir, args.snap_dir, args.write
+    user, fields, items = fetch()
+    ids = field_ids(fields)
+    records = [normalize(i, ids) for i in items]
+    index = vault_index(out_dir)
 
-seen, todo = set(), []
-skipped = not_vinyl = 0
-for r in records:
-    if not r["is_vinyl"]:
-        not_vinyl += 1
-        continue
-    rid = r["release_id"]
-    if rid in seen:
-        print(f"warning: {rid} is in the collection twice; one note",
-              file=sys.stderr)
-        continue
-    seen.add(rid)
-    if rid in index:
-        skipped += 1
-        continue
-    todo.append(r)
-
-# Masters give the original year; fetched only for records about to be written.
-masters = {}
-for r in todo:
-    mid = r["master_id"]
-    if mid and mid not in masters:
-        masters[mid] = get(f"{API}/masters/{mid}")
-    if mid and masters[mid].get("year"):
-        r["year"] = masters[mid]["year"]
-
-for r in [] if args.no_mb else todo:
-    found = mb_releases(r["release_id"])
-    if found is None:
-        r["tags"].append("MusicBrainz unavailable")
-    elif len(found) == 1:
-        r["mbid"] = found[0]
-    elif found:
-        r["tags"].append(f"{len(found)} MusicBrainz matches: {', '.join(found)}")
-    else:
-        r["tags"].append("no MusicBrainz match")
-
-made = 0
-taken = set()
-for r in todo:
-    path = out_dir / filename(r)
-    # Only a note linked to another pressing proves this is a second one.
-    if path.exists() and path.name not in taken and path not in index.values():
-        print(f"skipped, note exists without this discogs link: {path.name}",
-              file=sys.stderr)
-        continue
-    if path.exists() or path.name in taken:
-        path = out_dir / filename(r, f", {r['catno'] or r['release_id']}")
-        if path.exists() or path.name in taken:
-            print(f"skipped, name collision: {path.name}", file=sys.stderr)
+    seen, todo = set(), []
+    skipped = not_vinyl = 0
+    for r in records:
+        if not r["is_vinyl"]:
+            not_vinyl += 1
             continue
-    taken.add(path.name)
-    made += 1
-    tags = "".join(f"[{t}] " for t in r["tags"])
+        rid = r["release_id"]
+        if rid in seen:
+            print(f"warning: {rid} is in the collection twice; one note",
+                  file=sys.stderr)
+            continue
+        seen.add(rid)
+        if rid in index:
+            skipped += 1
+            continue
+        todo.append(r)
+
+    # Masters give the original year; fetched only for records about to be written.
+    masters = {}
+    for r in todo:
+        mid = r["master_id"]
+        if mid and mid not in masters:
+            masters[mid] = get(f"{API}/masters/{mid}")
+        if mid and masters[mid].get("year"):
+            r["year"] = masters[mid]["year"]
+
+    for r in [] if args.no_mb else todo:
+        found = mb_releases(r["release_id"])
+        if found is None:
+            r["tags"].append("MusicBrainz unavailable")
+        elif len(found) == 1:
+            r["mbid"] = found[0]
+        elif found:
+            r["tags"].append(f"{len(found)} MusicBrainz matches: {', '.join(found)}")
+        else:
+            r["tags"].append("no MusicBrainz match")
+
+    made = 0
+    taken = set()
+    for r in todo:
+        path = out_dir / filename(r)
+        # Only a note linked to another pressing proves this is a second one.
+        if path.exists() and path.name not in taken and path not in index.values():
+            print(f"skipped, note exists without this discogs link: {path.name}",
+                  file=sys.stderr)
+            continue
+        if path.exists() or path.name in taken:
+            path = out_dir / filename(r, f", {r['catno'] or r['release_id']}")
+            if path.exists() or path.name in taken:
+                print(f"skipped, name collision: {path.name}", file=sys.stderr)
+                continue
+        taken.add(path.name)
+        made += 1
+        tags = "".join(f"[{t}] " for t in r["tags"])
+        if write:
+            path.write_text(note(r))
+            if tags:
+                print(f"{tags}{path.name}", file=sys.stderr)
+        else:
+            print(tags + path.name)
+
+    on_discogs = {r["release_id"] for r in records}
+    gone = sorted(p.name for rid, p in index.items() if rid not in on_discogs)
+    for name in gone:
+        print(f"in vault, not on Discogs: {name}", file=sys.stderr)
+
     if write:
-        path.write_text(note(r))
-        if tags:
-            print(f"{tags}{path.name}", file=sys.stderr)
-    else:
-        print(tags + path.name)
+        snap_dir.mkdir(parents=True, exist_ok=True)
+        snap = snap_dir / f"{datetime.date.today().isoformat()}.json"
+        snap.write_text(json.dumps({"username": user, "fields": fields,
+                                    "releases": items, "masters": masters},
+                                   ensure_ascii=False, indent=1))
+        print(f"snapshot: {snap}", file=sys.stderr)
 
-on_discogs = {r["release_id"] for r in records}
-gone = sorted(p.name for rid, p in index.items() if rid not in on_discogs)
-for name in gone:
-    print(f"in vault, not on Discogs: {name}", file=sys.stderr)
+    print(f"{'wrote' if write else 'would write'} {made}, skipped {skipped} existing,"
+          f" {not_vinyl} not vinyl, {len(gone)} in vault not on Discogs",
+          file=sys.stderr)
 
-if write:
-    snap_dir.mkdir(parents=True, exist_ok=True)
-    snap = snap_dir / f"{datetime.date.today().isoformat()}.json"
-    snap.write_text(json.dumps({"username": user, "fields": fields,
-                                "releases": items, "masters": masters},
-                               ensure_ascii=False, indent=1))
-    print(f"snapshot: {snap}", file=sys.stderr)
 
-print(f"{'wrote' if write else 'would write'} {made}, skipped {skipped} existing,"
-      f" {not_vinyl} not vinyl, {len(gone)} in vault not on Discogs",
-      file=sys.stderr)
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("out_dir", type=Path)
+    ap.add_argument("snap_dir", type=Path)
+    ap.add_argument("--write", action="store_true")
+    ap.add_argument("--no-mb", action="store_true")
+    ap.add_argument("--wants", type=Path, default=None)
+    args = ap.parse_args()
+    run_collection(args)
+
+
+if __name__ == "__main__":
+    main()
