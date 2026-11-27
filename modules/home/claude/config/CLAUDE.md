@@ -57,7 +57,7 @@ read-only — never write `settings.json` or similar directly. Point me at the N
   (`~/.claude/hooks/rtk-rewrite.sh`) pipes every Bash command through `rtk rewrite`, so
   `git status` transparently becomes `rtk git status`. The exit code is the decision: `0`
   rewrites and returns `permissionDecision: "allow"`, bypassing allow/deny matching entirely;
-  `3` rewrites and lets Claude Code prompt; `1` and `2` pass the command through untouched, so
+  `3` rewrites without deciding; `1` and `2` pass the command through untouched, so
   `permissions.deny` handles it natively. `Bash(rtk proxy*)` is denied — arbitrary-command
   escape hatch.
 - **A rewrite can silently drop a flag `rtk` does not know, and still exit 0.** It prints
@@ -278,6 +278,8 @@ remote.
 
 ## Beads trial (until 2026-12-16)
 
+- **The trial is the work monorepo only.** dotfiles uses beads on every machine,
+  unconditionally — no arm, no control, nothing to check.
 - **Arms live in `$MY_AGENT_ARTIFACTS_ROOT/dotfiles/beads-trial/arms.tsv`**, never in issue
   labels. Whenever you hand over a `wt switch --create` for `fw_monorepo`, state its arm: the
   opposite of the last real row (`-` rows only gate). Every new branch counts, fixes included;
@@ -291,8 +293,10 @@ remote.
   `BEADS_DIR="$HOME/dotfiles/main/.beads" bd create "<one line>" -l friction -d "session <id>"`.
 - **dotfiles sync is mine:** I run `bd dolt pull` at session start and `bd dolt push` at the end.
   Remind me; never run either.
-- **Change freeze until the end date:** skill and `CLAUDE.md` edits only for breakage, each dated
-  in `trial-log.md`.
+- **Change freeze until the end date:** skill and `CLAUDE.md` edits only for breakage, from any
+  repo, each dated in `$MY_AGENT_ARTIFACTS_ROOT/dotfiles/beads-trial/trial-log.md` **on the
+  machine where the edit was made** — create it if absent. Each machine keeps its own log and I
+  collect them for the decision; never hold an entry back because the log is elsewhere.
 
 ## Git Worktree Workflow
 
