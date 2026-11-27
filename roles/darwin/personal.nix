@@ -12,6 +12,7 @@
       "keepassxc"
       "libreoffice"
       "little-snitch"
+      "macfuse" # veracrypt depends on it.
       "nextcloud"
       "orcaslicer"
       "proton-mail"
