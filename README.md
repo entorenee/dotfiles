@@ -18,11 +18,10 @@ This configuration is highly opinionated and tailored to my preferences. Various
 
 ## Setup
 
-Feel free to clone or fork the repo and store the dotfiles in your **home** directory.
+Feel free to clone or fork the repo. Clone it to `~/dotfiles/main`: `~/dotfiles` is a container for the primary checkout and its worktrees, and mutable config links expect the primary there.
 
 ```
-$ cd ~
-$ git clone https://github.com/entorenee/dotfiles
+$ git clone https://github.com/entorenee/dotfiles ~/dotfiles/main
 ```
 
 ### Install Nix
@@ -38,7 +37,7 @@ curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix 
 Install nix-darwin to manage system configuration:
 
 ```
-nix run nix-darwin -- switch --flake ~/dotfiles#[fw-skyler|lyra-silvertongue]
+nix run nix-darwin -- switch --flake ~/dotfiles/main#[fw-skyler|lyra-silvertongue]
 ```
 
 ### Linux
@@ -115,16 +114,6 @@ cargo install --git https://github.com/rtk-ai/rtk
 # or
 curl -fsSL https://raw.githubusercontent.com/rtk-ai/rtk/master/install.sh | sh
 ```
-
-## Manual configuration
-
-### Iterm (likely to be deprecated)
-
-After copying the dotfiles, several pieces need to be manually set in Iterm's preferences.
-
-- Set the preference backup to `~/dotfiles/iterm2`. Make sure to ignore local settings when first selecting this to avoid overwriting the settings.
-- Set iTerm2 to save the settings on exit.
-- The zsh theme uses Powerline fonts and will not render correctly without setting the display font to a Powerline based font. I currently use Dank Mono.
 
 ## Optional App Templates
 
