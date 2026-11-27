@@ -21,6 +21,12 @@ copy = "wt step copy-ignored"
 [step.copy-ignored]
 exclude = [".beads/"]
 
+# Global, so it fires for every repo; dot-use is a no-op unless the worktree
+# being removed is the live dotfiles checkout. Store path via ~/.local/bin, not
+# the pointer — the pointer may be the very worktree going away.
+[pre-remove]
+dotfiles-pointer = '"$HOME/.local/bin/dot-use" --if-live "{{ worktree_path }}" "{{ primary_worktree_path }}"'
+
 [post-switch]
 tmux = "$HOME/.local/state/dotfiles/active/modules/home/worktrunk/hooks/tmux-switch.sh {{ branch | sanitize }} {{ worktree_path }}"
 pnpm-warm = "$HOME/.local/state/dotfiles/active/modules/home/worktrunk/hooks/pnpm-warm.sh {{ worktree_path }}"

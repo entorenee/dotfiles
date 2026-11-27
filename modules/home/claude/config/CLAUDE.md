@@ -319,11 +319,12 @@ Branch names must start with a conventional-commit prefix: `fix/`, `feat/`, `doc
   Never run `wt switch --create` yourself. Propose the branch name and hand me the exact
   `wt switch --create <branch>` command, then wait for me to confirm the worktree path before
   editing anything.
-- **Exception — the `dotfiles` repo does not use worktrees.** Work directly in `~/dotfiles`.
-  Many of its home-manager modules deploy config via `config.lib.file.mkOutOfStoreSymlink`
-  against a hardcoded `${config.home.homeDirectory}/dotfiles/...` path (see `modules/home/`
-  `ghostty`, `karabiner`, `aerospace`). A rebuild from a worktree points `~/.config/*` back at
-  the _primary_ checkout, so branch config never resolves and can't be tested until it merges.
+- **`dotfiles` uses worktrees too; making one live is a separate step.** The container is
+  `~/dotfiles/` and its primary is `~/dotfiles/main`. Mutable config links resolve through
+  `~/.local/state/dotfiles/active`: `make rebuild` from a worktree repoints that symlink at it,
+  `dot-use main` points it back with no rebuild, and a worktrunk `pre-remove` hook resets it
+  if the live worktree is removed. `dot-use` moves only the mutable links. Store-backed config
+  still needs `make rebuild` from that checkout, and the rebuild is mine to run.
 
 ### Moving a session into a new worktree mid-session
 
