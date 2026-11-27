@@ -28,5 +28,8 @@ exclude_commands = [
   "npx prisma",
   "pnpm exec prisma",
   "pnpm prisma",
+  # Rewriting after auto-mode has reviewed the call (curl with allowed_domains
+  # always gets reviewed) voids the approval: "a hook changed this call's input".
+  "curl",
 ]
 transparent_prefixes = []
