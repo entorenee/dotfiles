@@ -1,6 +1,6 @@
 #!/usr/bin/env zsh
 
-cd $HOME/dotfiles
+cd "$HOME/.local/state/dotfiles/active"
 brew update
 nix flake update --flake .
 fd .nix --exec update-nix-fetchgit

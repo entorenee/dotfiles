@@ -6,7 +6,6 @@
 }: let
   personalYubikeyIdentity = "${config.home.homeDirectory}/.ssh/id_rsa_yubikey_personal.pub";
   workYubikeyIdentity = "${config.home.homeDirectory}/.ssh/id_rsa_yubikey_work.pub";
-  ghDashConfig = "${config.home.homeDirectory}/dotfiles/hosts/darwin/fw-skyler/gh-dash.yml";
 in {
   imports = [
     ./claude.nix
@@ -43,5 +42,5 @@ in {
   };
 
   xdg.configFile."gh-dash/config.yml".source =
-    lib.mkForce (config.lib.file.mkOutOfStoreSymlink ghDashConfig);
+    lib.mkForce (config.lib.dotfiles.link ./gh-dash.yml);
 }

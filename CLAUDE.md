@@ -178,6 +178,40 @@ Role/host ordering in merged lists is not stable — `roles/` and `hosts/` defin
 - **Rebuild and switch:** `make rebuild` — auto-detects Darwin vs Linux and picks the flake attribute from the machine's hostname (`hostname -s`). **Darwin and `hester-prynne` only:** its Linux branch takes the standalone home-manager path, so on a NixOS host it fails with `does not provide attribute homeConfigurations."<host>"`. Use `make hub-switch` on the hub — see "NixOS Pi Hosts" below.
 - **Host selection:** flake outputs are keyed by hostname (`fw-skyler`, `lyra-silvertongue`, `hester-prynne`). Each `hosts/{darwin,home}/<hostname>` states `{username, system, homeImports, darwinImports ? [], overlays ? []}`; `homeImports` is one ordered list naming the tier role plus any identity or host-specific modules, and `darwinImports` is its nix-darwin counterpart (see "Identity roles live in `roles/`" below).
 
+### Testing a branch from a worktree
+
+Every `lib.dotfiles.link` (`modules/home/dotfiles/default.nix`) points at a fixed path,
+`~/.local/state/dotfiles/active/<repo path>`, rather than a checkout. That path is a symlink to
+whichever checkout is live, so the store never records where the links end up and eval stays
+pure.
+
+| To                          | Run                                  |
+| --------------------------- | ------------------------------------ |
+| Make a worktree live, fully | `make rebuild` from inside it        |
+| Swap only the mutable links | `dot-use <path or name>`, no rebuild |
+| Go back to the primary      | `dot-use main`                       |
+| See which checkout is live  | `dot-use`, which exits 1 if dangling |
+
+`make rebuild` repoints through `dot-use` itself, so both refuse anything that is not a git
+toplevel holding `flake.nix` and `roles/home/minimal.nix`. Activation only _seeds_ a missing
+pointer, at `~/dotfiles/main`, and never overwrites one. Otherwise activating a worktree build
+would snap the pointer back to the primary.
+
+**Removing the live worktree resets the pointer to the primary.** The `pre-remove` hook in
+`modules/home/worktrunk/config/config.toml` calls `dot-use --if-live`, which does nothing
+unless the worktree being removed is the live one. The hook is global to worktrunk, so it fires
+in every repo and depends on that guard. It calls the store copy in `~/.local/bin`, not the
+copy behind the pointer, because the pointer may resolve into the worktree being deleted.
+
+`dot-use` alone leaves the store unchanged. After it, the mutable links show the new checkout
+but packages, `settings.json`, and every other store-backed file stay at the last rebuild.
+Write-backs from apps that own their config (Karabiner, OrcaSlicer) land on whichever branch is
+live.
+
+`.beads/embeddeddolt` lives only in the primary. `bd` reaches it from a worktree through the
+git common dir, and `[step.copy-ignored]` excludes `.beads/` so `wt` does not copy a private,
+diverging database into a new worktree.
+
 ### Pin every Darwin host's hostname
 
 macOS keeps three separate names, and only one of them is what `hostname` returns:

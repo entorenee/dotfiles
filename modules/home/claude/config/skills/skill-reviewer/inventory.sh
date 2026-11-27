@@ -34,7 +34,7 @@ case "${1:-}" in
 --selftest) MODE=selftest ;;
 esac
 
-CONFIG_DIR="${SKILL_CONFIG_DIR:-$HOME/dotfiles/modules/home/claude/config}"
+CONFIG_DIR="${SKILL_CONFIG_DIR:-$HOME/.local/state/dotfiles/active/modules/home/claude/config}"
 TRANSCRIPTS="${SKILL_TRANSCRIPT_DIR:-$HOME/.claude/projects}"
 # Guarded, not defaulted: a wrong root finds nothing and reports every
 # report-writing skill as unused.

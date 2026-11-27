@@ -48,6 +48,7 @@ rebuild:
 		echo "Quit them and retry, or override with: make rebuild FORCE=1"; \
 		exit 1; \
 	fi
+	@modules/home/bins/bin/dot-use "$(CURDIR)"
 	@host="$$(hostname -s)"; \
 	if [ "$$(uname)" = "Darwin" ]; then \
 		sudo darwin-rebuild switch --flake ".#$$host"; \

@@ -1,0 +1,72 @@
+#!/usr/bin/env bash
+# Repoint the dotfiles active-checkout pointer. Mutable config links follow it
+# at once; store-backed config still needs `make rebuild` from that checkout.
+#
+#   dot-use                            show the live checkout
+#   dot-use <path|name>                a name resolves under ~/dotfiles (main, main.feat-x)
+#   dot-use --if-live <gone> <primary> worktrunk pre-remove: repoint to <primary>
+#                                      only if <gone> is live; never fails the removal
+set -eu
+
+pointer="${XDG_STATE_HOME:-$HOME/.local/state}/dotfiles/active"
+container="$HOME/dotfiles"
+
+resolve() {
+  if [ -d "$1" ]; then
+    (cd "$1" && pwd -P)
+  elif [ -d "$container/$1" ]; then
+    (cd "$container/$1" && pwd -P)
+  else
+    return 1
+  fi
+}
+
+# A git toplevel shaped like this repo. The markers predate the pointer module,
+# so a branch cut before it still qualifies.
+is_checkout() {
+  [ "$(git -C "$1" rev-parse --show-toplevel 2>/dev/null)" = "$1" ] &&
+    [ -f "$1/flake.nix" ] && [ -f "$1/roles/home/minimal.nix" ]
+}
+
+point() {
+  mkdir -p "$(dirname "$pointer")"
+  ln -sfn "$1" "$pointer"
+  echo "dotfiles: live checkout is now $1"
+}
+
+if [ $# -eq 0 ]; then
+  target="$(readlink "$pointer" 2>/dev/null)" || {
+    echo "dotfiles: no pointer at $pointer" >&2
+    exit 1
+  }
+  if [ -d "$target" ]; then
+    echo "$target"
+  else
+    echo "dotfiles: pointer is dangling ($target); run 'dot-use main'" >&2
+    exit 1
+  fi
+  exit 0
+fi
+
+if [ "$1" = "--if-live" ]; then
+  [ $# -eq 3 ] || exit 0
+  live="$(readlink -f "$pointer" 2>/dev/null)" || exit 0
+  gone="$(readlink -f "$2" 2>/dev/null)" || exit 0
+  [ "$live" = "$gone" ] || exit 0
+  primary="$(resolve "$3")" && is_checkout "$primary" || {
+    echo "dotfiles: removing the live checkout and $3 is not one; run dot-use" >&2
+    exit 0
+  }
+  point "$primary"
+  exit 0
+fi
+
+target="$(resolve "$1")" || {
+  echo "dotfiles: no such directory: $1" >&2
+  exit 1
+}
+is_checkout "$target" || {
+  echo "dotfiles: not a dotfiles checkout: $target" >&2
+  exit 1
+}
+point "$target"

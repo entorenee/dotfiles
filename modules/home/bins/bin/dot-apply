@@ -1,4 +1,4 @@
 #!/usr/bin/env zsh
 
-# git add ~/dotfiles
-darwin-rebuild switch --flake "/users/$SUDO_USER/dotfiles#$(hostname -s)"
+# git add ~/dotfiles/main
+darwin-rebuild switch --flake "/Users/$SUDO_USER/.local/state/dotfiles/active#$(hostname -s)"

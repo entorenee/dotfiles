@@ -4,6 +4,7 @@
   # remote, or a `~/dotfiles` checkout.
   imports = [
     ../../modules/options.nix
+    ../../modules/home/dotfiles
 
     ../../modules/home/minimal-pkgs.nix
     ../../modules/home/nvim/package.nix

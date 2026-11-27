@@ -3,9 +3,7 @@
   lib,
   pkgs,
   ...
-}: let
-  ghDashConfig = "${config.home.homeDirectory}/dotfiles/roles/home/personal-gh-dash.yml";
-in {
+}: {
   # The personal role, home-manager side — the portable subset, safe for any
   # machine doing the "personal" job, headless or not. Anything needing a GUI
   # desktop goes in ./personal-desktop.nix instead.
@@ -16,7 +14,7 @@ in {
   home.packages = [pkgs.tor];
 
   xdg.configFile."gh-dash/config.yml".source =
-    lib.mkForce (config.lib.file.mkOutOfStoreSymlink ghDashConfig);
+    lib.mkForce (config.lib.dotfiles.link ./personal-gh-dash.yml);
 
   services.syncthing.enable = true;
 }
