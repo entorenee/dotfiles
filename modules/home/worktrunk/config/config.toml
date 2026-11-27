@@ -13,6 +13,12 @@
 
 skip-shell-integration-prompt = true
 
+# Git records no directory modes, so a fresh checkout creates .beads/ at the
+# umask default (0755) and bd then warns that it is wider than 0700. pre-start
+# blocks, so the mode is fixed before post-start or anything else can run bd.
+[pre-start]
+beads-perms = "[ ! -d '{{ worktree_path }}/.beads' ] || chmod 700 '{{ worktree_path }}/.beads'"
+
 [post-start]
 copy = "wt step copy-ignored"
 
