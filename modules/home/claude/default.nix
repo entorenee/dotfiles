@@ -425,6 +425,15 @@ in {
         # equivalent). A `Bash(rtk git add*)` twin was removed 2026-08-19 as
         # unreachable — its comment claimed exit 3, which measurement disproved.
         "Bash(git add*)"
+        # These bd flags replace the field wholesale and only warn afterwards.
+        # Notes have --append-notes, which none of these match (one hyphen before
+        # "notes"); design has no append form, so a deliberate replace of either
+        # is handed over as `! bd update …`. rtk passes bd through (exit 1).
+        "Bash(bd update *--notes *)"
+        "Bash(bd update *--notes=*)"
+        "Bash(bd update *--design *)"
+        "Bash(bd update *--design=*)"
+        "Bash(bd update *--design-file*)"
         # rtk proxy is an arbitrary-command escape hatch
         "Bash(rtk proxy*)"
         # pnpm exec sandbox escapes — block interpreters / shells / rm via pnpm exec
